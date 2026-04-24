@@ -76,7 +76,8 @@ export async function acceptInviteAction(
     action: "staff.invite_accepted",
     entity_type: "staff_invite",
     entity_id: invite.id,
-    context: { role: invite.role, event_id: invite.event_id },
+    event_id: invite.event_id,
+    context: { role: invite.role },
   });
 
   const redirectTo =

@@ -80,12 +80,20 @@ export async function addHolderGuestAction(token: string, formData: FormData) {
 
   if (error) return { error: error.message };
 
+  // Look up event_id so the audit row can be scoped to the event.
+  const { data: nightRow } = await admin
+    .from("event_nights")
+    .select("event_id")
+    .eq("id", allocation.event_night_id)
+    .maybeSingle<{ event_id: string }>();
+
   // Audit: who added this? Holders have no user ID; record via
   // actor_allocation_id so the action is attributed to the holder allocation.
   await admin.from("audit_log").insert({
     actor_allocation_id: allocation.id,
     action: "holder.add_guest",
     entity_type: "guest",
+    event_id: nightRow?.event_id ?? null,
     context: { full_name: fullName, plus_ones: requestedPlusOnes, status },
   });
 

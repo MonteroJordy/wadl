@@ -148,6 +148,7 @@ export async function completeRsvpAction(
     actor_allocation_id: alloc.id,
     action: "guest.rsvp",
     entity_type: "guest",
+    event_id: input.eventId,
     context: { full_name: fullName, plus_ones: plusOnes, status },
   });
 

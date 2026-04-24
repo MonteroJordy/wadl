@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useTransition } from "react";
 import {
   managerApproveGuestAction,
@@ -56,34 +57,39 @@ export default function GuestRow({ eventId, guest }: Props) {
         guest.flag_dna ? "border-coral" : checkedIn ? "opacity-60" : ""
       }`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="font-sans text-cream font-semibold truncate">
-            {guest.full_name}
-            {guest.plus_ones > 0 && (
-              <span className="text-muted font-normal"> +{guest.plus_ones}</span>
-            )}
-            {guest.flag_dna && (
-              <span className="ml-2 label-mono text-coral">⚠ DNA</span>
-            )}
-          </p>
-          <p className="label-mono mt-1 truncate">
-            <span className={statusColor}>{guest.status}</span>
-            {" · "}
-            {guest.tier.toUpperCase()}
-            {guest.allocation_name && <> · {guest.allocation_name}</>}
-            {checkedIn && (
-              <>
-                {" "}
-                ·{" "}
-                <span className="text-mint">
-                  IN {new Date(guest.checked_in_at!).toLocaleTimeString()}
-                </span>
-              </>
-            )}
-          </p>
+      <Link
+        href={`/manager/events/${eventId}/guests/${guest.id}`}
+        className="block hover:opacity-90 transition"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="font-sans text-cream font-semibold truncate">
+              {guest.full_name}
+              {guest.plus_ones > 0 && (
+                <span className="text-muted font-normal"> +{guest.plus_ones}</span>
+              )}
+              {guest.flag_dna && (
+                <span className="ml-2 label-mono text-coral">⚠ DNA</span>
+              )}
+            </p>
+            <p className="label-mono mt-1 truncate">
+              <span className={statusColor}>{guest.status}</span>
+              {" · "}
+              {guest.tier.toUpperCase()}
+              {guest.allocation_name && <> · {guest.allocation_name}</>}
+              {checkedIn && (
+                <>
+                  {" "}
+                  ·{" "}
+                  <span className="text-mint">
+                    IN {new Date(guest.checked_in_at!).toLocaleTimeString()}
+                  </span>
+                </>
+              )}
+            </p>
+          </div>
         </div>
-      </div>
+      </Link>
 
       {!checkedIn && (
         <div className="grid grid-cols-2 gap-2 mt-3">

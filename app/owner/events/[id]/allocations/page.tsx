@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOwnerContext, fmtDate } from "@/lib/owner";
+import EmptyState from "@/components/empty-state";
 
 export const dynamic = "force-dynamic";
 
@@ -99,14 +100,15 @@ export default async function AllocationsPage({
       </Link>
 
       {nights.length === 0 ? (
-        <p className="label-mono text-center">No nights yet.</p>
+        <EmptyState
+          title="No nights yet"
+          body="Add nights from settings, then come back to distribute allocations."
+        />
       ) : allocs.length === 0 ? (
-        <div className="card text-center">
-          <p className="label-mono mb-2">No allocations yet</p>
-          <p className="text-muted text-sm">
-            Add a promoter, artist, or brand allocation to start distributing the list.
-          </p>
-        </div>
+        <EmptyState
+          title="No allocations yet"
+          body="Add a promoter, artist, or brand allocation to start distributing the list."
+        />
       ) : (
         <div className="flex flex-col gap-6">
           {nights.map((n) => {

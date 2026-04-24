@@ -101,11 +101,17 @@ export default async function AllocationDetailPage({
       <div className="mt-8">
         <p className="label-mono mb-3">Guests on this list</p>
         {guestsList.length === 0 ? (
-          <p className="label-mono text-center">None yet.</p>
+          <p className="label-mono text-center text-mint">
+            None yet — share the magic link and names will land here.
+          </p>
         ) : (
           <div className="flex flex-col gap-2">
             {guestsList.map((g) => (
-              <div key={g.id} className="card flex items-center justify-between">
+              <Link
+                key={g.id}
+                href={`/owner/events/${event.id}/guests/${g.id}`}
+                className="card flex items-center justify-between hover:border-coral/60 transition"
+              >
                 <div>
                   <p className="font-sans text-cream">{g.full_name}</p>
                   {g.plus_ones > 0 && (
@@ -125,7 +131,7 @@ export default async function AllocationDetailPage({
                 >
                   {g.status}
                 </span>
-              </div>
+              </Link>
             ))}
           </div>
         )}

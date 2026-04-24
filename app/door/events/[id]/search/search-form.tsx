@@ -84,7 +84,9 @@ export default function SearchForm({
       {pending && <p className="label-mono">Searching…</p>}
 
       {query && !pending && results.length === 0 && (
-        <p className="label-mono text-center mt-4">No match.</p>
+        <p className="label-mono text-center text-mint mt-4">
+          No match — try a different spelling or scan the QR.
+        </p>
       )}
 
       <div className="flex flex-col gap-2">

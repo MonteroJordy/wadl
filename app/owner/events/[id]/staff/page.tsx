@@ -8,6 +8,7 @@ import {
   RevokeInviteButton,
   RemoveStaffButton,
 } from "./row-buttons";
+import EmptyState from "@/components/empty-state";
 
 export const dynamic = "force-dynamic";
 
@@ -91,7 +92,10 @@ export default async function StaffPage({
       <section className="mt-8">
         <p className="label-mono mb-2">Staff on this event</p>
         {staff.length === 0 ? (
-          <p className="label-mono text-center">None yet.</p>
+          <EmptyState
+            title="No staff yet"
+            body="Invite someone above to put them on the scanner tonight."
+          />
         ) : (
           <div className="flex flex-col gap-2">
             {staff.map((s) => (

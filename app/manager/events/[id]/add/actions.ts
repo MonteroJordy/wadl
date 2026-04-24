@@ -93,6 +93,7 @@ export async function managerAddGuestAction(
     action: "manual_add_at_door",
     entity_type: "guest",
     entity_id: guest.id,
+    event_id: eventId,
     context: {
       allocation_id: alloc.id,
       tier,

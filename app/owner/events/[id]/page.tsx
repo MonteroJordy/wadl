@@ -1,9 +1,31 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOwnerContext, fmtDate, fmtTime } from "@/lib/owner";
+import { fmtHour } from "@/lib/recap";
 import FreezeButton from "./freeze-button";
+import EmptyState from "@/components/empty-state";
 
 export const dynamic = "force-dynamic";
+
+interface CheckInRow {
+  state: string;
+  scanned_at: string;
+  guest: {
+    plus_ones: number;
+    allocation_id: string | null;
+    allocation: { holder_name: string } | null;
+  } | null;
+}
+
+function ago(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  const min = Math.round(ms / 60_000);
+  if (min < 1) return "just now";
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.round(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  return `${Math.round(hr / 24)}d ago`;
+}
 
 export default async function DayDashPage({
   params,
@@ -16,7 +38,9 @@ export default async function DayDashPage({
 
   const { data: event } = await supabase
     .from("events")
-    .select("id, name, description, flyer_url, event_type, venue_id, account_id, event_nights(id, night_date, doors_at, cutoff_at, capacity_cap, lockdown_threshold_pct, is_frozen)")
+    .select(
+      "id, name, description, flyer_url, event_type, venue_id, account_id, event_nights(id, night_date, doors_at, cutoff_at, capacity_cap, lockdown_threshold_pct, is_frozen)"
+    )
     .eq("id", params.id)
     .eq("account_id", account.id)
     .maybeSingle();
@@ -37,49 +61,118 @@ export default async function DayDashPage({
   if (nights.length === 0) {
     return (
       <main className="mobile-frame">
-        <Link href="/owner" className="label-mono hover:text-cream">← Back</Link>
-        <h1 className="display-lg mt-4 mb-2">{event.name}</h1>
-        <div className="card mt-6">
-          <p className="label-mono mb-2">No nights yet</p>
-          <p className="text-muted text-sm">
-            Add nights from settings to light this up.
-          </p>
-          <Link
-            href={`/owner/events/${event.id}/settings`}
-            className="btn-primary text-center mt-4 block"
-          >
-            Go to settings
-          </Link>
-        </div>
+        <Link href="/owner" className="label-mono hover:text-cream">
+          ← Back
+        </Link>
+        <h1 className="display-lg mt-4 mb-6">{event.name}</h1>
+        <EmptyState
+          title="No nights yet"
+          body="Add a night from settings to start building the list."
+          action={
+            <Link
+              href={`/owner/events/${event.id}/settings`}
+              className="btn-primary inline-block"
+            >
+              Go to settings
+            </Link>
+          }
+        />
       </main>
     );
   }
 
-  // Pick active night: query param, else next upcoming (first whose doors_at >= now), else first.
+  // Active night.
   const now = Date.now();
   const upcoming = nights.find((n) => new Date(n.doors_at).getTime() >= now);
   const defaultNight = upcoming ?? nights[0];
-  const active =
-    nights.find((n) => n.id === searchParams.night) ?? defaultNight;
+  const active = nights.find((n) => n.id === searchParams.night) ?? defaultNight;
 
+  // Live analytics fetch. Pull check_ins with joined guest/allocation so
+  // we can show last-scan, arrival curve, and top holder inline.
   const [guestsRes, checkInsRes, allocRes, pendingRes] = await Promise.all([
-    supabase.from("guests").select("status", { count: "exact", head: false }).eq("event_night_id", active.id),
-    supabase.from("check_ins").select("state").eq("event_night_id", active.id),
-    supabase.from("allocations").select("id", { count: "exact", head: true }).eq("event_night_id", active.id),
-    supabase.from("guests").select("id", { count: "exact", head: true }).eq("event_night_id", active.id).eq("status", "pending"),
+    supabase.from("guests").select("status, plus_ones").eq("event_night_id", active.id),
+    supabase
+      .from("check_ins")
+      .select(
+        "state, scanned_at, guest:guests!inner(plus_ones, allocation_id, allocation:allocations(holder_name))"
+      )
+      .eq("event_night_id", active.id),
+    supabase
+      .from("allocations")
+      .select("id", { count: "exact", head: true })
+      .eq("event_night_id", active.id),
+    supabase
+      .from("guests")
+      .select("id", { count: "exact", head: true })
+      .eq("event_night_id", active.id)
+      .eq("status", "pending"),
   ]);
 
-  const guests = guestsRes.data ?? [];
-  const approved = guests.filter((g) => g.status === "approved").length;
-  const totalList = approved + (pendingRes.count ?? 0);
-  const scanned = (checkInsRes.data ?? []).filter((c) => c.state === "approved").length;
+  const guests = (guestsRes.data ?? []) as Array<{
+    status: string;
+    plus_ones: number;
+  }>;
+  const approvedHeads = guests
+    .filter((g) => g.status === "approved")
+    .reduce((s, g) => s + 1 + (g.plus_ones ?? 0), 0);
+  const pendingHeads = guests
+    .filter((g) => g.status === "pending")
+    .reduce((s, g) => s + 1 + (g.plus_ones ?? 0), 0);
+
+  const checkIns = (checkInsRes.data ?? []) as unknown as CheckInRow[];
+  const approvedScans = checkIns.filter((c) => c.state === "approved");
+
+  let scanned = 0;
+  const holderScans = new Map<string, { name: string; count: number }>();
+  const hourCounts = new Map<number, number>();
+  let lastScanAt: string | null = null;
+
+  for (const c of approvedScans) {
+    const heads = 1 + (c.guest?.plus_ones ?? 0);
+    scanned += heads;
+    const hour = new Date(c.scanned_at).getHours();
+    hourCounts.set(hour, (hourCounts.get(hour) ?? 0) + heads);
+    if (!lastScanAt || c.scanned_at > lastScanAt) lastScanAt = c.scanned_at;
+    if (c.guest?.allocation_id) {
+      const key = c.guest.allocation_id;
+      if (!holderScans.has(key)) {
+        holderScans.set(key, {
+          name: c.guest.allocation?.holder_name ?? "—",
+          count: 0,
+        });
+      }
+      holderScans.get(key)!.count += heads;
+    }
+  }
+
+  const recentScans = approvedScans.filter(
+    (c) => Date.now() - new Date(c.scanned_at).getTime() < 30 * 60_000
+  ).length;
+
+  const topHolderEntry = [...holderScans.values()].sort(
+    (a, b) => b.count - a.count
+  )[0];
+
+  // Build an hour array spanning first scan hour → now (or a 4-hour window).
+  const currentHour = new Date().getHours();
+  const earliestHour =
+    hourCounts.size > 0 ? Math.min(...hourCounts.keys()) : currentHour;
+  const hours: Array<{ hour: number; count: number }> = [];
+  for (let h = earliestHour; h <= currentHour; h++) {
+    hours.push({ hour: h % 24, count: hourCounts.get(h) ?? 0 });
+  }
+  const peakHourCount = Math.max(1, ...hours.map((h) => h.count));
+
   const cap = active.capacity_cap ?? 0;
   const pctFull = cap > 0 ? Math.round((scanned / cap) * 100) : 0;
+  const totalList = approvedHeads + pendingHeads;
 
   return (
     <main className="mobile-frame">
       <header className="flex items-center justify-between pt-6 pb-4">
-        <Link href="/owner" className="label-mono hover:text-cream">← Back</Link>
+        <Link href="/owner" className="label-mono hover:text-cream">
+          ← Back
+        </Link>
         <Link
           href={`/owner/events/${event.id}/settings`}
           className="label-mono hover:text-cream"
@@ -139,7 +232,9 @@ export default async function DayDashPage({
           </div>
           <div className="text-right">
             <p className="label-mono">Full</p>
-            <p className="font-display text-4xl text-coral leading-none">{pctFull}%</p>
+            <p className="font-display text-4xl text-coral leading-none">
+              {pctFull}%
+            </p>
           </div>
         </div>
         <div className="h-2 bg-s3 rounded-full mt-4 overflow-hidden">
@@ -151,13 +246,11 @@ export default async function DayDashPage({
         <div className="grid grid-cols-3 gap-2 mt-4">
           <div>
             <p className="label-mono">Approved</p>
-            <p className="font-display text-2xl text-cream">{approved}</p>
+            <p className="font-display text-2xl text-cream">{approvedHeads}</p>
           </div>
           <div>
             <p className="label-mono">Pending</p>
-            <p className="font-display text-2xl text-gold">
-              {pendingRes.count ?? 0}
-            </p>
+            <p className="font-display text-2xl text-gold">{pendingHeads}</p>
           </div>
           <div>
             <p className="label-mono">Allocs</p>
@@ -166,7 +259,63 @@ export default async function DayDashPage({
             </p>
           </div>
         </div>
+
+        {scanned > 0 && (
+          <div className="mt-4 pt-4 border-t border-line grid grid-cols-2 gap-3">
+            <div>
+              <p className="label-mono">Last scan</p>
+              <p className="font-sans text-sm text-cream">
+                {lastScanAt ? ago(lastScanAt) : "—"}
+              </p>
+            </div>
+            <div>
+              <p className="label-mono">Last 30m</p>
+              <p className="font-sans text-sm text-cream">
+                {recentScans} in
+              </p>
+            </div>
+          </div>
+        )}
       </section>
+
+      {hours.length > 0 && scanned > 0 && (
+        <section className="card mb-4">
+          <p className="label-mono mb-3">Arrivals by hour</p>
+          <div className="flex items-end gap-1 h-20">
+            {hours.map((b) => {
+              const h = (b.count / peakHourCount) * 100;
+              const isPeak = b.count > 0 && b.count === peakHourCount;
+              return (
+                <div
+                  key={b.hour}
+                  className="flex-1 flex flex-col items-center gap-1"
+                  title={`${fmtHour(b.hour)}: ${b.count}`}
+                >
+                  <div
+                    className={`w-full rounded-t ${
+                      isPeak ? "bg-coral" : "bg-mint/60"
+                    }`}
+                    style={{ height: `${Math.max(4, h)}%` }}
+                  />
+                  <p className="label-mono text-[9px]">{fmtHour(b.hour)}</p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {topHolderEntry && (
+        <section className="card mb-4">
+          <p className="label-mono mb-1">Top holder so far</p>
+          <p className="font-sans text-cream font-semibold">
+            {topHolderEntry.name}
+          </p>
+          <p className="label-mono mt-1">
+            <span className="text-mint">{topHolderEntry.count}</span> scanned in
+          </p>
+        </section>
+      )}
 
       <section className="grid grid-cols-2 gap-2 mb-4">
         <Link
@@ -207,6 +356,23 @@ export default async function DayDashPage({
         </Link>
       </section>
 
+      <section className="grid grid-cols-2 gap-2 mb-4">
+        <Link
+          href={`/owner/events/${event.id}/recap?night=${active.id}`}
+          className="card text-center hover:border-coral transition"
+        >
+          <p className="label-mono mb-1">Post-event</p>
+          <p className="font-sans font-semibold text-cream">Recap</p>
+        </Link>
+        <Link
+          href={`/owner/events/${event.id}/audit`}
+          className="card text-center hover:border-coral transition"
+        >
+          <p className="label-mono mb-1">Trail</p>
+          <p className="font-sans font-semibold text-cream">Audit log</p>
+        </Link>
+      </section>
+
       <div className="mb-4">
         <FreezeButton
           eventId={event.id}
@@ -216,10 +382,26 @@ export default async function DayDashPage({
       </div>
 
       {totalList === 0 && (
-        <p className="label-mono text-center mt-2">
-          No guests yet. Add allocations to start the list.
-        </p>
+        <EmptyState
+          title="No guests yet"
+          body="Invite a promoter or share the discovery page to start the list."
+        />
       )}
+
+      <section className="grid grid-cols-2 gap-2 mt-4">
+        <Link
+          href={`/owner/events/${event.id}/export`}
+          className="label-mono text-center py-2 hover:text-cream transition"
+        >
+          Export CSV
+        </Link>
+        <Link
+          href={`/owner/events/${event.id}/print`}
+          className="label-mono text-center py-2 hover:text-cream transition"
+        >
+          Print roster
+        </Link>
+      </section>
     </main>
   );
 }

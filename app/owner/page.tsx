@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireOwnerContext, fmtDate, fmtTime } from "@/lib/owner";
+import EmptyState from "@/components/empty-state";
 
 export const dynamic = "force-dynamic";
 
@@ -121,12 +122,10 @@ export default async function OwnerWeekViewPage() {
       </Link>
 
       {byDate.size === 0 ? (
-        <div className="card text-center mt-6">
-          <p className="label-mono mb-2">No nights this week</p>
-          <p className="text-muted text-sm">
-            Create an event to get your first guest list on the door.
-          </p>
-        </div>
+        <EmptyState
+          title="No nights this week"
+          body="Create an event to get your first guest list on the door."
+        />
       ) : (
         <div className="flex flex-col gap-5">
           {[...byDate.entries()].map(([date, ns]) => (

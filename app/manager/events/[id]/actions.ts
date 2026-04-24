@@ -30,6 +30,7 @@ export async function managerApproveGuestAction(
     action: "manager.approve_inline",
     entity_type: "guest",
     entity_id: guestId,
+    event_id: eventId,
   });
 
   revalidatePath(`/manager/events/${eventId}`);
@@ -59,6 +60,7 @@ export async function managerRejectGuestAction(
     action: "manager.reject_inline",
     entity_type: "guest",
     entity_id: guestId,
+    event_id: eventId,
   });
 
   revalidatePath(`/manager/events/${eventId}`);

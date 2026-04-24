@@ -6,6 +6,7 @@ import {
 } from "@/lib/door";
 import { fmtDate, fmtTime } from "@/lib/format";
 import GuestRow from "./guest-row";
+import EmptyState from "@/components/empty-state";
 
 export const dynamic = "force-dynamic";
 
@@ -238,15 +239,21 @@ export default async function ManagerEventPage({
           </div>
 
           {filtered.length === 0 && (
-            <p className="label-mono text-center mt-6">
-              No guests match these filters.
-            </p>
+            <EmptyState
+              title="Nothing matches"
+              body={
+                rows.length === 0
+                  ? "No guests yet — wait for RSVPs or add a walk-up."
+                  : "Clear your filters to see everyone."
+              }
+            />
           )}
         </>
       ) : (
-        <div className="card text-center mt-4">
-          <p className="label-mono mb-2">No nights yet</p>
-        </div>
+        <EmptyState
+          title="No nights yet"
+          body="The event has no nights defined. Ask the owner to add one."
+        />
       )}
 
       <p className="label-mono mt-auto pt-8 text-center text-gold">

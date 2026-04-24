@@ -142,6 +142,7 @@ export async function manualCheckInAction(
     action: "door.manual_check_in",
     entity_type: "guest",
     entity_id: guest.id,
+    event_id: eventId,
   });
 
   revalidatePath(`/door/events/${eventId}`);

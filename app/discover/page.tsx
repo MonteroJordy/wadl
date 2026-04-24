@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fmtDate, fmtTime } from "@/lib/format";
+import EmptyState from "@/components/empty-state";
 
 export const dynamic = "force-dynamic";
 
@@ -57,12 +58,10 @@ export default async function DiscoverPage() {
       </header>
 
       {events.length === 0 ? (
-        <div className="card text-center mt-6">
-          <p className="label-mono mb-2">Nothing live</p>
-          <p className="text-muted text-sm">
-            Check back. New events drop weekly.
-          </p>
-        </div>
+        <EmptyState
+          title="Nothing live"
+          body="Check back. New nights drop weekly."
+        />
       ) : (
         <div className="flex flex-col gap-4 mt-2">
           {events.map((e) => {

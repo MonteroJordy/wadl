@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireOwnerContext, fmtDate } from "@/lib/owner";
 import QueueRow from "./row";
 import BulkActions from "./bulk";
+import EmptyState from "@/components/empty-state";
 
 export const dynamic = "force-dynamic";
 
@@ -88,12 +89,10 @@ export default async function QueuePage({
       </p>
 
       {pending.length === 0 ? (
-        <div className="card text-center mt-4">
-          <p className="label-mono mb-2">Queue empty</p>
-          <p className="text-muted text-sm">
-            Nothing waiting for approval. Auto-approved allocations bypass this view.
-          </p>
-        </div>
+        <EmptyState
+          title="Queue empty"
+          body="Nothing waiting for approval. Auto-approved allocations bypass this view."
+        />
       ) : (
         <div className="flex flex-col gap-6">
           {nights.map((n) => {

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fmtDate, fmtTime } from "@/lib/format";
 import MyTicketsVerify from "./verify-form";
+import EmptyState from "@/components/empty-state";
 
 export const dynamic = "force-dynamic";
 
@@ -89,15 +90,15 @@ export default async function MyTicketsPage() {
       <p className="label-mono mb-6">{phoneWithPlus}</p>
 
       {rows.length === 0 ? (
-        <div className="card text-center mt-6">
-          <p className="label-mono mb-2">Nothing here yet</p>
-          <p className="text-muted text-sm">
-            RSVP to an event and your ticket will appear here.
-          </p>
-          <Link href="/discover" className="btn-primary mt-4 block text-center">
-            Browse events
-          </Link>
-        </div>
+        <EmptyState
+          title="Nothing here yet"
+          body="RSVP to an event and your ticket will appear here."
+          action={
+            <Link href="/discover" className="btn-primary inline-block">
+              Browse events
+            </Link>
+          }
+        />
       ) : (
         <>
           {upcoming.length > 0 && (
