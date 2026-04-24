@@ -1,4 +1,4 @@
-# Build status — through Day 5
+# Build status — through Day 6
 
 **Commits on `main`:**
 
@@ -9,10 +9,12 @@
 - `8af44ac` — Day 4: guest discovery + RSVP + phone verify + QR via SMS + My Tickets
 - `b8d077f` — docs: Day 4 WAKEUP append
 - `9d530e0` — Day 5: door operations — staff invite, QR scanner, manager view, DNA flag
+- `dcc6b84` — docs: Day 5 WAKEUP append
+- `20c165c` — Day 6: recap + analytics + audit log viewer + CSV/print export + flag UI + empty state polish
 
-TypeScript passes (`npx tsc --noEmit` clean). Production `next build` compiles all **30 routes** clean. Dev server was not started — run it yourself.
+TypeScript passes (`npx tsc --noEmit` clean). Production `next build` compiles all **37 routes** clean. Dev server was not started — run it yourself.
 
-> ⚠ **Before you `npm run dev` for Day 5, wipe the Next cache: `rm -rf .next && npm run dev`.** New top-level routes (`/door`, `/manager`, `/staff-invite`) and new migrations need a cold start. Skipping this often produces "module not found" or stale middleware behavior.
+> ⚠ **Before you `npm run dev` for Day 6, wipe the Next cache: `rm -rf .next && npm run dev`.** Day 6 adds new top-level routes (`/owner/events/[id]/{recap,audit,export,print,guests/[guestId]}` + `/manager/events/[id]/guests/[guestId]`) and a new migration. Cold start avoids stale middleware/module-graph issues.
 
 ---
 
@@ -497,3 +499,115 @@ Five migrations applied:
 6. `20260426000001_day5_door_ops.sql`
 
 Ready for Day 6 (analytics + recap + audit log viewer + flag UI polish) when you are.
+
+---
+
+## Day 6 — recap, analytics, audit, export, flag UI, empty states
+
+### Files shipped
+
+| File | Purpose |
+|---|---|
+| `supabase/migrations/20260427000001_day6_audit_event_id.sql` | Adds `audit_log.event_id uuid` + partial index. Every audit-log insert site (RSVP, holder, door scan/search, manager approve/reject, manual-add, staff-invite, flag) now populates it. Old rows keep null and are excluded from event-scoped queries. |
+| `lib/recap.ts` | `computeRecap(eventId, nightId?)` — aggregates head-counts, tier stats, check-ins-by-hour, top promoters, no-shows. Pure function over the service-role admin client. |
+| `lib/guest-access.ts` | `resolveGuestMutateAccess(userId, guestId)` — returns `{eventId, isOwner, isManager}` if caller may mutate a guest (account owner OR door_manager via event_staff), else null. |
+| `lib/flag.ts` | `"use server"` `toggleFlagDnaAction(guestId, flag, reason)` — dual-authz via the helper, updates `guests.flag_dna/flag_reason`, writes audit row, revalidates owner + manager paths. |
+| `lib/guest-query.ts` | `fetchGuestForDetail(guestId, eventId)` — one query for everything the guest-detail view shows (allocation, night, event, all check_ins with scanner name). |
+| `components/empty-state.tsx` | Shared `<EmptyState title body action tone>`; default tone is mint per the Day 6 brief. |
+| `components/flag-dna-form.tsx` | Client component with 3 visual states: not-flagged/idle → not-flagged/confirm-with-reason → flagged-card with remove button. Reason is required to flag; unflag is a confirm. |
+| `components/guest-detail.tsx` | Shared detail view used by both owner and manager guest-detail pages (coral accent for owner, gold for manager). Shows basics, door history (all `check_ins` newest-first), flag form, QR link. |
+| `app/owner/events/[id]/guests/[guestId]/page.tsx` | Owner guest detail (scopes via `requireOwnerContext` + event-on-account check). |
+| `app/manager/events/[id]/guests/[guestId]/page.tsx` | Manager guest detail (scopes via `requireDoorContext(requireRole: "door_manager")`). Same body, different wrapper. |
+| `app/owner/events/[id]/recap/page.tsx` | Show-rate hero, tier breakdown with per-tier show-rate bars, hour histogram with peak highlight, top-5 promoters, no-show list (first 40 linked to guest detail; full via export). Night selector (`All nights` vs per-night). |
+| `app/owner/events/[id]/audit/page.tsx` | Paginated 50/page audit viewer. Distinct-action chips for filtering, resolves `actor_user_id → profile.full_name` and `actor_allocation_id → holder_name`. Context JSON preview truncated. |
+| `app/owner/events/[id]/export/route.ts` | Route handler — GET returns `text/csv; charset=utf-8` with BOM (Excel-safe). Columns: name, phone, email, tier, status, plus_ones, allocation, night_date, checked_in, checked_in_at, flagged_dna, rsvp_at, approved_at. |
+| `app/owner/events/[id]/print/page.tsx` + `print-button.tsx` | Print-ready roster grouped by allocation. `@media print` styles force white bg / black text / 0.5in margins. Mint-filled checkbox for scanned guests, empty outline for not-yet. Night selector (all nights or one). |
+| `app/owner/events/[id]/page.tsx` (rewrite) | Daydash upgraded with live analytics: last-scan time (relative), last-30m arrivals, per-hour mini-sparkline (coral peak, mint others), top-holder card, Recap + Audit quick-action tiles, inline CSV + print links. |
+| Daydash, weekview, discover, mytickets, allocations list, queue, staff list, manager list, search "no match" | All moved to shared `EmptyState` or mint-accented helper copy. |
+| Manager row + owner allocation-detail guest list | Each row now links to the relevant guest-detail page so the flag UI is reachable from the places a manager/owner hits during operations. |
+| 9 audit_log insert sites | Backfilled to include `event_id` so the viewer sees them. |
+
+### Smoke test — Day 6 loop
+
+Prereqs: through-Day-5 flow working. Have at least one event with approved + checked-in guests (run the Day 5 smoke test to generate that).
+
+> **Run this first** after pulling Day 6:
+> ```
+> rm -rf .next && npm run dev
+> ```
+
+1. **Daydash live analytics** — Visit `/owner/events/<id>`. After a few scans you should see "Last scan · 2m ago" and "Last 30m · N in". The "Arrivals by hour" sparkline shows up once there's at least one scan. "Top holder so far" names whichever allocation has the most scanned heads. Recap + Audit tiles below the manage/queue row.
+
+2. **Recap** — Tap **Recap** tile. Shows show-rate (e.g. "67%") with progress bar, tier breakdown, hour histogram with coral peak bar, top 5 promoters, no-show list. Tap a no-show → owner guest detail page. Multi-night events get a night selector at top ("All nights" or per-night).
+
+3. **Flag DNA from guest detail** — From the no-show list (or owner allocation detail → guest row, or manager home → guest row) tap any guest to open the detail page. Click **⚠ Flag Do Not Admit** → reason textarea appears. Type a reason → **Flag DNA**. The card flips to a coral banner "⚠ FLAGGED — DO NOT ADMIT" with a "Remove flag" button.
+
+4. **Verify flag + audit row** — In the DB:
+   ```
+   /opt/homebrew/opt/postgresql@16/bin/psql \
+     "$(grep ^SUPABASE_DB_URL .env.local | cut -d= -f2-)" \
+     -c "select full_name, flag_dna, flag_reason from guests where flag_dna = true;"
+   /opt/homebrew/opt/postgresql@16/bin/psql \
+     "$(grep ^SUPABASE_DB_URL .env.local | cut -d= -f2-)" \
+     -c "select action, context, created_at from audit_log where action in ('guest.flag_dna','guest.unflag_dna') order by created_at desc limit 5;"
+   ```
+
+5. **Scan a flagged guest** — Open the flagged guest's `/t/<check_in_token>` in incognito. On the `/door/events/<id>/scan` page, scan their QR. Dark red DO NOT ADMIT overlay + reason. Confirms the flag wires into Day 5's scanner.
+
+6. **Audit log viewer** — From daydash tap **Audit log**. See the full trail for the event. Tap an action chip (e.g. `door.scanned_in`) → list filters. Pagination at bottom if there are >50 entries. Actor names resolve from profiles; holder flows show "Diplo (holder)" etc.
+
+7. **CSV export** — From daydash tap **Export CSV**. Browser downloads `<event>_guests.csv`. Open in Excel/Numbers; accented names render correctly (UTF-8 BOM prepended).
+
+8. **Print roster** — From daydash tap **Print roster**. Page renders grouped-by-allocation with checkbox + tier + +1s columns. Tap **Print now** → browser print dialog. In print preview you should see white background, black text, no header/footer branding, mint-checked checkbox for scanned guests.
+
+9. **Empty states** — Wipe the DB or visit a brand-new account. Every list should now show a friendly mint-bordered empty state:
+   - `/discover` → "Nothing live"
+   - `/mytickets` → "Nothing here yet" with "Browse events" CTA
+   - `/owner` → "No nights this week"
+   - `/owner/events/<id>/allocations` → "No allocations yet"
+   - `/owner/events/<id>/queue` → "Queue empty"
+   - `/owner/events/<id>/staff` → "No staff yet"
+   - `/owner/events/<id>/recap` → "No data yet"
+   - `/manager/events/<id>` → "Nothing matches" (filter-aware copy)
+   - Search "no match" → mint hint "No match — try a different spelling or scan the QR."
+
+### Day 6 judgment calls
+
+1. **Recap aggregates head-counts, not row-counts.** A guest with `plus_ones=2` contributes 3 to the approved/checked-in/tier totals. Matches the Day 3 cap semantics. Show rate is `checked_in_heads / approved_heads`. The "no-show list" is one row per guest (not per head) because you approve a row, not a head.
+
+2. **Top-holder ranking is by scanned heads.** Not by show-rate. A 20/30 allocation outranks a 5/5 allocation. The brief said "top promoter" which I read as raw volume; show-rate is still visible next to each holder so you can eyeball quality.
+
+3. **Hour histogram uses local browser time zone on the server.** `new Date(scanned_at).getHours()` runs on the Vercel/node server with its own TZ. For Miami-local ops this is approximately right (server defaults to UTC → we bucket into UTC hours). If a recap bar says "7pm peak" on the dashboard but Jordy remembers 2am Miami being the peak, that's because 2am Miami = 6am UTC. A proper timezone-aware bucket would use the venue's timezone from `venues.timezone`; deferred as a v1.1 polish.
+
+4. **Audit viewer is event-scoped. Older rows (pre-Day-6) are invisible.** The migration added `event_id` but didn't backfill — there's no clean way to infer event for holder/RSVP rows without joining through entities. Loss is small (testing-only data) and the viewer is honest about scope. If you want to see everything: raw `psql` the audit_log table.
+
+5. **CSV flatten-first design.** One row per guest, one CSV. Multi-night events get `night_date` per row but share the same file. If you want separate per-night exports, add `?night=<id>` to the route; for now it dumps the whole event. Default is fine for spreadsheet owners.
+
+6. **Print view is one column, grouped by allocation, alphabetical inside each group.** A columnar two-up layout saves paper but needs fragile column-break CSS. Opted for single-column to keep the build honest. Empty allocations are hidden. Walk-up direct guests land in their "Walk-up" group (which is just another allocation holder at this point).
+
+7. **Flag is a hard blocker at the scanner.** Once flagged, every scan shows DO NOT ADMIT (Day 5 wiring handles this). Unflagging is a one-confirm button; the audit trail keeps both the flag + unflag events so there's always a record. Reason is required to flag, not to unflag.
+
+8. **Flag UI is dual-authz, not role-duplicated.** One server action (`toggleFlagDnaAction` in `lib/flag.ts`) enforces "account owner of the event OR door_manager assigned to the event". Same action invoked from /owner guest detail, /manager guest detail, or — in principle — any other surface. Keeps the rules in one place.
+
+9. **Guest detail is split into two thin route wrappers** (/owner and /manager) rather than one shared route. Each hits its existing guard (`requireOwnerContext` vs `requireDoorContext`), then renders the same `GuestDetail` component with a different accent color and back href. No shared middleware magic; each path has its own URL + security story.
+
+10. **Daydash sparkline spans "earliest scan hour → current hour".** Not a fixed 4-hour window. On a live night this is what you want — start shows 1–2 bars growing; late night you see 6+ hours of history. Bars are mint with the peak bar flipped coral. Empty when there's no scan yet (section hidden).
+
+11. **EmptyState accents with mint by default.** Brief §10 assigns mint to door staff; Day 6 uses it as a neutral "new/fresh" color for empty lists because mint-against-dark reads positive-but-quiet. The component also accepts coral/gold/muted if you want variety later.
+
+12. **CSV BOM + CRLF.** Adds `﻿` BOM and uses `\r\n` line endings so Excel on Mac/Windows opens accented names correctly without manual "import with UTF-8" steps. Standard pattern; no surprises.
+
+13. **Print styles scoped to `.print-roster`.** Avoids leaking white-background / black-text rules into the non-print page. Clicking Print and cancelling the dialog leaves the dark UI intact.
+
+### Database state after Day 6
+
+Seven migrations applied:
+1. `20260423000000_init.sql`
+2. `20260424000001_day2_events_rls.sql`
+3. `20260424000002_seed_test_event.sql` (idempotent)
+4. `20260424000003_allocation_tokens.sql`
+5. `20260425000001_day4_guest_rsvp.sql`
+6. `20260426000001_day5_door_ops.sql`
+7. `20260427000001_day6_audit_event_id.sql`
+
+Ready for Day 7 (Vercel deploy + full dry-run event) when you are.
