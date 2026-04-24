@@ -12,7 +12,7 @@ export function nextOnboardingStep(
   if (!profile || !profile.full_name) return "/signup";
   if (!profile.account_id || !account) return "/entitysetup";
   if (account.account_type === "venue" && !hasVenue) return "/venuesetup";
-  return "/owner/dashboard";
+  return "/owner";
 }
 
 /** Normalize user-entered US phone numbers to E.164 for Supabase. */

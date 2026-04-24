@@ -50,3 +50,69 @@ export interface Venue {
   created_at: string;
   updated_at: string;
 }
+
+export interface WadlEvent {
+  id: string;
+  account_id: string;
+  venue_id: string | null;
+  event_type: EventType;
+  name: string;
+  description: string | null;
+  flyer_url: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EventNight {
+  id: string;
+  event_id: string;
+  night_date: string;
+  doors_at: string;
+  cutoff_at: string | null;
+  capacity_cap: number | null;
+  lockdown_threshold_pct: number;
+  is_frozen: boolean;
+  created_at: string;
+}
+
+export interface Allocation {
+  id: string;
+  event_night_id: string;
+  holder_name: string;
+  holder_phone: string | null;
+  holder_email: string | null;
+  magic_link_token: string;
+  cap: number;
+  auto_approve: boolean;
+  list_open: boolean;
+  plus_ones_allowed: boolean;
+  created_by: string;
+  created_at: string;
+}
+
+export interface AllocationToken {
+  id: string;
+  allocation_id: string;
+  token: string;
+  expires_at: string | null;
+  revoked_at: string | null;
+  created_at: string;
+}
+
+export interface Guest {
+  id: string;
+  event_night_id: string;
+  allocation_id: string | null;
+  full_name: string;
+  phone: string | null;
+  email: string | null;
+  plus_ones: number;
+  tier: Tier;
+  status: RsvpStatus;
+  qr_token: string | null;
+  added_by_user_id: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  created_at: string;
+}
