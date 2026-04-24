@@ -1,4 +1,4 @@
-# Build status — through Day 4
+# Build status — through Day 5
 
 **Commits on `main`:**
 
@@ -7,8 +7,12 @@
 - `a6c61a6` — Day 3: allocations + magic-link holder flow + approval queue
 - `e70aa7d` — docs: initial WAKEUP_SUMMARY
 - `8af44ac` — Day 4: guest discovery + RSVP + phone verify + QR via SMS + My Tickets
+- `b8d077f` — docs: Day 4 WAKEUP append
+- `9d530e0` — Day 5: door operations — staff invite, QR scanner, manager view, DNA flag
 
-TypeScript passes (`npx tsc --noEmit` clean). Production `next build` compiles all 22 routes clean. Dev server was not started — run it yourself.
+TypeScript passes (`npx tsc --noEmit` clean). Production `next build` compiles all **30 routes** clean. Dev server was not started — run it yourself.
+
+> ⚠ **Before you `npm run dev` for Day 5, wipe the Next cache: `rm -rf .next && npm run dev`.** New top-level routes (`/door`, `/manager`, `/staff-invite`) and new migrations need a cold start. Skipping this often produces "module not found" or stale middleware behavior.
 
 ---
 
@@ -312,4 +316,184 @@ Four migrations applied (in order):
 4. `20260424000003_allocation_tokens.sql` — Day 3 magic-link tokens
 5. `20260425000001_day4_guest_rsvp.sql` — Day 4 check_in_token + phone_verified_at
 
-Ready for Day 5 (door scanner) when you are.
+---
+
+## Day 5 — door operations
+
+### Files shipped
+
+| File | Purpose |
+|---|---|
+| `supabase/migrations/20260426000001_day5_door_ops.sql` | `user_role` enum gains `door_staff` + `door_manager`; `check_in_state` gains `do_not_admit`; `guests.flag_dna` + `guests.flag_reason`; new `staff_invites` table with owner-scoped RLS; `event_staff` CHECK constraint updated to allow only the new door roles. |
+| `lib/door.ts` | `requireDoorContext({ eventId, requireRole })` guard for /door and /manager pages. Owner self-bypass: account owners can access their own events without an event_staff row (testing + founder-runs-the-door ergonomics). `resolveActiveNight()` helper shared across door/manager. |
+| `app/owner/events/[id]/staff/` | Owner-side staff management. `page.tsx` lists active staff + pending invites. `invite-form.tsx` creates an invite (phone + role), sends SMS, surfaces the /staff-invite URL for copy-paste. `row-buttons.tsx` handles revoke / remove. `actions.ts` writes to `staff_invites`. |
+| `app/staff-invite/[token]/` | Public accept page. If invitee is not authenticated, inline phone-OTP. If already signed in with the invite phone, binds on click. `actions.ts` upserts `event_staff`, upgrades `profiles.role` (never downgrades owners), marks invite used, writes audit_log. |
+| `app/door/page.tsx` | Auto-route to a single/active event-staff assignment. |
+| `app/door/events/[id]/page.tsx` | Staff home — mint color scheme, `IN:X/cap` counter, big SCAN and SEARCH tiles, per-night picker if multi-night. |
+| `app/door/events/[id]/scan/` | QR scanner. `scanner.tsx` uses `@zxing/browser` + `getUserMedia` for continuous decode. `actions.ts` validates a decoded token: checks wrong-event → wrong-night → DNA → pending/status → already-used → writes `check_ins`. 5 overlay states: APPROVED (mint), ALREADY IN (gold), NOT ON LIST / WRONG EVENT / WRONG NIGHT (coral), DO NOT ADMIT (dark red `#7a0f14`). Dedupe identical tokens within 2.5s, hold result ~1.6s, then resume. |
+| `app/door/events/[id]/search/` | Name search — debounced (220ms) `ilike` query capped at 20 rows. Tap row → `manualCheckInAction` with the same validation as camera scan. DNA-flagged rows render with coral border and disabled check-in button. |
+| `app/manager/page.tsx` | Manager auto-route (requires `role='door_manager'`). |
+| `app/manager/events/[id]/page.tsx` | Manager home — gold color scheme, full guest list with status + tier filter chips, inline approve/deny/check-in buttons per row. Jump tiles to SCAN, SEARCH, + ADD. |
+| `app/manager/events/[id]/guest-row.tsx` | Client-side row with per-row server-action buttons. |
+| `app/manager/events/[id]/actions.ts` | `managerApproveGuestAction`, `managerRejectGuestAction` — use service-role admin client (RLS on guests is owner-scoped; door managers bypass via event_staff membership verified in `requireDoorContext`). |
+| `app/manager/events/[id]/add/` | Walk-up manual add. Form captures name + phone (opt) + allocation (dropdown shows used/cap per holder) + tier + +1s. Action inserts guest as `approved` + writes check_ins (`approved`) + audit_log (`manual_add_at_door`) in one shot. |
+| `app/owner/events/[id]/page.tsx` | Daydash now has Staff + Door-view quick-action tiles. |
+| `lib/types.ts` | `UserRole` extended with door_* values. `CheckInState` extended with `do_not_admit`. `Guest` gains `check_in_token`, `phone_verified_at`, `flag_dna`, `flag_reason`. New `StaffInvite` type. |
+| `lib/supabase/middleware.ts` | `/staff-invite` added to PUBLIC_PATHS. |
+| `.gitignore` | `.env.local.*` pattern added (catches editor `.save` backups — a `.env.local.save` showed up from the Nano autosave). |
+
+### Smoke test — Day 5 loop
+
+Prereqs: through-Day-4 flow works. Test phone `+13057990518` / `123456` enabled in Supabase. At least one event exists with an upcoming night. (If you've wiped data, sign up, create an event, RSVP as a guest from incognito to produce a QR to scan.)
+
+> **Run this first** after pulling Day 5:
+> ```
+> rm -rf .next && npm run dev
+> ```
+> New top-level routes (`/door`, `/manager`, `/staff-invite`) won't appear without it.
+
+#### 1. Owner invites themselves as door_staff
+
+- Visit `/owner/events/<id>` → tap **Staff** quick-action (new tile in the daydash)
+- Lands on `/owner/events/<id>/staff`
+- In the **Invite someone** card, enter `3057990518`, pick **Door staff**, submit
+- Since DEV_MODE is on, SMS is console-logged. The URL also shows inline under "Invite sent":
+  ```
+  http://localhost:3000/staff-invite/<hex-token>
+  ```
+- Copy that URL
+
+#### 2. Open the invite in a second browser / incognito
+
+- Paste the URL in incognito (to simulate a different device / staff member)
+- You see the event name + role + a phone entry form
+- Enter `3057990518` (the test phone), submit → OTP form
+- Enter `123456` → verify → invite binds → you land on `/door/events/<id>`
+
+> Judgment call #A: if you accept as the **same user** (because you're the owner, and you used your own phone), the action calls `upsert` on event_staff but **does not downgrade** your `profiles.role='owner'`. Owners can wear the door-staff hat without losing ownership.
+
+#### 3. Staff home (mint)
+
+- You see the event name, `IN: 0/<cap>` counter in mint, SCAN and SEARCH tiles
+- Tap **SCAN** → permission prompt → grant camera → preview loads
+
+#### 4. Scan a guest QR
+
+- In a third tab (or your phone), open a guest's `/t/<check_in_token>` page (RSVP with the test phone from `/discover` if you haven't yet)
+- Point the staff-side camera at the QR
+- Overlay flashes **APPROVED** mint-green with the guest name + tier + plus-ones
+- Returns to scanner after ~1.6s
+
+#### 5. Verify the check_in row landed
+
+```
+/opt/homebrew/opt/postgresql@16/bin/psql \
+  "$(grep ^SUPABASE_DB_URL .env.local | cut -d= -f2-)" \
+  -c "select g.full_name, ci.state, ci.scanned_at, p.full_name as scanned_by from check_ins ci join guests g on g.id = ci.guest_id left join profiles p on p.id = ci.scanned_by order by ci.scanned_at desc limit 5;"
+```
+
+You should see the guest with `state='approved'` and `scanned_by` set to your own profile's name.
+
+#### 6. Scan the same QR again
+
+- Overlay should flash **ALREADY IN** gold with the prior scan time
+- No duplicate `check_ins` row gets inserted
+
+#### 7. Test NOT ON LIST
+
+- Point at any other QR (e.g. a random QR from a package) or rotate the allocation's magic link (revoke + new token) and then try the old QR
+- Overlay shows **NOT ON LIST** coral
+
+#### 8. Test DO NOT ADMIT
+
+Flag a guest directly in the DB (flag-setting UI is Day 6):
+
+```
+/opt/homebrew/opt/postgresql@16/bin/psql \
+  "$(grep ^SUPABASE_DB_URL .env.local | cut -d= -f2-)" \
+  -c "update guests set flag_dna=true, flag_reason='Fight at last event' where full_name='<your test guest name>';"
+```
+
+Scan that guest's QR → overlay flashes dark red **⚠ DO NOT ADMIT** with the reason. A `check_ins` row is written with `state='do_not_admit'` and `audit_log` records `door.blocked_dna`.
+
+#### 9. Name search
+
+- Back on `/door/events/<id>`, tap **SEARCH**
+- Type a partial name from your guest list → debounced results appear
+- Tap **Check in** on an approved, not-yet-checked-in guest → row updates to "IN hh:mm"
+
+#### 10. Manager view
+
+- Invite yourself again as **Door manager** from `/owner/events/<id>/staff` (new invite URL)
+- Accept in another incognito
+- You land on `/manager/events/<id>` with the gold theme + full guest list + tier/status filter chips
+- Tap a status chip ("pending") — list filters accordingly
+- Tap **Approve** on a pending row — it flips to approved in place
+
+#### 11. Manual add at door
+
+- From manager home, tap **+ ADD**
+- Fill in: name "Walk-up Diego", tier VIP, pick an allocation with remaining cap, +1s 1
+- Submit → guest is inserted as `approved`, `check_ins` row is written, `audit_log` gets `manual_add_at_door`, you bounce back to the manager list filtered to "Checked in"
+- Verify:
+  ```
+  /opt/homebrew/opt/postgresql@16/bin/psql \
+    "$(grep ^SUPABASE_DB_URL .env.local | cut -d= -f2-)" \
+    -c "select action, context from audit_log where action='manual_add_at_door' order by created_at desc limit 3;"
+  ```
+
+#### 12. IN counter increments
+
+- Go back to `/door/events/<id>` — the **IN: X/cap** counter should reflect every approved scan + manual add
+- Same on `/manager/events/<id>` (its IN tile uses the same count)
+
+### Day 5 judgment calls
+
+1. **Owner self-bypass in door context.** `requireDoorContext()` treats any user who owns an event's account as a door_manager for that event — even without an event_staff row. This lets the founder run an event alone at the door without pretending to be two users. Real staff still go through the invite flow. Documented in `lib/door.ts`.
+
+2. **Accepting an invite as an existing owner doesn't downgrade them.** We check `profiles.role !== 'owner'` before flipping to the invite role. Owners keep their role; the event_staff row is still added so `requireDoorContext` has something to find.
+
+3. **Pending RSVPs scan as NOT ON LIST, not as a new "pending" state.** The brief called out 5 scan states, and PENDING wasn't one of them. A pending guest at the door is effectively not-on-list from the scanner's perspective. Their `/t/<token>` page already shows PENDING, so they can see they need host approval before getting in.
+
+4. **Scanner logs check_ins only for APPROVED and DO NOT ADMIT.** Wrong-event, wrong-night, already-used, and not-found states do **not** insert duplicate/pollutive rows. Already-used doesn't re-insert because there's already a row; the UI surfaces the prior scan. Wrong-event doesn't insert because the scanner isn't scoped to that event. Not-found has no guest to attach to. This keeps `check_ins` clean for analytics. If you want scan-attempt telemetry for the fail states, we can route them through `audit_log` later.
+
+5. **WRONG EVENT vs WRONG NIGHT.** `check_in_state` enum didn't distinguish these — I used `wrong_night` as the existing enum value and exposed the distinction only in the UI (two separate overlay titles). The DB doesn't care which; the scanner UI does.
+
+6. **Zxing library choice.** Went with `@zxing/browser` + `@zxing/library` over `html5-qrcode`. Gives clean TypeScript types, no pre-built UI to fight, tiny client bundle impact is ~110 kB gzipped on the scan route (which is fine — only door staff hit it). If this feels heavy, `jsQR` is lighter but doesn't handle autofocus/back-camera preference as well.
+
+7. **DEDUPE_MS = 2500, RESULT_HOLD_MS = 1600.** Mean the scanner ignores a repeat scan of the same QR within 2.5s (prevents 5 frames of the same person from hammering the server action) and holds the result overlay ~1.6s so staff can read it. Numbers are tuned conservatively — bump `RESULT_HOLD_MS` to 2000 if you want more read-time.
+
+8. **Camera permission UX.** Pre-start screen requires a manual "Start scanner" click. Browsers will refuse getUserMedia without a user gesture on most devices, so auto-starting is a trap. Clicking fires the permission prompt.
+
+9. **DNA-flag UI is Day 6.** Today you flag via raw SQL. The guest row on the search page and manager list does render a coral DNA badge (⚠ DNA) when `flag_dna=true`, but no UI to set it. Flag-setting needs a reason-picker + confirm, which is a Day 6 polish item.
+
+10. **Staff invite accept state machine.** Three steps in the accept form: (a) enter phone → send OTP, (b) enter OTP → verify → auto-trigger bind, (c) if already signed in when opening the link, we skip straight to a "bind this invite to your account" button. This saves an OTP round-trip for owners and for staff members who have an existing session.
+
+11. **Invite SMS body hard-coded.** Brief said Twilio is on a trial; unverified staff numbers won't receive real SMS (DEV_MODE console fallback will show). That's expected. The invite URL is also displayed inline in the owner's "Invite sent" card so you can copy it manually and text it yourself if Twilio can't.
+
+12. **Removing staff also clears their role.** If a user has zero remaining `event_staff` rows after a remove, we flip their `profiles.role` back to `'guest'`. This prevents orphaned door_staff/door_manager role on someone no longer assigned anywhere. Owner accounts are untouched because they use `role='owner'`.
+
+13. **Manager approve/check-in uses admin client.** Guests RLS is still owner-scoped. Rather than adding an event-staff-scoped RLS policy on guests (which means subquery-joining event_staff on every guest read), manager actions use the service-role admin client and rely on `requireDoorContext` for authorization. Same defense pattern Day 4 used for `/mytickets` and `/discover`.
+
+14. **Door/manager IN count is per-night, not per-event.** A multi-night event shows the counter for the selected/active night. Cross-night aggregates can be added Day 6 in the recap view if useful.
+
+### What Day 5 did NOT build (scope discipline)
+
+- Flag-setting UI (set `flag_dna` + reason from the owner / manager views) — Day 6 polish
+- Scanner torch / flashlight control — nice-to-have, not needed for indoor doors
+- Multi-camera picker (use back vs front) — browsers usually pick the right default; zxing's deviceId arg is `undefined` which lets the browser choose
+- Offline scanner / local cache — Day 7 deploy territory
+- Staff Shift time clock / shift notes — not in §12
+- Shift-end exports — Day 6
+
+### Database state after Day 5
+
+Five migrations applied:
+1. `20260423000000_init.sql`
+2. `20260424000001_day2_events_rls.sql`
+3. `20260424000002_seed_test_event.sql` (idempotent, safe to re-run post-signup)
+4. `20260424000003_allocation_tokens.sql`
+5. `20260425000001_day4_guest_rsvp.sql`
+6. `20260426000001_day5_door_ops.sql`
+
+Ready for Day 6 (analytics + recap + audit log viewer + flag UI polish) when you are.
