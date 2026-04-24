@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { updateEventAction, updateNightsAction } from "./actions";
-import { fmtDate } from "@/lib/owner";
+import { fmtDate } from "@/lib/format";
 
 interface NightRow {
   id: string;

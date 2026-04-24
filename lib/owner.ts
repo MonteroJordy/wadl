@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Account, Profile } from "@/lib/types";
 
+export { fmtDate, fmtTime } from "@/lib/format";
+
 /**
  * Standard server-side guard for /owner/* pages. Returns the signed-in
  * profile + account, or redirects to the appropriate onboarding step if
@@ -32,23 +34,4 @@ export async function requireOwnerContext() {
   if (!account) redirect("/entitysetup");
 
   return { supabase, user, profile, account };
-}
-
-export function fmtDate(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
-}
-
-export function fmtTime(iso: string) {
-  const d = new Date(iso);
-  return d
-    .toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-    })
-    .toLowerCase();
 }
