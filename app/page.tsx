@@ -11,13 +11,18 @@ export default async function RootPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login");
+  // Public landing: anyone without a session sees the event feed.
+  if (!user) redirect("/discover");
 
   const { data: profile } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", user.id)
     .maybeSingle<Profile>();
+
+  // Guest-role users (phone-verified for an RSVP, no owner onboarding)
+  // land on their ticket list, not on owner onboarding.
+  if (profile?.role === "guest") redirect("/mytickets");
 
   let account: Account | null = null;
   if (profile?.account_id) {
