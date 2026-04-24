@@ -1,12 +1,14 @@
-# Overnight build — wake-up summary
+# Build status — through Day 4
 
-**Status:** Day 2 and Day 3 shipped end-to-end. No blockers. Three commits on `main`:
+**Commits on `main`:**
 
-- `cbd4b45` — Day 1 (pre-existing)
+- `cbd4b45` — Day 1: scaffolding + Supabase + phone OTP auth flow
 - `8cf7234` — Day 2: owner weekview + daydash + multi-night create event + seed data
 - `a6c61a6` — Day 3: allocations + magic-link holder flow + approval queue
+- `e70aa7d` — docs: initial WAKEUP_SUMMARY
+- `8af44ac` — Day 4: guest discovery + RSVP + phone verify + QR via SMS + My Tickets
 
-TypeScript passes (`npx tsc --noEmit` clean). Production `next build` compiles all 13 routes clean. Dev server was not started per your instructions — run it yourself.
+TypeScript passes (`npx tsc --noEmit` clean). Production `next build` compiles all 22 routes clean. Dev server was not started — run it yourself.
 
 ---
 
@@ -169,4 +171,145 @@ These are Day 4+ or v1.1 per the brief — explicitly skipped:
   - `20260424000002_seed_test_event.sql` (Day 2 — ran as no-op; re-run post-signup)
   - `20260424000003_allocation_tokens.sql` (Day 3)
 
-Ready for Day 4 when you are.
+---
+
+## Day 4 — guest discovery + RSVP + QR delivery
+
+### Files shipped
+
+| File | Purpose |
+|---|---|
+| `supabase/migrations/20260425000001_day4_guest_rsvp.sql` | Adds `guests.check_in_token` (unique UUID, auto-default) and `guests.phone_verified_at` (timestamptz). Indexes the token and the (phone, phone_verified_at) pair for /mytickets lookups. |
+| `lib/sms.ts` | `sendSms({to, body})` with `DEV_MODE` auto-detect. Dev logs to console; prod hits the Twilio REST API directly (no `twilio` SDK — plain `fetch`). |
+| `app/discover/page.tsx` | Public event feed — flyer-first 4:5 cards, 60-day horizon, account-agnostic (shows every event). Read via service-role admin client because RLS is owner-scoped. |
+| `app/e/[eventId]/page.tsx` | Public event detail — flyer hero, venue, description, upcoming-nights list with per-night RSVP CTAs. |
+| `app/e/[eventId]/rsvp/page.tsx` + `form.tsx` + `actions.ts` | Three-step RSVP: form → Supabase phone OTP → success with ticket link. One URL, client state drives the step machine. |
+| `app/t/[token]/page.tsx` | Public QR display. Renders `qrcode` SVG of the token. Pending RSVPs show a PENDING placeholder instead of a live QR. |
+| `app/mytickets/page.tsx` + `verify-form.tsx` | Phone-OTP light auth; shows all tickets whose `guests.phone` matches `user.phone`. Split into upcoming / past. Inline sign-in form when no session. |
+| `app/page.tsx` (modified) | Root now redirects to `/discover` for unauthed visitors and to `/mytickets` for `role='guest'` users. |
+| `lib/supabase/middleware.ts` (modified) | PUBLIC_PATHS adds `/discover`, `/e`, `/t`, `/mytickets`. |
+| `.env.local.example` (modified) | `DEV_MODE=true` added. Twilio vars annotated as "used only when DEV_MODE=false". |
+| `package.json` | New deps: `qrcode`, `@types/qrcode`. |
+
+### Smoke test — Day 4 loop
+
+Prereqs: Day 2/3 smoke-test flow works. Test phone `+13057990518` / `123456` enabled in Supabase Auth → Providers → Phone. An event with at least one upcoming night exists (create one on `/owner/events/new` if not).
+
+1. **Re-apply the Day 4 migration** (it was applied from this folder already, but idempotent re-run is safe):
+   ```
+   /opt/homebrew/opt/postgresql@16/bin/psql \
+     "$(grep ^SUPABASE_DB_URL .env.local | cut -d= -f2-)" \
+     -f supabase/migrations/20260425000001_day4_guest_rsvp.sql
+   ```
+
+2. **Start the dev server in one terminal, watch logs in another**:
+   ```
+   npm run dev
+   ```
+   The dev server must show the SMS dev-mode logs — that's where the "SMS" lands in local.
+
+3. **Open the public side**. Visit http://localhost:3000 → redirects to `/discover`. You should see your event flyer card.
+
+4. **Click into an event**: `/e/<eventId>`. See flyer hero, venue info, nights list.
+
+5. **RSVP**: tap RSVP on a night. `/e/<eventId>/rsvp?night=<id>`.
+   - Enter name: "Test Guest"
+   - Phone: `3057990518` (the test phone — Supabase test-phone provider returns the static code)
+   - +1s: 0 or 1 (to exercise plus-ones)
+   - Submit → "Text me the code"
+
+6. **OTP verify**: enter `123456` → "Verify & RSVP".
+
+7. **Check the dev-server terminal**. You should see:
+   ```
+   [SMS:dev] → +13057990518
+   WADL: RSVP received (pending host approval). Your ticket: http://localhost:3000/t/<uuid>
+   ```
+   That URL **is** the ticket. No real SMS was sent.
+
+8. **Success screen** shows "Sent for review" (or "Locked in" if the walk-up allocation's auto_approve is on). Tap "See your QR" → `/t/<uuid>`. The pending-state page shows a yellow PENDING block, not a QR.
+
+9. **Approve from owner side**. In a second browser (or same browser, different session), hit `/owner/events/<eventId>/queue`. You should see the new pending row: "Test Guest" under "Walk-up" holder. Tap Approve.
+
+10. **Back on the guest side**: refresh `/t/<uuid>` → the SVG QR now renders.
+
+11. **My Tickets**:
+    - Open an incognito window
+    - Go to `/mytickets` — shows the phone-OTP form
+    - Enter `3057990518` → `123456` → lands on the ticket list
+    - See the approved ticket → tap → QR page
+
+12. **Freeze path**: in owner daydash, tap "Freeze this night". Back on guest side, refresh `/e/<eventId>` → the RSVP button for that night is replaced by "List closed". `/e/<eventId>/rsvp?night=<frozen>` also rejects.
+
+13. **Cap path**: set a very low `capacity_cap` on the night via `/owner/events/<id>/settings` (e.g. 1), RSVP from another phone → error "Walk-up list is full" after the second submit.
+
+### Day 4 decisions (document → override)
+
+1. **Walk-up allocation is find-or-create, per night, on first public RSVP.** `holder_name='Walk-up'`, `auto_approve=false` (owner reviews), `list_open=true`, `plus_ones_allowed=true`, `cap = event_night.capacity_cap ?? 999999`. If you want walk-ups to bypass the queue, toggle auto-approve on the allocation after it's auto-created (it shows up in the allocations list like any other). Documented as a Day 4 owner-UX gap — consider an "auto-approve walk-ups" switch on event settings later.
+
+2. **QR encodes the raw `check_in_token` UUID**, not a URL. Day 5 scanner will match the raw string against `guests.check_in_token`. This keeps QR payloads short and scanner logic simple. Alternative: encode the full /t/[token] URL — if you want scanners to open a phone browser on scan, flip this. Cheap to change.
+
+3. **Pending RSVPs still get the SMS + ticket link immediately**, but `/t/[token]` renders a PENDING placeholder instead of the QR until `status='approved'`. The SMS body explicitly says "pending host approval". Door scanner (Day 5) will reject pending tokens.
+
+4. **Phone storage format asymmetry**: `guests.phone` and `profiles.phone` are stored E.164 **with** the leading `+` (my `normalizePhone` prepends it). Supabase's `auth.users.phone` / JWT `phone` claim stores E.164 **without** the `+`. `/mytickets` re-adds the `+` before querying. Documented here so you don't trip over this if you add more phone-based queries.
+
+5. **`rsvp_otp_attempts` rate-limit table skipped.** Supabase's built-in rate-limiting on `signInWithOtp` covers the immediate abuse vector. Adding our own table would be belt-and-suspenders for Day 4. Revisit if we see abuse post-launch.
+
+6. **No SMS retry / queue**. If Twilio returns an error in prod, we surface it to the RSVP flow but don't retry. The RSVP still succeeds — the guest can always pull their ticket from /mytickets. Dead-letter queue is Day 7+ territory.
+
+7. **SMS message format is hard-coded in `actions.ts`**. Two variants: approved vs pending. If you want templating, `lib/sms.ts` is the place to add it. Explicitly out of scope per the brief's v1.1 list ("SMS templates").
+
+8. **`/t/[token]` is fully public** — anyone with the UUID can view the QR. This is intentional (so guests can text the link to themselves, screenshot it, etc.). UUID randomness is the security. Rotating a token requires a new migration path that we haven't added (guests.check_in_token is not a user-facing rotate). Low priority.
+
+9. **Guest role bypass of owner onboarding**: `/` now redirects `role='guest'` users to `/mytickets`, so they don't get dragged into the owner signup flow when they sign in via phone for an RSVP. This is a new routing rule — if a guest wants to *become* an owner, they can navigate directly to `/signup` which still works and will flip their role.
+
+10. **`/mytickets` reads via admin client** rather than relying on RLS policies. RLS on `guests` is still owner-scoped (added Day 2). Adding a phone-match policy would be another layer but isn't required since the server-side admin client already filters by the authenticated user's phone. If you want a defense-in-depth RLS policy for guests, add one later.
+
+11. **Ticket-list horizon**: no cutoff on how far back "past" tickets go. They all show with reduced opacity. If the list grows unmanageable, trim to last 90 days — not done now.
+
+### DEV_MODE — how to flip on real SMS
+
+Today: `.env.local.example` has `DEV_MODE=true` as the default. Your `.env.local` doesn't have `DEV_MODE` set at all, which triggers the auto-detect in `lib/sms.ts`:
+
+- If `NEXT_PUBLIC_APP_URL` contains `localhost` → dev mode (console log)
+- Otherwise → Twilio
+
+So right now, in local development, SMS lands in the server console — no Twilio hit, no credentials needed.
+
+**To send real SMS from your local machine** (e.g. for a real-phone test while still on localhost):
+
+```bash
+# In .env.local:
+DEV_MODE=false
+TWILIO_ACCOUNT_SID=AC...
+TWILIO_AUTH_TOKEN=...
+TWILIO_FROM_NUMBER=+1...     # or TWILIO_MESSAGING_SERVICE_SID=MG...
+```
+
+Restart `npm run dev`. `lib/sms.ts` now calls the Twilio REST API. No code changes.
+
+**In production** (Vercel) on Day 7:
+- Set `NEXT_PUBLIC_APP_URL` to your real domain (auto-detect flips to Twilio mode automatically)
+- Or explicitly set `DEV_MODE=false`
+- Fill in the Twilio env vars in Vercel's project settings
+
+### What Day 4 did NOT build (scope discipline)
+
+- Twilio `twilio` npm SDK — we use `fetch` + REST, one less dependency
+- SMS templating / i18n
+- Guest cancel ("refer-a-friend" from §3 is v1.1 by the brief; cancel is not listed but is loosely implied — skipped for scope)
+- Inline venue map / image gallery on event detail
+- Discovery filtering / search / pagination (60-day horizon is the only filter)
+- QR rotation / revoke-and-reissue for guests
+- Wallet passes (Apple/Google Wallet) — not in §12
+
+### Database state after Day 4
+
+Four migrations applied (in order):
+1. `20260423000000_init.sql` — Day 1 core tables
+2. `20260424000001_day2_events_rls.sql` — Day 2 RLS + is_frozen
+3. `20260424000002_seed_test_event.sql` — Day 2 seed (idempotent)
+4. `20260424000003_allocation_tokens.sql` — Day 3 magic-link tokens
+5. `20260425000001_day4_guest_rsvp.sql` — Day 4 check_in_token + phone_verified_at
+
+Ready for Day 5 (door scanner) when you are.
