@@ -1,4 +1,10 @@
-export type UserRole = "owner" | "manager" | "staff" | "guest";
+export type UserRole =
+  | "owner"
+  | "manager"
+  | "staff"
+  | "guest"
+  | "door_staff"
+  | "door_manager";
 export type AccountType = "venue" | "brand" | "individual";
 export type EventType =
   | "venue_owned"
@@ -17,7 +23,8 @@ export type CheckInState =
   | "not_found"
   | "already_used"
   | "wrong_night"
-  | "cancelled";
+  | "cancelled"
+  | "do_not_admit";
 
 export interface Profile {
   id: string;
@@ -111,8 +118,25 @@ export interface Guest {
   tier: Tier;
   status: RsvpStatus;
   qr_token: string | null;
+  check_in_token: string | null;
+  phone_verified_at: string | null;
+  flag_dna: boolean;
+  flag_reason: string | null;
   added_by_user_id: string | null;
   approved_by: string | null;
   approved_at: string | null;
+  created_at: string;
+}
+
+export interface StaffInvite {
+  id: string;
+  event_id: string;
+  phone: string;
+  role: "door_staff" | "door_manager";
+  token: string;
+  invited_by: string;
+  used_at: string | null;
+  used_by: string | null;
+  expires_at: string | null;
   created_at: string;
 }

@@ -10,6 +10,7 @@ const PUBLIC_PATHS = [
   "/e",
   "/t",
   "/mytickets",
+  "/staff-invite",
 ];
 
 type CookieToSet = { name: string; value: string; options: CookieOptions };

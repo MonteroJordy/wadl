@@ -190,6 +190,23 @@ export default async function DayDashPage({
         </Link>
       </section>
 
+      <section className="grid grid-cols-2 gap-2 mb-4">
+        <Link
+          href={`/owner/events/${event.id}/staff`}
+          className="card text-center hover:border-coral transition"
+        >
+          <p className="label-mono mb-1">Door</p>
+          <p className="font-sans font-semibold text-cream">Staff</p>
+        </Link>
+        <Link
+          href={`/door/events/${event.id}?night=${active.id}`}
+          className="card text-center border-mint/40 hover:border-mint transition"
+        >
+          <p className="label-mono mb-1 text-mint">Live</p>
+          <p className="font-sans font-semibold text-mint">Door view</p>
+        </Link>
+      </section>
+
       <div className="mb-4">
         <FreezeButton
           eventId={event.id}
