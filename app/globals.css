@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0a0a0a;
+  --s1: #111111;
+  --s2: #181818;
+  --s3: #222222;
+  --coral: #ff4a2b;
+  --gold: #f5c842;
+  --mint: #00d97e;
+  --lav: #a78bfa;
+  --cream: #f2ede4;
+  --muted: rgba(242, 237, 228, 0.5);
+  --line: rgba(255, 255, 255, 0.07);
+}
+
+html,
+body {
+  background-color: var(--bg);
+  color: var(--cream);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-family: var(--font-epilogue), system-ui, sans-serif;
+}
+
+@layer components {
+  .mobile-frame {
+    @apply mx-auto w-full max-w-frame min-h-screen bg-bg px-6 py-8 flex flex-col;
+  }
+
+  .display-xl {
+    @apply font-display text-5xl leading-none tracking-wide text-cream uppercase;
+  }
+
+  .display-lg {
+    @apply font-display text-4xl leading-none tracking-wide text-cream uppercase;
+  }
+
+  .label-mono {
+    @apply font-mono text-[10px] uppercase tracking-[0.18em] text-muted;
+  }
+
+  .input-dark {
+    @apply w-full bg-s2 border border-line text-cream px-4 py-4 rounded-md
+           font-sans text-base placeholder:text-muted
+           focus:border-coral focus:outline-none transition-colors;
+  }
+
+  .btn-primary {
+    @apply w-full bg-coral text-bg font-sans font-semibold
+           text-sm uppercase tracking-[0.14em] py-4 rounded-md
+           disabled:opacity-40 disabled:cursor-not-allowed
+           hover:brightness-110 transition;
+  }
+
+  .btn-ghost {
+    @apply w-full bg-transparent border border-line text-cream font-sans
+           font-semibold text-sm uppercase tracking-[0.14em] py-4 rounded-md
+           hover:border-cream/30 transition;
+  }
+
+  .card {
+    @apply bg-s1 border border-line rounded-lg p-4;
+  }
+}
