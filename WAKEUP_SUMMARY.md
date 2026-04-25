@@ -884,3 +884,196 @@ These are all known-and-named gaps. Pick them up post-launch as actual operator 
 ---
 
 **Status:** Day 10 complete. 49 routes. Code green, build green, deploy auto-triggers on `git push origin main`.
+
+---
+
+## Day 11 / 12 / 13 — virality, hardening, advanced features (combined run)
+
+Three more days landed in one push. **Live at https://wadl-pearl.vercel.app** auto-redeploys on push to `main` via the Vercel GitHub integration.
+
+### Commits
+
+- `b790f36` — Day 11: wallet passes + refer-a-friend + notifications + offline + cross-event analytics + PDF + merge + flag list
+- `f3c5815` — Day 12: internal CMS + CSV import + SMS broadcast + email auth + .ics + realtime + onboarding tour + demo data + skeletons + Sentry stub + mobile audit
+- `e428fe8` — Day 13: recurring events + photographer + photo gallery + Stripe Connect stub + webhooks + embeddable widget
+
+73 routes compile clean. Three more migrations applied: `20260429000001_day11_features`, `20260429000002_day12_features`, `20260429000003_day13_features`.
+
+### New env vars (all optional — graceful degrade when missing)
+
+| Var | Purpose |
+|---|---|
+| `APPLE_PASS_CERT_PEM` | Apple Wallet pass cert (PEM). Without it, /api/wallet/apple/[token] returns a 503 with explanation. |
+| `APPLE_PASS_KEY_PEM` | Apple Wallet pass private key (PEM). Same fallback. |
+| `APPLE_PASS_TYPE_ID` | Apple Pass Type ID (e.g. pass.com.wadl.ticket). |
+| `APPLE_TEAM_ID` | Apple Developer Team ID. |
+| `GOOGLE_WALLET_ISSUER_ID` | Google Wallet issuer ID. Without it, /api/wallet/google/[token] returns 503. |
+| `GOOGLE_WALLET_SERVICE_ACCOUNT_KEY` | JSON-stringified service account credentials. JWT signing happens here. |
+| `SENTRY_DSN` | Sentry DSN for error tracking. Without it, lib/sentry.ts no-ops with console.warn. |
+| `STRIPE_CONNECT_CLIENT_ID` | Stripe Connect platform client ID. Without it, /owner/payouts shows "coming soon". |
+
+### Day 11 files
+
+| File | Purpose |
+|---|---|
+| `app/api/wallet/apple/[token]/route.ts` | Apple Wallet pass — graceful 503 stub when certs missing. The .pkpass byte stream needs `passkit-generator` once certs are provisioned. |
+| `app/api/wallet/google/[token]/route.ts` | Google Wallet — full JWT-signing implementation via `node:crypto` (no SDK). Redirects to https://pay.google.com/gp/v/save/{jwt}. Graceful 503 stub without env. |
+| `app/referral/[guestId]/...` | Refer-a-friend page. A confirmed guest gets a personalized link that adds friends to the same allocation. Records `guests.referred_by_guest_id`. |
+| `app/owner/notifications/...` + `lib/notifications.ts` | Per-account inbox. Sidebar shows unread count badge. `notify(accountId, kind, payload)` is fire-and-forget. Wired into holder add (rsvp_pending, capacity_alert), referral add, broadcast, tier upgrade. |
+| `app/api/door/manifest/[nightId]/route.ts` | Door manifest endpoint. Returns guest tokens + flag status for offline scanning. AuthZ: account owner OR event_staff. |
+| `app/api/door/sync/route.ts` | Bulk-resolve queued offline scans. Conflict resolution: earliest scan timestamp wins; later duplicate becomes `already_used`. |
+| `app/door/events/[id]/scan/scanner.tsx` | Rewritten with offline awareness. Caches manifest to localStorage on mount + on every online tick. Falls back to cached validation when offline; queues scans to localStorage. Auto-flushes queue on reconnect. ONLINE/OFFLINE pill + cache freshness indicator. |
+| `lib/analytics.ts` + `app/owner/analytics/page.tsx` | 90-day rolling: attendance trend (per night), by venue, by day-of-week (best DoW chosen by avg scanned per event), top 10 promoters by event count then volume. |
+| `lib/pdf.ts` + `app/owner/events/[id]/export/pdf/route.ts` | Hand-rolled minimal PDF generator (Helvetica core fonts, no embedding). Multi-page, grouped by allocation, scanned guests get an X in the checkbox. ~5KB code; avoids @react-pdf/renderer's ~5MB tree. |
+| `app/owner/guests/merge/...` | Side-by-side picker (`?ids=A,B`). Older record wins; loser gets `merged_into_guest_id` + `cancelled` status. Re-parents check_ins and referrals to the winner. Tags and flag reasons concatenate. |
+| `app/owner/flags/...` | Cross-event/venue DNA registry. Sortable (recent / name / event). Bulk-unflag with confirm. Per-row click into guest detail. |
+| `supabase/migrations/20260429000001_day11_features.sql` | guests.referred_by_guest_id + merged_into_guest_id + merged_at; notifications table w/ owner-scoped RLS. |
+
+### Day 12 files
+
+| File | Purpose |
+|---|---|
+| `app/admin/...` (layout + page + accounts + events + guests) | Internal CMS gated by `profiles.email = 'jmontero@mainframeagency.com'`. Stats dashboard (8 counters: accounts/users/events/nights/guests/scans/broadcasts/dna), accounts table, events table, guest search w/ force-flag action. |
+| `app/owner/events/[id]/guests/import/...` + `lib/csv.ts` | Paste CSV → preview → assign night/allocation → commit. Headers auto-detected (name/full_name, phone/mobile/cell, email, tier, plus_ones/+1/plus1/plus_one). Phone validated to E.164 (US default for 10-digit). Duplicates skipped by phone (per-night). Reports inserted/skipped counts. |
+| `app/owner/events/[id]/broadcast/...` | Filter target by night/status/tier/allocation. Dry-run shows recipient count + estimated $ cost (~$0.008/segment). Variable substitution via lib/sms-templates.ts. broadcasts table logs the send for audit + cost reconciliation. |
+| `app/login/page.tsx` | Now has phone-OTP and email-magic-link tabs. Email path uses Supabase native `signInWithOtp({ email, options: { emailRedirectTo } })`. Existing phone path untouched. |
+| `app/api/events/[id]/calendar.ics/route.ts` | Public .ics export. One VEVENT per night. SUMMARY = event name. LOCATION = venue name + address + city. DTEND = cutoff_at if present, else doors+4h. |
+| `components/realtime-counters.tsx` + daydash wiring | Subscribes via `supabase.channel('night-...')` to guests + check_ins postgres_changes filtered by event_night_id. Debounced 600ms `router.refresh()` on event. LIVE pill turns mint when something just happened. |
+| `components/onboarding-tour.tsx` + `app/owner/tour/actions.ts` | 4-step coral popover: Create event → Add allocation → Share link → Watch RSVPs. Step 1 also offers "Load demo data". Stored in `profiles.tour_completed_at` + `tour_dismissed_at`. |
+| `lib/demo-seed.ts` | Idempotent (gated by `profiles.demo_seeded_at`). Creates 1 venue, 1 event, 2 nights (next Fri/Sat), 3 allocations (Diplo / Marco Loco / Walk-up), 25 guests w/ mixed statuses, ~half scanned in. |
+| `components/skeleton.tsx` + `loading.tsx` for /owner, /owner/events/[id], /owner/scorecards, /owner/analytics | Mint-tinted shimmer skeletons. Reusable SkeletonBar / SkeletonCard / SkeletonList / SkeletonHero primitives. |
+| `lib/sentry.ts` | SENTRY_DSN-aware. Real Sentry Envelope POST when set, console.warn otherwise. captureException + withCapture wrapper helper. No SDK dep. |
+| `supabase/migrations/20260429000002_day12_features.sql` | profiles.tour_completed_at + tour_dismissed_at + demo_seeded_at; broadcasts table w/ owner SELECT RLS. |
+
+### Day 13 files
+
+| File | Purpose |
+|---|---|
+| `app/owner/events/[id]/template/...` | Save the source event's nights+allocations shape to `event_templates.config`. Optional `cadence_days` schedules `next_run_at`; the cron worker that auto-creates is the one missing piece (schema is ready). Create-from-template generates a new event starting today, distributing nights consecutively. |
+| `app/photographer/events/[id]/...` + `lib/storage.uploadEventPhoto` | Photographer (or owner / manager) multi-file uploads to `event-photos` bucket. Recent grid below the form. New `photographer` role added to user_role enum. |
+| `app/e/[eventId]/gallery/page.tsx` | Public-read gallery, no auth. Grid view with lazy-loaded images. Captions + tagged guest names overlay. |
+| `app/owner/payouts/page.tsx` | Without `STRIPE_CONNECT_CLIENT_ID`: "coming soon" + email-support CTA. With it: Connect Express OAuth onboarding link. |
+| `lib/webhooks.ts` + `app/owner/webhooks/...` | Owners register endpoint URL + event filter ('*' or comma list). HMAC-SHA256 signature in `x-wadl-signature: sha256=<hex>` header. Backoff: 1m, 5m, 30m, 2h, 12h. Up to 5 attempts. `enqueueWebhook()` fires-and-forgets the worker. Recent deliveries panel + Retry-pending button. |
+| `app/embed/[eventId]/...` + `app/embed/layout.tsx` | iframe-friendly RSVP widget. `?accent=#FF4A2B` for brand color. Drops the WADL chrome via embed-specific layout. Submits to `embedRsvpAction` → pending RSVP + notification + webhook. |
+| Webhook integrations | `rsvp.created` from holder add + embed; `allocation.full` when holder add hits cap; `guest.checked_in` from door scan. |
+| `supabase/migrations/20260429000003_day13_features.sql` | event_templates, event_photos, event_photo_tags, webhook_endpoints, webhook_deliveries; `event-photos` storage bucket; `photographer` enum value; widened event_staff role check. |
+
+### Smoke test — combined Day 11/12/13 loop
+
+Through Day 10 deployed first.
+
+1. **Wallet buttons** on /t/[token] (any approved guest). Without env: clicking "Add to Apple Wallet" returns JSON 503; that's the graceful-degrade contract. Same for Google.
+
+2. **Referral.** From /t/[token] → "Bring a friend →". Add a name. Refresh /t/[token]'s "Brought N friends" badge appears. Owner gets a `referral_arrived` notification.
+
+3. **Notifications inbox.** /owner/notifications. Sidebar shows unread badge. Mark-all-read clears it.
+
+4. **Offline scanner.** Open /door/events/[id]/scan online → "Manifest cached" pill. DevTools → Application → Service Workers... actually just toggle airplane mode / DevTools network offline. ONLINE pill flips to OFFLINE coral. Scan a known QR — APPROVED, with `offline · queued` subtext. Reconnect → queue auto-flushes → scan badge clears.
+
+5. **Cross-event analytics.** /owner/analytics. 90-day attendance trend bars + by-DoW best day pill + per-venue rates + top promoters.
+
+6. **PDF.** Daydash → "Export PDF" → opens inline PDF in browser. Approved guests grouped by allocation, with X marks for scanned heads.
+
+7. **Merge.** /owner/guests/merge?ids=A,B (paste two guest IDs from URL bars). Pick name/phone/email/notes side. Click Merge. Loser becomes a soft-deleted reference; check_ins re-parented.
+
+8. **Flag list.** /owner/flags. All flagged guests across all your events. Bulk select → unflag.
+
+9. **Internal CMS.** /admin (only when signed in as jmontero@mainframeagency.com). Stats / Accounts / Events / Guests tabs.
+
+10. **CSV import.** /owner/events/[id]/guests/import. Paste `name,phone,tier,plus_ones` rows. Preview validates phones. Pick night + allocation + status → Import. Reports inserted/skipped.
+
+11. **Broadcast.** /owner/events/[id]/broadcast. Filter by status/tier/night/allocation. Preview shows count + cost. Send. Recipients dedupe by phone. Logged to `broadcasts` table.
+
+12. **Email magic link.** /login → "Email link" tab → enter email → magic link sent (Supabase). Click in inbox → bounces back to /owner.
+
+13. **.ics.** /api/events/[id]/calendar.ics downloads. Imports into Cal/Google.
+
+14. **Realtime.** /owner/events/[id] open in two tabs. Trigger an RSVP from /h/[token] in tab B. Tab A's daydash counters update within ~600ms without refresh.
+
+15. **Onboarding tour.** New owner signup → /owner shows the coral 4-step tour. "Load demo data" populates a venue+event+25 guests so the dashboard isn't empty. Skip or finish to dismiss.
+
+16. **Templates.** /owner/events/[id]/template → save current shape → "Create from template" → new event lands in /owner/events/[newId]/settings with the same nights/allocations.
+
+17. **Photographer.** Owner adds a photographer to event_staff via SQL or admin tool (UI for this is v1.4). /photographer/events/[id] → upload pics → /e/[id]/gallery shows them publicly.
+
+18. **Webhooks.** /owner/webhooks → add `https://webhook.site/<your-id>` with `*`. RSVP via /h/[token]. Webhook.site receives a POST with `x-wadl-signature: sha256=...` header. Verify HMAC: `crypto.createHmac('sha256', secret).update(rawBody).digest('hex')`.
+
+19. **Embed.** /embed/[eventId]?accent=%23FF4A2B in an iframe (or directly). Mini RSVP card. Submit creates pending RSVP + notifies owner + fires `rsvp.created` webhook with `via: 'embed'`.
+
+### Day 11/12/13 judgment calls
+
+1. **Apple Wallet pass left as a 503 stub even when certs are present.** The .pkpass build pipeline (manifest SHA1 + PKCS#7 detached signature) needs `node-forge` or `passkit-generator`. We didn't add deps unprompted. The route is wired so adding the lib later is a single file change.
+
+2. **Google Wallet was implementable without an SDK** because the spec is just RS256 JWT signing + a redirect — `node:crypto` covers it. Apple's signature requires PKCS#7, which needs forge.
+
+3. **Offline scanner uses localStorage, not IndexedDB.** Manifest at typical event scale (~500 guests) is well under the 5MB localStorage cap. IDB would add complexity (open + transaction + cursor) for no real benefit at this scale.
+
+4. **Conflict resolution prefers earliest scan timestamp.** If two devices scan the same QR offline, the earlier one wins (admitted), the later becomes `already_used`. Justification: time-of-arrival is the door-truth.
+
+5. **Hand-rolled PDF over @react-pdf/renderer.** ~5KB of code vs a ~5MB dep tree. Acceptable trade-off for a single export route. If we ever need styled PDFs (flyers, contracts), reconsider.
+
+6. **Merge winner = older record.** Stable, predictable, doesn't depend on which side the user picked. Picker only governs which fields' values survive on the winner row.
+
+7. **Notifications use `payload.message`/`payload.href` instead of typed columns.** Each kind can render differently without schema migrations. Trade-off: payload shape isn't enforced. Acceptable for an internal-only inbox.
+
+8. **Broadcast dedupes by phone, not guest ID.** Same person on two nights of an event = one SMS. Almost always what you want.
+
+9. **Email auth is OTP-based via Supabase native, not a separate provider.** Avoids OAuth/SMTP/DKIM setup. Magic link works in dev because Supabase ships with a working dev mailer.
+
+10. **Realtime uses postgres_changes instead of broadcast.** Eats a tiny per-event Postgres replication slot but means we don't have to wire publish calls into every action that mutates guests/check_ins.
+
+11. **Onboarding tour persists per-user, not per-account.** A user who switches accounts won't re-see it. Reasonable since onboarding is a one-time human onboarding, not a per-account thing.
+
+12. **Demo data seed is idempotent via `profiles.demo_seeded_at`.** Owners can clean up the demo rows manually; we don't auto-delete them on a second click because that could nuke real data the owner already adapted.
+
+13. **Skeletons live in `loading.tsx` files.** Next 14 App Router renders these during the server-component fetch. Zero client-side wiring needed.
+
+14. **Sentry runs against the raw Envelope endpoint.** Saves the SDK dep (~150KB) and works in any runtime (edge, node). DSN parsing is 6 lines. No tracing/perf — just exception reporting.
+
+15. **Webhook backoff is hardcoded array, not exponential formula.** Easier to read; matches Stripe's published schedule shape.
+
+16. **Webhook delivery is best-effort fire-after-enqueue, not a separate worker.** `void deliverPending()` runs in the response background. Sufficient for moderate event volume. Add a cron call to /api/webhooks/deliver if scale demands.
+
+17. **Embed widget is self-contained inline-styled.** Doesn't pull WADL CSS so it works against a white site, dark site, brand-colored site without conflict.
+
+18. **Photographer multi-upload is sequential, not parallel.** Rate-friendly to Supabase Storage; gives the user a clear progress count. Doesn't match a fancy parallel loader but fits the rest of the app's style.
+
+19. **CSV import auto-detects column headers** (name/full_name/fullname; phone/mobile/cell; etc). Saves the user from a column-mapping screen for the 90% case where headers are sane.
+
+20. **Internal CMS gates on email string match, not a `is_platform_admin` column.** Faster to ship; trivial to swap later by upgrading to a column.
+
+### Database state after Day 13
+
+Thirteen migrations applied:
+1. `20260423000000_init.sql`
+2. `20260424000001_day2_events_rls.sql`
+3. `20260424000002_seed_test_event.sql`
+4. `20260424000003_allocation_tokens.sql`
+5. `20260425000001_day4_guest_rsvp.sql`
+6. `20260426000001_day5_door_ops.sql`
+7. `20260427000001_day6_audit_event_id.sql`
+8. `20260428000001_day8_storage.sql`
+9. `20260428000002_day9_features.sql`
+10. `20260428000003_day10_v11.sql`
+11. `20260429000001_day11_features.sql`
+12. `20260429000002_day12_features.sql`
+13. `20260429000003_day13_features.sql`
+
+### What's still NOT shipping
+
+Trimmed further. Remaining:
+
+- **Apple .pkpass byte stream** — graceful stub in place, needs passkit-generator.
+- **Recurring event auto-create cron** — `event_templates.cadence_days` + `next_run_at` are populated; the worker that polls `next_run_at <= now()` isn't wired (Vercel Cron can call a /api/cron/templates endpoint).
+- **Webhook delivery cron** — `enqueueWebhook` fires the worker once after enqueue. A Vercel Cron call to `/api/webhooks/deliver` (we'd add it) would catch retry-failed deliveries on schedule.
+- **Photographer staff invite UI** — adding a photographer to event_staff is currently a SQL or `/admin` write. The /owner/events/[id]/staff page accepts `door_staff` / `door_manager` only.
+- **Stripe Connect actual money flow** — onboarding link works; commission tracking + transfer schedule + webhook intake (`account.updated`, `payout.created`) would be the next slice.
+- **Service-worker app-shell caching** — offline scanner uses localStorage for data, but the page itself still needs to be loaded once online before the offline path activates.
+- **Co-owner edit/admin write enforcement** — RLS still SELECT-only.
+- **Multi-account per user**.
+
+These are all known-and-named gaps. Pick them up post-launch.
+
+---
+
+**Status:** Days 11/12/13 complete. 73 routes. Code green, build green, push to main triggers Vercel auto-deploy.
