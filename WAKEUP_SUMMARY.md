@@ -1,4 +1,4 @@
-# Build status — through Day 6
+# Build status — through Day 7 (MVP COMPLETE)
 
 **Commits on `main`:**
 
@@ -11,10 +11,12 @@
 - `9d530e0` — Day 5: door operations — staff invite, QR scanner, manager view, DNA flag
 - `dcc6b84` — docs: Day 5 WAKEUP append
 - `20c165c` — Day 6: recap + analytics + audit log viewer + CSV/print export + flag UI + empty state polish
+- `d6876f9` — docs: Day 6 WAKEUP append
+- `ff03664` — Day 7: prod-ready — DEPLOY.md + health check + prod-ready audit script + README
 
-TypeScript passes (`npx tsc --noEmit` clean). Production `next build` compiles all **37 routes** clean. Dev server was not started — run it yourself.
+TypeScript passes (`npx tsc --noEmit` clean). `next build` compiles all **39 routes** clean. **`./scripts/check-prod-ready.sh` ALL GATES GREEN.** Dev server was not started — run it yourself. Nothing has been pushed to a remote and nothing has been deployed.
 
-> ⚠ **Before you `npm run dev` for Day 6, wipe the Next cache: `rm -rf .next && npm run dev`.** Day 6 adds new top-level routes (`/owner/events/[id]/{recap,audit,export,print,guests/[guestId]}` + `/manager/events/[id]/guests/[guestId]`) and a new migration. Cold start avoids stale middleware/module-graph issues.
+> ⚠ **Before you `npm run dev` for Day 7, wipe the Next cache: `rm -rf .next && npm run dev`.**
 
 ---
 
@@ -611,3 +613,102 @@ Seven migrations applied:
 7. `20260427000001_day6_audit_event_id.sql`
 
 Ready for Day 7 (Vercel deploy + full dry-run event) when you are.
+
+---
+
+## Day 7 — prod-ready
+
+### Files shipped
+
+| File | Purpose |
+|---|---|
+| `lib/app-url.ts` | `getAppUrl()` (throws if `NEXT_PUBLIC_APP_URL` missing — no silent fallback) and `isDevMode()` (`https://` → prod, anything else → dev; explicit `DEV_MODE` env wins). Replaces four `?? "http://localhost:3000"` scatter-points and the hand-rolled localhost detection in `lib/sms.ts`. |
+| `app/api/health/route.ts` | Public health endpoint. `GET /api/health` → `{ status, db, twilio, version, timestamp }`. DB probe = `select id from events limit 1` via service role. Twilio probe = `GET Accounts/<sid>.json` with a 3s `AbortController` timeout (skipped in dev mode → returns `twilio: "dev"`). HTTP 503 if db down, else 200. |
+| `scripts/check-prod-ready.sh` | Four-gate audit, exits non-zero on failure. (1) no `console.*` in `app/lib/components` (lib/sms.ts dev fallback allowlisted); (2) every `process.env.X` referenced is declared in `.env.local.example` (Vercel auto-vars allowlisted); (3) no TODO/FIXME/XXX; (4) `next build` clean (filters benign webpack cache warnings). |
+| `DEPLOY.md` | 9-section deploy guide: pre-deploy checklist, GitHub setup, Vercel import, env-var table, Supabase URL allowlist, first-deploy + verification (incl. `curl /api/health` expected output), GoDaddy → Vercel custom domain DNS, 12-step post-deploy dry-run smoke test, rollback procedure. Placeholders everywhere — never real values. |
+| `README.md` | 5-paragraph project overview: what WADL is, tech stack, local dev setup (points at `.env.local.example` + `WAKEUP_SUMMARY.md`), link to `DEPLOY.md`, proprietary license note. |
+| `lib/supabase/middleware.ts` | `/api/health` added to `PUBLIC_PATHS` so Vercel's monitoring + uptime checks don't get redirected to /login. |
+| Server actions + pages (4) | `app/owner/events/[id]/staff/{actions,page}.tsx`, `app/owner/events/[id]/allocations/[allocId]/page.tsx`, `app/e/[eventId]/rsvp/actions.ts` — all now call `getAppUrl()` instead of inlining the env read + localhost fallback. |
+
+### Deploy cheat-sheet (full version: `DEPLOY.md`)
+
+1. **Local gates green:** `npx tsc --noEmit && npx next build && ./scripts/check-prod-ready.sh`.
+2. **GitHub:** create private `wadl` repo, `git remote add origin git@github.com:<you>/wadl.git`, `git push -u origin main`.
+3. **Vercel:** Sign up via GitHub OAuth → Add New → Project → import `wadl`. Don't deploy yet.
+4. **Vercel env vars:** add `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL`, `NEXT_PUBLIC_APP_URL` (placeholder for now), `DEV_MODE=false`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and one of `TWILIO_FROM_NUMBER` / `TWILIO_MESSAGING_SERVICE_SID`. All three environments (Production / Preview / Development).
+5. **Supabase URL allowlist:** Authentication → URL Configuration → add `https://<project>.vercel.app/**` (and your custom domain after step 7).
+6. **Deploy.** Copy the `.vercel.app` URL into `NEXT_PUBLIC_APP_URL`, redeploy. `curl https://<url>/api/health` → expect `{"status":"ok","db":"ok","twilio":"ok",...}`.
+7. **Custom domain:** Vercel → Settings → Domains → add `wadl.app` (or your domain) → set the A record at GoDaddy to `76.76.21.21` (or CNAME for subdomain to `cname.vercel-dns.com`). After Vercel issues the cert, update `NEXT_PUBLIC_APP_URL` again, redeploy, re-add to Supabase allowlist.
+8. **Dry-run event** with real phones: owner signup → create event → allocation → magic-link from holder phone → RSVP from guest phone (real Twilio SMS) → approve → invite yourself as door staff → scan the QR → recap shows numbers → audit shows everything. Section 8 of `DEPLOY.md` is the 12-step script.
+
+### Day 7 judgment calls
+
+1. **`getAppUrl()` throws if env missing — no silent fallback.** Day 1 through Day 6 had `?? "http://localhost:3000"` sprinkled across server code. That's a footgun in prod: if `NEXT_PUBLIC_APP_URL` is unset on Vercel, every magic-link / ticket SMS would point at localhost. Throwing fails the request loudly so the misconfig surfaces in the first invite, not the first guest's "where's my ticket" complaint.
+
+2. **`isDevMode()` defaults to dev unless URL is explicit `https://`.** Brief said https → prod, localhost → dev. The "anything else" case (e.g. blank env, ngrok over http) defaults to dev. Prod must be deliberate. `DEV_MODE` env var still wins for cases like "I want to test real SMS off a non-https tunnel".
+
+3. **Health probe times out Twilio at 3s.** Twilio's p99 is well under that, but if their API blips, the health endpoint shouldn't hang Vercel's monitoring. `AbortController` cancels cleanly. DB probe doesn't have an explicit timeout — Postgres connection pool already enforces one.
+
+4. **Health probe is fully public.** No PII, no row data — just ok/fail flags. Exposing it lets Vercel's built-in uptime checks (or any external Pingdom-style monitor) hit it without OAuth gymnastics. If you want it scoped, add a shared-secret query param later.
+
+5. **`check-prod-ready.sh` gate failures are exit-1 except warnings.** Build warnings (rather than errors) are surfaced but don't fail the gate. Real errors (compile failure, missing env, stray console) hard-fail. This keeps the script useful in CI without false positives from benign webpack chatter.
+
+6. **`scripts/` lives at repo root, not inside `app/`.** Anything outside Next's `app/` and `pages/` paths is opaque to Next — exactly what you want for build-time tooling. Made executable (`chmod +x`); committed mode is `100755`.
+
+7. **README license is proprietary.** Brief didn't specify; defaulted to "all rights reserved" because this is for Jordy's business and there's no plan to open-source it. Easy to relax later by editing the README + adding an actual `LICENSE` file.
+
+8. **DEPLOY.md uses placeholders only.** No actual SUPABASE / Twilio / Vercel project values. The doc reads cleanly without revealing anything that would matter if someone forked or screenshot-shared it.
+
+### What WADL ships at MVP — and what's deferred
+
+**Shipped (week 1):**
+- Phone OTP + email/password auth, RLS on every table from day one
+- Multi-night events, allocations + magic-link holder flow, approval queue, walk-up
+- Guest discovery, RSVP with phone verify, QR delivery via SMS, My Tickets
+- Door staff scanner with 5 scan states, name search, manual check-in
+- Door manager view: full guest list with filters, inline approve, walk-up add
+- Post-event recap (show rate, tier breakdown, peak hour, top promoter, no-shows)
+- Live daydash analytics, audit log viewer, CSV export, print roster
+- Do-Not-Admit flag UI for owners and door managers
+- Health check + prod-ready audit + DEPLOY guide
+
+**Explicitly NOT shipping in MVP** (defer per brief §7 v1.1, with stubbed approach noted):
+- **Chat Hub AI** (Claude API parsing of pasted name dumps) — deferred per brief §13. Touchpoint: would slot in as `/owner/events/[id]/chathub` with an Anthropic SDK call. Not started.
+- **Cross-event analytics** — recap is per-event only. No aggregation across an account's history.
+- **Multi-venue switcher** — one venue per account assumed; `accounts.account_type='venue'` + single `venues` row.
+- **Co-owner invite** (other accounts on one event) — `events.account_id` is single-FK; co-ownership would need a join table.
+- **Promoter scorecards** — recap shows top-5 holders for one event, not aggregated promoter performance.
+- **Clone event** — duplicating an event with allocations is a one-page operation we didn't build.
+- **Tier upgrade notifications** — guests see tier in their ticket, but tier changes don't trigger SMS.
+- **Internal CMS** for static content / knowledge-base.
+- **Guest merge** (deduplicating two records for the same person across events).
+- **Flag list** (a single screen showing all DNA-flagged guests across the account). Today: filter the manager view, or recap shows nothing.
+- **SMS templates** — message bodies are hard-coded in the actions that send them. Two variants exist (approved vs pending RSVP, staff invite, ticket SMS).
+- **Billing portal** (Stripe subscription management) — env var listed but no code path.
+- **PDF export** — CSV exports; PDF would require a renderer.
+- **Apple/Google Wallet pass** — not in §12.
+- **Waitlist auto-promote** — when a guest cancels, no auto-bump from waitlist.
+- **Refer-a-friend** — guest can RSVP themselves but not bring others via shareable link.
+- **Flyer file upload** (Supabase Storage) — flyer field is a URL string the owner pastes in.
+- **Door staff for offline scanning** — scanner needs a network connection to validate.
+- **Guest notes / tags** beyond DNA flag.
+
+These are all known-and-named gaps. Pick them up post-launch as actual operator pain emerges.
+
+### Database state after Day 7
+
+Same seven migrations as Day 6. Day 7 was code-and-docs only — no schema changes.
+
+### How to run the prod-ready check yourself
+
+```bash
+./scripts/check-prod-ready.sh
+```
+
+Expected last line: `==> ALL GATES GREEN. Safe to deploy.`
+
+If it fails, the script tells you exactly which gate and why. Fix → rerun → repeat.
+
+---
+
+**Status:** Week 1 MVP complete. Code green. Docs green. Push to GitHub when ready, then follow `DEPLOY.md`.
