@@ -85,7 +85,7 @@ export default function SignupPage() {
   }
 
   return (
-    <main className="mobile-frame">
+    <main id="main-content" className="mobile-frame">
       <div className="pt-8">
         <p className="label-mono mb-3">01 / Account</p>
         <h1 className="display-xl mb-2">Who are<br/>you?</h1>

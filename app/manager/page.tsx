@@ -18,7 +18,7 @@ export default async function ManagerHome() {
   if (active) redirect(`/manager/events/${active.event_id}`);
 
   return (
-    <main className="mobile-frame">
+    <main id="main-content" className="mobile-frame">
       <header className="pt-6 pb-4">
         <p className="label-mono text-gold mb-1">Manager</p>
         <h1 className="display-lg">Pick an event.</h1>

@@ -67,7 +67,7 @@ export default async function AllocationDetailPage({
     .reduce((sum, g) => sum + 1 + (g.plus_ones ?? 0), 0);
 
   return (
-    <main className="mobile-frame">
+    <main id="main-content" className="mobile-frame">
       <header className="flex items-center justify-between pt-6 pb-4">
         <Link
           href={`/owner/events/${event.id}/allocations`}

@@ -50,7 +50,7 @@ export default async function DoorEventHome({
   const capacity = active?.capacity_cap ?? 0;
 
   return (
-    <main className="mobile-frame">
+    <main id="main-content" className="mobile-frame">
       <header className="flex items-start justify-between pt-6 pb-4">
         <div>
           <p className="label-mono text-mint mb-1">Door / Staff</p>

@@ -57,7 +57,7 @@ export default async function WaitlistPage({
   }
 
   return (
-    <main className="mx-auto max-w-frame md:max-w-2xl px-6 py-12">
+    <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 py-12">
       <header className="flex items-center justify-between pb-4">
         <Link
           href={`/owner/events/${event.id}`}

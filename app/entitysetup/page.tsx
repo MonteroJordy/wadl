@@ -101,7 +101,7 @@ function EntitySetupInner() {
       : "Your name or handle";
 
   return (
-    <main className="mobile-frame">
+    <main id="main-content" className="mobile-frame">
       <div className="pt-8">
         <p className="label-mono mb-3">02 / Entity</p>
         <h1 className="display-xl mb-2">Name it.</h1>
@@ -138,7 +138,7 @@ function EntitySetupInner() {
 
 export default function EntitySetupPage() {
   return (
-    <Suspense fallback={<main className="mobile-frame" />}>
+    <Suspense fallback={<main id="main-content" className="mobile-frame" />}>
       <EntitySetupInner />
     </Suspense>
   );

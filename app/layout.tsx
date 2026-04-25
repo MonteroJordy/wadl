@@ -43,6 +43,9 @@ export default function RootLayout({
       className={`${bebas.variable} ${epilogue.variable} ${dmMono.variable}`}
     >
       <body className="bg-bg text-cream min-h-screen">
+        <a href="#main-content" className="skip-link">
+          Skip to content
+        </a>
         {children}
         <CookieConsent />
       </body>

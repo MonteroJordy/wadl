@@ -53,7 +53,7 @@ export default async function TicketPage({
 
   if (!guest) {
     return (
-      <main className="mobile-frame">
+      <main id="main-content" className="mobile-frame">
         <div className="pt-12 text-center">
           <p className="label-mono mb-3">WADL</p>
           <h1 className="display-lg mb-3">Ticket not found.</h1>
@@ -78,7 +78,7 @@ export default async function TicketPage({
   const active = guest.status === "approved";
 
   return (
-    <main className="mobile-frame">
+    <main id="main-content" className="mobile-frame">
       <header className="flex items-center justify-between pt-6 pb-4">
         <Link href="/mytickets" className="label-mono hover:text-cream">
           ← Tickets

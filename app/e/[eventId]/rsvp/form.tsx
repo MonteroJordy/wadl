@@ -100,7 +100,7 @@ export default function RsvpForm({ eventId, eventName, night }: Props) {
 
   if (step === "success" && success) {
     return (
-      <main className="mobile-frame">
+      <main id="main-content" className="mobile-frame">
         <div className="pt-8">
           <p className="label-mono mb-2">You&apos;re on</p>
           <h1 className="display-lg mb-3">
@@ -148,7 +148,7 @@ export default function RsvpForm({ eventId, eventName, night }: Props) {
 
   if (step === "otp") {
     return (
-      <main className="mobile-frame">
+      <main id="main-content" className="mobile-frame">
         <header className="flex items-center justify-between pt-6 pb-4">
           <button
             type="button"
@@ -196,7 +196,7 @@ export default function RsvpForm({ eventId, eventName, night }: Props) {
   }
 
   return (
-    <main className="mobile-frame">
+    <main id="main-content" className="mobile-frame">
       <header className="flex items-center justify-between pt-6 pb-4">
         <Link href={`/e/${eventId}`} className="label-mono hover:text-cream">
           ← Back

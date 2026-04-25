@@ -98,7 +98,7 @@ export default async function ManagerEventPage({
   }
 
   return (
-    <main className="mobile-frame">
+    <main id="main-content" className="mobile-frame">
       <header className="flex items-start justify-between pt-6 pb-4">
         <div>
           <p className="label-mono text-gold mb-1">Manager</p>

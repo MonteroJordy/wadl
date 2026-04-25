@@ -89,7 +89,7 @@ export default async function EventDetailPage({
   const showNights = upcoming.length > 0 ? upcoming : nights;
 
   return (
-    <main className="mobile-frame">
+    <main id="main-content" className="mobile-frame">
       <header className="flex items-center justify-between pt-6 pb-4">
         <Link href="/discover" className="label-mono hover:text-cream">
           ← Discover

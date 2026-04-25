@@ -17,7 +17,7 @@ export default async function SmsTemplatesPage() {
   }>;
 
   return (
-    <main className="mx-auto max-w-frame md:max-w-2xl px-6 py-12">
+    <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 py-12">
       <p className="label-mono mb-1">Settings</p>
       <h1 className="display-lg leading-[0.95] mb-2">SMS templates</h1>
       <p className="text-muted text-sm mb-6">

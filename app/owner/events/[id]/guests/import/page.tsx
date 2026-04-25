@@ -49,7 +49,7 @@ export default async function ImportCsvPage({
   }
 
   return (
-    <main className="mx-auto max-w-frame md:max-w-2xl px-6 pt-12 pb-8 md:py-12">
+    <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 pt-12 pb-8 md:py-12">
       <Link
         href={`/owner/events/${event.id}`}
         className="label-mono hover:text-cream"

@@ -43,7 +43,7 @@ export default async function ReferralPage({
 
   if (!ref) {
     return (
-      <main className="mobile-frame">
+      <main id="main-content" className="mobile-frame">
         <div className="pt-12 text-center">
           <p className="label-mono mb-3">WADL</p>
           <h1 className="display-lg mb-3">Link not found.</h1>
@@ -78,7 +78,7 @@ export default async function ReferralPage({
     ref.status !== "rejected";
 
   return (
-    <main className="mobile-frame">
+    <main id="main-content" className="mobile-frame">
       <header className="pt-6 pb-4">
         <p className="label-mono mb-2">Bring a friend</p>
         <h1 className="display-lg">{ref.night.event.name}</h1>

@@ -56,7 +56,7 @@ export default async function WebhooksPage() {
   ).filter((d) => d.endpoint.account_id === account.id);
 
   return (
-    <main className="mx-auto max-w-frame md:max-w-3xl px-6 pt-12 pb-8 md:py-12">
+    <main id="main-content" className="mx-auto max-w-frame md:max-w-3xl px-6 pt-12 pb-8 md:py-12">
       <h1 className="display-lg mb-2">Webhooks</h1>
       <p className="label-mono mb-6">
         POSTs to your URL when events fire. HMAC-SHA256 signed. Backoff on failure.

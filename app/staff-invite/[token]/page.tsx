@@ -24,7 +24,7 @@ function Shell({
   cta?: React.ReactNode;
 }) {
   return (
-    <main className="mobile-frame">
+    <main id="main-content" className="mobile-frame">
       <div className="pt-12 text-center">
         <p className="label-mono mb-3">WADL / Staff invite</p>
         <h1 className="display-lg mb-4">{title}</h1>
@@ -76,7 +76,7 @@ export default async function StaffInvitePage({
   } = await supabase.auth.getUser();
 
   return (
-    <main className="mobile-frame">
+    <main id="main-content" className="mobile-frame">
       <header className="pt-6 pb-4">
         <p className="label-mono mb-2">WADL / Staff</p>
         <h1 className="display-lg">Working the door.</h1>

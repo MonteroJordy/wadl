@@ -91,7 +91,7 @@ export default function VenueSetupPage() {
   }
 
   return (
-    <main className="mobile-frame">
+    <main id="main-content" className="mobile-frame">
       <div className="pt-8">
         <p className="label-mono mb-3">03 / Venue</p>
         <h1 className="display-xl mb-2">Your<br/>room.</h1>

@@ -59,7 +59,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="mobile-frame">
+    <main id="main-content" className="mobile-frame">
       <div className="pt-8">
         <p className="label-mono mb-3">WADL</p>
         <h1 className="display-xl mb-2">Door,<br/>handled.</h1>

@@ -10,7 +10,7 @@ export default async function AnalyticsPage() {
 
   if (a.trend.length === 0) {
     return (
-      <main className="mx-auto max-w-frame md:max-w-3xl px-6 pt-12 pb-8 md:py-12">
+      <main id="main-content" className="mx-auto max-w-frame md:max-w-3xl px-6 pt-12 pb-8 md:py-12">
         <h1 className="display-lg mb-2">Analytics</h1>
         <p className="label-mono mb-6">90-day rolling</p>
         <EmptyState
@@ -24,7 +24,7 @@ export default async function AnalyticsPage() {
   const peakNight = Math.max(1, ...a.trend.map((t) => t.scanned));
 
   return (
-    <main className="mx-auto max-w-frame md:max-w-3xl px-6 pt-12 pb-8 md:py-12">
+    <main id="main-content" className="mx-auto max-w-frame md:max-w-3xl px-6 pt-12 pb-8 md:py-12">
       <header className="mb-6">
         <p className="label-mono mb-1">90-day rolling</p>
         <h1 className="display-lg">Analytics</h1>

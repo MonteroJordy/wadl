@@ -22,7 +22,7 @@ export default async function AdminAccountsPage() {
   const rows = (data ?? []) as unknown as Row[];
 
   return (
-    <main className="mx-auto max-w-5xl px-6 pt-8 pb-12">
+    <main id="main-content" className="mx-auto max-w-5xl px-6 pt-8 pb-12">
       <h1 className="display-lg mb-2">Accounts</h1>
       <p className="label-mono mb-6">{rows.length} total</p>
 

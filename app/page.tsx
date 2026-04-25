@@ -62,7 +62,7 @@ export default async function RootPage() {
   // Anonymous → public landing.
   return (
     <>
-      <main className="bg-bg text-cream">
+      <main id="main-content" className="bg-bg text-cream">
         {/* Top nav */}
         <header className="px-6 md:px-12 pt-6 pb-4 flex items-center justify-between max-w-6xl mx-auto">
           <Link

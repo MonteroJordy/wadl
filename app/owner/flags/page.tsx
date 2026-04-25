@@ -51,7 +51,7 @@ export default async function MasterFlagsPage({
   }));
 
   return (
-    <main className="mx-auto max-w-frame md:max-w-3xl px-6 pt-12 pb-8 md:py-12">
+    <main id="main-content" className="mx-auto max-w-frame md:max-w-3xl px-6 pt-12 pb-8 md:py-12">
       <header className="mb-6">
         <p className="label-mono mb-1">DNA registry</p>
         <h1 className="display-lg">Flag list</h1>

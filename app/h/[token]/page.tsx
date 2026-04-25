@@ -21,7 +21,7 @@ interface TokenData {
 
 function ErrorFrame({ title, body }: { title: string; body: string }) {
   return (
-    <main className="mobile-frame">
+    <main id="main-content" className="mobile-frame">
       <div className="pt-12 text-center">
         <p className="label-mono mb-3">WADL</p>
         <h1 className="display-lg mb-4">{title}</h1>
@@ -88,7 +88,7 @@ export default async function HolderPage({
   const listOpen = alloc.list_open && !night.is_frozen && remaining > 0;
 
   return (
-    <main className="mobile-frame">
+    <main id="main-content" className="mobile-frame">
       <header className="pt-6 pb-4">
         <p className="label-mono mb-2">Holder list</p>
         <h1 className="display-lg">{night.event.name}</h1>

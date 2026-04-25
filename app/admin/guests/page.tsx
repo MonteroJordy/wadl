@@ -35,7 +35,7 @@ export default async function AdminGuestsPage({
   const rows = (data ?? []) as unknown as Row[];
 
   return (
-    <main className="mx-auto max-w-5xl px-6 pt-8 pb-12">
+    <main id="main-content" className="mx-auto max-w-5xl px-6 pt-8 pb-12">
       <h1 className="display-lg mb-2">Guests</h1>
       <form action="/admin/guests" method="get" className="mb-4">
         <input

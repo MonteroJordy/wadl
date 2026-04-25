@@ -27,6 +27,54 @@ body {
   font-family: var(--font-epilogue), system-ui, sans-serif;
 }
 
+/* a11y: skip link for keyboard users — visible only on focus. */
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 100;
+  background: var(--coral);
+  color: var(--bg);
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 600;
+  transform: translateY(-200%);
+  transition: transform 0.15s ease;
+}
+.skip-link:focus {
+  transform: translateY(0);
+  outline: 2px solid var(--cream);
+  outline-offset: 2px;
+}
+
+/* a11y: ensure keyboard focus is always visible. Browsers strip outline on
+   click; focus-visible only fires for keyboard nav, so this is non-intrusive. */
+*:focus-visible {
+  outline: 2px solid var(--coral);
+  outline-offset: 2px;
+}
+
+/* Inputs already replace outline with a coral border — keep that, but also
+   add a subtle ring under focus-visible for extra contrast. */
+.input-dark:focus-visible {
+  outline: 2px solid var(--coral);
+  outline-offset: 1px;
+}
+
+/* Honor user's reduced-motion preference everywhere. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @layer components {
   .mobile-frame {
     @apply mx-auto w-full max-w-frame min-h-screen bg-bg px-6 py-8 flex flex-col;

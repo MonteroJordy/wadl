@@ -38,7 +38,7 @@ export default async function NotificationsPage() {
   const unread = rows.filter((r) => !r.read_at).length;
 
   return (
-    <main className="mx-auto max-w-frame md:max-w-3xl px-6 pt-12 pb-8 md:py-12">
+    <main id="main-content" className="mx-auto max-w-frame md:max-w-3xl px-6 pt-12 pb-8 md:py-12">
       <header className="flex items-end justify-between pb-4">
         <div>
           <p className="label-mono mb-1">Inbox</p>

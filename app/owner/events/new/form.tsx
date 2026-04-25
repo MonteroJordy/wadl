@@ -100,7 +100,7 @@ export default function NewEventForm({
   }
 
   return (
-    <main className="mobile-frame">
+    <main id="main-content" className="mobile-frame">
       <header className="flex items-center justify-between pt-6 pb-4">
         <Link href="/owner" className="label-mono hover:text-cream transition">
           ← Back

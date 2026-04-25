@@ -61,7 +61,7 @@ export default async function ProfilePage() {
   const accountTypeLabel = account.account_type === "venue" ? "Venue" : account.account_type === "brand" ? "Brand" : "Individual";
 
   return (
-    <main className="mx-auto max-w-frame md:max-w-2xl px-6 py-8 md:py-12">
+    <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 py-8 md:py-12">
       <header className="pb-6">
         <p className="label-mono mb-1">Profile</p>
         <h1 className="display-lg leading-[0.95]">{profile.full_name ?? "Owner"}</h1>

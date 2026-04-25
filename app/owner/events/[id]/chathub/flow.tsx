@@ -104,7 +104,7 @@ export default function ChatHubFlow({
 
   if (step === "done") {
     return (
-      <main className="mx-auto max-w-frame md:max-w-2xl px-6 py-12">
+      <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 py-12">
         <p className="label-mono mb-2">Chat Hub</p>
         <h1 className="display-lg mb-2">Committed.</h1>
         <p className="text-muted text-sm mb-6">
@@ -136,7 +136,7 @@ export default function ChatHubFlow({
 
   if (step === "review") {
     return (
-      <main className="mx-auto max-w-frame md:max-w-3xl px-6 py-12">
+      <main id="main-content" className="mx-auto max-w-frame md:max-w-3xl px-6 py-12">
         <header className="flex items-center justify-between pb-4">
           <button
             type="button"
@@ -257,7 +257,7 @@ export default function ChatHubFlow({
   }
 
   return (
-    <main className="mx-auto max-w-frame md:max-w-2xl px-6 py-12">
+    <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 py-12">
       <p className="label-mono mb-2">Chat Hub</p>
       <h1 className="display-lg leading-[0.95] mb-2">Paste the names.</h1>
       <p className="text-muted text-sm mb-6">

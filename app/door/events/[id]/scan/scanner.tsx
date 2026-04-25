@@ -310,7 +310,7 @@ export default function Scanner({ eventId, eventName, nightId, backHref }: Props
   }
 
   return (
-    <main className="mobile-frame">
+    <main id="main-content" className="mobile-frame">
       <header className="flex items-center justify-between pt-6 pb-4">
         <Link href={backHref} className="label-mono hover:text-cream">
           ← Back

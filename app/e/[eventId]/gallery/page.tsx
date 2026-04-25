@@ -34,7 +34,7 @@ export default async function PublicGalleryPage({
   const photos = (photosRaw ?? []) as unknown as PhotoRow[];
 
   return (
-    <main className="mx-auto max-w-3xl px-4 pt-8 pb-12">
+    <main id="main-content" className="mx-auto max-w-3xl px-4 pt-8 pb-12">
       <header className="text-center mb-6">
         <p className="label-mono mb-1">Gallery</p>
         <h1 className="display-lg">{event.name}</h1>

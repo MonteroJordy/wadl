@@ -46,7 +46,7 @@ export default async function DiscoverPage() {
     .filter((e) => e.event_nights.length > 0);
 
   return (
-    <main className="mobile-frame">
+    <main id="main-content" className="mobile-frame">
       <header className="flex items-start justify-between pt-6 pb-4">
         <div>
           <p className="label-mono mb-1">WADL</p>

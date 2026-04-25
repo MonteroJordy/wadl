@@ -11,7 +11,7 @@ const LAST_UPDATED = "April 30, 2026";
 export default function PrivacyPage() {
   return (
     <>
-      <main className="bg-bg text-cream min-h-screen">
+      <main id="main-content" className="bg-bg text-cream min-h-screen">
         <header className="px-6 md:px-12 pt-6 pb-4 flex items-center justify-between max-w-4xl mx-auto">
           <Link href="/" className="font-display text-2xl text-coral tracking-wide">
             WADL

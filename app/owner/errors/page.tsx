@@ -37,7 +37,7 @@ export default async function ErrorsPage({
   const rows = (data ?? []) as ErrorRow[];
 
   return (
-    <main className="mx-auto max-w-5xl px-6 pt-12 pb-12">
+    <main id="main-content" className="mx-auto max-w-5xl px-6 pt-12 pb-12">
       <header className="mb-6">
         <p className="label-mono mb-1">Platform owner only</p>
         <h1 className="display-lg">Error log</h1>

@@ -61,7 +61,7 @@ export default async function DayDashPage({
 
   if (nights.length === 0) {
     return (
-      <main className="mobile-frame">
+      <main id="main-content" className="mobile-frame">
         <Link href="/owner" className="label-mono hover:text-cream">
           ← Back
         </Link>
@@ -169,7 +169,7 @@ export default async function DayDashPage({
   const totalList = approvedHeads + pendingHeads;
 
   return (
-    <main className="mobile-frame">
+    <main id="main-content" className="mobile-frame">
       <header className="flex items-center justify-between pt-6 pb-4">
         <Link href="/owner" className="label-mono hover:text-cream">
           ← Back

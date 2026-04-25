@@ -31,7 +31,7 @@ export default async function EventSettingsPage({
   }>).sort((a, b) => (a.doors_at < b.doors_at ? -1 : 1));
 
   return (
-    <main className="mobile-frame">
+    <main id="main-content" className="mobile-frame">
       <header className="flex items-center justify-between pt-6 pb-4">
         <Link
           href={`/owner/events/${event.id}`}

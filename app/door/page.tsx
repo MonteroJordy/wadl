@@ -14,7 +14,7 @@ export default async function DoorHome() {
   if (active) redirect(`/door/events/${active.event_id}`);
 
   return (
-    <main className="mobile-frame">
+    <main id="main-content" className="mobile-frame">
       <header className="pt-6 pb-4">
         <p className="label-mono text-mint mb-1">Door</p>
         <h1 className="display-lg">Pick an event.</h1>

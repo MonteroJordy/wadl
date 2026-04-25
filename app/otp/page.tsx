@@ -56,7 +56,7 @@ function OtpInner() {
   }
 
   return (
-    <main className="mobile-frame">
+    <main id="main-content" className="mobile-frame">
       <div className="pt-8">
         <p className="label-mono mb-3">Verify</p>
         <h1 className="display-xl mb-4">Enter code.</h1>
@@ -110,7 +110,7 @@ function OtpInner() {
 
 export default function OtpPage() {
   return (
-    <Suspense fallback={<main className="mobile-frame" />}>
+    <Suspense fallback={<main id="main-content" className="mobile-frame" />}>
       <OtpInner />
     </Suspense>
   );

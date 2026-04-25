@@ -33,7 +33,7 @@ export default async function MyTicketsPage() {
 
   if (!user?.phone) {
     return (
-      <main className="mobile-frame">
+      <main id="main-content" className="mobile-frame">
         <header className="flex items-center justify-between pt-6 pb-4">
           <Link href="/discover" className="label-mono hover:text-cream">
             ← Discover
@@ -91,7 +91,7 @@ export default async function MyTicketsPage() {
   }
 
   return (
-    <main className="mobile-frame">
+    <main id="main-content" className="mobile-frame">
       <header className="flex items-center justify-between pt-6 pb-4">
         <Link href="/discover" className="label-mono hover:text-cream">
           ← Discover

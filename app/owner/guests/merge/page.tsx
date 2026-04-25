@@ -34,7 +34,7 @@ export default async function GuestMergePage({
 
   if (ids.length !== 2) {
     return (
-      <main className="mx-auto max-w-frame md:max-w-2xl px-6 pt-12 pb-8 md:py-12">
+      <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 pt-12 pb-8 md:py-12">
         <h1 className="display-lg mb-4">Merge guests</h1>
         <p className="text-muted text-sm mb-2">
           Pass two guest IDs in the URL like:{" "}
@@ -64,7 +64,7 @@ export default async function GuestMergePage({
   );
   if (rows.length !== 2) {
     return (
-      <main className="mx-auto max-w-frame md:max-w-2xl px-6 pt-12 pb-8 md:py-12">
+      <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 pt-12 pb-8 md:py-12">
         <h1 className="display-lg mb-4">Merge guests</h1>
         <p className="text-coral text-sm">
           One or both guests not found, or not in your account.
@@ -97,7 +97,7 @@ export default async function GuestMergePage({
   }
 
   return (
-    <main className="mx-auto max-w-frame md:max-w-2xl px-6 pt-12 pb-8 md:py-12">
+    <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 pt-12 pb-8 md:py-12">
       <header className="mb-4">
         <Link href="/owner" className="label-mono hover:text-cream">
           ← Back

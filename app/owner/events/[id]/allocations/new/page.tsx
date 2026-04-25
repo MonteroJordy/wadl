@@ -27,7 +27,7 @@ export default async function NewAllocationPage({
 
   if (nights.length === 0) {
     return (
-      <main className="mobile-frame">
+      <main id="main-content" className="mobile-frame">
         <h1 className="display-lg mt-6 mb-4">No nights yet</h1>
         <p className="text-muted text-sm">Add a night before creating an allocation.</p>
       </main>

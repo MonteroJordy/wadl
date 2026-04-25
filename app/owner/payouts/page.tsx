@@ -9,7 +9,7 @@ export default async function PayoutsPage() {
 
   if (!enabled) {
     return (
-      <main className="mx-auto max-w-frame md:max-w-2xl px-6 pt-12 pb-8 md:py-12">
+      <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 pt-12 pb-8 md:py-12">
         <p className="label-mono mb-1">Promoter payouts</p>
         <h1 className="display-lg leading-[0.95] mb-6">Coming soon</h1>
         <EmptyState
@@ -34,7 +34,7 @@ export default async function PayoutsPage() {
   // - Pending payout amount + schedule
   // - Past payouts (Connect transfers)
   return (
-    <main className="mx-auto max-w-frame md:max-w-2xl px-6 pt-12 pb-8 md:py-12">
+    <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 pt-12 pb-8 md:py-12">
       <p className="label-mono mb-1">Promoter payouts</p>
       <h1 className="display-lg leading-[0.95] mb-2">Payouts</h1>
       <p className="text-muted text-sm mb-6">

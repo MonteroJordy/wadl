@@ -77,7 +77,7 @@ export default async function PrintRosterPage({
   const total = guests.reduce((s, g) => s + 1 + (g.plus_ones ?? 0), 0);
 
   return (
-    <main className="mobile-frame print:mobile-frame-none print:max-w-none print:p-0">
+    <main id="main-content" className="mobile-frame print:mobile-frame-none print:max-w-none print:p-0">
       <style>{`
         @media print {
           html, body { background: #fff !important; color: #000 !important; }

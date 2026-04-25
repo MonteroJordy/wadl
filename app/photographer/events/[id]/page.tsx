@@ -52,7 +52,7 @@ export default async function PhotographerPage({
   }
   if (!allowed) {
     return (
-      <main className="mobile-frame">
+      <main id="main-content" className="mobile-frame">
         <h1 className="display-lg mt-8 mb-4">Not authorized</h1>
         <p className="text-muted">
           Ask the owner to add you as a photographer for this event.
@@ -69,7 +69,7 @@ export default async function PhotographerPage({
   const photos = (photosRaw ?? []) as PhotoRow[];
 
   return (
-    <main className="mx-auto max-w-frame md:max-w-2xl px-6 pt-12 pb-8 md:py-12">
+    <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 pt-12 pb-8 md:py-12">
       <Link href="/" className="label-mono hover:text-cream">
         WADL
       </Link>
