@@ -90,7 +90,7 @@ function EntitySetupInner() {
       return;
     }
 
-    router.push(account.account_type === "venue" ? "/venuesetup" : "/owner");
+    router.push(account.account_type === "venue" ? "/venuesetup" : "/welcome");
   }
 
   const label =

@@ -28,6 +28,10 @@ const PUBLIC_PATHS = [
   "/docs",
   "/sitemap.xml",
   "/robots.txt",
+  "/holder/claim",
+  "/manifest.json",
+  "/icon.svg",
+  "/service-worker.js",
 ];
 
 type CookieToSet = { name: string; value: string; options: CookieOptions };

@@ -1,0 +1,20 @@
+{
+  "name": "WADL — Door, handled.",
+  "short_name": "WADL",
+  "description": "One door, one list, one truth. Guest-list management for nightlife.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#FF4A2B",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity", "social"]
+}

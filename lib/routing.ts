@@ -12,6 +12,8 @@ export function nextOnboardingStep(
   if (!profile || !profile.full_name) return "/signup";
   if (!profile.account_id || !account) return "/entitysetup";
   if (account.account_type === "venue" && !hasVenue) return "/venuesetup";
+  // First-time owners see the 5-step welcome wizard before the dashboard.
+  if (!profile.onboarding_completed_at) return "/welcome";
   return "/owner";
 }
 

@@ -157,6 +157,17 @@ export default async function HolderPage({
         </section>
       )}
 
+      <p className="label-mono mt-8 text-center">
+        Track your show rate over time —{" "}
+        <a
+          href={`/holder/claim/${params.token}`}
+          className="text-coral hover:text-cream underline"
+        >
+          claim this allocation
+        </a>
+        .
+      </p>
+
       <p className="label-mono mt-auto pt-8 text-center">
         Powered by WADL
       </p>

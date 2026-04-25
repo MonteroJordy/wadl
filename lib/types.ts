@@ -36,6 +36,7 @@ export interface Profile {
   tour_completed_at: string | null;
   tour_dismissed_at: string | null;
   demo_seeded_at: string | null;
+  onboarding_completed_at: string | null;
   created_at: string;
   updated_at: string;
 }

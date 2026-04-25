@@ -36,6 +36,8 @@ interface Props {
   brand: string;
   brandSub?: string;
   brandTone?: "coral" | "gold" | "mint";
+  /** Right-aligned items rendered in a sticky top bar above the children. */
+  topBarRight?: React.ReactNode;
 }
 
 export default function AuthedShell({
@@ -46,6 +48,7 @@ export default function AuthedShell({
   brand,
   brandSub,
   brandTone = "coral",
+  topBarRight,
 }: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const pathname = usePathname() ?? "";
@@ -169,7 +172,14 @@ export default function AuthedShell({
         </div>
       </aside>
 
-      <div className="flex-1 min-w-0">{children}</div>
+      <div className="flex-1 min-w-0">
+        {topBarRight && (
+          <div className="sticky top-0 z-20 bg-bg/85 backdrop-blur-sm border-b border-line px-4 md:px-6 py-2 flex items-center justify-end gap-2 md:pl-6 pl-14">
+            {topBarRight}
+          </div>
+        )}
+        {children}
+      </div>
     </div>
   );
 }

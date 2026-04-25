@@ -96,11 +96,22 @@ export default async function MyTicketsPage() {
         <Link href="/discover" className="label-mono hover:text-cream">
           ← Discover
         </Link>
-        <form action="/api/auth/signout" method="post">
-          <button type="submit" className="label-mono hover:text-cream transition">
-            Sign out
-          </button>
-        </form>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/mytickets/profile"
+            className="label-mono hover:text-cream"
+          >
+            Profile
+          </Link>
+          <form action="/api/auth/signout" method="post">
+            <button
+              type="submit"
+              className="label-mono hover:text-cream transition"
+            >
+              Sign out
+            </button>
+          </form>
+        </div>
       </header>
 
       <h1 className="display-lg mb-2">My tickets.</h1>

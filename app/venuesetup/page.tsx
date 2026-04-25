@@ -49,7 +49,7 @@ export default function VenueSetupPage() {
         return;
       }
       if (profile.accounts?.account_type !== "venue") {
-        router.replace("/owner");
+        router.replace("/");
         return;
       }
       setAccountId(profile.account_id);
@@ -87,7 +87,7 @@ export default function VenueSetupPage() {
       return;
     }
 
-    router.push("/owner");
+    router.push("/welcome");
   }
 
   return (

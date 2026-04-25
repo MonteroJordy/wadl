@@ -1,5 +1,7 @@
 import AuthedShell, { type NavSection } from "@/components/authed-shell";
 import { requireOwnerContext } from "@/lib/owner";
+import CommandPalette from "@/components/command-palette";
+import NotificationBell from "@/components/notification-bell";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +27,7 @@ export default async function OwnerLayout({
       label: "Run the door",
       items: [
         { href: "/owner", label: "This week", matchPrefix: "/owner/events" },
+        { href: "/owner/calendar", label: "Calendar" },
         { href: "/owner/events/new", label: "+ New event" },
         { href: "/owner/scorecards", label: "Scorecards" },
         { href: "/owner/analytics", label: "Analytics" },
@@ -82,6 +85,12 @@ export default async function OwnerLayout({
       brand="WADL"
       brandSub={account.display_name}
       brandTone="coral"
+      topBarRight={
+        <>
+          <CommandPalette />
+          <NotificationBell unread={unread ?? 0} />
+        </>
+      }
     >
       {children}
     </AuthedShell>

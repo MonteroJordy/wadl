@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Bebas_Neue, Epilogue, DM_Mono } from "next/font/google";
 import "./globals.css";
 import CookieConsent from "@/components/cookie-consent";
+import { ToastProvider } from "@/components/toast";
 
 const bebas = Bebas_Neue({
   weight: "400",
@@ -30,6 +31,23 @@ export const metadata: Metadata = {
   ),
   title: { default: "WADL", template: "%s — WADL" },
   description: "Guest-list management for nightlife.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    title: "WADL",
+    statusBarStyle: "black-translucent",
+  },
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon.svg",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0a0a0a",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -46,8 +64,10 @@ export default function RootLayout({
         <a href="#main-content" className="skip-link">
           Skip to content
         </a>
-        {children}
-        <CookieConsent />
+        <ToastProvider>
+          {children}
+          <CookieConsent />
+        </ToastProvider>
       </body>
     </html>
   );
