@@ -1,4 +1,4 @@
-# Build status — through Day 7 (MVP COMPLETE)
+# Build status — through Day 10 (MVP + v1.1 SHIPPED)
 
 **Commits on `main`:**
 
@@ -712,3 +712,175 @@ If it fails, the script tells you exactly which gate and why. Fix → rerun → 
 ---
 
 **Status:** Week 1 MVP complete. Code green. Docs green. Push to GitHub when ready, then follow `DEPLOY.md`.
+
+---
+
+## Day 8 / 9 / 10 — polish + nice-to-haves + v1.1 (combined run)
+
+Three days landed in one push. **Production deploy at https://wadl-pearl.vercel.app** auto-redeploys on push to `main` via the Vercel GitHub integration.
+
+### Commits
+
+- `00e2ce0` — Day 8: global owner nav + profile/settings + flyer upload + event search + empty state polish
+- `078849d` — Day 9: Chat Hub AI + scorecards + clone event + waitlist auto-promote + co-owner invite
+- `28e2602` — Day 10: v1.1 — guest notes/tags + multi-venue + tier upgrade + SMS templates + billing portal
+
+49 routes compile clean. Three migrations applied: `20260428000001_day8_storage`, `20260428000002_day9_features`, `20260428000003_day10_v11`.
+
+### Day 8 files
+
+| File | Purpose |
+|---|---|
+| `components/authed-shell.tsx` | Sticky sidebar on md+ / mobile drawer with hamburger. Active route highlighted coral via `usePathname()`. Profile + sign-out anchored to bottom. |
+| `app/owner/layout.tsx` + `app/manager/layout.tsx` | Wrap every authed route with role-appropriate nav sections (Run-the-door / Account / View-as for owner; Door + View-as for manager). |
+| `app/owner/profile/page.tsx` | User basics, account-type badge (coral/gold/mint), venue list, deduped team, share-with-venues link, danger zone (delete-account stub → email founder), sign-out. |
+| `lib/storage.ts` | Server-side flyer upload via service-role admin client to public `event-flyers` bucket. Validates size (≤5 MB) + MIME (jpg/png/webp). Cache-busts URL with `?v=`. |
+| `app/owner/events/{new,[id]/settings}/...` | Both forms now accept a file upload alongside the URL field. 4:5 preview as soon as a file is selected. |
+| `app/owner/page.tsx` | Search-by-name + range chips (week / month / upcoming / past, default week). Empty state copy adapts to context. |
+| `supabase/migrations/20260428000001_day8_storage.sql` | Public-read `event-flyers` bucket. |
+
+### Day 9 files
+
+| File | Purpose |
+|---|---|
+| `lib/chathub.ts` | Two-backend parser. Claude (haiku-4-5 via bare fetch on `/v1/messages`, JSON-only prompt) when `ANTHROPIC_API_KEY` is set, else regex fallback. Handles "Name VIP", "Name +2", "Name w/ Diplo", "Carol all access", default GA. Both backends return identical shape. |
+| `app/owner/events/[id]/chathub/{actions,flow,page}.tsx` | Three-step flow (input → review → done). Per-row name/tier/+1s/holder editable before commit. Commit attributes guests by case-insensitive holder name match → fallback "default holder" allocation. Audit `chathub_add` with insert count. |
+| `lib/scorecards.ts` | Aggregate approved + scanned heads per holder (lower-cased name as key) cross-event or scoped to one event. Grade A/B/C/D from show rate, trend up/down/flat from latest event vs prior. Tier mix (GA/VIP/AA) per holder. |
+| `app/owner/scorecards/{page,[holderId]/page}.tsx` + `app/owner/events/[id]/scorecards/page.tsx` + `components/scorecard-row.tsx` | Cross-event leaderboard, individual detail, single-event leaderboard. Sorted by show rate, then volume. |
+| `app/owner/events/[id]/clone/{actions,form,page}.tsx` | Pick shift-by-N-days (default +7), optional copy-allocations toggle. Duplicates event + nights with shifted dates + optional allocations w/ fresh tokens. Does NOT copy guests, check_ins, audit. Lands on new event's settings. |
+| `lib/waitlist.ts` + `app/owner/events/[id]/waitlist/...` + `components/guest-cancel-button.tsx` | `autoPromoteOnNight()` picks oldest waitlisted, marks approved, SMSs ticket URL. `cancelGuestAction` sets cancelled and triggers auto-promote when the cancelled guest was previously approved. Waitlist page lists waitlisted by night with a manual Promote button. |
+| `app/owner/events/[id]/co-owners/...` + `app/co-owner/accept/[token]/...` | Owner enters phone + email + permission (read-only / edit / admin). SMS sent if phone present, invite URL surfaced for copy. Public `/co-owner/accept/[token]` does phone OTP if needed, upserts `event_co_owners` for invitee's account. RLS extended so co-owners can SELECT events/event_nights/allocations/guests/check_ins for their permitted events. |
+| `lib/supabase/middleware.ts` | `/co-owner` added to PUBLIC_PATHS. |
+| `supabase/migrations/20260428000002_day9_features.sql` | `co_owner_invites` + `event_co_owners` tables; co-owner SELECT policies on the five owner-scoped tables. |
+| Daydash | Quick-action grid extended: Chat Hub, Waitlist, Co-owners; Recap, Scorecards, Audit; Export, Print, Clone. |
+
+### Day 10 files
+
+| File | Purpose |
+|---|---|
+| `lib/guest-extras.ts` | Three server actions: `updateGuestNotesAction`, `updateGuestTagsAction`, `upgradeTierAction`. All gated through `resolveGuestMutateAccess` (account-owner OR door-manager). Tier upgrade also sends SMS + sets `tier_upgraded_at` so /mytickets banners. |
+| `components/guest-notes-tags.tsx` | Shared notes textarea (autosave on blur) + tag chips. Presets: "VIP Regular", "Influencer", "Watch". Free-form custom tags supported. |
+| `components/tier-upgrade-button.tsx` | "Change tier" expand → 3 chips (GA / VIP / All access). Disabled on current. |
+| `components/guest-detail.tsx` | Tier-upgrade button + notes/tags section added. |
+| `app/mytickets/page.tsx` | Coral banner at top when guest has un-seen tier upgrades; marks all such rows `tier_upgrade_seen_at = now()` on view. |
+| `app/owner/page.tsx` | Multi-venue switcher chips above search (renders only when 2+ venues). Filters events by `venue_id`; "All venues" clears. |
+| `lib/sms-templates.ts` + `app/owner/sms-templates/{actions,template-form,page}.tsx` | Per-account template CRUD with key/label/body. 4 default templates (RSVP confirmed / doors open / last call / post-event thanks) seeded on demand. `renderTemplate({{var}})` substitution helper for downstream sends. |
+| `app/owner/billing/page.tsx` + `app/api/billing/{portal,checkout}/route.ts` | Placeholder + email-founder CTA when `STRIPE_SECRET_KEY` empty; "Set up billing" CTA when no customer record yet; "Open billing portal" Stripe Customer Portal link when customer exists. Portal handler creates a session via Stripe REST (no SDK dep). |
+| `supabase/migrations/20260428000003_day10_v11.sql` | `guests.notes` + `guests.tags` (text[] w/ GIN index) + `guests.tier_upgraded_at` + `guests.tier_upgrade_seen_at`; `sms_templates` table w/ owner-scoped RLS; `accounts.stripe_customer_id` + `stripe_subscription_id` + `subscription_status`. |
+
+### Smoke test — combined Day 8/9/10 loop
+
+Prereqs: through-Day-7 deployed. Pull from main, `rm -rf .next && npm run dev` locally OR hit `https://wadl-pearl.vercel.app` after Vercel finishes its redeploy.
+
+1. **Sidebar nav.** Sign in as owner. Sidebar appears at md+; hamburger on mobile. Click "+ New event" / "Profile + venues" / "Scorecards" / "SMS templates" / "Billing" — every link active-highlights coral when on that route.
+
+2. **Profile page.** `/owner/profile` renders user, account type badge, venue list, deduped team, share link box, danger zone with email-support fallback.
+
+3. **Flyer upload.** `/owner/events/new` — pick a JPG, see 4:5 preview, submit → event lands on daydash with the flyer rendered. Edit flyer in settings → flyer URL gets `?v=...` cache-bust suffix; preview swaps live.
+
+4. **Event search + venue switcher.** `/owner` — search "diplo" filters by name; range chips switch week/month/upcoming/past; with 2+ venues you also get a venue chip row (default "All venues").
+
+5. **Chat Hub.** From daydash → Chat Hub. Pick a default holder. Paste:
+   ```
+   Diplo VIP
+   Alice +2
+   Bob w/ Kiko VIP
+   Carol Smith all access
+   ```
+   Click Parse. Review screen shows 4 rows with editable tier / +1s / holder. Confidence chips. Hit Commit → "Committed. 4 guests added" → Review queue shows them.
+
+   If `ANTHROPIC_API_KEY` is set in Vercel env, the review screen badges "claude" (top right). Otherwise "regex" — both work.
+
+6. **Scorecards.** `/owner/scorecards` — leaderboard sorted by show rate, A/B/C/D grades, ↑↓→ trend chevrons. Tap a holder → individual page with show-rate hero, tier-mix bars, trend label.
+
+7. **Clone event.** `/owner/events/[id]/clone` → +1 week shift → submit → lands on new event's settings with cloned name + nights + allocations (fresh tokens).
+
+8. **Waitlist auto-promote.** Set a guest to `waitlisted` from the queue. Cancel a confirmed guest from their detail page. The waitlisted guest gets auto-promoted (status=approved); SMS goes out via Twilio (or DEV log). Audit shows `waitlist.auto_promoted`.
+
+9. **Co-owner invite.** `/owner/events/[id]/co-owners` → enter phone + Edit permission → submit. SMS sent / dev log. Open the invite URL in incognito → phone OTP → "Accept invite" → bounces to `/owner` (their account now sees this event in scorecards / filtered queries).
+
+10. **Guest notes + tags.** Open any guest detail. Toggle "VIP Regular" + "Influencer". Type "Friend of the owner" + Enter as custom. Type a note in the textarea, blur → autosaves. Refresh — all persisted.
+
+11. **Tier upgrade banner.** Owner ⟶ guest detail ⟶ "Change tier" → bump GA to VIP. SMS sent. Open guest's `/mytickets` (incognito w/ their phone) → coral banner: "Tier upgrade! You've been bumped to VIP for ...". Refresh — banner gone (marked seen).
+
+12. **SMS templates.** `/owner/sms-templates` → "Seed defaults" → 4 templates appear. Edit one → save. Variables `{{guest.name}}` etc. ready for downstream sends.
+
+13. **Billing.** `/owner/billing` — without `STRIPE_SECRET_KEY`, shows "Billing coming soon" + email-support CTA. With key but no customer: "Set up billing" CTA → `/api/billing/checkout` (stub redirects back). With customer ID populated: "Open billing portal" → Stripe Customer Portal session.
+
+### Day 8/9/10 judgment calls
+
+1. **Owner / manager get separate layouts** instead of a shared `(authed)/layout.tsx` route group. Reason: existing routes already live at `/owner/...` and `/manager/...`, and route-group restructure means moving directories. Two near-identical layouts is shallow duplication.
+
+2. **Manager layout pulls profile via the admin client**, not `requireDoorContext`, because that helper expects an event ID. The layout runs above any event scope.
+
+3. **Flyer uploads always go through the service-role admin client.** The bucket is public-read; writes happen server-side after we've verified the user owns the event. Avoids per-bucket RLS gymnastics keyed on storage path.
+
+4. **`getAppUrl()` is now load-bearing.** Several server actions construct URLs via `${getAppUrl()}/...`. If `NEXT_PUBLIC_APP_URL` is unset on Vercel, the action throws — we want that to surface loudly in the first request, not silently misroute SMS bodies to localhost.
+
+5. **Chat Hub uses Claude haiku-4-5, not opus.** Parsing free-text names is well within haiku's range, and the cost difference matters once promoters are pasting long lists nightly. Switch `model` in `lib/chathub.ts` if you want sharper inference.
+
+6. **Chat Hub regex fallback runs even without `ANTHROPIC_API_KEY` in dev.** Means you can demo the feature without wiring Anthropic — at lower confidence (0.7 fixed). The flow surfaces which backend produced each row so the user knows.
+
+7. **Scorecards group by lower-cased holder name.** A "Diplo" allocation on Friday and "diplo" on Saturday merge into the same scorecard. Same first/last name across two real promoters would also merge (rare but possible). Phone-disambiguation is post-MVP.
+
+8. **Trend = last event vs. prior event**, not rolling average. Brief said "vs previous event" so we kept it literal. Threshold = ±5% to avoid noise on tiny sample sizes.
+
+9. **Clone shifts dates by integer days.** Calendar-month clones (e.g. "same date next month") aren't supported — would complicate February / DST / weird week-of-month logic. Owner can edit dates on the new event's settings page after the clone lands.
+
+10. **Waitlist auto-promote runs only on approved-guest cancellations.** If a `pending` guest cancels, no seat opened up — no promotion needed. Logic lives in `cancelGuestAction` not as a DB trigger because it needs to send SMS, which is application-layer.
+
+11. **Co-owner edit / admin permissions are stored but not enforced for writes yet.** Day 9 RLS only opens SELECT for co-owners. Edit / admin write enforcement is a follow-up — for MVP+, owners and door staff/managers via event_staff cover the realistic write flows.
+
+12. **Co-owner accept requires the invitee to already have an account.** If they sign in by phone but haven't gone through `/signup`, the action returns "Set up your own account first." — no auto-onboarding shortcut. Avoids the edge case where the same phone is both an account owner AND a co-owner of someone else's event.
+
+13. **Tags are an unbounded text array.** Three preset chips for affordance, but anyone can add anything. No tag taxonomy enforcement. GIN index on the column means tag-based search will be cheap if we add it later.
+
+14. **Notes are private to the account.** Stored on `guests.notes`. RLS already gates `guests` SELECT to account owner + door manager + co-owner. No separate "internal notes" RLS layer.
+
+15. **Tier upgrade fires SMS even if no `phone` is on the guest row.** Sends silently fail in the SMS layer; the audit log still records the upgrade. Guest sees the banner on `/mytickets` either way.
+
+16. **`/mytickets` marks all unseen upgrades seen on a single visit.** If the guest got 3 upgrades in a row without checking the page, the banner shows all 3, then clears. Won't re-fire on subsequent loads.
+
+17. **Multi-venue switcher only renders with 2+ venues.** Owners with one venue don't need it. Adds zero noise.
+
+18. **SMS templates stored per-account.** Two accounts running the same brand share nothing — keeps tenancy clean. `renderTemplate()` substitutes `{{var}}` paths; downstream sends pick a template by key and call render with the right vars.
+
+19. **Billing UI gracefully degrades through three states.** No Stripe key → "coming soon". Stripe key but no customer → setup CTA → /api/billing/checkout (stub). Stripe key + customer → portal CTA. The wiring to actually create Stripe customers is deferred until you take payments.
+
+20. **Stripe Customer Portal called via REST, not the `stripe` SDK.** Same pattern as Twilio. Saves a dependency; the API surface is small.
+
+### Database state after Day 10
+
+Ten migrations applied:
+1. `20260423000000_init.sql`
+2. `20260424000001_day2_events_rls.sql`
+3. `20260424000002_seed_test_event.sql`
+4. `20260424000003_allocation_tokens.sql`
+5. `20260425000001_day4_guest_rsvp.sql`
+6. `20260426000001_day5_door_ops.sql`
+7. `20260427000001_day6_audit_event_id.sql`
+8. `20260428000001_day8_storage.sql`
+9. `20260428000002_day9_features.sql`
+10. `20260428000003_day10_v11.sql`
+
+### What's still NOT shipping
+
+Trimmed compared to Day 7's deferral list (lots of Day-9-and-10 boxes ticked). Remaining:
+
+- **Co-owner edit / admin write enforcement** — RLS only opens SELECT today.
+- **Cross-event analytics on /owner/scorecards beyond per-holder** — no account-wide arrival curves yet.
+- **Apple/Google Wallet passes** — out of scope.
+- **Refer-a-friend** — guests RSVP themselves only.
+- **Internal CMS** — static content in code.
+- **PDF export** — CSV + print-roster cover most prints.
+- **Stripe price/plan provisioning** — billing UI exists; the "Set up billing" path is a stub redirect.
+- **Email channel** — invites and notifications go via SMS only. Co-owner invites store an email but don't send to it.
+- **Real-time scanner counter** — daydash + door views compute on render. No websocket / supabase realtime yet.
+- **Door scanner offline mode** — needs network for validation.
+- **Multi-account per user** — one user → one account assumption baked in.
+
+These are all known-and-named gaps. Pick them up post-launch as actual operator pain emerges.
+
+---
+
+**Status:** Day 10 complete. 49 routes. Code green, build green, deploy auto-triggers on `git push origin main`.
