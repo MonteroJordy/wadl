@@ -40,9 +40,17 @@ export default function NewEventForm({
   const [venueId, setVenueId] = useState(venues[0]?.id ?? "none");
   const [description, setDescription] = useState("");
   const [flyerUrl, setFlyerUrl] = useState("");
+  const [flyerFile, setFlyerFile] = useState<File | null>(null);
+  const [flyerPreview, setFlyerPreview] = useState<string | null>(null);
   const [nights, setNights] = useState<NightRow[]>([newNight()]);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0] ?? null;
+    setFlyerFile(f);
+    setFlyerPreview(f ? URL.createObjectURL(f) : null);
+  }
 
   function updateNight(i: number, patch: Partial<NightRow>) {
     setNights((rows) => rows.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
@@ -83,6 +91,7 @@ export default function NewEventForm({
     fd.set("description", description.trim());
     fd.set("flyer_url", flyerUrl.trim());
     fd.set("nights", JSON.stringify(payload));
+    if (flyerFile) fd.set("flyer_file", flyerFile);
 
     startTransition(async () => {
       const result = await createEventAction(fd);
@@ -156,13 +165,34 @@ export default function NewEventForm({
         )}
 
         <div>
-          <label htmlFor="flyer" className="label-mono block mb-2">Flyer URL (optional)</label>
+          <p className="label-mono mb-2">Flyer (4:5 image)</p>
+          {flyerPreview && (
+            <div
+              className="rounded-md overflow-hidden border border-line mb-2"
+              style={{ aspectRatio: "4 / 5", maxWidth: 200 }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={flyerPreview}
+                alt="Flyer preview"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
           <input
-            id="flyer"
+            id="flyer-file"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={onPickFile}
+            className="input-dark file:mr-3 file:bg-s3 file:text-cream file:border-0 file:rounded file:px-3 file:py-1 file:text-xs"
+          />
+          <p className="label-mono mt-2">Or paste a URL instead:</p>
+          <input
+            id="flyer-url"
             type="url"
             value={flyerUrl}
             onChange={(e) => setFlyerUrl(e.target.value)}
-            className="input-dark"
+            className="input-dark mt-1"
             placeholder="https://…"
           />
         </div>

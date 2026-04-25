@@ -4,6 +4,15 @@ import EmptyState from "@/components/empty-state";
 
 export const dynamic = "force-dynamic";
 
+const RANGES = ["week", "month", "upcoming", "past"] as const;
+type Range = (typeof RANGES)[number];
+const RANGE_LABEL: Record<Range, string> = {
+  week: "This week",
+  month: "This month",
+  upcoming: "All upcoming",
+  past: "Past",
+};
+
 interface NightWithEvent {
   id: string;
   event_id: string;
@@ -24,20 +33,48 @@ interface CheckInRow {
   state: string;
 }
 
-export default async function OwnerWeekViewPage() {
+function rangeWindow(range: Range): { start: Date | null; end: Date | null } {
+  const now = new Date();
+  const startOfDay = new Date(now);
+  startOfDay.setHours(0, 0, 0, 0);
+
+  if (range === "week") {
+    const end = new Date(startOfDay);
+    end.setDate(end.getDate() + 7);
+    return { start: startOfDay, end };
+  }
+  if (range === "month") {
+    const end = new Date(startOfDay);
+    end.setDate(end.getDate() + 30);
+    return { start: startOfDay, end };
+  }
+  if (range === "upcoming") return { start: startOfDay, end: null };
+  // past
+  return { start: null, end: startOfDay };
+}
+
+export default async function OwnerWeekViewPage({
+  searchParams,
+}: {
+  searchParams: { q?: string; range?: string };
+}) {
   const { supabase, account, profile } = await requireOwnerContext();
 
-  // Window: today → +7 days.
-  const now = new Date();
-  const start = new Date(now);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 7);
+  const q = (searchParams.q ?? "").trim();
+  const range: Range = RANGES.includes(searchParams.range as Range)
+    ? (searchParams.range as Range)
+    : "week";
+  const { start, end } = rangeWindow(range);
 
-  const { data: eventsData } = await supabase
+  let eventsQ = supabase
     .from("events")
-    .select("id, name, flyer_url, event_nights(id, event_id, night_date, doors_at, capacity_cap, is_frozen)")
+    .select(
+      "id, name, flyer_url, event_nights(id, event_id, night_date, doors_at, capacity_cap, is_frozen)"
+    )
     .eq("account_id", account.id);
+  if (q) eventsQ = eventsQ.ilike("name", `%${q}%`);
+
+  const { data: eventsData } = await eventsQ;
 
   const nights: NightWithEvent[] = [];
   for (const e of eventsData ?? []) {
@@ -56,16 +93,26 @@ export default async function OwnerWeekViewPage() {
     };
     for (const n of ev.event_nights ?? []) {
       const d = new Date(n.doors_at);
-      if (d >= start && d <= end) {
-        nights.push({
-          ...n,
-          event: { id: ev.id, name: ev.name, flyer_url: ev.flyer_url },
-        });
-      }
+      const inRange =
+        (start === null || d >= start) && (end === null || d <= end);
+      if (!inRange) continue;
+      nights.push({
+        ...n,
+        event: { id: ev.id, name: ev.name, flyer_url: ev.flyer_url },
+      });
     }
   }
 
-  nights.sort((a, b) => (a.doors_at < b.doors_at ? -1 : 1));
+  // Past = newest first; everything else = soonest first.
+  nights.sort((a, b) =>
+    range === "past"
+      ? a.doors_at < b.doors_at
+        ? 1
+        : -1
+      : a.doors_at < b.doors_at
+      ? -1
+      : 1
+  );
 
   let guests: GuestRow[] = [];
   let checkIns: CheckInRow[] = [];
@@ -95,7 +142,6 @@ export default async function OwnerWeekViewPage() {
     return { approved, pending, scanned };
   }
 
-  // Group by night_date.
   const byDate = new Map<string, NightWithEvent[]>();
   for (const n of nights) {
     const key = n.night_date;
@@ -103,28 +149,84 @@ export default async function OwnerWeekViewPage() {
     byDate.get(key)!.push(n);
   }
 
+  function rangeHref(r: Range) {
+    const sp = new URLSearchParams();
+    if (r !== "week") sp.set("range", r);
+    if (q) sp.set("q", q);
+    const s = sp.toString();
+    return s ? `/owner?${s}` : "/owner";
+  }
+
   return (
-    <main className="mobile-frame">
-      <header className="flex items-start justify-between pt-6 pb-4">
+    <main className="mx-auto max-w-frame md:max-w-3xl px-6 pt-12 pb-8 md:py-12">
+      <header className="flex items-start justify-between pb-4">
         <div>
-          <p className="label-mono mb-1">This week</p>
+          <p className="label-mono mb-1">{RANGE_LABEL[range]}</p>
           <h1 className="display-lg">{account.display_name}</h1>
         </div>
-        <form action="/api/auth/signout" method="post">
-          <button type="submit" className="label-mono hover:text-cream transition">
-            Sign out
-          </button>
-        </form>
       </header>
 
-      <Link href="/owner/events/new" className="btn-primary text-center mb-6 block">
+      <Link href="/owner/events/new" className="btn-primary text-center mb-4 block">
         + Create event
       </Link>
 
+      <form action="/owner" method="get" className="mb-3">
+        <input
+          type="text"
+          name="q"
+          defaultValue={q}
+          placeholder="Search by event name…"
+          className="input-dark"
+        />
+        {range !== "week" && (
+          <input type="hidden" name="range" value={range} />
+        )}
+      </form>
+
+      <div className="flex gap-1 overflow-x-auto pb-2 mb-4">
+        {RANGES.map((r) => {
+          const active = r === range;
+          return (
+            <Link
+              key={r}
+              href={rangeHref(r)}
+              className={`shrink-0 px-3 py-1 rounded-full border text-[10px] font-mono uppercase tracking-wider ${
+                active
+                  ? "border-coral bg-s2 text-cream"
+                  : "border-line bg-s1 text-muted hover:text-cream"
+              }`}
+            >
+              {RANGE_LABEL[r]}
+            </Link>
+          );
+        })}
+      </div>
+
       {byDate.size === 0 ? (
         <EmptyState
-          title="No nights this week"
-          body="Create an event to get your first guest list on the door."
+          title={
+            q
+              ? "No matches"
+              : range === "past"
+              ? "No past events yet"
+              : range === "upcoming"
+              ? "No upcoming events"
+              : range === "month"
+              ? "Nothing this month"
+              : "No nights this week"
+          }
+          body={
+            q
+              ? `Nothing named "${q}". Try a different search or change the range.`
+              : "Create an event to get your first guest list on the door."
+          }
+          action={
+            !q && (
+              <Link href="/owner/events/new" className="btn-primary inline-block">
+                + Create event
+              </Link>
+            )
+          }
         />
       ) : (
         <div className="flex flex-col gap-5">
@@ -174,7 +276,7 @@ export default async function OwnerWeekViewPage() {
         </div>
       )}
 
-      <p className="label-mono mt-auto pt-8 text-center">
+      <p className="label-mono mt-8 text-center">
         {profile.full_name?.split(" ")[0]} · {account.account_type}
       </p>
     </main>

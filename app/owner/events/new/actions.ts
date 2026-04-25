@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { uploadEventFlyer } from "@/lib/storage";
 import type { EventType } from "@/lib/types";
 
 interface NightInput {
@@ -97,6 +98,16 @@ export async function createEventAction(formData: FormData) {
     // Clean up event so we don't leave an orphan.
     await supabase.from("events").delete().eq("id", event.id);
     return { error: nightsErr.message };
+  }
+
+  // Optional flyer upload. A failed upload doesn't fail the event creation;
+  // owner can re-upload from settings.
+  const flyerFile = formData.get("flyer_file") as File | null;
+  if (flyerFile && flyerFile.size > 0) {
+    const upload = await uploadEventFlyer(event.id, flyerFile);
+    if (upload.ok) {
+      await supabase.from("events").update({ flyer_url: upload.url }).eq("id", event.id);
+    }
   }
 
   revalidatePath("/owner");
