@@ -33,6 +33,9 @@ export interface Profile {
   full_name: string | null;
   role: UserRole;
   account_id: string | null;
+  tour_completed_at: string | null;
+  tour_dismissed_at: string | null;
+  demo_seeded_at: string | null;
   created_at: string;
   updated_at: string;
 }

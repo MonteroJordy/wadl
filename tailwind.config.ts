@@ -32,6 +32,15 @@ const config: Config = {
       minHeight: {
         frame: "740px",
       },
+      keyframes: {
+        skeleton: {
+          "0%": { backgroundPosition: "200% 0" },
+          "100%": { backgroundPosition: "-200% 0" },
+        },
+      },
+      animation: {
+        skeleton: "skeleton 1.6s ease-in-out infinite",
+      },
     },
   },
   plugins: [],

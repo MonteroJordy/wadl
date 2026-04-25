@@ -4,6 +4,7 @@ import { requireOwnerContext, fmtDate, fmtTime } from "@/lib/owner";
 import { fmtHour } from "@/lib/recap";
 import FreezeButton from "./freeze-button";
 import EmptyState from "@/components/empty-state";
+import RealtimeCounters from "@/components/realtime-counters";
 
 export const dynamic = "force-dynamic";
 
@@ -196,9 +197,12 @@ export default async function DayDashPage({
       ) : null}
 
       <h1 className="display-lg mb-1">{event.name}</h1>
-      <p className="label-mono mb-6">
-        {fmtDate(active.night_date)} · Doors {fmtTime(active.doors_at)}
-      </p>
+      <div className="flex items-center justify-between mb-6">
+        <p className="label-mono">
+          {fmtDate(active.night_date)} · Doors {fmtTime(active.doors_at)}
+        </p>
+        <RealtimeCounters nightId={active.id} />
+      </div>
 
       {nights.length > 1 && (
         <div className="flex gap-2 mb-6 overflow-x-auto">

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireOwnerContext, fmtDate, fmtTime } from "@/lib/owner";
 import EmptyState from "@/components/empty-state";
+import OnboardingTour from "@/components/onboarding-tour";
 
 export const dynamic = "force-dynamic";
 
@@ -329,6 +330,10 @@ export default async function OwnerWeekViewPage({
       <p className="label-mono mt-8 text-center">
         {profile.full_name?.split(" ")[0]} · {account.account_type}
       </p>
+
+      {!profile.tour_completed_at && !profile.tour_dismissed_at && (
+        <OnboardingTour alreadySeeded={!!profile.demo_seeded_at} />
+      )}
     </main>
   );
 }
