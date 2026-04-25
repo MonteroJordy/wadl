@@ -1,9 +1,52 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fmtDate, fmtTime } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { eventId: string };
+}): Promise<Metadata> {
+  const admin = createAdminClient();
+  const { data: ev } = await admin
+    .from("events")
+    .select("id, name, description, venue:venues(name, city)")
+    .eq("id", params.eventId)
+    .maybeSingle<{
+      id: string;
+      name: string;
+      description: string | null;
+      venue: { name: string | null; city: string | null } | null;
+    }>();
+
+  if (!ev) {
+    return { title: "Event — WADL" };
+  }
+  const venueLine = [ev.venue?.name, ev.venue?.city].filter(Boolean).join(" · ");
+  const description =
+    ev.description?.slice(0, 200) ?? `RSVP to ${ev.name}${venueLine ? ` at ${venueLine}` : ""}`;
+  const ogImage = `/api/og/event/${params.eventId}`;
+  return {
+    title: ev.name,
+    description,
+    openGraph: {
+      title: ev.name,
+      description,
+      type: "website",
+      images: [{ url: ogImage, width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: ev.name,
+      description,
+      images: [ogImage],
+    },
+  };
+}
 
 interface EventDetail {
   id: string;
