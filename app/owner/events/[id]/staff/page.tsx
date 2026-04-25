@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOwnerContext } from "@/lib/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getAppUrl } from "@/lib/app-url";
 import InviteForm from "./invite-form";
 import {
   CopyLinkButton,
@@ -68,7 +69,7 @@ export default async function StaffPage({
   const staff = (staffRes.data ?? []) as unknown as StaffRow[];
   const invites = (invitesRes.data ?? []) as InviteRow[];
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = getAppUrl();
 
   return (
     <main className="mobile-frame">

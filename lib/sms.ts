@@ -1,18 +1,17 @@
 /**
  * Thin SMS abstraction. SERVER-ONLY.
  *
- * DEV_MODE behavior:
- *   - If `DEV_MODE=true` in env, or if `NEXT_PUBLIC_APP_URL` points at
- *     localhost, the payload is console.logged and nothing is sent.
- *   - Otherwise, POSTs to Twilio's REST API with the credentials in
- *     TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / (TWILIO_MESSAGING_SERVICE_SID
- *     or TWILIO_FROM_NUMBER).
+ * DEV_MODE behavior is centralized in lib/app-url.ts (auto-detect from
+ * NEXT_PUBLIC_APP_URL: https → real Twilio, anything else → console).
+ * Set DEV_MODE=false explicitly to override auto-detect (e.g. test real
+ * SMS while running off a non-https tunnel).
  *
- * To flip live:
- *   1. Fill in the Twilio vars in `.env.local`.
- *   2. Set `DEV_MODE=false`.
- *   3. Deploy (or restart `next dev`). No code change.
+ * Twilio path requires:
+ *   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and either
+ *   TWILIO_MESSAGING_SERVICE_SID or TWILIO_FROM_NUMBER.
  */
+
+import { isDevMode } from "@/lib/app-url";
 
 export interface SendSmsInput {
   to: string;
@@ -22,13 +21,6 @@ export interface SendSmsInput {
 export type SendSmsResult =
   | { ok: true; provider: "dev" | "twilio"; sid?: string }
   | { ok: false; error: string };
-
-function isDevMode(): boolean {
-  const explicit = process.env.DEV_MODE;
-  if (explicit !== undefined) return explicit.toLowerCase() !== "false";
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-  return appUrl.includes("localhost") || appUrl.includes("127.0.0.1");
-}
 
 export async function sendSms({ to, body }: SendSmsInput): Promise<SendSmsResult> {
   if (isDevMode()) {

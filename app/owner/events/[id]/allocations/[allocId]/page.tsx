@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOwnerContext, fmtDate } from "@/lib/owner";
+import { getAppUrl } from "@/lib/app-url";
 import AllocationControls from "./controls";
 
 export const dynamic = "force-dynamic";
@@ -44,8 +45,7 @@ export default async function AllocationDetailPage({
     .limit(1)
     .maybeSingle<{ token: string; created_at: string }>();
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const holderUrl = tokenRow ? `${baseUrl}/h/${tokenRow.token}` : "";
+  const holderUrl = tokenRow ? `${getAppUrl()}/h/${tokenRow.token}` : "";
 
   const { data: guests } = await supabase
     .from("guests")

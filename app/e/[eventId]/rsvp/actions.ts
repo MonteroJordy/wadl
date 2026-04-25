@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendSms } from "@/lib/sms";
+import { getAppUrl } from "@/lib/app-url";
 
 interface CompleteInput {
   eventId: string;
@@ -152,8 +153,7 @@ export async function completeRsvpAction(
     context: { full_name: fullName, plus_ones: plusOnes, status },
   });
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const ticketUrl = `${appUrl}/t/${guest.check_in_token}`;
+  const ticketUrl = `${getAppUrl()}/t/${guest.check_in_token}`;
 
   const smsBody =
     status === "approved"

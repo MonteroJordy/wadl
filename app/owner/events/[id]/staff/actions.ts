@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizePhone } from "@/lib/routing";
 import { sendSms } from "@/lib/sms";
+import { getAppUrl } from "@/lib/app-url";
 
 type StaffRole = "door_staff" | "door_manager";
 
@@ -46,8 +47,7 @@ export async function createInviteAction(
     return { ok: false, error: error?.message ?? "Could not create invite." };
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const inviteUrl = `${appUrl}/staff-invite/${invite.token}`;
+  const inviteUrl = `${getAppUrl()}/staff-invite/${invite.token}`;
   const body = `WADL: you're invited to work the door as ${role === "door_manager" ? "a manager" : "staff"}. Open ${inviteUrl} on your phone to sign in.`;
 
   const smsRes = await sendSms({ to: phone, body });
