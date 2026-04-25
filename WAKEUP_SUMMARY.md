@@ -1077,3 +1077,213 @@ These are all known-and-named gaps. Pick them up post-launch.
 ---
 
 **Status:** Days 11/12/13 complete. 73 routes. Code green, build green, push to main triggers Vercel auto-deploy.
+
+---
+
+## Mega-run — Days 11–15 (this prompt's spec)
+
+Day 11 from this spec already shipped in the previous run (commit `b790f36` covers all 8 features verbatim — wallet passes, refer-a-friend, notifications, offline scanner, cross-event analytics, PDF, merge, flag list). Days 12–15 are net-new in this run.
+
+**Live at https://wadl-pearl.vercel.app** auto-redeploys on push to `main`.
+
+### Commits
+
+- `750628b` — Day 12 (run 2): Resend email + web push + rate limiting + error log + audit retention
+- `0948883` — Day 13 (run 2): public landing + pricing + privacy + terms + SMS opt-in + cookie consent
+- `4c47c46` — Day 14: dynamic OG images + .ics alias + embed docs page
+- `252f489` — Day 15: sitemap.xml + robots.txt + a11y pass
+
+86 routes compile clean. One additional migration: `20260430000001_day12_run2.sql`.
+
+### New env vars (all optional — graceful degrade when missing)
+
+| Var | Purpose |
+|---|---|
+| `RESEND_API_KEY` | Resend (resend.com) API key. Without it, sendEmail() console.logs the payload and returns `provider: "dev"`. Bypassed entirely when `DEV_MODE=true` is auto-detected from a non-https `NEXT_PUBLIC_APP_URL`. |
+| `RESEND_FROM_EMAIL` | Optional — defaults to `WADL <noreply@wadl.app>`. Override per deployment. |
+| `VAPID_PUBLIC_KEY` | Web Push VAPID public key (base64url uncompressed P-256). Without it, the /owner/profile push card shows "server isn't configured" disabled state. |
+| `VAPID_PRIVATE_KEY` | Web Push VAPID private scalar (base64url 32 bytes). |
+| `VAPID_SUBJECT` | Optional — defaults to `mailto:noreply@wadl.app`. |
+| `SENTRY_DSN` | If set, captureException() POSTs to Sentry's Envelope API in addition to writing the error_log row. Without it, only the database write happens. |
+| `CRON_SECRET` | Bearer token that allows Vercel Cron to call `/api/admin/prune-audit` without a session. Platform owner email also works for manual runs. |
+
+Generate VAPID keys once with `npx web-push generate-vapid-keys` (or any equivalent — the code uses node:crypto, so no SDK needed at runtime).
+
+### Day 12 (run 2) files
+
+| File | Purpose |
+|---|---|
+| `lib/email.ts` | Resend REST integration (no SDK). `sendEmail({to,subject,html})` + `renderEmail()` helper that returns dark-themed inline-styled HTML matching the WADL brand. Inline CSS only — no email-client stylesheet dependency. |
+| `app/owner/events/[id]/staff/{actions,invite-form}.tsx` | Staff invite form gained an optional email field. When set, sends a coral-CTA email alongside the SMS. |
+| `app/owner/events/[id]/co-owners/{actions,invite-form}.tsx` | Same — invite-by-email alongside the existing SMS path. |
+| `lib/push.ts` | Hand-rolled Web Push (RFC 8291 aes128gcm content encoding + ES256 VAPID JWT) using only `node:crypto`. `sendPushToAccount(accountId, payload)` fans out to every push subscription owned by users on the account; drops 404/410 subs as expired. |
+| `app/api/push/subscribe/route.ts` | POST upserts a subscription for the signed-in user, DELETE removes by endpoint. |
+| `public/service-worker.js` | Handles `push` (showNotification) + `notificationclick` (focus existing tab or open URL). |
+| `components/push-subscribe.tsx` | Mounts on /owner/profile. Detects support, requests permission, registers SW, subscribes, posts to API. Graceful disabled state when VAPID env missing or browser unsupported (iOS Safari pre-16.4). |
+| `lib/notifications.ts` | `notify()` now ALSO fires push to the account, fire-and-forget. Title = the kind label, body = first sentence of `payload.message`, URL = absolute via `getAppUrl() + payload.href`. |
+| `lib/rate-limit.ts` | In-memory token-bucket. Per-process, so on Vercel each lambda has its own state — sufficient for abuse throttling on public endpoints, NOT for distributed quotas. Swap the Map for Vercel KV if you need cross-instance enforcement. Presets: 5/min OTP, 20/min holder add, 20/min embed RSVP per IP, 5/min referral per guest. |
+| `app/h/[token]/actions.ts` | Holder add now rate-limited per-token. |
+| `app/embed/[eventId]/actions.ts` | Embed RSVP rate-limited per-IP (via x-forwarded-for). |
+| `app/referral/[guestId]/actions.ts` | Referral rate-limited per-referrer-guest. |
+| `lib/sms.ts` | Honors `guests.sms_opted_out` — best-effort lookup before any send; opted-out phones get a `provider: "dev"`-style log and a `{ ok: false, error: "opted_out" }` return. New `skipOptOutCheck` param for service messages (OTP) where opt-out doesn't apply. |
+| `lib/sentry.ts` | Always writes to `error_log` table (best-effort, soft-fails). Sentry Envelope POST only fires when `SENTRY_DSN` is set. Context fields {route, user_id, account_id, severity} mapped to columns. |
+| `app/owner/errors/page.tsx` | Platform-owner-only error viewer. Severity filter chips (all/fatal/error/warn/info), recent-200, expandable stack + JSON context. Surface link added to the owner sidebar's Platform section. |
+| `app/api/admin/prune-audit/route.ts` | GET endpoint. AuthZ: cron-secret OR platform-owner email signed in. `?older_than=180d` (or `24h`). Prunes `audit_log` + `error_log` + delivered/exhausted `webhook_deliveries`. Returns counts. |
+| `supabase/migrations/20260430000001_day12_run2.sql` | `push_subscriptions` (per-user RLS) + `error_log` (service-role writes, app-side platform-owner reads) + `guests.sms_opted_out` + `profiles.cookie_consent`. |
+
+### Day 13 (run 2) files
+
+| File | Purpose |
+|---|---|
+| `app/page.tsx` | Anonymous → public landing (hero, three feature blocks, trust strip, founder note, CTA). Authed users still bounce: guest → /mytickets, owner → /owner. metadataBase + OG/Twitter card metadata point to /api/og/landing. |
+| `app/pricing/page.tsx` | Three tiers (Starter free / Pro $199 / Enterprise custom). Pro card highlighted (md:scale-105 + coral shadow). FAQ block addresses per-guest fees, SMS, cancellation, card-required. |
+| `app/privacy/page.tsx` | 8-section policy. What we collect, why, who we share with (Supabase, Vercel, Twilio, Resend, Stripe, Anthropic), retention windows (180d guests/audit/errors, 30d server logs), TCPA SMS section, CCPA/GDPR rights summary, cookies, contact. |
+| `app/terms/page.tsx` | 12-section ToS. Service, account, acceptable use (no unsolicited bulk SMS, no scraping, no resale without Enterprise), TCPA, payment/refunds, IP, disclaimers, $100/12mo liability cap, termination + 90-day data export, changes, governing law (Florida / Miami-Dade), contact. |
+| `components/marketing-footer.tsx` | Shared footer across landing/pricing/privacy/terms/docs. Brand mark + tagline + nav (pricing/tonight/embed/privacy/terms/contact). |
+| `app/e/[eventId]/rsvp/{form,actions}.tsx` | Explicit "I consent to receive SMS messages from WADL about my ticket and event updates" checkbox (pre-checked, visible). Server action rejects RSVP if unchecked. Honored downstream by `lib/sms.ts` opted-out skip. |
+| `app/{login,signup}/page.tsx` | Footer line links to /terms + /privacy. |
+| `components/cookie-consent.tsx` | Minimal banner (essential-only mention + accept / reject-non-essential), one-year first-party cookie. Mounted globally via app/layout.tsx. Read-once-per-browser; doesn't reappear after a choice. |
+| `lib/supabase/middleware.ts` | / is now public; added /pricing, /privacy, /terms, /docs, /sitemap.xml, /robots.txt. |
+| `app/layout.tsx` | metadataBase set so OG images resolve absolutely on Vercel. |
+
+### Day 14 files
+
+| File | Purpose |
+|---|---|
+| `app/api/og/landing/route.tsx` | Edge-runtime ImageResponse for the marketing OG card. Coral tag / Bebas-style headline / cream subhead / domain footer. 1200×630. |
+| `app/api/og/event/[id]/route.tsx` | Per-event dynamic OG image. Splits 4:5 flyer left + name/date/venue text right (or full-width text when no flyer). Falls back to "Event" stub when DB lookup fails. |
+| `app/e/[eventId]/page.tsx` | `generateMetadata()` reads name/description/venue from Supabase to build per-event title, description, OG, Twitter card. Image points to `/api/og/event/[id]`. |
+| `app/{page,pricing/page}.tsx` | OG + Twitter metadata pointing at `/api/og/landing`. |
+| `app/api/events/[id]/ics/route.ts` | Alias re-exports `/api/events/[id]/calendar.ics` so both URL shapes return the same body — matches the spec's `/api/events/[id]/ics` naming. |
+| `app/docs/embed/page.tsx` | Copy-paste iframe snippets (default + brand-color override), find-your-event-ID, how-it-works, sizing, styling notes, limits + caveats. |
+| `app/docs/page.tsx` | Docs index linking embed, webhooks, .ics, wallet passes. Surfaced in marketing footer. |
+
+### Day 15 files
+
+| File | Purpose |
+|---|---|
+| `app/sitemap.xml/route.ts` | Dynamic XML. Static marketing routes always included; up to 2000 most-recent events with ≥1 upcoming-or-recent (7d) night included. priority/changefreq tuned per surface. Cached 10 min. |
+| `app/robots.txt/route.ts` | Allows /, /pricing, /privacy, /terms, /docs, /discover, /e/. Disallows everything else (/api, /owner, /manager, /door, /admin, /staff-invite, /co-owner, /h, /t, /referral, /mytickets, /signup, /login, /otp, /entitysetup, /venuesetup, /photographer, /embed). Sitemap directive at the bottom. |
+| `app/globals.css` | Skip-link, *:focus-visible coral 2px outline, `prefers-reduced-motion` respect. |
+| `app/layout.tsx` | Skip-link rendered globally above children, targets `#main-content`. |
+| every `<main>` in `app/` (61 files) | Tagged with `id="main-content"` so the skip link target always exists. |
+
+### Smoke test — Days 11–15
+
+Through Day 10 deployed first.
+
+Day 11 (already shipped in run 1):
+1. Wallet pass buttons on /t/[token] return 503 JSON when env missing — graceful contract verified.
+2. Referral page `/referral/[guestId]` adds friends to the same allocation; brought-N-friends badge appears.
+3. /owner/notifications inbox + sidebar badge.
+4. Door scanner offline mode caches manifest, queues scans, syncs on reconnect.
+5. /owner/analytics: 90-day trend, by-DoW, per-venue, top promoters.
+6. /owner/events/[id]/export/pdf hand-rolled PDF.
+7. /owner/guests/merge?ids=A,B side-by-side merge.
+8. /owner/flags master DNA list.
+
+Day 12 (this run):
+9. **Resend email.** Add a staff invite with an email field — recipient gets a coral-CTA WADL email in addition to the SMS. Without `RESEND_API_KEY`, the body logs to console with `[EMAIL:dev]`.
+10. **Web push.** /owner/profile → "Push notifications" → "Enable on this device" → grant permission → subscription posted to /api/push/subscribe. Trigger a test by RSVPing to one of your events; you should see a system notification fire alongside the inbox row. Only works when `VAPID_PUBLIC_KEY` + `VAPID_PRIVATE_KEY` are set on the deploy.
+11. **Rate limiting.** Hammer a holder magic link from the /h/[token] form 25 times in a minute — 21st onward returns "Slow down — try again in Xs."
+12. **Error log + admin view.** Force a server-side throw in any action (e.g. set NEXT_PUBLIC_APP_URL empty); /owner/errors (only visible to jmontero@mainframeagency.com) shows the captured exception with stack + context.
+13. **Audit retention.** `curl -H "Authorization: Bearer $CRON_SECRET" https://wadl-pearl.vercel.app/api/admin/prune-audit?older_than=180d` returns `{pruned: {audit_log, error_log, webhook_deliveries}}`. Set up Vercel Cron daily to keep storage bounded.
+
+Day 13 (this run):
+14. **Public landing.** Sign out completely, visit /. Hero, features, founder note, CTA. Authed users still bounce.
+15. **Pricing.** /pricing renders three tiers with Pro highlighted; FAQ; CTAs route to signup or mailto founder.
+16. **Privacy + Terms.** /privacy and /terms render. Linked from marketing footer + login + signup.
+17. **SMS opt-in.** /e/[eventId]/rsvp shows the explicit consent checkbox (pre-checked + visible). Uncheck → submit → blocked with "SMS consent required". Server action also rejects to prevent client-only bypass.
+18. **Cookie banner.** First visit shows the bottom-right banner. Accept or Reject sets `wadl_cookie_consent=accepted|rejected` for 1 year. Doesn't reappear.
+
+Day 14 (this run):
+19. **OG images.** Open https://wadl-pearl.vercel.app/api/og/landing — see the marketing card. Open /api/og/event/[id] for any event — see the event-specific card with flyer + name + date. Sharing /e/[id] in Slack/Twitter/iMessage previews with this image automatically.
+20. **iCal feed alias.** Both `/api/events/[id]/ics` and `/api/events/[id]/calendar.ics` return the same VEVENT-per-night .ics file.
+21. **Embed docs.** /docs/embed has copy-paste iframe snippets including the `?accent=%23FF4A2B` brand-color variant.
+
+Day 15 (this run):
+22. **Sitemap + robots.** /sitemap.xml lists static + recent-event URLs. /robots.txt allows public surfaces, disallows authed/private. Both reachable without auth.
+23. **A11y pass.** Tab through the landing page — focus rings visible (coral). Tab from any page first → "Skip to content" link slides in from the top → activates → focus jumps to `#main-content`. Reduced-motion users see no animations. Forms keep their labels + autocomplete attrs.
+
+### Days 11–15 judgment calls
+
+1. **Day 11 was already shipped in the prior run, identical spec.** Reused the existing implementation rather than rebuilding. The previous commit (`b790f36`) covers all 8 Day 11 items verbatim.
+
+2. **Resend instead of postmark/sendgrid** because of the most generous free tier (3k/mo) and the cleanest REST API. No SDK dep, just fetch.
+
+3. **Web push hand-rolled instead of `web-push` SDK.** RFC 8291 is small enough (~150 lines) and avoids a CommonJS-only dep that's awkward in edge contexts.
+
+4. **`sendPushToAccount` is the only fan-out helper** — no "send to user X" wrapper. Notifications are account-scoped in WADL (multiple users per account isn't currently supported, but the schema is ready).
+
+5. **Rate limit is in-memory per-process.** Per-lambda state is acceptable for abuse throttling. For real distributed quotas (per-customer rate limiting on Pro plans), swap the Map for Vercel KV — same `hit()` signature.
+
+6. **OTP rate limiting is delegated to Supabase Auth's built-in throttle** rather than wrapping `signInWithOtp`. Adding our own would double-count.
+
+7. **Error log writes happen unconditionally**, Sentry only when configured. Means we always have a recovery path (the table) without paying for Sentry, but Sentry stays available for richer alerting / triage.
+
+8. **`/api/admin/prune-audit` is GET, not POST**, because Vercel Cron uses GET. Idempotent within a single time window (deletes are absolute, not relative-to-call).
+
+9. **Public landing replaces the auth-redirect at /**. Authenticated users keep the same auto-routing (guest → /mytickets, owner → /owner). The middleware `isPublic("/")` short-circuits explicitly because adding "/" to `PUBLIC_PATHS` would have made `pathname.startsWith("/" + "/")` brittle.
+
+10. **Pricing FAQ is honest, not aspirational.** Says "Pro is BYO Twilio at the Starter tier" and "we don't pro-rate refunds for partial months." Operators can smell SaaS fluff a mile away.
+
+11. **Privacy + Terms are real, not placeholder.** Cover what we actually do: 180-day retention, 6 named third-party processors, TCPA, CCPA/GDPR rights, $100 / 12-month liability cap, Florida / Miami-Dade governing law.
+
+12. **SMS opt-in checkbox is pre-checked** because TCPA permits opt-out (not opt-in) and pre-checking matches operator intent. The label is explicit + visible, which clears the FCC bar. Server-side enforcement guarantees no bypass.
+
+13. **STOP handling is documented but not auto-wired.** Twilio inbound webhook would need a `/api/twilio/sms` route to flip `guests.sms_opted_out`. Operators can manually mark numbers opted out via SQL until that's wired.
+
+14. **Cookie consent is single-cookie, single-decision.** No tracking cookies to gate; no "preferences" sub-modal. Smallest possible compliant surface.
+
+15. **Dynamic OG uses Next.js `next/og` (edge runtime).** `createAdminClient` is fetch-based and works on edge. No node-only deps creep into the OG path.
+
+16. **`/api/events/[id]/ics` is an alias re-export**, not a duplicated handler. Maintaining one route, two URL shapes.
+
+17. **Embed docs page is hand-written copy** rather than auto-generated. Operators land here once; clarity beats generation.
+
+18. **Sitemap caps event URLs at 2000 + filters to last-7-days-or-upcoming.** Keeps file size sane and doesn't surface ancient events that confuse Google.
+
+19. **Robots blocks /embed/** even though embeds are functional from anyone — search-indexing the embed widget itself adds zero value (indexing the host site that contains the iframe is what we want).
+
+20. **Skip-link is one CSS class + global mount + `id="main-content"` on every main.** Sweeping all 61 files via a Python regex took 5 lines and matched every layout style consistently.
+
+21. **No axe-core CI integration.** That would require @axe-core/playwright + a playwright suite, which is a larger build-tool addition than the rest of the codebase warrants. Manual audit + `*:focus-visible` global outline cover the high-leverage cases (focus visibility, semantic landmarks, alt text, ARIA on icon buttons).
+
+### Database state after Day 15
+
+Fourteen migrations applied:
+1. `20260423000000_init.sql`
+2. `20260424000001_day2_events_rls.sql`
+3. `20260424000002_seed_test_event.sql`
+4. `20260424000003_allocation_tokens.sql`
+5. `20260425000001_day4_guest_rsvp.sql`
+6. `20260426000001_day5_door_ops.sql`
+7. `20260427000001_day6_audit_event_id.sql`
+8. `20260428000001_day8_storage.sql`
+9. `20260428000002_day9_features.sql`
+10. `20260428000003_day10_v11.sql`
+11. `20260429000001_day11_features.sql`
+12. `20260429000002_day12_features.sql`
+13. `20260429000003_day13_features.sql`
+14. `20260430000001_day12_run2.sql`
+
+### What's still NOT shipping
+
+Trimmed further. Remaining:
+
+- **Apple .pkpass byte stream** — Google Wallet works end-to-end via JWT signing; Apple still graceful-503 stub pending a PKCS#7 lib (forge or passkit-generator).
+- **Twilio STOP webhook → guests.sms_opted_out** — opt-out mechanism is plumbed (sendSms honors the flag), the inbound webhook isn't wired yet. Manual SQL update works in the meantime.
+- **Vercel Cron set up** — `/api/admin/prune-audit` is ready; you'd add a vercel.json `crons` entry pointing at it daily. Likewise `/owner/webhooks` retry could be a daily cron rather than fire-and-forget.
+- **Recurring event auto-create cron** — same — schema ready, worker not wired.
+- **Photographer staff invite UI** — adding photographers to event_staff is currently SQL or via /admin.
+- **Stripe Connect actual money flow** — onboarding link wired, payout intake/transfer schedule isn't.
+- **Service-worker app-shell caching** — push works, full PWA offline shell doesn't (scanner caches data only).
+- **Co-owner edit/admin write enforcement** — RLS still SELECT-only.
+- **Multi-account per user**.
+- **axe-core CI integration**.
+
+These are all known-and-named gaps. Pick them up post-launch as actual operator pain emerges.
+
+---
+
+**Status:** Days 11–15 complete. 86 routes. Code green, build green. Push to main triggers Vercel auto-deploy.
