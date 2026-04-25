@@ -12,17 +12,51 @@
  */
 
 import { isDevMode } from "@/lib/app-url";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export interface SendSmsInput {
   to: string;
   body: string;
+  /** When true, skip the opt-out check (used by service messages like OTP). */
+  skipOptOutCheck?: boolean;
 }
 
 export type SendSmsResult =
   | { ok: true; provider: "dev" | "twilio"; sid?: string }
-  | { ok: false; error: string };
+  | { ok: false; error: string }
+  | { ok: false; error: "opted_out"; phone: string };
 
-export async function sendSms({ to, body }: SendSmsInput): Promise<SendSmsResult> {
+/**
+ * Honor TCPA opt-outs by short-circuiting when the recipient phone has any
+ * guest row marked sms_opted_out. Best-effort: a DB error here does NOT block
+ * the send (we'd rather over-send than swallow a critical message).
+ */
+async function isOptedOut(phone: string): Promise<boolean> {
+  try {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("guests")
+      .select("id")
+      .eq("phone", phone)
+      .eq("sms_opted_out", true)
+      .limit(1);
+    return !!(data && data.length > 0);
+  } catch {
+    return false;
+  }
+}
+
+export async function sendSms({
+  to,
+  body,
+  skipOptOutCheck,
+}: SendSmsInput): Promise<SendSmsResult> {
+  if (!skipOptOutCheck && (await isOptedOut(to))) {
+    // eslint-disable-next-line no-console
+    console.log(`[SMS:opted-out] → ${to} — skipping send`);
+    return { ok: false, error: "opted_out", phone: to };
+  }
+
   if (isDevMode()) {
     // eslint-disable-next-line no-console
     console.log(

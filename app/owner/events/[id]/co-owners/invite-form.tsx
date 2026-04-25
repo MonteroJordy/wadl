@@ -13,6 +13,7 @@ export default function CoOwnerInviteForm({ eventId }: { eventId: string }) {
   const [result, setResult] = useState<{
     url: string;
     provider: "dev" | "twilio";
+    emailSent: boolean;
   } | null>(null);
   const [copied, setCopied] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -31,7 +32,11 @@ export default function CoOwnerInviteForm({ eventId }: { eventId: string }) {
       const res = await createCoOwnerInviteAction(eventId, fd);
       if (!res.ok) setError(res.error);
       else {
-        setResult({ url: res.inviteUrl, provider: res.smsProvider });
+        setResult({
+          url: res.inviteUrl,
+          provider: res.smsProvider,
+          emailSent: res.emailSent,
+        });
         setPhone("");
         setEmail("");
       }

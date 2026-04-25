@@ -5,12 +5,18 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizePhone } from "@/lib/routing";
 import { sendSms } from "@/lib/sms";
+import { sendEmail, renderEmail } from "@/lib/email";
 import { getAppUrl } from "@/lib/app-url";
 
 type StaffRole = "door_staff" | "door_manager";
 
 export type CreateInviteResult =
-  | { ok: true; inviteUrl: string; smsProvider: "dev" | "twilio" }
+  | {
+      ok: true;
+      inviteUrl: string;
+      smsProvider: "dev" | "twilio";
+      emailSent: boolean;
+    }
   | { ok: false; error: string };
 
 export async function createInviteAction(
@@ -18,6 +24,7 @@ export async function createInviteAction(
   formData: FormData
 ): Promise<CreateInviteResult> {
   const phoneRaw = (formData.get("phone") as string | null) ?? "";
+  const emailRaw = ((formData.get("email") as string | null) ?? "").trim();
   const role = formData.get("role") as StaffRole | null;
 
   const phone = normalizePhone(phoneRaw);
@@ -25,6 +32,8 @@ export async function createInviteAction(
   if (role !== "door_staff" && role !== "door_manager") {
     return { ok: false, error: "Pick a role." };
   }
+  const email =
+    emailRaw && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailRaw) ? emailRaw : null;
 
   const supabase = createClient();
   const {
@@ -48,15 +57,34 @@ export async function createInviteAction(
   }
 
   const inviteUrl = `${getAppUrl()}/staff-invite/${invite.token}`;
-  const body = `WADL: you're invited to work the door as ${role === "door_manager" ? "a manager" : "staff"}. Open ${inviteUrl} on your phone to sign in.`;
+  const roleLabel = role === "door_manager" ? "a manager" : "staff";
+  const body = `WADL: you're invited to work the door as ${roleLabel}. Open ${inviteUrl} on your phone to sign in.`;
 
   const smsRes = await sendSms({ to: phone, body });
   const smsProvider: "dev" | "twilio" =
     smsRes.ok && smsRes.provider === "twilio" ? "twilio" : "dev";
 
+  let emailSent = false;
+  if (email) {
+    const rendered = renderEmail({
+      heading: "You're on the door for WADL",
+      body: `You've been invited to work the door as ${roleLabel}. Tap the button below on your phone to sign in.`,
+      ctaLabel: "Open invite",
+      ctaHref: inviteUrl,
+      footer: "If you didn't expect this email, you can ignore it.",
+    });
+    const emailRes = await sendEmail({
+      to: email,
+      subject: "WADL: door invite",
+      html: rendered.html,
+      text: rendered.text,
+    });
+    emailSent = emailRes.ok;
+  }
+
   revalidatePath(`/owner/events/${eventId}/staff`);
 
-  return { ok: true, inviteUrl, smsProvider };
+  return { ok: true, inviteUrl, smsProvider, emailSent };
 }
 
 export async function revokeInviteAction(

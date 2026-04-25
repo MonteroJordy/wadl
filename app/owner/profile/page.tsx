@@ -2,6 +2,8 @@ import Link from "next/link";
 import { requireOwnerContext } from "@/lib/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAppUrl } from "@/lib/app-url";
+import { getVapidPublicKey } from "@/lib/push";
+import PushSubscribeButton from "@/components/push-subscribe";
 import EmptyState from "@/components/empty-state";
 
 export const dynamic = "force-dynamic";
@@ -149,6 +151,10 @@ export default async function ProfilePage() {
             ))}
           </ul>
         )}
+      </section>
+
+      <section className="mb-4">
+        <PushSubscribeButton vapidPublicKey={getVapidPublicKey()} />
       </section>
 
       <section className="card mb-4">

@@ -62,7 +62,10 @@ export default async function OwnerLayout({
       ? [
           {
             label: "Platform",
-            items: [{ href: "/admin", label: "Internal CMS" }],
+            items: [
+              { href: "/admin", label: "Internal CMS" },
+              { href: "/owner/errors", label: "Error log" },
+            ],
           },
         ]
       : []),

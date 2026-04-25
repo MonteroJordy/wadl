@@ -4,13 +4,19 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendSms } from "@/lib/sms";
+import { sendEmail, renderEmail } from "@/lib/email";
 import { getAppUrl } from "@/lib/app-url";
 import { normalizePhone } from "@/lib/routing";
 
 type Permission = "read_only" | "edit" | "admin";
 
 export type CoOwnerInviteResult =
-  | { ok: true; inviteUrl: string; smsProvider: "dev" | "twilio" }
+  | {
+      ok: true;
+      inviteUrl: string;
+      smsProvider: "dev" | "twilio";
+      emailSent: boolean;
+    }
   | { ok: false; error: string };
 
 export async function createCoOwnerInviteAction(
@@ -57,8 +63,26 @@ export async function createCoOwnerInviteAction(
     if (res.ok) smsProvider = res.provider;
   }
 
+  let emailSent = false;
+  if (email) {
+    const rendered = renderEmail({
+      heading: "You've been invited to co-own an event",
+      body: `Permission level: ${permission.replace("_", "-")}. Tap below to accept.`,
+      ctaLabel: "Accept invite",
+      ctaHref: inviteUrl,
+      footer: "If you weren't expecting this, you can ignore it.",
+    });
+    const r = await sendEmail({
+      to: email,
+      subject: "WADL: co-owner invite",
+      html: rendered.html,
+      text: rendered.text,
+    });
+    emailSent = r.ok;
+  }
+
   revalidatePath(`/owner/events/${eventId}/co-owners`);
-  return { ok: true, inviteUrl, smsProvider };
+  return { ok: true, inviteUrl, smsProvider, emailSent };
 }
 
 export async function revokeCoOwnerInviteAction(

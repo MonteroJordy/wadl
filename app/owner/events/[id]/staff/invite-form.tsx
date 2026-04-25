@@ -5,11 +5,13 @@ import { createInviteAction } from "./actions";
 
 export default function InviteForm({ eventId }: { eventId: string }) {
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [role, setRole] = useState<"door_staff" | "door_manager">("door_staff");
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{
     url: string;
     smsProvider: "dev" | "twilio";
+    emailSent: boolean;
   } | null>(null);
   const [pending, startTransition] = useTransition();
   const [copied, setCopied] = useState(false);
@@ -21,6 +23,7 @@ export default function InviteForm({ eventId }: { eventId: string }) {
 
     const fd = new FormData();
     fd.set("phone", phone);
+    if (email.trim()) fd.set("email", email.trim());
     fd.set("role", role);
 
     startTransition(async () => {
@@ -29,8 +32,13 @@ export default function InviteForm({ eventId }: { eventId: string }) {
         setError(res.error);
         return;
       }
-      setResult({ url: res.inviteUrl, smsProvider: res.smsProvider });
+      setResult({
+        url: res.inviteUrl,
+        smsProvider: res.smsProvider,
+        emailSent: res.emailSent,
+      });
       setPhone("");
+      setEmail("");
     });
   }
 
@@ -58,6 +66,21 @@ export default function InviteForm({ eventId }: { eventId: string }) {
           className="input-dark"
           placeholder="(305) 555 1234"
           required
+        />
+      </div>
+
+      <div>
+        <label htmlFor="staff-email" className="label-mono block mb-2">
+          Email (optional)
+        </label>
+        <input
+          id="staff-email"
+          type="email"
+          inputMode="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="input-dark"
+          placeholder="they@venue.com"
         />
       </div>
 
@@ -97,7 +120,10 @@ export default function InviteForm({ eventId }: { eventId: string }) {
           <p className="label-mono mb-2">
             Invite sent
             {result.smsProvider === "dev" && (
-              <span className="text-gold"> (DEV — console log)</span>
+              <span className="text-gold"> (SMS DEV — console log)</span>
+            )}
+            {result.emailSent && (
+              <span className="text-mint"> · email also sent</span>
             )}
           </p>
           <div className="flex gap-2">

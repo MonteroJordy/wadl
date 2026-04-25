@@ -1,10 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
 import { enqueueWebhook } from "@/lib/webhooks";
 import { toE164 } from "@/lib/csv";
+import { hit, LIMITS } from "@/lib/rate-limit";
 
 interface EmbedRsvpInput {
   eventId: string;
@@ -23,6 +25,14 @@ export async function embedRsvpAction(
 
   const phone = toE164(input.phone);
   if (!phone) return { ok: false, error: "Enter a valid phone number." };
+
+  // Rate limit by IP — embeds are public, no token to scope on.
+  const h = headers();
+  const ip = h.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
+  const limit = hit(`embed:${input.eventId}:${ip}`, LIMITS.embedRsvpPerIp);
+  if (!limit.ok) {
+    return { ok: false, error: `Slow down — try again in ${limit.retryAfterSec}s.` };
+  }
 
   const admin = createAdminClient();
   const { data: ev } = await admin

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
+import { hit, LIMITS } from "@/lib/rate-limit";
 
 interface ReferrerLookup {
   id: string;
@@ -28,6 +29,10 @@ export async function addReferralAction(referrerId: string, formData: FormData) 
   const fullName = (formData.get("full_name") as string | null)?.trim();
   const plusOnesStr = formData.get("plus_ones") as string | null;
   if (!fullName) return { error: "Enter a name." };
+
+  const limit = hit(`referral:${referrerId}`, LIMITS.rsvpFromTicketPerGuest);
+  if (!limit.ok)
+    return { error: `Slow down — try again in ${limit.retryAfterSec}s.` };
 
   const admin = createAdminClient();
   const { data: ref } = await admin
