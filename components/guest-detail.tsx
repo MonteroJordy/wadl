@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { fmtDate, fmtTime } from "@/lib/format";
 import FlagDnaForm from "@/components/flag-dna-form";
+import GuestCancelButton from "@/components/guest-cancel-button";
 
 interface GuestDetailData {
   id: string;
@@ -19,7 +20,7 @@ interface GuestDetailData {
   night: {
     night_date: string;
     doors_at: string;
-    event: { name: string };
+    event: { id: string; name: string };
   };
   check_ins: Array<{
     state: string;
@@ -142,6 +143,14 @@ export default function GuestDetail({
           guestId={guest.id}
           initialFlagged={guest.flag_dna}
           initialReason={guest.flag_reason ?? ""}
+        />
+      </section>
+
+      <section className="mb-4">
+        <GuestCancelButton
+          eventId={guest.night.event.id}
+          guestId={guest.id}
+          status={guest.status}
         />
       </section>
 

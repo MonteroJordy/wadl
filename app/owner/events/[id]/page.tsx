@@ -356,13 +356,44 @@ export default async function DayDashPage({
         </Link>
       </section>
 
-      <section className="grid grid-cols-2 gap-2 mb-4">
+      <section className="grid grid-cols-3 gap-2 mb-4">
+        <Link
+          href={`/owner/events/${event.id}/chathub`}
+          className="card text-center hover:border-coral transition"
+        >
+          <p className="label-mono mb-1">Paste</p>
+          <p className="font-sans font-semibold text-cream">Chat Hub</p>
+        </Link>
+        <Link
+          href={`/owner/events/${event.id}/waitlist`}
+          className="card text-center hover:border-coral transition"
+        >
+          <p className="label-mono mb-1">Backups</p>
+          <p className="font-sans font-semibold text-cream">Waitlist</p>
+        </Link>
+        <Link
+          href={`/owner/events/${event.id}/co-owners`}
+          className="card text-center hover:border-coral transition"
+        >
+          <p className="label-mono mb-1">Share</p>
+          <p className="font-sans font-semibold text-cream">Co-owners</p>
+        </Link>
+      </section>
+
+      <section className="grid grid-cols-3 gap-2 mb-4">
         <Link
           href={`/owner/events/${event.id}/recap?night=${active.id}`}
           className="card text-center hover:border-coral transition"
         >
-          <p className="label-mono mb-1">Post-event</p>
+          <p className="label-mono mb-1">Post</p>
           <p className="font-sans font-semibold text-cream">Recap</p>
+        </Link>
+        <Link
+          href={`/owner/events/${event.id}/scorecards`}
+          className="card text-center hover:border-coral transition"
+        >
+          <p className="label-mono mb-1">Holders</p>
+          <p className="font-sans font-semibold text-cream">Scorecards</p>
         </Link>
         <Link
           href={`/owner/events/${event.id}/audit`}
@@ -388,7 +419,7 @@ export default async function DayDashPage({
         />
       )}
 
-      <section className="grid grid-cols-2 gap-2 mt-4">
+      <section className="grid grid-cols-3 gap-2 mt-4">
         <Link
           href={`/owner/events/${event.id}/export`}
           className="label-mono text-center py-2 hover:text-cream transition"
@@ -400,6 +431,12 @@ export default async function DayDashPage({
           className="label-mono text-center py-2 hover:text-cream transition"
         >
           Print roster
+        </Link>
+        <Link
+          href={`/owner/events/${event.id}/clone`}
+          className="label-mono text-center py-2 hover:text-cream transition"
+        >
+          Clone event
         </Link>
       </section>
     </main>
