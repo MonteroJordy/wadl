@@ -1287,3 +1287,168 @@ These are all known-and-named gaps. Pick them up post-launch as actual operator 
 ---
 
 **Status:** Days 11–15 complete. 86 routes. Code green, build green. Push to main triggers Vercel auto-deploy.
+
+---
+
+## Mega-run — Days 16, 17, 18
+
+Three-day push: web flow polish (Day 16), monorepo + Expo iOS scaffold (Day 17), Expo push + EAS Build setup (Day 18). The web app stays at its production URL; mobile is a new shipping target.
+
+### Commits
+
+- `ad446a6` — Day 16: web flow polish — onboarding wizard + toasts + skeletons + error boundaries + PWA + Cmd+K + notif bell + holder dash + guest profile + calendar + micro-anims
+- (Day 17 + Day 18 — see below for the bundled commit hashes after this push)
+
+### Day 16 highlights
+
+| Surface | What changed |
+|---|---|
+| `/welcome` | New 5-step onboarding wizard. `nextOnboardingStep` routes new owners through it before `/owner`. Persists via `profiles.onboarding_completed_at`. Skip-to-end allowed. |
+| `components/toast.tsx` | Provider + `useToast()` hook. Mounted in root layout. 4 tones (success mint, error coral, warning gold, info), 4s auto-dismiss, animated entry. |
+| `loading.tsx` rollout | Added skeleton loaders for queue, allocations, recap, notifications, calendar, holder, discover, mytickets, audit (joining the existing skeletons on owner / events / scorecards / analytics). |
+| `error.tsx` rollout | Per-route-group error boundaries (root, owner, manager, door, admin, photographer, e/[eventId], referral). Each posts to `/api/log/client-error` → `captureException` → `error_log` table + Sentry. |
+| PWA | `public/manifest.json` (coral theme color, swan-style W icon at `public/icon.svg`), iOS Apple Web App meta tags, viewport `viewportFit=cover`. Service worker now caches manifest + icon + `offline.html` and serves the offline page on navigation failures. |
+| `/api/search` + `components/command-palette.tsx` | Cmd/Ctrl+K opens a Linear-style search palette. Searches events, guests, holders scoped to the user's account. ↑↓ navigate, ↵ open, esc close. |
+| `components/notification-bell.tsx` | Surfaced in the new `AuthedShell` `topBarRight` slot alongside Cmd+K. Unread count from `notifications` table. |
+| `/holder/claim/[token]` + `/holder` | A confirmed holder can claim their allocation by phone OTP, getting linked across all their `allocation_tokens`. `/holder` dashboard shows lifetime show rate + per-allocation cards. Migration: `allocation_owners`. |
+| `/mytickets/profile` | Guest profile with lifetime stats (events attended, no-show rate, +1s brought, referrals made) + past events list. |
+| `/owner/calendar` | Month grid; coral=today, mint=has-events, capacity % per day. Linked from sidebar. |
+| Tailwind | Added `toast-in`, `fade-in`, `scale-in`, `press` keyframes (durations <200ms). Used by ToastProvider + CommandPalette + Welcome. |
+| Migrations | `profiles.onboarding_completed_at`, `user_devices`, `allocation_owners`. |
+
+### Day 17 — monorepo + Expo
+
+Restructure (preserving git history via `git mv`):
+
+```
+wadl/
+├── apps/
+│   ├── web/        → all formerly-root files
+│   │   ├── app/, components/, lib/, public/, supabase/, scripts/
+│   │   ├── middleware.ts, next.config.mjs, tailwind.config.ts, tsconfig.json
+│   │   └── package.json (renamed to "web", deps unchanged)
+│   └── mobile/     → new Expo iOS app
+├── packages/
+│   └── shared/     → cross-platform TS — types, format, routing, sms-template
+├── package.json    → npm workspaces
+├── pnpm-workspace.yaml                # ready when we migrate
+└── vercel.json     → minimal: declares Next.js framework
+```
+
+- Web's `lib/types.ts`, `lib/format.ts`, `lib/routing.ts`, `lib/sms-templates.ts` are now thin re-exports of the shared module — same import paths everywhere, single source of truth shared with mobile.
+- `apps/web/tsconfig.json` paths alias `@wadl/shared` → `../../packages/shared/src`. `apps/web/next.config.mjs` adds `transpilePackages: ["@wadl/shared"]` so Next compiles the TS source directly without a separate build step.
+- Web build still passes (41 routes, no TS errors) from `apps/web/`.
+
+Expo iOS scaffold (`apps/mobile/`):
+
+- `app.json` — bundle id `com.wadl.app`, dark UI, NSCameraUsageDescription, expo-router + secure-store + barcode-scanner + notifications plugins.
+- `package.json` — Expo SDK 51 + expo-router 3.5 + expo-secure-store + expo-camera + expo-barcode-scanner + nativewind 4 + supabase-js. Not installed yet — `npm install` from monorepo root materializes it.
+- `tailwind.config.js` matches web's coral / gold / mint / lav / cream / dark tokens.
+- `src/lib/supabase.ts` — SecureStore + AsyncStorage hybrid storage adapter (SecureStore caps at 2KB on Android), reads `EXPO_PUBLIC_SUPABASE_URL` + `EXPO_PUBLIC_SUPABASE_ANON_KEY`.
+- File-based routes scaffolded:
+
+| Route | Purpose |
+|---|---|
+| `app/_layout.tsx` | Auth-gate Stack + push registration on session-grant |
+| `app/(auth)/login` + `otp` | Phone OTP via Supabase |
+| `app/(tabs)/discover` | Upcoming events feed |
+| `app/(tabs)/mytickets` | User's RSVP'd events |
+| `app/(tabs)/dashboard` | Owner 14-day glance + scanner CTA |
+| `app/(tabs)/profile` | Bio + sign out |
+| `app/(guest)/event/[id]` | Event detail with RSVP CTA |
+| `app/(guest)/event/[id]/rsvp` | Walk-up RSVP via Supabase insert |
+| `app/(guest)/ticket/[token]` | QR display (placeholder grid; swap react-native-qrcode-svg for prod) |
+| `app/(door)/scan` | expo-barcode-scanner with same 5 fail states as web |
+| `app/(owner)/event/[id]` | Owner per-event glance + scanner deeplink |
+
+- `eas.json` with development (Simulator), preview (TestFlight internal), production (App Store) profiles.
+
+### Day 18 — Expo push + EAS docs
+
+- `apps/mobile/src/lib/push.ts` — `registerForPushNotifications()` requests permission, fetches Expo push token, upserts to `user_devices` keyed by `(user_id, expo_push_token)`. Wired into `app/_layout.tsx` to fire after session is established.
+- `apps/web/lib/expo-push.ts` — server-side Expo Push HTTP client. No SDK; batches up to 100/req. `sendExpoPushToAccount(accountId, ...)` fans out to every `user_devices` row owned by users in the account, prunes `DeviceNotRegistered` tokens.
+- `apps/web/lib/notifications.ts` `notify()` now fires `sendPushToAccount` (web) **AND** `sendExpoPushToAccount` (mobile) in parallel. A single `notify()` call lights up every browser + iOS subscriber.
+- `DEPLOY_MOBILE.md` — full guide: Apple Developer enrollment ($99/yr), App Store Connect record, Expo / EAS setup, EAS Build profiles, TestFlight workflow, App Store submission checklist (privacy URL, screenshots, demo account, encryption export, Privacy Nutrition Labels), OTA updates, push pipeline, cost summary, smoke test.
+
+### Web ↔ mobile parity
+
+Mobile intentionally focuses on the **on-the-night** flows. Power-user surfaces stay on web. Where mobile is missing a feature, the relevant screen surfaces a "use the web app at wadl-pearl.vercel.app" footer.
+
+| Feature | Web | Mobile | Notes |
+|---|---|---|---|
+| Login (phone OTP) | ✓ | ✓ | Both via Supabase Auth |
+| Login (email magic link) | ✓ | — | Web only — niche path |
+| Signup + onboarding wizard | ✓ | — | Mobile assumes you signed up on web |
+| Discover events | ✓ | ✓ | |
+| RSVP (consent gated) | ✓ | ✓ | Both insert pending guest |
+| Ticket QR display | ✓ | partial | Mobile shows placeholder grid; swap react-native-qrcode-svg before launch |
+| Add to Apple/Google Wallet | ✓ | — | Mobile uses native ticket; wallet is for cross-device |
+| Bring-a-friend referral | ✓ | — | Web flow; mobile can deep-link to /referral |
+| Door scanner (online) | ✓ | ✓ | Mobile uses native expo-barcode-scanner |
+| Door scanner (offline + sync) | ✓ | — | Web has localStorage queue; mobile would need IndexedDB equivalent (Day 19) |
+| Owner dashboard | ✓ (full) | ✓ (glance) | Mobile shows next 14d + scan; full stats stay web |
+| Owner queue / approvals | ✓ | — | Web only |
+| Allocations CRUD | ✓ | — | Web only |
+| Chat Hub AI | ✓ | — | Web only |
+| Scorecards / Analytics | ✓ | — | Web only |
+| Calendar view | ✓ | — | Mobile uses 14-day list view instead |
+| SMS templates / Broadcast | ✓ | — | Web only |
+| Webhooks / Stripe Connect | ✓ | — | Web only |
+| Embed widget (iframe) | ✓ | — | N/A on mobile |
+| Push notifications | ✓ web push | ✓ Expo Push | Both go through `notify()` automatically |
+| Holder dashboard / claim | ✓ | — | Web only for now |
+| Internal CMS / errors | ✓ | — | Web only |
+
+### New env vars (Day 16–18)
+
+| Var | Surface | Required? | Purpose |
+|---|---|---|---|
+| `EXPO_PUBLIC_SUPABASE_URL` | mobile | yes for mobile | Same Supabase URL as web. Lives in `apps/mobile/.env`. |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | mobile | yes for mobile | Same anon key as web. |
+| `EXPO_PUBLIC_WEB_URL` | mobile | optional | Used for cross-link copy ("manage on the web"). Defaults to https://wadl-pearl.vercel.app. |
+
+No new web-side env vars in this run.
+
+### Migrations (Day 16)
+
+15. `20260501000001_day16_features.sql` — `profiles.onboarding_completed_at` + `user_devices` (Expo push tokens).
+16. `20260501000002_day16_holder.sql` — `allocation_owners` (holder claim linkage).
+
+(Day 17 + 18 are code-only — no schema changes.)
+
+### Vercel deploy note
+
+After this push, **the Vercel project's Root Directory must be updated to `apps/web`** (Vercel dashboard → project → Settings → General → Root Directory). Until you do that, the next deploy will fail to find `package.json` at the repo root. Once set, every push to `main` deploys `apps/web` as before. Documented in `DEPLOY.md` §0.
+
+### Smoke test — Days 16–18
+
+Web (post-Vercel-root-update):
+1. Sign up fresh → land in `/welcome` → step through 5 cards → end on dashboard.
+2. Cmd+K from anywhere on /owner → search a guest by name → enter to navigate.
+3. Approve a pending RSVP from /owner/events/[id]/queue → see toast "Approved" and notification bell badge tick up.
+4. Open a holder magic link → click "Claim this allocation" → sign in via OTP → land on /holder.
+5. Open /mytickets/profile → verify lifetime stats render.
+6. Open /owner/calendar → tap a future date → land on the event's daydash.
+7. Add WADL to home screen on iOS Safari → confirm splash + standalone window opens to /.
+
+Mobile (Simulator):
+1. `cd apps/mobile && npm install && cp .env.example .env && npm run ios`
+2. Login → OTP → Discover → tap event → RSVP → MyTickets → Ticket → Dashboard → Open scanner → scan a printed `/t/[token]` QR.
+3. Sign out → confirm session cleared from SecureStore.
+
+### What's NOT shipping in this run
+
+- `react-native-qrcode-svg` — mobile ticket displays a deterministic placeholder grid (works for visual feedback, NOT scannable). Swap before TestFlight beta.
+- Mobile offline scanner queue — web has localStorage + sync; mobile would mirror with `react-native-mmkv` (Day 19).
+- Mobile push fallback when Expo Push is unavailable (e.g. operator not yet on EAS) — direct APNs via auth key.
+- Vercel dashboard root-directory change is documented but not automated.
+- Apple Developer Program enrollment is documented but requires the operator's $99/yr signup.
+- iOS icon + splash PNG assets — referenced in `app.json` but not yet committed; generate from `public/icon.svg`.
+- pnpm migration — workspace is npm today; pnpm is one `rm package-lock.json && pnpm install` away.
+- axe-core CI — manual a11y stays the bar.
+
+These are all known-and-named gaps.
+
+---
+
+**Status:** Days 16–18 complete. Web builds clean inside `apps/web/`. Mobile compiles after `npm install`. Push to `main` triggers Vercel auto-deploy (once Root Directory is set to apps/web). Mobile deploys via `eas build` per `DEPLOY_MOBILE.md`.

@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { supabase } from "../src/lib/supabase";
+import { registerForPushNotifications } from "../src/lib/push";
 import type { Session } from "@supabase/supabase-js";
 
 export default function RootLayout() {
@@ -33,6 +34,14 @@ export default function RootLayout() {
       router.replace("/(tabs)/discover");
     }
   }, [session, ready, segments, router]);
+
+  // Register push token once we have a session. Best-effort.
+  useEffect(() => {
+    if (!session) return;
+    registerForPushNotifications().catch(() => {
+      /* no-op */
+    });
+  }, [session]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#0a0a0a" }}>

@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendPushToAccount } from "@/lib/push";
+import { sendExpoPushToAccount } from "@/lib/expo-push";
 import { getAppUrl } from "@/lib/app-url";
 
 export type NotificationKind =
@@ -42,7 +43,9 @@ export async function notify(
     // best-effort
   }
 
-  // Fire-and-forget push. No-op when VAPID isn't configured or no subs.
+  // Fire-and-forget push to BOTH web push subs AND Expo push tokens.
+  // Each helper no-ops gracefully when its config / subscribers aren't
+  // present — VAPID-less web stays silent; mobile-less accounts stay silent.
   try {
     const title =
       (payload.message as string | undefined)?.split(".")[0]?.slice(0, 80) ??
@@ -50,12 +53,22 @@ export async function notify(
     const url = (payload.href as string | undefined)
       ? `${getAppUrl()}${payload.href}`
       : `${getAppUrl()}/owner/notifications`;
-    await sendPushToAccount(accountId, {
-      title: `WADL: ${KIND_LABEL[kind] ?? kind}`,
-      body: title,
-      url,
-      tag: kind,
-    });
+    const heading = `WADL: ${KIND_LABEL[kind] ?? kind}`;
+    await Promise.all([
+      sendPushToAccount(accountId, {
+        title: heading,
+        body: title,
+        url,
+        tag: kind,
+      }),
+      sendExpoPushToAccount({
+        accountId,
+        title: heading,
+        body: title,
+        url,
+        tag: kind,
+      }),
+    ]);
   } catch {
     // best-effort
   }
