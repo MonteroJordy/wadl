@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { enqueueWebhook } from "@/lib/webhooks";
 
 export type ScanResult =
   | {
@@ -43,7 +44,7 @@ interface GuestLookup {
   night: {
     id: string;
     night_date: string;
-    event: { id: string; name: string };
+    event: { id: string; name: string; account_id: string };
   };
 }
 
@@ -70,7 +71,7 @@ export async function scanTokenAction(
   const { data: guest } = await admin
     .from("guests")
     .select(
-      "id, full_name, plus_ones, tier, status, event_night_id, flag_dna, flag_reason, night:event_nights!inner(id, night_date, event:events!inner(id, name))"
+      "id, full_name, plus_ones, tier, status, event_night_id, flag_dna, flag_reason, night:event_nights!inner(id, night_date, event:events!inner(id, name, account_id))"
     )
     .eq("check_in_token", token)
     .maybeSingle<GuestLookup>();
@@ -162,6 +163,14 @@ export async function scanTokenAction(
     entity_type: "guest",
     entity_id: guest.id,
     event_id: eventId,
+  });
+
+  await enqueueWebhook(guest.night.event.account_id, "guest.checked_in", {
+    event_id: eventId,
+    guest_id: guest.id,
+    full_name: guest.full_name,
+    tier: guest.tier,
+    plus_ones: guest.plus_ones,
   });
 
   revalidatePath(`/door/events/${eventId}`);

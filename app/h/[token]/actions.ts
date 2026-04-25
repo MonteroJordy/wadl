@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
+import { enqueueWebhook } from "@/lib/webhooks";
 
 interface TokenLookup {
   token: string;
@@ -118,6 +119,23 @@ export async function addHolderGuestAction(token: string, formData: FormData) {
       href: `/owner/events/${nightRow.event.id}`,
       event_id: nightRow.event.id,
     });
+  }
+
+  if (nightRow?.event) {
+    await enqueueWebhook(nightRow.event.account_id, "rsvp.created", {
+      event_id: nightRow.event.id,
+      allocation_id: allocation.id,
+      full_name: fullName,
+      plus_ones: requestedPlusOnes,
+      status,
+    });
+    if (allocation.cap > 0 && newUsed >= allocation.cap) {
+      await enqueueWebhook(nightRow.event.account_id, "allocation.full", {
+        event_id: nightRow.event.id,
+        allocation_id: allocation.id,
+        cap: allocation.cap,
+      });
+    }
   }
 
   revalidatePath(`/h/${token}`);

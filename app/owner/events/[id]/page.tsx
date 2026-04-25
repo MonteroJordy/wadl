@@ -463,6 +463,19 @@ export default async function DayDashPage({
         >
           Broadcast SMS
         </Link>
+        <Link
+          href={`/owner/events/${event.id}/template`}
+          className="label-mono text-center py-2 hover:text-cream transition"
+        >
+          Templates
+        </Link>
+        <Link
+          href={`/embed/${event.id}`}
+          target="_blank"
+          className="label-mono text-center py-2 hover:text-cream transition"
+        >
+          Embed widget
+        </Link>
       </section>
     </main>
   );

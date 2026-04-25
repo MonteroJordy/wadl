@@ -49,3 +49,40 @@ export async function uploadEventFlyer(
   // serves the same path.
   return { ok: true, url: `${publicUrl}?v=${Date.now()}` };
 }
+
+/**
+ * Upload an event photo (photographer flow) to the public `event-photos` bucket.
+ * Path: <event_id>/<random>.<ext>. Returns both the storage path and a public URL.
+ */
+export async function uploadEventPhoto(
+  eventId: string,
+  file: File
+): Promise<
+  { ok: true; path: string; url: string } | { ok: false; error: string }
+> {
+  if (!file || file.size === 0) return { ok: false, error: "No file selected." };
+  if (file.size > MAX_BYTES) return { ok: false, error: "File too large (max 5 MB)." };
+  if (!ALLOWED.includes(file.type)) return { ok: false, error: "Use JPG, PNG, or WebP." };
+
+  const ext =
+    file.type === "image/png"
+      ? "png"
+      : file.type === "image/webp"
+      ? "webp"
+      : "jpg";
+
+  const admin = createAdminClient();
+  const id = crypto.randomUUID();
+  const path = `${eventId}/${id}.${ext}`;
+  const buffer = Buffer.from(await file.arrayBuffer());
+
+  const { error } = await admin.storage
+    .from("event-photos")
+    .upload(path, buffer, { contentType: file.type, upsert: false });
+  if (error) return { ok: false, error: error.message };
+
+  const {
+    data: { publicUrl },
+  } = admin.storage.from("event-photos").getPublicUrl(path);
+  return { ok: true, path, url: publicUrl };
+}
