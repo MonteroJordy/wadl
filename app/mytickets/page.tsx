@@ -12,6 +12,9 @@ interface TicketRow {
   full_name: string;
   plus_ones: number;
   status: string;
+  tier: string;
+  tier_upgraded_at: string | null;
+  tier_upgrade_seen_at: string | null;
   check_in_token: string;
   created_at: string;
   night: {
@@ -53,13 +56,27 @@ export default async function MyTicketsPage() {
   const { data: tickets } = await admin
     .from("guests")
     .select(
-      "id, full_name, plus_ones, status, check_in_token, created_at, night:event_nights!inner(id, night_date, doors_at, event:events!inner(id, name, flyer_url))"
+      "id, full_name, plus_ones, status, tier, tier_upgraded_at, tier_upgrade_seen_at, check_in_token, created_at, night:event_nights!inner(id, night_date, doors_at, event:events!inner(id, name, flyer_url))"
     )
     .eq("phone", phoneWithPlus)
     .not("check_in_token", "is", null)
     .order("created_at", { ascending: false });
 
   const rows = (tickets ?? []) as unknown as TicketRow[];
+
+  // Tier-upgrade banner: show for any guest where tier_upgraded_at is set
+  // and tier_upgrade_seen_at is null. Mark them seen on this view so the
+  // banner doesn't fire again.
+  const newUpgrades = rows.filter(
+    (t) => t.tier_upgraded_at && !t.tier_upgrade_seen_at
+  );
+  if (newUpgrades.length > 0) {
+    const ids = newUpgrades.map((t) => t.id);
+    await admin
+      .from("guests")
+      .update({ tier_upgrade_seen_at: new Date().toISOString() })
+      .in("id", ids);
+  }
 
   // Split upcoming vs past by doors_at.
   const now = Date.now();
@@ -88,6 +105,25 @@ export default async function MyTicketsPage() {
 
       <h1 className="display-lg mb-2">My tickets.</h1>
       <p className="label-mono mb-6">{phoneWithPlus}</p>
+
+      {newUpgrades.length > 0 && (
+        <section className="card border-coral mb-6">
+          <p className="label-mono text-coral mb-2">Tier upgrade!</p>
+          {newUpgrades.map((t) => (
+            <p key={t.id} className="text-cream text-sm mb-1">
+              You&apos;ve been bumped to{" "}
+              <span className="font-sans font-semibold">
+                {t.tier.replace("_", " ").toUpperCase()}
+              </span>{" "}
+              for{" "}
+              <span className="font-sans font-semibold">
+                {t.night.event.name}
+              </span>
+              .
+            </p>
+          ))}
+        </section>
+      )}
 
       {rows.length === 0 ? (
         <EmptyState

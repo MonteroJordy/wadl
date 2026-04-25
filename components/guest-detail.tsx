@@ -2,6 +2,8 @@ import Link from "next/link";
 import { fmtDate, fmtTime } from "@/lib/format";
 import FlagDnaForm from "@/components/flag-dna-form";
 import GuestCancelButton from "@/components/guest-cancel-button";
+import GuestNotesTags from "@/components/guest-notes-tags";
+import TierUpgradeButton from "@/components/tier-upgrade-button";
 
 interface GuestDetailData {
   id: string;
@@ -16,6 +18,8 @@ interface GuestDetailData {
   check_in_token: string | null;
   created_at: string;
   approved_at: string | null;
+  notes: string | null;
+  tags: string[];
   allocation: { holder_name: string } | null;
   night: {
     night_date: string;
@@ -136,6 +140,21 @@ export default function GuestDetail({
             })}
           </ul>
         )}
+      </section>
+
+      <section className="mb-4">
+        <TierUpgradeButton
+          guestId={guest.id}
+          currentTier={guest.tier}
+        />
+      </section>
+
+      <section className="mb-4">
+        <GuestNotesTags
+          guestId={guest.id}
+          initialNotes={guest.notes ?? ""}
+          initialTags={guest.tags ?? []}
+        />
       </section>
 
       <section className="mb-4">

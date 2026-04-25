@@ -13,6 +13,8 @@ interface RawGuest {
   check_in_token: string | null;
   created_at: string;
   approved_at: string | null;
+  notes: string | null;
+  tags: string[];
   allocation: { holder_name: string } | null;
   night: {
     night_date: string;
@@ -35,7 +37,7 @@ export async function fetchGuestForDetail(guestId: string, eventId: string) {
   const { data } = await admin
     .from("guests")
     .select(
-      "id, full_name, phone, email, plus_ones, tier, status, flag_dna, flag_reason, check_in_token, created_at, approved_at, " +
+      "id, full_name, phone, email, plus_ones, tier, status, flag_dna, flag_reason, check_in_token, created_at, approved_at, notes, tags, " +
         "allocation:allocations(holder_name), " +
         "night:event_nights!inner(night_date, doors_at, event:events!inner(id, name)), " +
         "check_ins(state, scanned_at, scanner:profiles(full_name))"

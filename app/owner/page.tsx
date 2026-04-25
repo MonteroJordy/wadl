@@ -56,7 +56,7 @@ function rangeWindow(range: Range): { start: Date | null; end: Date | null } {
 export default async function OwnerWeekViewPage({
   searchParams,
 }: {
-  searchParams: { q?: string; range?: string };
+  searchParams: { q?: string; range?: string; venue?: string };
 }) {
   const { supabase, account, profile } = await requireOwnerContext();
 
@@ -65,14 +65,24 @@ export default async function OwnerWeekViewPage({
     ? (searchParams.range as Range)
     : "week";
   const { start, end } = rangeWindow(range);
+  const venueFilter = (searchParams.venue ?? "").trim();
+
+  // List of this account's venues for the switcher.
+  const { data: venuesData } = await supabase
+    .from("venues")
+    .select("id, name")
+    .eq("account_id", account.id)
+    .order("name");
+  const venues = (venuesData ?? []) as Array<{ id: string; name: string }>;
 
   let eventsQ = supabase
     .from("events")
     .select(
-      "id, name, flyer_url, event_nights(id, event_id, night_date, doors_at, capacity_cap, is_frozen)"
+      "id, name, flyer_url, venue_id, event_nights(id, event_id, night_date, doors_at, capacity_cap, is_frozen)"
     )
     .eq("account_id", account.id);
   if (q) eventsQ = eventsQ.ilike("name", `%${q}%`);
+  if (venueFilter) eventsQ = eventsQ.eq("venue_id", venueFilter);
 
   const { data: eventsData } = await eventsQ;
 
@@ -153,6 +163,15 @@ export default async function OwnerWeekViewPage({
     const sp = new URLSearchParams();
     if (r !== "week") sp.set("range", r);
     if (q) sp.set("q", q);
+    if (venueFilter) sp.set("venue", venueFilter);
+    const s = sp.toString();
+    return s ? `/owner?${s}` : "/owner";
+  }
+  function venueHref(v: string) {
+    const sp = new URLSearchParams();
+    if (v) sp.set("venue", v);
+    if (range !== "week") sp.set("range", range);
+    if (q) sp.set("q", q);
     const s = sp.toString();
     return s ? `/owner?${s}` : "/owner";
   }
@@ -170,6 +189,34 @@ export default async function OwnerWeekViewPage({
         + Create event
       </Link>
 
+      {venues.length > 1 && (
+        <div className="flex gap-1 overflow-x-auto pb-2 mb-3">
+          <Link
+            href={venueHref("")}
+            className={`shrink-0 px-3 py-1 rounded-full border text-[10px] font-mono uppercase tracking-wider ${
+              !venueFilter
+                ? "border-coral bg-s2 text-cream"
+                : "border-line bg-s1 text-muted hover:text-cream"
+            }`}
+          >
+            All venues
+          </Link>
+          {venues.map((v) => (
+            <Link
+              key={v.id}
+              href={venueHref(v.id)}
+              className={`shrink-0 px-3 py-1 rounded-full border text-[10px] font-mono uppercase tracking-wider ${
+                venueFilter === v.id
+                  ? "border-coral bg-s2 text-cream"
+                  : "border-line bg-s1 text-muted hover:text-cream"
+              }`}
+            >
+              {v.name}
+            </Link>
+          ))}
+        </div>
+      )}
+
       <form action="/owner" method="get" className="mb-3">
         <input
           type="text"
@@ -180,6 +227,9 @@ export default async function OwnerWeekViewPage({
         />
         {range !== "week" && (
           <input type="hidden" name="range" value={range} />
+        )}
+        {venueFilter && (
+          <input type="hidden" name="venue" value={venueFilter} />
         )}
       </form>
 
