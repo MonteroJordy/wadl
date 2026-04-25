@@ -12,10 +12,70 @@ interface Props {
   backHref: string;
 }
 
-type UiResult = ScanResult & { at: number };
+type UiResult = ScanResult & { at: number; offline?: boolean };
+
+interface ManifestGuest {
+  id: string;
+  full_name: string;
+  plus_ones: number;
+  tier: string;
+  status: string;
+  flag_dna: boolean;
+  flag_reason: string | null;
+  check_in_token: string;
+  scanned: boolean;
+}
+
+interface QueuedScan {
+  scanned_at: number;
+  token: string;
+  event_id: string;
+  night_id: string;
+}
 
 const DEDUPE_MS = 2500;
 const RESULT_HOLD_MS = 1600;
+
+function manifestKey(nightId: string) {
+  return `wadl.manifest.${nightId}`;
+}
+function queueKey() {
+  return `wadl.scan_queue`;
+}
+function loadManifest(nightId: string): ManifestGuest[] | null {
+  try {
+    const raw = localStorage.getItem(manifestKey(nightId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { guests: ManifestGuest[] };
+    return parsed.guests ?? null;
+  } catch {
+    return null;
+  }
+}
+function saveManifest(nightId: string, guests: ManifestGuest[]) {
+  try {
+    localStorage.setItem(
+      manifestKey(nightId),
+      JSON.stringify({ guests, cached_at: Date.now() })
+    );
+  } catch {
+    /* quota — ignore */
+  }
+}
+function loadQueue(): QueuedScan[] {
+  try {
+    return JSON.parse(localStorage.getItem(queueKey()) ?? "[]") as QueuedScan[];
+  } catch {
+    return [];
+  }
+}
+function saveQueue(q: QueuedScan[]) {
+  try {
+    localStorage.setItem(queueKey(), JSON.stringify(q));
+  } catch {
+    /* ignore */
+  }
+}
 
 function stateColor(state: ScanResult["state"]): string {
   switch (state) {
@@ -51,12 +111,152 @@ export default function Scanner({ eventId, eventName, nightId, backHref }: Props
   const [startError, setStartError] = useState<string | null>(null);
   const [result, setResult] = useState<UiResult | null>(null);
 
+  const [online, setOnline] = useState(true);
+  const [manifestStatus, setManifestStatus] = useState<"none" | "loading" | "ready" | "stale">(
+    "none"
+  );
+  const [manifestCachedAt, setManifestCachedAt] = useState<number | null>(null);
+  const [queueDepth, setQueueDepth] = useState(0);
+  const [syncing, setSyncing] = useState(false);
+
+  const localScannedRef = useRef<Set<string>>(new Set());
+
+  // Online status tracking.
+  useEffect(() => {
+    setOnline(typeof navigator !== "undefined" ? navigator.onLine : true);
+    const onUp = () => setOnline(true);
+    const onDown = () => setOnline(false);
+    window.addEventListener("online", onUp);
+    window.addEventListener("offline", onDown);
+    return () => {
+      window.removeEventListener("online", onUp);
+      window.removeEventListener("offline", onDown);
+    };
+  }, []);
+
+  // Load cached manifest synchronously on mount.
+  useEffect(() => {
+    const cached = loadManifest(nightId);
+    if (cached) {
+      setManifestStatus("stale");
+      try {
+        const raw = localStorage.getItem(manifestKey(nightId));
+        if (raw) {
+          const meta = JSON.parse(raw) as { cached_at?: number };
+          if (meta.cached_at) setManifestCachedAt(meta.cached_at);
+        }
+      } catch {
+        /* ignore */
+      }
+      // Pre-populate locally-scanned set from manifest.
+      for (const g of cached) {
+        if (g.scanned) localScannedRef.current.add(g.check_in_token);
+      }
+    }
+    setQueueDepth(loadQueue().length);
+  }, [nightId]);
+
+  // Refresh manifest when online.
+  useEffect(() => {
+    if (!online) return;
+    setManifestStatus((s) => (s === "ready" ? s : "loading"));
+    fetch(`/api/door/manifest/${nightId}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { guests?: ManifestGuest[]; generated_at?: string } | null) => {
+        if (!j?.guests) {
+          setManifestStatus((s) => (s === "loading" ? "none" : s));
+          return;
+        }
+        saveManifest(nightId, j.guests);
+        setManifestStatus("ready");
+        setManifestCachedAt(Date.now());
+        for (const g of j.guests) {
+          if (g.scanned) localScannedRef.current.add(g.check_in_token);
+        }
+      })
+      .catch(() => setManifestStatus((s) => (s === "loading" ? "none" : s)));
+  }, [nightId, online]);
+
+  // Auto-flush queue when online.
+  useEffect(() => {
+    if (!online) return;
+    const q = loadQueue();
+    if (q.length === 0) return;
+    void flushQueue();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [online]);
+
+  async function flushQueue() {
+    const q = loadQueue();
+    if (q.length === 0) return;
+    setSyncing(true);
+    try {
+      const res = await fetch("/api/door/sync", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ scans: q }),
+      });
+      if (res.ok) {
+        saveQueue([]);
+        setQueueDepth(0);
+      }
+    } catch {
+      /* keep queue for next attempt */
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   useEffect(() => {
     return () => {
       controlsRef.current?.stop();
       if (resultTimerRef.current) clearTimeout(resultTimerRef.current);
     };
   }, []);
+
+  async function offlineDecode(token: string): Promise<UiResult> {
+    const cached = loadManifest(nightId) ?? [];
+    const g = cached.find((x) => x.check_in_token === token);
+    const at = Date.now();
+    if (!g) return { state: "not_found", at, offline: true };
+    if (g.flag_dna) {
+      // Queue the DNA attempt so it gets logged when we reconnect.
+      const q = loadQueue();
+      q.push({ token, scanned_at: at, event_id: eventId, night_id: nightId });
+      saveQueue(q);
+      setQueueDepth(q.length);
+      return {
+        state: "do_not_admit",
+        guest: { id: g.id, full_name: g.full_name, plus_ones: g.plus_ones, tier: g.tier },
+        reason: g.flag_reason,
+        at,
+        offline: true,
+      };
+    }
+    if (g.status !== "approved") return { state: "not_found", at, offline: true };
+    if (localScannedRef.current.has(token)) {
+      return {
+        state: "already_used",
+        guest: { id: g.id, full_name: g.full_name, plus_ones: g.plus_ones, tier: g.tier },
+        scannedAt: new Date().toISOString(),
+        scannedByName: null,
+        at,
+        offline: true,
+      };
+    }
+    // Approved offline. Mark locally and queue.
+    localScannedRef.current.add(token);
+    const q = loadQueue();
+    q.push({ token, scanned_at: at, event_id: eventId, night_id: nightId });
+    saveQueue(q);
+    setQueueDepth(q.length);
+    return {
+      state: "approved",
+      guest: { id: g.id, full_name: g.full_name, plus_ones: g.plus_ones, tier: g.tier },
+      at,
+      offline: true,
+    };
+  }
 
   async function onDecode(text: string) {
     const now = Date.now();
@@ -69,8 +269,18 @@ export default function Scanner({ eventId, eventName, nightId, backHref }: Props
     }
     lastHandledRef.current = { token: text, at: now };
 
-    const res = await scanTokenAction(eventId, nightId, text);
-    setResult({ ...res, at: Date.now() });
+    let res: UiResult;
+    if (online) {
+      try {
+        const r = await scanTokenAction(eventId, nightId, text);
+        res = { ...r, at: Date.now() };
+      } catch {
+        res = await offlineDecode(text);
+      }
+    } else {
+      res = await offlineDecode(text);
+    }
+    setResult(res);
     if (resultTimerRef.current) clearTimeout(resultTimerRef.current);
     resultTimerRef.current = setTimeout(() => {
       setResult(null);
@@ -85,7 +295,7 @@ export default function Scanner({ eventId, eventName, nightId, backHref }: Props
       if (!video) return;
 
       const controls = await reader.decodeFromVideoDevice(
-        undefined, // let browser pick (prefers back camera on mobile)
+        undefined,
         video,
         (r) => {
           if (r) void onDecode(r.getText());
@@ -109,6 +319,45 @@ export default function Scanner({ eventId, eventName, nightId, backHref }: Props
       </header>
 
       <h1 className="display-lg leading-[0.95] mb-2">{eventName}</h1>
+
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <span
+          className={`label-mono px-2 py-0.5 rounded-full border ${
+            online
+              ? "border-mint/40 text-mint"
+              : "border-coral/40 text-coral"
+          }`}
+        >
+          {online ? "● ONLINE" : "● OFFLINE"}
+        </span>
+        <span
+          className={`label-mono px-2 py-0.5 rounded-full border ${
+            manifestStatus === "ready"
+              ? "border-mint/40 text-mint"
+              : manifestStatus === "stale"
+              ? "border-gold/40 text-gold"
+              : "border-line text-muted"
+          }`}
+        >
+          {manifestStatus === "ready"
+            ? `Manifest cached`
+            : manifestStatus === "stale"
+            ? `Stale cache`
+            : manifestStatus === "loading"
+            ? "Caching…"
+            : "No cache"}
+        </span>
+        {queueDepth > 0 && (
+          <button
+            type="button"
+            onClick={() => void flushQueue()}
+            disabled={!online || syncing}
+            className="label-mono px-2 py-0.5 rounded-full border border-coral/60 text-coral hover:text-cream"
+          >
+            {syncing ? "Syncing…" : `Sync ${queueDepth}`}
+          </button>
+        )}
+      </div>
 
       <div
         className="relative w-full rounded-lg overflow-hidden border-2 border-mint/60 bg-bg mb-4"
@@ -188,13 +437,23 @@ export default function Scanner({ eventId, eventName, nightId, backHref }: Props
               {result.state === "error" && (
                 <p className="label-mono mt-2 opacity-80">{result.error}</p>
               )}
+              {result.offline && (
+                <p className="label-mono mt-2 opacity-60">offline · queued</p>
+              )}
             </div>
           </div>
         )}
       </div>
 
       <p className="label-mono text-center">
-        Hold steady. Auto-continues after each scan.
+        {online
+          ? "Hold steady. Auto-continues after each scan."
+          : `Offline mode — queueing scans (${queueDepth} pending). Reconnect to sync.`}
+        {manifestCachedAt && (
+          <span className="block mt-1 text-muted">
+            Cache from {new Date(manifestCachedAt).toLocaleTimeString()}
+          </span>
+        )}
       </p>
     </main>
   );

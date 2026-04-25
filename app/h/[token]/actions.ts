@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { notify } from "@/lib/notifications";
 
 interface TokenLookup {
   token: string;
@@ -80,12 +81,15 @@ export async function addHolderGuestAction(token: string, formData: FormData) {
 
   if (error) return { error: error.message };
 
-  // Look up event_id so the audit row can be scoped to the event.
+  // Look up event_id + account_id so the audit row + notification can be scoped.
   const { data: nightRow } = await admin
     .from("event_nights")
-    .select("event_id")
+    .select("event_id, event:events!inner(id, name, account_id)")
     .eq("id", allocation.event_night_id)
-    .maybeSingle<{ event_id: string }>();
+    .maybeSingle<{
+      event_id: string;
+      event: { id: string; name: string; account_id: string };
+    }>();
 
   // Audit: who added this? Holders have no user ID; record via
   // actor_allocation_id so the action is attributed to the holder allocation.
@@ -96,6 +100,25 @@ export async function addHolderGuestAction(token: string, formData: FormData) {
     event_id: nightRow?.event_id ?? null,
     context: { full_name: fullName, plus_ones: requestedPlusOnes, status },
   });
+
+  if (nightRow?.event && status === "pending") {
+    await notify(nightRow.event.account_id, "rsvp_pending", {
+      message: `${fullName} added by holder, awaiting review (${nightRow.event.name})`,
+      href: `/owner/events/${nightRow.event.id}/queue`,
+      event_id: nightRow.event.id,
+      event_name: nightRow.event.name,
+    });
+  }
+
+  // Capacity alert at 90% of cap.
+  const newUsed = used + requestedTotal;
+  if (allocation.cap > 0 && newUsed >= Math.floor(allocation.cap * 0.9) && nightRow?.event) {
+    await notify(nightRow.event.account_id, "capacity_alert", {
+      message: `Allocation hit ${Math.round((newUsed / allocation.cap) * 100)}% (${newUsed}/${allocation.cap}) on ${nightRow.event.name}`,
+      href: `/owner/events/${nightRow.event.id}`,
+      event_id: nightRow.event.id,
+    });
+  }
 
   revalidatePath(`/h/${token}`);
   return { ok: true as const };

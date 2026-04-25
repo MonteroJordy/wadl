@@ -419,12 +419,18 @@ export default async function DayDashPage({
         />
       )}
 
-      <section className="grid grid-cols-3 gap-2 mt-4">
+      <section className="grid grid-cols-2 gap-2 mt-4">
         <Link
           href={`/owner/events/${event.id}/export`}
           className="label-mono text-center py-2 hover:text-cream transition"
         >
           Export CSV
+        </Link>
+        <Link
+          href={`/owner/events/${event.id}/export/pdf`}
+          className="label-mono text-center py-2 hover:text-cream transition"
+        >
+          Export PDF
         </Link>
         <Link
           href={`/owner/events/${event.id}/print`}
@@ -437,6 +443,21 @@ export default async function DayDashPage({
           className="label-mono text-center py-2 hover:text-cream transition"
         >
           Clone event
+        </Link>
+      </section>
+
+      <section className="grid grid-cols-2 gap-2 mt-2">
+        <Link
+          href={`/owner/events/${event.id}/guests/import`}
+          className="label-mono text-center py-2 hover:text-cream transition"
+        >
+          Import CSV
+        </Link>
+        <Link
+          href={`/owner/events/${event.id}/broadcast`}
+          className="label-mono text-center py-2 hover:text-cream transition"
+        >
+          Broadcast SMS
         </Link>
       </section>
     </main>

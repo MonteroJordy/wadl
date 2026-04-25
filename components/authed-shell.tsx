@@ -14,6 +14,8 @@ export interface NavItem {
   label: string;
   /** Path prefix that should also activate this item. */
   matchPrefix?: string;
+  /** Optional badge count rendered next to the label. */
+  badge?: number;
 }
 
 interface UserSummary {
@@ -117,13 +119,18 @@ export default function AuthedShell({
                       <Link
                         href={item.href}
                         onClick={() => setDrawerOpen(false)}
-                        className={`block px-5 py-2.5 font-sans text-sm transition border-l-2 ${
+                        className={`flex items-center justify-between px-5 py-2.5 font-sans text-sm transition border-l-2 ${
                           active
                             ? "border-coral bg-coral/10 text-cream"
                             : "border-transparent text-muted hover:text-cream hover:bg-s2"
                         }`}
                       >
-                        {item.label}
+                        <span>{item.label}</span>
+                        {typeof item.badge === "number" && item.badge > 0 && (
+                          <span className="ml-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-coral text-bg text-[10px] font-mono font-semibold">
+                            {item.badge > 99 ? "99+" : item.badge}
+                          </span>
+                        )}
                       </Link>
                     </li>
                   );

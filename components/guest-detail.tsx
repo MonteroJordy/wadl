@@ -31,6 +31,7 @@ interface GuestDetailData {
     scanned_at: string;
     scanner: { full_name: string | null } | null;
   }>;
+  referred_count?: number;
 }
 
 export default function GuestDetail({
@@ -115,6 +116,16 @@ export default function GuestDetail({
           </div>
         )}
       </section>
+
+      {(guest.referred_count ?? 0) > 0 && (
+        <section className="card mb-4 border-coral/30">
+          <p className="label-mono mb-1">Referrals</p>
+          <p className="font-sans text-cream">
+            Brought <span className="font-display text-2xl text-coral">{guest.referred_count}</span> friend
+            {guest.referred_count === 1 ? "" : "s"}
+          </p>
+        </section>
+      )}
 
       <section className="card mb-4">
         <p className="label-mono mb-2">Door history</p>

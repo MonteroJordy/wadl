@@ -8,7 +8,17 @@ export default async function OwnerLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { profile, account } = await requireOwnerContext();
+  const { supabase, profile, account } = await requireOwnerContext();
+
+  // Unread notification count for sidebar badge.
+  const { count: unread } = await supabase
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("account_id", account.id)
+    .is("read_at", null);
+
+  // Whether to surface the platform-admin link.
+  const isPlatformAdmin = profile.email === "jmontero@mainframeagency.com";
 
   const sections: NavSection[] = [
     {
@@ -17,6 +27,18 @@ export default async function OwnerLayout({
         { href: "/owner", label: "This week", matchPrefix: "/owner/events" },
         { href: "/owner/events/new", label: "+ New event" },
         { href: "/owner/scorecards", label: "Scorecards" },
+        { href: "/owner/analytics", label: "Analytics" },
+        { href: "/owner/flags", label: "Flag list" },
+      ],
+    },
+    {
+      label: "Inbox",
+      items: [
+        {
+          href: "/owner/notifications",
+          label: "Notifications",
+          badge: unread ?? 0,
+        },
       ],
     },
     {
@@ -24,6 +46,8 @@ export default async function OwnerLayout({
       items: [
         { href: "/owner/profile", label: "Profile + venues" },
         { href: "/owner/sms-templates", label: "SMS templates" },
+        { href: "/owner/webhooks", label: "Webhooks" },
+        { href: "/owner/payouts", label: "Payouts" },
         { href: "/owner/billing", label: "Billing" },
       ],
     },
@@ -34,6 +58,14 @@ export default async function OwnerLayout({
         { href: "/mytickets", label: "My tickets" },
       ],
     },
+    ...(isPlatformAdmin
+      ? [
+          {
+            label: "Platform",
+            items: [{ href: "/admin", label: "Internal CMS" }],
+          },
+        ]
+      : []),
   ];
 
   return (

@@ -51,5 +51,11 @@ export async function fetchGuestForDetail(guestId: string, eventId: string) {
   // Sort check_ins newest-first for display.
   data.check_ins.sort((a, b) => (a.scanned_at > b.scanned_at ? -1 : 1));
 
-  return data;
+  // Tally referrals brought by this guest (Day 11).
+  const { count } = await admin
+    .from("guests")
+    .select("id", { count: "exact", head: true })
+    .eq("referred_by_guest_id", guestId);
+
+  return { ...data, referred_count: count ?? 0 };
 }

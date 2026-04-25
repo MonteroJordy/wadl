@@ -6,12 +6,19 @@ const PUBLIC_PATHS = [
   "/otp",
   "/api/auth",
   "/api/health",
+  "/api/wallet",
+  "/api/events",
+  "/api/embed",
+  "/api/webhooks",
   "/h",
   "/discover",
   "/e",
   "/t",
   "/mytickets",
   "/staff-invite",
+  "/co-owner",
+  "/referral",
+  "/embed",
 ];
 
 type CookieToSet = { name: string; value: string; options: CookieOptions };

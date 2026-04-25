@@ -14,7 +14,7 @@ interface TicketData {
   night: {
     night_date: string;
     doors_at: string;
-    event: { name: string; flyer_url: string | null };
+    event: { id: string; name: string; flyer_url: string | null };
   };
 }
 
@@ -46,7 +46,7 @@ export default async function TicketPage({
   const { data: guest } = await admin
     .from("guests")
     .select(
-      "id, full_name, plus_ones, status, check_in_token, night:event_nights!inner(night_date, doors_at, event:events!inner(name, flyer_url))"
+      "id, full_name, plus_ones, status, check_in_token, night:event_nights!inner(night_date, doors_at, event:events!inner(id, name, flyer_url))"
     )
     .eq("check_in_token", params.token)
     .maybeSingle<TicketData>();
@@ -122,8 +122,43 @@ export default async function TicketPage({
         </p>
       </div>
 
+      {active && (
+        <div className="grid grid-cols-2 gap-2 mt-5">
+          <a
+            href={`/api/wallet/apple/${guest.check_in_token}`}
+            className="btn-ghost text-center text-xs"
+          >
+            Add to Apple Wallet
+          </a>
+          <a
+            href={`/api/wallet/google/${guest.check_in_token}`}
+            className="btn-ghost text-center text-xs"
+          >
+            Add to Google Wallet
+          </a>
+        </div>
+      )}
+
       <p className="label-mono mt-6 text-center break-all">
         <span className="text-muted">Token:</span> {guest.check_in_token}
+      </p>
+
+      <p className="label-mono mt-3 text-center">
+        <a
+          href={`/api/events/${guest.night.event.id}/calendar.ics`}
+          className="hover:text-cream"
+        >
+          + Add to calendar
+        </a>
+      </p>
+
+      <p className="label-mono mt-3 text-center">
+        <a
+          href={`/referral/${guest.id}`}
+          className="hover:text-cream"
+        >
+          Bring a friend →
+        </a>
       </p>
 
       <p className="label-mono mt-auto pt-8 text-center">
