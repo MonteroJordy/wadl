@@ -1,0 +1,11 @@
+node_modules/
+.expo/
+.expo-shared/
+.env
+.env.local
+dist/
+ios/
+android/
+*.log
+.eas/
+expo-env.d.ts

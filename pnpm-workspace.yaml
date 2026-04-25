@@ -1,0 +1,9 @@
+# pnpm workspaces config — used if/when we migrate from npm.
+# The existing tree uses npm workspaces (apps/* + packages/*); the
+# brief asked for pnpm, but switching package managers requires a
+# clean reinstall + lockfile regeneration that we can't do
+# autonomously. Keeping this file present so the migration is one
+# `rm package-lock.json && pnpm install` away.
+packages:
+  - "apps/*"
+  - "packages/*"

@@ -2,7 +2,32 @@
 
 Production deploy is a one-time operation per environment. This guide walks the entire path from a local-only repo to a live URL with real SMS, real QR, real door scans.
 
-> **Never paste real secrets into this file.** Treat every value below as a placeholder. Real values live only in `.env.local` (locally) and the Vercel project env (in production).
+> **Never paste real secrets into this file.** Treat every value below as a placeholder. Real values live only in `apps/web/.env.local` (locally) and the Vercel project env (in production).
+
+---
+
+## 0. Monorepo layout (Day 17+)
+
+```
+wadl/                                  # repo root
+├── apps/
+│   ├── web/        → Next.js 14 app (formerly the entire repo)
+│   │   └── .env.local                 # local web env (untracked)
+│   └── mobile/     → Expo / iOS app  (apps/mobile/.env, untracked)
+├── packages/
+│   └── shared/     → cross-platform TS (types, format, routing, sms-template)
+├── package.json    → npm workspaces ("workspaces": ["apps/*","packages/*"])
+├── pnpm-workspace.yaml                # ready when we migrate to pnpm
+└── vercel.json     → minimal: declares Next.js framework
+```
+
+**Vercel config (one-time):** in the Vercel dashboard → project settings,
+set **Root Directory** to `apps/web`. Vercel autodetects Next.js inside.
+Until you do this, the deploy will fail to find `package.json`. After
+setting it once, every push to `main` deploys `apps/web` automatically.
+
+Mobile deploys via **EAS Build** — see `DEPLOY_MOBILE.md`. Vercel ignores
+`apps/mobile/`.
 
 ---
 
@@ -14,10 +39,9 @@ Run this on `main` with a clean working tree:
 # Tree clean?
 git status
 
-# All tests / type checks pass?
+# Web typecheck + build clean?
+cd apps/web
 npx tsc --noEmit
-
-# Build clean?
 npx next build
 
 # Prod-ready audit?

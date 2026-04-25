@@ -1,0 +1,74 @@
+import { useEffect, useState } from "react";
+import { View, Text, Pressable, ActivityIndicator } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { supabase } from "../../src/lib/supabase";
+
+export default function ProfileScreen() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<{
+    full_name: string | null;
+    phone: string | null;
+    email: string | null;
+  } | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) {
+        setLoading(false);
+        return;
+      }
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name, phone, email")
+        .eq("id", u.user.id)
+        .maybeSingle();
+      setProfile(data ?? null);
+      setLoading(false);
+    })();
+  }, []);
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    router.replace("/(auth)/login");
+  }
+
+  if (loading) {
+    return (
+      <SafeAreaView className="flex-1 bg-bg items-center justify-center">
+        <ActivityIndicator color="#FF4A2B" />
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView className="flex-1 bg-bg px-6">
+      <View className="flex-1">
+        <Text className="text-coral text-[10px] uppercase tracking-widest mt-6 mb-2">
+          Profile
+        </Text>
+        <Text className="text-cream text-5xl font-black uppercase tracking-tight mb-2">
+          {profile?.full_name ?? "Guest"}
+        </Text>
+        <Text className="text-muted text-[10px] uppercase tracking-widest">
+          {profile?.phone ?? "—"}
+        </Text>
+        {profile?.email && (
+          <Text className="text-muted text-[10px] uppercase tracking-widest mt-1">
+            {profile.email}
+          </Text>
+        )}
+      </View>
+      <Pressable
+        onPress={signOut}
+        className="bg-s1 border border-line rounded-md py-4 mb-6 active:opacity-80"
+      >
+        <Text className="text-cream text-center font-semibold uppercase tracking-widest text-sm">
+          Sign out
+        </Text>
+      </Pressable>
+    </SafeAreaView>
+  );
+}

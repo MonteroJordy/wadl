@@ -9,6 +9,15 @@ out/
 next-env.d.ts
 build/
 
+# expo / mobile
+.expo/
+.expo-shared/
+expo-env.d.ts
+apps/mobile/ios/
+apps/mobile/android/
+apps/mobile/dist/
+.eas/
+
 # testing
 coverage/
 

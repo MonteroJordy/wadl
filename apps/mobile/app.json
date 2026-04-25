@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "WADL",
+    "slug": "wadl",
+    "scheme": "wadl",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": false,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#0a0a0a"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.wadl.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "WADL uses your camera to scan guest QR codes at the door.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.wadl.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#0a0a0a"
+      },
+      "permissions": ["CAMERA"]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-barcode-scanner",
+        {
+          "cameraPermission": "WADL uses your camera to scan guest QR codes at the door."
+        }
+      ],
+      "expo-notifications"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
+      }
+    }
+  }
+}
