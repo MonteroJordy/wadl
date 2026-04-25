@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Bebas_Neue, Epilogue, DM_Mono } from "next/font/google";
 import "./globals.css";
+import CookieConsent from "@/components/cookie-consent";
 
 const bebas = Bebas_Neue({
   weight: "400",
@@ -24,7 +25,10 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "WADL",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://wadl-pearl.vercel.app"
+  ),
+  title: { default: "WADL", template: "%s — WADL" },
   description: "Guest-list management for nightlife.",
 };
 
@@ -38,7 +42,10 @@ export default function RootLayout({
       lang="en"
       className={`${bebas.variable} ${epilogue.variable} ${dmMono.variable}`}
     >
-      <body className="bg-bg text-cream min-h-screen">{children}</body>
+      <body className="bg-bg text-cream min-h-screen">
+        {children}
+        <CookieConsent />
+      </body>
     </html>
   );
 }

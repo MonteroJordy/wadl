@@ -12,6 +12,7 @@ interface CompleteInput {
   phone: string;
   plusOnes: number;
   email: string | null;
+  smsConsent: boolean;
 }
 
 export type CompleteRsvpResult =
@@ -37,6 +38,12 @@ export async function completeRsvpAction(
   const fullName = input.fullName.trim();
   if (!fullName) return { ok: false, error: "Enter a name." };
   if (!input.phone) return { ok: false, error: "Missing phone." };
+  if (!input.smsConsent) {
+    return {
+      ok: false,
+      error: "SMS consent is required to deliver your QR ticket.",
+    };
+  }
 
   const supabase = createClient();
   const {

@@ -154,6 +154,18 @@ export default function SignupPage() {
         <button type="submit" className="btn-primary mt-2" disabled={loading}>
           {loading ? "Saving…" : "Continue"}
         </button>
+
+        <p className="label-mono mt-2 text-center">
+          By continuing you agree to our{" "}
+          <a href="/terms" className="text-coral hover:text-cream underline">
+            terms
+          </a>{" "}
+          and{" "}
+          <a href="/privacy" className="text-coral hover:text-cream underline">
+            privacy policy
+          </a>
+          .
+        </p>
       </form>
     </main>
   );

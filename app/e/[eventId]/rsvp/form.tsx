@@ -24,6 +24,7 @@ export default function RsvpForm({ eventId, eventName, night }: Props) {
   const [email, setEmail] = useState("");
   const [plusOnes, setPlusOnes] = useState(0);
   const [code, setCode] = useState("");
+  const [smsConsent, setSmsConsent] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<
     | {
@@ -41,6 +42,8 @@ export default function RsvpForm({ eventId, eventName, night }: Props) {
     if (!fullName.trim()) return setError("Enter your name.");
     const normalized = normalizePhone(phoneInput);
     if (!normalized) return setError("Enter a valid phone number.");
+    if (!smsConsent)
+      return setError("SMS consent is required to receive your QR ticket.");
 
     setE164Phone(normalized);
     const supabase = createClient();
@@ -78,6 +81,7 @@ export default function RsvpForm({ eventId, eventName, night }: Props) {
         phone: e164Phone,
         plusOnes,
         email: email.trim() || null,
+        smsConsent,
       });
 
       if (!result.ok) {
@@ -273,6 +277,24 @@ export default function RsvpForm({ eventId, eventName, night }: Props) {
             +1s are approved by the host. Subject to availability.
           </p>
         </div>
+
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={smsConsent}
+            onChange={(e) => setSmsConsent(e.target.checked)}
+            className="mt-1 accent-coral w-4 h-4"
+          />
+          <span className="text-xs text-cream/80 leading-relaxed">
+            I consent to receive SMS messages from WADL about my ticket and
+            event updates. Reply STOP any time to opt out. Standard message
+            rates apply. See our{" "}
+            <Link href="/privacy" className="text-coral underline">
+              privacy policy
+            </Link>
+            .
+          </span>
+        </label>
 
         {error && <p className="text-coral text-sm">{error}</p>}
 

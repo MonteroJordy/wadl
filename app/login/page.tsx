@@ -145,7 +145,15 @@ export default function LoginPage() {
       )}
 
       <p className="label-mono mt-auto pt-8 text-center">
-        By continuing you agree to the door rules.
+        By continuing you agree to our{" "}
+        <a href="/terms" className="text-coral hover:text-cream underline">
+          terms
+        </a>{" "}
+        and{" "}
+        <a href="/privacy" className="text-coral hover:text-cream underline">
+          privacy policy
+        </a>
+        .
       </p>
     </main>
   );

@@ -22,11 +22,18 @@ const PUBLIC_PATHS = [
   "/co-owner",
   "/referral",
   "/embed",
+  "/pricing",
+  "/privacy",
+  "/terms",
+  "/docs",
+  "/sitemap.xml",
+  "/robots.txt",
 ];
 
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 
 function isPublic(pathname: string) {
+  if (pathname === "/") return true;
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
 }
 
