@@ -32,14 +32,17 @@ export default function NewEventForm({
   venues,
   defaultCapacity,
   defaultEventType,
+  accountType = "venue",
 }: {
   venues: { id: string; name: string }[];
   defaultCapacity: number | null;
   defaultEventType: EventType;
+  accountType?: "venue" | "brand" | "individual";
 }) {
   const [name, setName] = useState("");
   const [eventType, setEventType] = useState<EventType>(defaultEventType);
   const [venueId, setVenueId] = useState(venues[0]?.id ?? "none");
+  const [partnerVenue, setPartnerVenue] = useState("");
   const [description, setDescription] = useState("");
   const [flyerUrl, setFlyerUrl] = useState("");
   const [flyerFile, setFlyerFile] = useState<File | null>(null);
@@ -86,11 +89,23 @@ export default function NewEventForm({
       }
     }
 
+    // Day 43 — non-venue accounts prepend the venue partner name into the
+    // description so it surfaces on /e/[id] and the daydash header without
+    // a schema change. When the partner-venue directory ships, this can
+    // migrate to a real foreign key.
+    let composedDescription = description.trim();
+    if (accountType !== "venue" && partnerVenue.trim()) {
+      const prefix = `at ${partnerVenue.trim()}`;
+      composedDescription = composedDescription
+        ? `${prefix}\n\n${composedDescription}`
+        : prefix;
+    }
+
     const fd = new FormData();
     fd.set("name", name.trim());
     fd.set("event_type", eventType);
-    fd.set("venue_id", venueId);
-    fd.set("description", description.trim());
+    fd.set("venue_id", accountType === "venue" ? venueId : "none");
+    fd.set("description", composedDescription);
     fd.set("flyer_url", flyerUrl.trim());
     fd.set("nights", JSON.stringify(payload));
     if (flyerFile) fd.set("flyer_file", flyerFile);
@@ -149,7 +164,7 @@ export default function NewEventForm({
           </div>
         </div>
 
-        {venues.length > 0 && (
+        {accountType === "venue" && venues.length > 0 && (
           <div>
             <label htmlFor="venue" className="label-mono block mb-2">Venue</label>
             <select
@@ -163,6 +178,32 @@ export default function NewEventForm({
               ))}
               <option value="none">No venue</option>
             </select>
+          </div>
+        )}
+
+        {accountType !== "venue" && (
+          <div>
+            <label htmlFor="partnerVenue" className="label-mono block mb-2">
+              {accountType === "brand" ? "Venue partner" : "Venue"}{" "}
+              <span className="text-muted">(free text — picker later)</span>
+            </label>
+            <input
+              id="partnerVenue"
+              type="text"
+              value={partnerVenue}
+              onChange={(e) => setPartnerVenue(e.target.value)}
+              placeholder={
+                accountType === "brand"
+                  ? "Wynwood Studios"
+                  : "Floyd Miami"
+              }
+              className="input-dark"
+            />
+            <p className="label-mono mt-1">
+              {accountType === "brand"
+                ? "Where the takeover lands. Saved to event description for now; full partner-venue directory ships next."
+                : "Venue you're booking the night at. Free-text for now."}
+            </p>
           </div>
         )}
 

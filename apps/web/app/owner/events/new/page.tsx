@@ -20,6 +20,7 @@ export default async function NewEventPage() {
       venues={(venues ?? []).map((v) => ({ id: v.id, name: v.name }))}
       defaultCapacity={defaultCapacity}
       defaultEventType={defaultEventType(account.account_type)}
+      accountType={account.account_type}
     />
   );
 }
