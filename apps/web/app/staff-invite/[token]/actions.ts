@@ -31,7 +31,7 @@ export async function acceptInviteAction(
     .maybeSingle<{
       id: string;
       event_id: string;
-      role: "door_staff" | "door_manager";
+      role: "door_staff" | "door_manager" | "photographer";
       used_at: string | null;
       expires_at: string | null;
     }>();
@@ -83,6 +83,8 @@ export async function acceptInviteAction(
   const redirectTo =
     invite.role === "door_manager"
       ? `/manager/events/${invite.event_id}`
+      : invite.role === "photographer"
+      ? `/photographer/events/${invite.event_id}`
       : `/door/events/${invite.event_id}`;
 
   return { ok: true, redirectTo };

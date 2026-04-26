@@ -91,7 +91,7 @@ export default async function CoOwnersPage({
                   </p>
                   <p className="label-mono mt-1">
                     {c.account.account_type} ·{" "}
-                    <span className="text-coral">{c.permission.replace("_", "-")}</span>
+                    <span className="text-coral">view-only</span>
                   </p>
                 </div>
               </div>
@@ -110,9 +110,7 @@ export default async function CoOwnersPage({
                   {i.invitee_phone || i.invitee_email}
                 </p>
                 <p className="label-mono mt-1">
-                  <span className="text-coral">
-                    {i.permission.replace("_", "-")}
-                  </span>{" "}
+                  <span className="text-coral">view-only</span>{" "}
                   · sent{" "}
                   {new Date(i.created_at).toLocaleString("en-US", {
                     month: "short",

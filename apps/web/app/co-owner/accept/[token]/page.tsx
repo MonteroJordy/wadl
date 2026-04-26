@@ -70,13 +70,10 @@ export default async function CoOwnerAcceptPage({
 
       <div className="card mb-5">
         <p className="label-mono mb-1">{invite.event.name}</p>
-        <p className="font-sans text-cream font-semibold">
-          {invite.permission === "admin"
-            ? "Admin"
-            : invite.permission === "edit"
-            ? "Edit"
-            : "Read-only"}{" "}
-          access
+        <p className="font-sans text-cream font-semibold">View-only access</p>
+        <p className="label-mono mt-2">
+          You&apos;ll see the event, allocations, and guest list. Edits stay
+          with the account owner.
         </p>
       </div>
 

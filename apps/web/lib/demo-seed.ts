@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireOwnerContext } from "@/lib/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { defaultEventType } from "@wadl/shared/account-type";
 
 const FIRST_NAMES = [
   "Alex", "Jordan", "Sam", "Casey", "Riley", "Morgan", "Taylor", "Avery",
@@ -76,7 +77,7 @@ export async function seedDemoDataAction(): Promise<
     .insert({
       account_id: account.id,
       venue_id: venue.id,
-      event_type: "venue_owned",
+      event_type: defaultEventType(account.account_type),
       name: "Demo Friday — Sample Night",
       description: "Demo event seeded by WADL onboarding.",
       created_by: profile.id,

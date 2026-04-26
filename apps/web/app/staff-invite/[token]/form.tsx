@@ -10,7 +10,7 @@ interface Props {
   token: string;
   invitePhone: string;
   eventName: string;
-  role: "door_staff" | "door_manager";
+  role: "door_staff" | "door_manager" | "photographer";
   alreadyAuthedPhone: string | null;
 }
 
@@ -93,7 +93,12 @@ export default function InviteAcceptForm({
     });
   }
 
-  const roleLabel = role === "door_manager" ? "Door manager" : "Door staff";
+  const roleLabel =
+    role === "door_manager"
+      ? "Door manager"
+      : role === "photographer"
+      ? "Photographer"
+      : "Door staff";
 
   if (step === "binding") {
     return (

@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 interface InviteLookup {
   id: string;
   phone: string;
-  role: "door_staff" | "door_manager";
+  role: "door_staff" | "door_manager" | "photographer";
   used_at: string | null;
   expires_at: string | null;
   event: { id: string; name: string };
@@ -85,7 +85,11 @@ export default async function StaffInvitePage({
       <div className="card mb-5">
         <p className="label-mono mb-1">{invite.event.name}</p>
         <p className="font-sans text-cream font-semibold">
-          {invite.role === "door_manager" ? "Door manager" : "Door staff"}
+          {invite.role === "door_manager"
+            ? "Door manager"
+            : invite.role === "photographer"
+            ? "Photographer"
+            : "Door staff"}
         </p>
       </div>
 

@@ -30,11 +30,15 @@ interface InviteRow {
 function roleBadge(role: string) {
   if (role === "door_manager") return "text-gold";
   if (role === "door_staff") return "text-mint";
+  if (role === "photographer") return "text-lav";
   return "text-muted";
 }
 
 function roleLabel(role: string) {
-  return role === "door_manager" ? "Manager" : role === "door_staff" ? "Staff" : role;
+  if (role === "door_manager") return "Manager";
+  if (role === "door_staff") return "Staff";
+  if (role === "photographer") return "Photographer";
+  return role;
 }
 
 export default async function StaffPage({

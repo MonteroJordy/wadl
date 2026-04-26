@@ -8,7 +8,8 @@ import { sendSms } from "@/lib/sms";
 import { sendEmail, renderEmail } from "@/lib/email";
 import { getAppUrl } from "@/lib/app-url";
 
-type StaffRole = "door_staff" | "door_manager";
+type StaffRole = "door_staff" | "door_manager" | "photographer";
+const VALID_ROLES: StaffRole[] = ["door_staff", "door_manager", "photographer"];
 
 export type CreateInviteResult =
   | {
@@ -29,7 +30,7 @@ export async function createInviteAction(
 
   const phone = normalizePhone(phoneRaw);
   if (!phone) return { ok: false, error: "Enter a valid phone number." };
-  if (role !== "door_staff" && role !== "door_manager") {
+  if (!role || !VALID_ROLES.includes(role)) {
     return { ok: false, error: "Pick a role." };
   }
   const email =
@@ -57,8 +58,16 @@ export async function createInviteAction(
   }
 
   const inviteUrl = `${getAppUrl()}/staff-invite/${invite.token}`;
-  const roleLabel = role === "door_manager" ? "a manager" : "staff";
-  const body = `WADL: you're invited to work the door as ${roleLabel}. Open ${inviteUrl} on your phone to sign in.`;
+  const roleLabel =
+    role === "door_manager"
+      ? "a door manager"
+      : role === "photographer"
+      ? "the photographer"
+      : "door staff";
+  const isPhotographer = role === "photographer";
+  const body = isPhotographer
+    ? `WADL: you're invited as ${roleLabel}. Open ${inviteUrl} on your phone to sign in and start uploading photos.`
+    : `WADL: you're invited to work the door as ${roleLabel}. Open ${inviteUrl} on your phone to sign in.`;
 
   const smsRes = await sendSms({ to: phone, body });
   const smsProvider: "dev" | "twilio" =
@@ -67,15 +76,21 @@ export async function createInviteAction(
   let emailSent = false;
   if (email) {
     const rendered = renderEmail({
-      heading: "You're on the door for WADL",
-      body: `You've been invited to work the door as ${roleLabel}. Tap the button below on your phone to sign in.`,
+      heading: isPhotographer
+        ? "You're shooting an event for WADL"
+        : "You're on the door for WADL",
+      body: isPhotographer
+        ? "You've been invited as the photographer. Tap below to sign in and access the upload page."
+        : `You've been invited to work the door as ${roleLabel}. Tap the button below on your phone to sign in.`,
       ctaLabel: "Open invite",
       ctaHref: inviteUrl,
       footer: "If you didn't expect this email, you can ignore it.",
     });
     const emailRes = await sendEmail({
       to: email,
-      subject: "WADL: door invite",
+      subject: isPhotographer
+        ? "WADL: photographer invite"
+        : "WADL: door invite",
       html: rendered.html,
       text: rendered.text,
     });

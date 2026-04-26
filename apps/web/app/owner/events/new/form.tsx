@@ -31,12 +31,14 @@ function newNight(): NightRow {
 export default function NewEventForm({
   venues,
   defaultCapacity,
+  defaultEventType,
 }: {
   venues: { id: string; name: string }[];
   defaultCapacity: number | null;
+  defaultEventType: EventType;
 }) {
   const [name, setName] = useState("");
-  const [eventType, setEventType] = useState<EventType>("venue_owned");
+  const [eventType, setEventType] = useState<EventType>(defaultEventType);
   const [venueId, setVenueId] = useState(venues[0]?.id ?? "none");
   const [description, setDescription] = useState("");
   const [flyerUrl, setFlyerUrl] = useState("");

@@ -6,9 +6,10 @@ import { createCoOwnerInviteAction } from "./actions";
 export default function CoOwnerInviteForm({ eventId }: { eventId: string }) {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [permission, setPermission] = useState<"read_only" | "edit" | "admin">(
-    "edit"
-  );
+  // Only "read_only" is enforceable today (Day 19 audit P1-1).
+  // The DB column accepts edit/admin for future tiering — UI doesn't offer
+  // them until write enforcement is wired.
+  const permission = "read_only" as const;
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{
     url: string;
@@ -85,30 +86,13 @@ export default function CoOwnerInviteForm({ eventId }: { eventId: string }) {
 
       <div>
         <p className="label-mono mb-2">Permission</p>
-        <div className="grid grid-cols-3 gap-2">
-          {(
-            [
-              { id: "read_only", label: "Read-only" },
-              { id: "edit", label: "Edit" },
-              { id: "admin", label: "Admin" },
-            ] as const
-          ).map((p) => {
-            const active = permission === p.id;
-            return (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => setPermission(p.id)}
-                className={`border rounded-md px-2 py-2 font-mono text-xs uppercase tracking-wider transition ${
-                  active
-                    ? "border-coral bg-s2 text-cream"
-                    : "border-line bg-s1 text-muted hover:text-cream"
-                }`}
-              >
-                {p.label}
-              </button>
-            );
-          })}
+        <div className="card border-line">
+          <p className="label-mono text-cream mb-1">View-only</p>
+          <p className="text-muted text-xs leading-relaxed">
+            Co-owners can see the event, allocations, and guest list. Editable
+            tiers are coming — for now everything writeable stays with the
+            account owner.
+          </p>
         </div>
       </div>
 

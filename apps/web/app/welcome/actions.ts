@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireOwnerContext } from "@/lib/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { defaultEventType } from "@wadl/shared/account-type";
 
 export async function completeWelcomeAction(): Promise<void> {
   const { profile } = await requireOwnerContext();
@@ -53,7 +54,7 @@ export async function createFirstEventAction(
     .insert({
       account_id: account.id,
       venue_id: venueId,
-      event_type: "venue_owned",
+      event_type: defaultEventType(account.account_type),
       name: input.name.trim(),
       created_by: profile.id,
     })

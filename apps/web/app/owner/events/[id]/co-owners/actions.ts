@@ -25,13 +25,15 @@ export async function createCoOwnerInviteAction(
 ): Promise<CoOwnerInviteResult> {
   const phoneRaw = (formData.get("phone") as string | null) ?? "";
   const email = ((formData.get("email") as string | null) ?? "").trim();
-  const permission = formData.get("permission") as Permission | null;
 
   const phone = phoneRaw ? normalizePhone(phoneRaw) : null;
   if (!phone && !email) return { ok: false, error: "Enter a phone or email." };
-  if (!permission || !["read_only", "edit", "admin"].includes(permission)) {
-    return { ok: false, error: "Pick a permission level." };
-  }
+
+  // Day 19 P1-1: write-tier permissions ("edit", "admin") are not yet
+  // enforced by RLS, so the server force-pins to "read_only" regardless of
+  // any value the client sent. The DB column keeps the wider enum for
+  // future tiering.
+  const permission: Permission = "read_only";
 
   const supabase = createClient();
   const {

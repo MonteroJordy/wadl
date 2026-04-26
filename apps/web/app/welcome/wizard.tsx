@@ -9,10 +9,12 @@ import {
   skipWelcomeAction,
 } from "./actions";
 import { useToast } from "@/components/toast";
+import { accountEntityLabel } from "@wadl/shared/account-type";
+import type { AccountType } from "@wadl/shared/types";
 
 interface InitialState {
   fullName: string;
-  accountType: string;
+  accountType: AccountType;
   accountName: string;
   hasVenue: boolean;
 }
@@ -147,31 +149,59 @@ export default function WelcomeWizard({ initial }: { initial: InitialState }) {
 
       {step === 3 && (
         <section className="flex-1 animate-fade-in">
-          <h1 className="display-lg mb-3">Your venue</h1>
-          {initial.hasVenue ? (
+          {initial.accountType === "venue" ? (
             <>
-              <p className="text-cream/80 leading-relaxed mb-6">
-                Venue already set up — you&apos;re ahead of schedule.
-              </p>
-              <Link
-                href="/owner/profile"
-                className="btn-ghost text-center block mb-3"
-              >
-                Edit venues
-              </Link>
+              <h1 className="display-lg mb-3">Your venue</h1>
+              {initial.hasVenue ? (
+                <>
+                  <p className="text-cream/80 leading-relaxed mb-6">
+                    Venue already set up — you&apos;re ahead of schedule.
+                  </p>
+                  <Link
+                    href="/owner/profile"
+                    className="btn-ghost text-center block mb-3"
+                  >
+                    Edit venues
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <p className="text-cream/80 leading-relaxed mb-6">
+                    Add your first venue (name, address, capacity, door time).
+                    You&apos;ll be back here when it&apos;s saved.
+                  </p>
+                  <Link
+                    href="/venuesetup?return=/welcome"
+                    className="btn-primary text-center block mb-3"
+                  >
+                    Set up venue →
+                  </Link>
+                </>
+              )}
             </>
           ) : (
             <>
+              <h1 className="display-lg mb-3">
+                {initial.accountType === "brand"
+                  ? "Where you take over"
+                  : "Where you play"}
+              </h1>
               <p className="text-cream/80 leading-relaxed mb-6">
-                Add your first venue (name, address, capacity, door time).
-                You&apos;ll be back here when it&apos;s saved.
+                {initial.accountType === "brand"
+                  ? "Brands run nights inside someone else's room. You don't set up a venue here — you'll pick the partner venue when you create your first event."
+                  : "Solo promoters and artists collab with venues. You don't run a room yourself — you'll associate each event with its host venue when you create it."}
               </p>
-              <Link
-                href="/venuesetup?return=/welcome"
-                className="btn-primary text-center block mb-3"
-              >
-                Set up venue →
-              </Link>
+              <div className="card border-line mb-3">
+                <p className="label-mono mb-1">Heads up</p>
+                <p className="text-muted text-sm leading-relaxed">
+                  Most flows still work even if you skip this. You can always
+                  add a partner venue from{" "}
+                  <Link href="/owner/profile" className="text-coral underline">
+                    profile
+                  </Link>{" "}
+                  later.
+                </p>
+              </div>
             </>
           )}
           <div className="grid grid-cols-2 gap-2">
@@ -179,7 +209,11 @@ export default function WelcomeWizard({ initial }: { initial: InitialState }) {
               ← Back
             </button>
             <button type="button" onClick={next} className="btn-primary">
-              {initial.hasVenue ? "Next →" : "Skip for now"}
+              {initial.accountType === "venue" && initial.hasVenue
+                ? "Next →"
+                : initial.accountType === "venue"
+                ? "Skip for now"
+                : "Continue →"}
             </button>
           </div>
         </section>
@@ -201,7 +235,7 @@ export default function WelcomeWizard({ initial }: { initial: InitialState }) {
                 id="ev-name"
                 value={evName}
                 onChange={(e) => setEvName(e.target.value)}
-                placeholder="Friday at the Patio"
+                placeholder={accountEntityLabel(initial.accountType).eventPlaceholder}
                 className="input-dark"
                 required
               />

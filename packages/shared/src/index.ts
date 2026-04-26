@@ -10,3 +10,4 @@ export * from "./types";
 export * from "./format";
 export * from "./routing";
 export * from "./sms-template";
+export * from "./account-type";

@@ -1452,3 +1452,149 @@ These are all known-and-named gaps.
 ---
 
 **Status:** Days 16–18 complete. Web builds clean inside `apps/web/`. Mobile compiles after `npm install`. Push to `main` triggers Vercel auto-deploy (once Root Directory is set to apps/web). Mobile deploys via `eas build` per `DEPLOY_MOBILE.md`.
+
+---
+
+## Day 19 — CTO audit (no fixes; inventory only)
+
+Full report: `AUDIT_DAY19.md` at repo root.
+
+**Headline blocker for the audit itself:** `DESIGN_REFERENCE.html` (the 96-screen reference promised in `WADL_PROJECT_BRIEF.md` §10) was never delivered to the repo. Phase 1 mapping was performed against the brief + the explicit screen-name list in the audit prompt instead.
+
+### What's working
+
+- **90 routes**, 16 migrations, web build passes from `apps/web/` (after Day 17 monorepo move).
+- Every owner/manager/door route uses a centralized auth helper (`requireOwnerContext`, `requireDoorContext`). No hand-rolled gates.
+- RLS enabled on every table from Day 1.
+- Loading + error boundaries + toast system + Cmd+K + onboarding wizard all real implementations, not stubs.
+- Guest flow (discover → /e → RSVP → /t → mytickets) works end-to-end with TCPA consent.
+- Door scanner online + offline-cached + sync flow works.
+- Mobile scaffold compiles (placeholder QR; needs `npm install` + asset PNGs before TestFlight).
+
+### Two structural gaps that matter most
+
+1. **Co-owner permissions are theater.** `event_co_owners.permission ∈ ('read_only', 'edit', 'admin')` is stored and surfaced in UI labels but **no write RLS policies enforce it.** Day 9 added SELECT-only co-owner policies; INSERT/UPDATE/DELETE for co-owners simply don't exist, so every co-owner is silently read-only regardless of their assigned tier.
+2. **Account-type differentiation is decorative.** Venue / brand / individual changes 5 labels + 1 routing fork — no different defaults, no different empty states, no different feature gating, no different event types.
+
+### Phase 5 named-screen score: 0 of 13 fully built
+
+| Built | Partial | Missing |
+|---|---|---|
+| 0 | `lockdown`, `notifprompt`, `promoteronboard`, `demomode` | `dualctx`, `escalate`, `guestmessage`, `guesttierhistory`, `pasteventdetail`, `postevent`/`posteventsummary`, `promotercompare`, `sharevent`, `smsdelivery` |
+
+### "Feels incomplete" patterns flagged
+
+- `/owner/dashboard` is `redirect("/owner")` — vestigial.
+- `/owner/sms-templates` CRUD works but **no outbound code reads `sms_templates`** at send time.
+- 6 of 11 declared notification kinds (`staff_assigned`, `billing_event`, `scan_failure_high`, `waitlist_promoted`, `guest_flagged`, `tier_upgraded`) **never fire** from any code path despite being labelled in the inbox UI.
+- `event_templates.cadence_days` collected but **no cron reads it** — recurring events don't auto-create.
+- `/admin/guests` has `platformForceFlagAction` defined but **no UI button surfaces it**.
+- Photographer role exists in DB enum but staff invite UI doesn't expose it.
+- `/api/cron`, `/api/embed`, `/api/webhooks` are in `PUBLIC_PATHS` but **no routes exist under them** — dead allowlist entries. The webhook gap means **no Twilio STOP receiver and no Stripe event receiver**.
+- `/api/log/client-error` is middleware-blocked for anonymous POSTs, so `error.tsx` hits from anon visitors never reach `error_log`.
+
+### P0 / P1 fix list (proposed order)
+
+| Priority | Item | Approx LOC | Why |
+|---|---|---|---|
+| P0-1 | Set Vercel project Root Directory to `apps/web` | 0 (operator action) | Next deploy fails until this is changed |
+| P1-1 | Fix or remove co-owner permission labels | 5–150 | Credibility bug — pitch demo will fail |
+| P1-2 | Harden `requireOwnerContext` (verify owner_user_id + role) | ~10 | Latent footgun |
+| P1-3 | Differentiate account types (default `event_type`, copy) | ~80 | Brief mandate not honored |
+| P1-4 | Allow anon `/api/log/client-error` + rate limit | ~15 | Silent client-error loss for anon |
+| P1-5 | Twilio inbound STOP webhook | ~80 | TCPA compliance has only the honor side, not the receiving side |
+| P1-6 | Add photographer to staff invite UI | ~10 | Schema supports it; UI doesn't |
+
+P2 (20 items) and P3 (8 items) listed in `AUDIT_DAY19.md`.
+
+**Recommended:** P0-1 + P1-1 + P1-2 + P1-3 + P1-4 + P1-6 are the minimum bar to call the platform "honest" with what it promises in UI + brief. P1-5 is the minimum bar to be TCPA-compliant on the receiving side. After that, prioritize P2 by which prototype screens are demo-blockers for the next pitch.
+
+**No code was changed in this audit.**
+
+---
+
+## Day 19 fixes — P0 + P1 + targeted P3
+
+Audit (`AUDIT_DAY19.md`) found 1 P0 + 6 P1 + assorted P3. P0 is operator-only (Vercel Root Directory). All 6 P1 + 4 P3 cleanups landed in this commit.
+
+### P1-1 — co-owner permission honesty
+
+The product was promising three permission tiers (`read_only` / `edit` / `admin`) via UI labels but only enforcing none of them — every co-owner was silently view-only regardless of tier.
+
+- `apps/web/app/owner/events/[id]/co-owners/invite-form.tsx` — removed the 3-button picker; permission card now reads "View-only" with a one-liner "editable tiers coming".
+- `apps/web/app/owner/events/[id]/co-owners/actions.ts` — server action force-pins `permission = "read_only"` regardless of any value the client sends.
+- `apps/web/app/owner/events/[id]/co-owners/page.tsx` — both the active-co-owners list and the pending-invites list now hard-code "view-only" instead of `permission.replace("_", "-")`.
+- `apps/web/app/co-owner/accept/[token]/page.tsx` — accept screen reads "View-only access" with the writes-stay-with-owner caveat.
+
+The DB column keeps the wider enum so future tiering is a one-migration unlock, not a schema rewrite.
+
+### P1-2 — `requireOwnerContext` hardened
+
+`apps/web/lib/owner.ts` now additionally enforces:
+1. `account.owner_user_id === user.id` — explicit ownership match, not just "has account_id".
+2. Profile role is not `manager` / `staff` / `door_manager` / `door_staff` — door-only roles can never reach `/owner/*` even if they somehow have an `account_id`.
+
+Failed checks redirect to `/` (which then routes guest → /mytickets, etc.).
+
+### P1-3 — account-type differentiation
+
+New shared module `packages/shared/src/account-type.ts` with three helpers:
+- `defaultEventType(accountType)` → `venue → venue_owned`, `brand → brand_takeover`, `individual → co_produced`.
+- `ownsAVenue(accountType)` → only `venue` runs venuesetup.
+- `accountEntityLabel(accountType)` → `{ noun, placeholder, eventPlaceholder }` for forms.
+
+Wired into:
+- `apps/web/app/welcome/actions.ts` — first event uses `defaultEventType(account.account_type)`.
+- `apps/web/lib/demo-seed.ts` — same.
+- `apps/web/app/owner/events/new/page.tsx` + `form.tsx` — new-event form pre-selects the type-appropriate default.
+- `apps/web/app/entitysetup/page.tsx` — label + placeholder come from `accountEntityLabel`.
+- `apps/web/app/welcome/wizard.tsx` — step 3 forks: venue gets the venue setup CTA; brand + individual get a "you don't run a room — you'll pick the partner venue per-event" explainer instead of a meaningless empty step.
+- Step 4 placeholder also reads from the helper.
+
+### P1-4 — `/api/log/client-error` accepts anon + rate limited
+
+- Added to `PUBLIC_PATHS` in `apps/web/lib/supabase/middleware.ts`. Anonymous error.tsx hits now reach the route.
+- 10/min per IP via the existing `lib/rate-limit.ts` token bucket. Field-size caps applied (message ≤ 500, stack ≤ 4000) to prevent log-table abuse.
+
+### P1-5 — Twilio STOP webhook
+
+`apps/web/app/api/webhooks/twilio/sms/route.ts` (POST + GET):
+
+- Reads `application/x-www-form-urlencoded` body Twilio posts.
+- Validates `X-Twilio-Signature` HMAC-SHA1 against `TWILIO_AUTH_TOKEN` + URL + sorted params. Skips validation in dev when token absent (with a console warning).
+- STOP / STOPALL / UNSUBSCRIBE / CANCEL / END / QUIT → set `guests.sms_opted_out = true` for every row matching the From phone, audit-logged.
+- START / UNSTOP / YES → reverse.
+- Returns empty 200 (Twilio handles the user-facing auto-reply for STOP/START keywords).
+
+Operator setup (one-time): in Twilio console → Phone Numbers → Active Numbers → A MESSAGE COMES IN webhook URL = `https://wadl-pearl.vercel.app/api/webhooks/twilio/sms`, method POST.
+
+### P1-6 — photographer role in staff invite
+
+- `apps/web/app/owner/events/[id]/staff/invite-form.tsx` — third role chip "Photographer · Upload event photos".
+- `apps/web/app/owner/events/[id]/staff/actions.ts` — accepts the new role; SMS body + email subject + heading branched per-role.
+- `apps/web/app/staff-invite/[token]/page.tsx` + `form.tsx` — accept page renders "Photographer" badge + label.
+- `apps/web/app/staff-invite/[token]/actions.ts` — accept redirects photographers to `/photographer/events/[id]` instead of `/door` or `/manager`.
+- `apps/web/app/owner/events/[id]/staff/page.tsx` — `roleBadge` adds lavender for photographer; `roleLabel` adds the label.
+- Migration `20260502000001_day19_p1_fixes.sql` widens `staff_invites.role` CHECK constraint to allow `photographer`. (Day 13 widened `event_staff` already; staff_invites was missed.)
+
+### P3 quick cleanups bundled
+
+- **Removed `/owner/dashboard`** — was just `redirect("/owner")`. Vestigial.
+- **Removed dead `/api/cron` and `/api/embed` PUBLIC_PATHS entries.** `/api/embed` had no route under it; the embed iframe lives at `/embed/[eventId]` which is already public via `/embed`.
+- **`/admin/guests` force-flag button surfaced.** New `force-flag-button.tsx` client component prompts for a reason, calls the existing `platformForceFlagAction`, refreshes. Action existed since Day 12 with no UI.
+- **Owner sidebar gains "Door view" + "Manager view" links** under "View as". Owners no longer have to type those URLs to use their implicit door_manager bypass.
+- **Welcome step 4 placeholder** reads from `accountEntityLabel(accountType).eventPlaceholder` so brand/individual see relevant copy ("Mainframe x Wynwood Takeover" / "DJ Name presents…") instead of "Friday at the Patio".
+
+### What this run did NOT change
+
+- **P0-1 (Vercel Root Directory) is operator-only.** Documented in `DEPLOY.md` §0 since Day 17. Until the dashboard setting is updated to `apps/web`, `git push` to main will fail to deploy.
+- **P2 prototype-named screens** (dualctx, escalate, guestmessage, guesttierhistory, lockdown UI, postevent, promotercompare, promoteronboard, sharevent, smsdelivery, demomode toggle) — none built.
+- **6 unused notification kinds** still don't fire from any code path.
+- **`sms_templates` still not read at send time** — CRUD-only.
+- **`event_templates.cadence_days` cron** — still no worker.
+- **Stripe Connect callback handler** — still missing.
+- **Apple Wallet `.pkpass` byte stream** — still graceful 503.
+- **Mobile QR codec swap + offline scanner** — still placeholder.
+- **axe-core CI** — still manual a11y.
+
+Build green (40 routes — `/owner/dashboard` removed, `/api/webhooks/twilio/sms` added, net same after the deletion). Migration 17 added.

@@ -1,4 +1,5 @@
 import { requireOwnerContext } from "@/lib/owner";
+import { defaultEventType } from "@wadl/shared/account-type";
 import NewEventForm from "./form";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +19,7 @@ export default async function NewEventPage() {
     <NewEventForm
       venues={(venues ?? []).map((v) => ({ id: v.id, name: v.name }))}
       defaultCapacity={defaultCapacity}
+      defaultEventType={defaultEventType(account.account_type)}
     />
   );
 }

@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { AccountType } from "@/lib/types";
+import { accountEntityLabel } from "@wadl/shared/account-type";
 
 const VALID_TYPES: AccountType[] = ["venue", "brand", "individual"];
 
@@ -93,12 +94,10 @@ function EntitySetupInner() {
     router.push(account.account_type === "venue" ? "/venuesetup" : "/welcome");
   }
 
-  const label =
-    accountType === "venue"
-      ? "Venue name"
-      : accountType === "brand"
-      ? "Brand name"
-      : "Your name or handle";
+  const entity = accountType ? accountEntityLabel(accountType) : null;
+  const label = entity
+    ? entity.noun.charAt(0).toUpperCase() + entity.noun.slice(1) + " name"
+    : "Name";
 
   return (
     <main id="main-content" className="mobile-frame">
@@ -121,7 +120,7 @@ function EntitySetupInner() {
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             className="input-dark"
-            placeholder={accountType === "venue" ? "Floyd Miami" : "Mainframe"}
+            placeholder={entity?.placeholder ?? ""}
             required
           />
         </div>

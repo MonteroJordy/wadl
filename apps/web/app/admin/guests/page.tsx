@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
+import ForceFlagButton from "./force-flag-button";
 
 export const dynamic = "force-dynamic";
 
@@ -70,7 +71,10 @@ export default async function AdminGuestsPage({
                   {r.night.event.account.display_name}
                 </td>
                 <td className="py-2">
-                  {r.flag_dna ? <span className="text-coral">⚠</span> : ""}
+                  <ForceFlagButton
+                    guestId={r.id}
+                    alreadyFlagged={r.flag_dna}
+                  />
                 </td>
               </tr>
             ))}

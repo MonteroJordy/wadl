@@ -57,6 +57,8 @@ export default async function OwnerLayout({
     {
       label: "View as",
       items: [
+        { href: "/door", label: "Door view" },
+        { href: "/manager", label: "Manager view" },
         { href: "/discover", label: "Guest discovery" },
         { href: "/mytickets", label: "My tickets" },
       ],

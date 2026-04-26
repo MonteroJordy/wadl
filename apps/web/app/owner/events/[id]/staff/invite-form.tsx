@@ -6,7 +6,9 @@ import { createInviteAction } from "./actions";
 export default function InviteForm({ eventId }: { eventId: string }) {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"door_staff" | "door_manager">("door_staff");
+  const [role, setRole] = useState<
+    "door_staff" | "door_manager" | "photographer"
+  >("door_staff");
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{
     url: string;
@@ -86,11 +88,12 @@ export default function InviteForm({ eventId }: { eventId: string }) {
 
       <div>
         <p className="label-mono mb-2">Role</p>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {(
             [
               { id: "door_staff", label: "Door staff", blurb: "Scan + search" },
               { id: "door_manager", label: "Door manager", blurb: "Full guest list" },
+              { id: "photographer", label: "Photographer", blurb: "Upload event photos" },
             ] as const
           ).map((r) => {
             const active = role === r.id;
