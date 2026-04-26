@@ -59,14 +59,62 @@ export default function LoginPage() {
   }
 
   return (
-    <main id="main-content" className="mobile-frame">
-      <div className="pt-8">
-        <p className="label-mono mb-3">WADL</p>
-        <h1 className="display-xl mb-2">Door,<br/>handled.</h1>
-        <p className="text-muted text-sm leading-relaxed mt-4 max-w-[300px]">
+    <main
+      id="main-content"
+      className="min-h-screen w-full grid md:grid-cols-2 relative overflow-hidden"
+    >
+      <div
+        className="hidden md:flex relative flex-col justify-between p-12 overflow-hidden"
+        style={{
+          background:
+            "linear-gradient(160deg, #14060a 0%, #0a0a0a 55%, #1c0703 100%)",
+        }}
+      >
+        <div
+          className="absolute -top-32 -left-32 w-[420px] h-[420px] rounded-full"
+          style={{
+            background:
+              "radial-gradient(closest-side, rgba(255,74,43,0.45), transparent 70%)",
+          }}
+        />
+        <div
+          className="absolute -bottom-40 -right-32 w-[460px] h-[460px] rounded-full"
+          style={{
+            background:
+              "radial-gradient(closest-side, rgba(245,200,66,0.18), transparent 70%)",
+          }}
+        />
+        <div className="relative">
+          <p className="font-display text-3xl text-coral tracking-wide">WADL</p>
+          <p className="label-mono mt-2">One door · one list · one truth</p>
+        </div>
+        <div className="relative max-w-md">
+          <p className="font-display text-5xl text-cream uppercase leading-[0.95] tracking-wide mb-4">
+            Door,<br />handled.
+          </p>
+          <p className="text-cream/70 text-sm leading-relaxed">
+            Replaces WhatsApp + spreadsheet chaos at every venue&apos;s door.
+            Every guest attributed, every promoter graded, every list closed
+            on time.
+          </p>
+        </div>
+        <p className="relative label-mono">Miami · Wynwood · LA · NYC · soon</p>
+      </div>
+
+      <div className="relative flex flex-col px-6 md:px-12 py-10 md:py-14 max-w-md w-full md:max-w-none mx-auto md:mx-0 md:justify-center">
+        <p className="label-mono mb-3 md:hidden">WADL</p>
+        <h1 className="font-display text-4xl md:text-5xl text-cream uppercase leading-[0.95] tracking-wide mb-2 md:hidden">
+          Door,<br />handled.
+        </h1>
+        <p className="text-muted text-sm leading-relaxed mb-8 md:mb-10 max-w-[360px] md:hidden">
           One list. One QR. Every guest attributed.
         </p>
-      </div>
+
+        <div className="md:max-w-sm">
+        <p className="label-mono mb-2 hidden md:block">Sign in</p>
+        <h2 className="font-display text-3xl text-cream uppercase tracking-wide mb-6 hidden md:block">
+          Get to work.
+        </h2>
 
       <div className="flex gap-1 mt-10 mb-2">
         {(["phone", "email"] as const).map((t) => (
@@ -144,17 +192,19 @@ export default function LoginPage() {
         </form>
       )}
 
-      <p className="label-mono mt-auto pt-8 text-center">
-        By continuing you agree to our{" "}
-        <a href="/terms" className="text-coral hover:text-cream underline">
-          terms
-        </a>{" "}
-        and{" "}
-        <a href="/privacy" className="text-coral hover:text-cream underline">
-          privacy policy
-        </a>
-        .
-      </p>
+      <p className="label-mono mt-8 md:mt-10">
+          By continuing you agree to our{" "}
+          <a href="/terms" className="text-coral hover:text-cream underline">
+            terms
+          </a>{" "}
+          and{" "}
+          <a href="/privacy" className="text-coral hover:text-cream underline">
+            privacy policy
+          </a>
+          .
+        </p>
+        </div>
+      </div>
     </main>
   );
 }

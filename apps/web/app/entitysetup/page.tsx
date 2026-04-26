@@ -100,37 +100,49 @@ function EntitySetupInner() {
     : "Name";
 
   return (
-    <main id="main-content" className="mobile-frame">
-      <div className="pt-8">
+    <main
+      id="main-content"
+      className="min-h-screen w-full flex items-center justify-center px-6 py-12 relative overflow-hidden"
+    >
+      <div
+        className="absolute inset-0 -z-10 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse at top left, rgba(255,74,43,0.18), transparent 55%)",
+        }}
+      />
+      <div className="w-full max-w-md">
         <p className="label-mono mb-3">02 / Entity</p>
-        <h1 className="display-xl mb-2">Name it.</h1>
-        <p className="text-muted text-sm mt-4">
+        <h1 className="font-display text-5xl text-cream uppercase tracking-wide leading-[0.95] mb-3">
+          Name it.
+        </h1>
+        <p className="text-muted text-sm mb-10">
           This is what guests and staff will see on the list.
         </p>
+
+        <form onSubmit={onSubmit} className="flex flex-col gap-5">
+          <div>
+            <label htmlFor="displayName" className="label-mono block mb-2">
+              {label}
+            </label>
+            <input
+              id="displayName"
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              className="input-dark"
+              placeholder={entity?.placeholder ?? ""}
+              required
+            />
+          </div>
+
+          {error && <p className="text-coral text-sm">{error}</p>}
+
+          <button type="submit" className="btn-primary mt-2" disabled={loading}>
+            {loading ? "Creating…" : "Continue"}
+          </button>
+        </form>
       </div>
-
-      <form onSubmit={onSubmit} className="mt-10 flex flex-col gap-5">
-        <div>
-          <label htmlFor="displayName" className="label-mono block mb-2">
-            {label}
-          </label>
-          <input
-            id="displayName"
-            type="text"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            className="input-dark"
-            placeholder={entity?.placeholder ?? ""}
-            required
-          />
-        </div>
-
-        {error && <p className="text-coral text-sm">{error}</p>}
-
-        <button type="submit" className="btn-primary mt-2" disabled={loading}>
-          {loading ? "Creating…" : "Continue"}
-        </button>
-      </form>
     </main>
   );
 }

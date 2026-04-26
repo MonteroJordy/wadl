@@ -91,14 +91,25 @@ export default function VenueSetupPage() {
   }
 
   return (
-    <main id="main-content" className="mobile-frame">
-      <div className="pt-8">
-        <p className="label-mono mb-3">03 / Venue</p>
-        <h1 className="display-xl mb-2">Your<br/>room.</h1>
-        <p className="text-muted text-sm mt-4">
-          Basics for the first event. You can add more venues later.
-        </p>
-      </div>
+    <main
+      id="main-content"
+      className="min-h-screen w-full flex items-center justify-center px-6 py-12 relative overflow-hidden"
+    >
+      <div
+        className="absolute inset-0 -z-10 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse at top right, rgba(255,74,43,0.18), transparent 55%)",
+        }}
+      />
+      <div className="w-full max-w-md">
+      <p className="label-mono mb-3">03 / Venue</p>
+      <h1 className="font-display text-5xl text-cream uppercase tracking-wide leading-[0.95] mb-3">
+        Your<br/>room.
+      </h1>
+      <p className="text-muted text-sm mb-10">
+        Basics for the first event. You can add more venues later.
+      </p>
 
       <form onSubmit={onSubmit} className="mt-10 flex flex-col gap-5">
         <div>
@@ -184,6 +195,7 @@ export default function VenueSetupPage() {
           {loading ? "Saving…" : "Finish setup"}
         </button>
       </form>
+      </div>
     </main>
   );
 }

@@ -86,15 +86,16 @@ export async function seedDemoDataAction(): Promise<
     .single();
   if (eErr || !event) return { ok: false, error: eErr?.message ?? "Event insert failed." };
 
-  // 3. Two nights — Fri / Sat upcoming.
+  // 3. Two nights — TONIGHT (so the tonight's-event hero renders right away)
+  // and tomorrow. Owners loading demo data immediately see the populated
+  // dashboard with a live show, not "No nights this week" until next Friday.
   const now = new Date();
-  const friday = new Date(now);
-  friday.setDate(friday.getDate() + ((5 - friday.getDay() + 7) % 7 || 7));
-  friday.setHours(23, 0, 0, 0);
-  const saturday = new Date(friday);
-  saturday.setDate(friday.getDate() + 1);
+  const tonight = new Date(now);
+  tonight.setHours(23, 0, 0, 0);
+  const tomorrow = new Date(tonight);
+  tomorrow.setDate(tonight.getDate() + 1);
 
-  const nightsToInsert = [friday, saturday].map((d) => ({
+  const nightsToInsert = [tonight, tomorrow].map((d) => ({
     event_id: event.id,
     night_date: d.toISOString().slice(0, 10),
     doors_at: d.toISOString(),

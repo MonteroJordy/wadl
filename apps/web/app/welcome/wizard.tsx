@@ -73,32 +73,92 @@ export default function WelcomeWizard({ initial }: { initial: InitialState }) {
   }
 
   return (
-    <main id="main-content" className="mx-auto max-w-md px-6 py-10 min-h-screen flex flex-col">
-      <header className="flex items-center justify-between mb-8">
-        <p className="label-mono text-coral">
-          Welcome · step {step}/5
-        </p>
-        <button
-          type="button"
-          onClick={skip}
-          disabled={pending}
-          className="label-mono hover:text-cream"
-        >
-          Skip tour →
-        </button>
-      </header>
-
-      <div className="flex gap-1 mb-6">
-        {STEPS.map((s) => (
-          <div
-            key={s}
-            className={`h-1 flex-1 rounded-full ${
-              s <= step ? "bg-coral" : "bg-s2"
-            }`}
-            aria-hidden="true"
-          />
-        ))}
+    <main
+      id="main-content"
+      className="min-h-screen w-full grid md:grid-cols-2 relative overflow-hidden"
+    >
+      {/* Left brand panel — aspirational, sets identity. Hidden on small screens. */}
+      <div
+        className="hidden md:flex relative flex-col justify-between p-12 overflow-hidden"
+        style={{
+          background:
+            "linear-gradient(160deg, #14060a 0%, #0a0a0a 55%, #1c0703 100%)",
+        }}
+      >
+        <div
+          className="absolute -top-32 -left-32 w-[420px] h-[420px] rounded-full"
+          style={{
+            background:
+              "radial-gradient(closest-side, rgba(255,74,43,0.45), transparent 70%)",
+          }}
+        />
+        <div
+          className="absolute -bottom-40 -right-32 w-[460px] h-[460px] rounded-full"
+          style={{
+            background:
+              "radial-gradient(closest-side, rgba(245,200,66,0.18), transparent 70%)",
+          }}
+        />
+        <div className="relative">
+          <p className="font-display text-3xl text-coral tracking-wide">
+            WADL
+          </p>
+          <p className="label-mono mt-2">One door · one list · one truth</p>
+        </div>
+        <div className="relative max-w-md">
+          <p className="font-display text-5xl text-cream uppercase leading-[0.95] tracking-wide mb-4">
+            Stop losing the door to chaos.
+          </p>
+          <p className="text-cream/70 text-sm leading-relaxed">
+            Replaces the WhatsApp-and-spreadsheet shuffle every busy night
+            turns into. Promoters, artists, brands, owner — everyone&apos;s on
+            one attributed list. The door scans QRs, the show rate gets graded,
+            the next week books itself.
+          </p>
+        </div>
+        <div className="relative grid grid-cols-3 gap-3 max-w-md text-cream/80">
+          <div>
+            <p className="font-display text-3xl text-coral leading-none">5m</p>
+            <p className="label-mono mt-1 text-cream/60">to first list</p>
+          </div>
+          <div>
+            <p className="font-display text-3xl text-coral leading-none">0</p>
+            <p className="label-mono mt-1 text-cream/60">accounts on holders</p>
+          </div>
+          <div>
+            <p className="font-display text-3xl text-coral leading-none">∞</p>
+            <p className="label-mono mt-1 text-cream/60">tiers per night</p>
+          </div>
+        </div>
       </div>
+
+      {/* Right wizard panel */}
+      <div className="relative flex flex-col px-6 md:px-10 py-8 md:py-12 max-w-xl w-full md:max-w-none mx-auto">
+        <header className="flex items-center justify-between mb-6">
+          <p className="label-mono text-coral">
+            Welcome · step {step}/5
+          </p>
+          <button
+            type="button"
+            onClick={skip}
+            disabled={pending}
+            className="label-mono hover:text-cream"
+          >
+            Skip tour →
+          </button>
+        </header>
+
+        <div className="flex gap-1 mb-8">
+          {STEPS.map((s) => (
+            <div
+              key={s}
+              className={`h-1 flex-1 rounded-full ${
+                s <= step ? "bg-coral" : "bg-s2"
+              }`}
+              aria-hidden="true"
+            />
+          ))}
+        </div>
 
       {step === 1 && (
         <section className="flex-1 animate-fade-in">
@@ -348,6 +408,7 @@ export default function WelcomeWizard({ initial }: { initial: InitialState }) {
           </div>
         </section>
       )}
+      </div>
     </main>
   );
 }

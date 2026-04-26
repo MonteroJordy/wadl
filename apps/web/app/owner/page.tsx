@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { requireOwnerContext, fmtDate, fmtTime } from "@/lib/owner";
-import EmptyState from "@/components/empty-state";
 import OnboardingTour from "@/components/onboarding-tour";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +9,7 @@ type Range = (typeof RANGES)[number];
 const RANGE_LABEL: Record<Range, string> = {
   week: "This week",
   month: "This month",
-  upcoming: "All upcoming",
+  upcoming: "Upcoming",
   past: "Past",
 };
 
@@ -27,6 +26,7 @@ interface NightWithEvent {
 interface GuestRow {
   event_night_id: string;
   status: string;
+  plus_ones: number;
 }
 
 interface CheckInRow {
@@ -50,8 +50,22 @@ function rangeWindow(range: Range): { start: Date | null; end: Date | null } {
     return { start: startOfDay, end };
   }
   if (range === "upcoming") return { start: startOfDay, end: null };
-  // past
   return { start: null, end: startOfDay };
+}
+
+function isSameDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+function dayLabel(date: Date): { dow: string; day: string } {
+  return {
+    dow: date.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase(),
+    day: String(date.getDate()),
+  };
 }
 
 export default async function OwnerWeekViewPage({
@@ -68,7 +82,6 @@ export default async function OwnerWeekViewPage({
   const { start, end } = rangeWindow(range);
   const venueFilter = (searchParams.venue ?? "").trim();
 
-  // List of this account's venues for the switcher.
   const { data: venuesData } = await supabase
     .from("venues")
     .select("id, name")
@@ -114,7 +127,6 @@ export default async function OwnerWeekViewPage({
     }
   }
 
-  // Past = newest first; everything else = soonest first.
   nights.sort((a, b) =>
     range === "past"
       ? a.doors_at < b.doors_at
@@ -130,8 +142,14 @@ export default async function OwnerWeekViewPage({
   if (nights.length > 0) {
     const nightIds = nights.map((n) => n.id);
     const [guestsRes, checkInsRes] = await Promise.all([
-      supabase.from("guests").select("event_night_id, status").in("event_night_id", nightIds),
-      supabase.from("check_ins").select("event_night_id, state").in("event_night_id", nightIds),
+      supabase
+        .from("guests")
+        .select("event_night_id, status, plus_ones")
+        .in("event_night_id", nightIds),
+      supabase
+        .from("check_ins")
+        .select("event_night_id, state")
+        .in("event_night_id", nightIds),
     ]);
     guests = (guestsRes.data ?? []) as GuestRow[];
     checkIns = (checkInsRes.data ?? []) as CheckInRow[];
@@ -140,25 +158,31 @@ export default async function OwnerWeekViewPage({
   function statsFor(nightId: string) {
     let approved = 0,
       pending = 0,
-      scanned = 0;
+      scanned = 0,
+      rsvps = 0;
     for (const g of guests) {
       if (g.event_night_id !== nightId) continue;
-      if (g.status === "approved") approved++;
-      else if (g.status === "pending") pending++;
+      const heads = 1 + (g.plus_ones ?? 0);
+      rsvps += heads;
+      if (g.status === "approved") approved += heads;
+      else if (g.status === "pending") pending += heads;
     }
     for (const c of checkIns) {
       if (c.event_night_id !== nightId) continue;
       if (c.state === "approved") scanned++;
     }
-    return { approved, pending, scanned };
+    return { approved, pending, scanned, rsvps };
   }
 
-  const byDate = new Map<string, NightWithEvent[]>();
-  for (const n of nights) {
-    const key = n.night_date;
-    if (!byDate.has(key)) byDate.set(key, []);
-    byDate.get(key)!.push(n);
-  }
+  // Identify tonight's event (a night happening today).
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tonight = nights.find((n) => {
+    const d = new Date(n.doors_at);
+    return isSameDay(d, today);
+  });
+  const tonightStats = tonight ? statsFor(tonight.id) : null;
+  const remainingNights = nights.filter((n) => n !== tonight);
 
   function rangeHref(r: Range) {
     const sp = new URLSearchParams();
@@ -178,20 +202,68 @@ export default async function OwnerWeekViewPage({
   }
 
   return (
-    <main id="main-content" className="mx-auto max-w-frame md:max-w-3xl px-6 pt-12 pb-8 md:py-12">
-      <header className="flex items-start justify-between pb-4">
-        <div>
-          <p className="label-mono mb-1">{RANGE_LABEL[range]}</p>
-          <h1 className="display-lg">{account.display_name}</h1>
+    <main
+      id="main-content"
+      className="mx-auto w-full max-w-6xl px-4 md:px-8 pt-6 pb-16"
+    >
+      {/* Hero strip — owner's current focus */}
+      <header className="flex items-end justify-between gap-4 mb-6">
+        <div className="min-w-0">
+          <p className="label-mono mb-1">
+            {RANGE_LABEL[range]} · {account.display_name}
+          </p>
+          <h1 className="font-display text-5xl md:text-6xl text-cream uppercase leading-[0.9] tracking-wide">
+            {tonight ? "Tonight" : RANGE_LABEL[range]}
+          </h1>
         </div>
+        <Link
+          href="/owner/events/new"
+          className="shrink-0 inline-flex items-center gap-2 bg-coral text-bg font-sans font-semibold text-xs uppercase tracking-[0.16em] px-5 py-3 rounded-full hover:brightness-110 transition"
+        >
+          + New event
+        </Link>
       </header>
 
-      <Link href="/owner/events/new" className="btn-primary text-center mb-4 block">
-        + Create event
-      </Link>
+      {/* Compact search + range tabs row */}
+      <div className="flex flex-col md:flex-row gap-2 md:items-center mb-3">
+        <form action="/owner" method="get" className="flex-1">
+          <input
+            type="text"
+            name="q"
+            defaultValue={q}
+            placeholder="Search events…"
+            className="w-full bg-s2 border border-line text-cream px-4 py-2.5 rounded-md font-sans text-sm placeholder:text-muted focus:border-coral focus:outline-none transition-colors"
+          />
+          {range !== "week" && (
+            <input type="hidden" name="range" value={range} />
+          )}
+          {venueFilter && (
+            <input type="hidden" name="venue" value={venueFilter} />
+          )}
+        </form>
+        <div className="flex gap-1 overflow-x-auto pb-1 md:pb-0">
+          {RANGES.map((r) => {
+            const active = r === range;
+            return (
+              <Link
+                key={r}
+                href={rangeHref(r)}
+                className={`shrink-0 px-3 py-1.5 rounded-full border text-[10px] font-mono uppercase tracking-wider transition ${
+                  active
+                    ? "border-coral bg-coral/10 text-cream"
+                    : "border-line bg-s1 text-muted hover:text-cream"
+                }`}
+              >
+                {RANGE_LABEL[r]}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
 
+      {/* Venue switcher pills */}
       {venues.length > 1 && (
-        <div className="flex gap-1 overflow-x-auto pb-2 mb-3">
+        <div className="flex gap-1 overflow-x-auto pb-2 mb-6">
           <Link
             href={venueHref("")}
             className={`shrink-0 px-3 py-1 rounded-full border text-[10px] font-mono uppercase tracking-wider ${
@@ -218,123 +290,203 @@ export default async function OwnerWeekViewPage({
         </div>
       )}
 
-      <form action="/owner" method="get" className="mb-3">
-        <input
-          type="text"
-          name="q"
-          defaultValue={q}
-          placeholder="Search by event name…"
-          className="input-dark"
-        />
-        {range !== "week" && (
-          <input type="hidden" name="range" value={range} />
-        )}
-        {venueFilter && (
-          <input type="hidden" name="venue" value={venueFilter} />
-        )}
-      </form>
+      {/* TONIGHT hero card — coral gradient, big stats */}
+      {tonight && tonightStats && (
+        <Link
+          href={`/owner/events/${tonight.event_id}?night=${tonight.id}`}
+          className="group block relative overflow-hidden rounded-2xl mb-6 isolate"
+        >
+          <div
+            className="absolute inset-0 -z-10"
+            style={{
+              background:
+                "linear-gradient(135deg, #FF4A2B 0%, #FF7A3C 55%, #c9351c 100%)",
+            }}
+          />
+          <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-white/10 -z-10" />
+          <div className="absolute -bottom-20 -left-12 w-64 h-64 rounded-full bg-white/5 -z-10" />
 
-      <div className="flex gap-1 overflow-x-auto pb-2 mb-4">
-        {RANGES.map((r) => {
-          const active = r === range;
-          return (
-            <Link
-              key={r}
-              href={rangeHref(r)}
-              className={`shrink-0 px-3 py-1 rounded-full border text-[10px] font-mono uppercase tracking-wider ${
-                active
-                  ? "border-coral bg-s2 text-cream"
-                  : "border-line bg-s1 text-muted hover:text-cream"
-              }`}
+          {tonight.event?.flyer_url && (
+            <div
+              className="absolute inset-0 -z-20 opacity-50"
+              style={{
+                backgroundImage: `url(${tonight.event.flyer_url})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            />
+          )}
+
+          <div className="p-6 md:p-8">
+            <div className="flex items-center justify-between mb-3">
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/70">
+                Tonight · {fmtDate(tonight.night_date)}
+              </p>
+              <span className="inline-flex items-center gap-1.5 bg-black/25 px-3 py-1 rounded-full font-mono text-[10px] uppercase tracking-widest text-white">
+                <span
+                  className="w-1.5 h-1.5 rounded-full bg-white"
+                  style={{
+                    boxShadow: "0 0 0 0 rgba(255,255,255,0.7)",
+                    animation: "wadl-pulse 2s infinite",
+                  }}
+                />
+                Live
+              </span>
+            </div>
+
+            <h2 className="font-display text-4xl md:text-6xl text-white uppercase leading-[0.9] tracking-wide mb-1">
+              {tonight.event?.name}
+            </h2>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-white/70 mb-6">
+              Doors {fmtTime(tonight.doors_at)}
+              {tonight.is_frozen ? " · LOCKDOWN" : ""}
+            </p>
+
+            <div className="grid grid-cols-3 gap-3 max-w-md">
+              <div>
+                <p className="font-display text-4xl md:text-5xl text-white leading-none">
+                  {tonightStats.scanned}
+                </p>
+                <p className="font-mono text-[9px] uppercase tracking-widest text-white/60 mt-1">
+                  In
+                </p>
+              </div>
+              <div>
+                <p className="font-display text-4xl md:text-5xl text-white/70 leading-none">
+                  {tonightStats.pending}
+                </p>
+                <p className="font-mono text-[9px] uppercase tracking-widest text-white/60 mt-1">
+                  Pending
+                </p>
+              </div>
+              <div>
+                <p className="font-display text-4xl md:text-5xl text-white leading-none">
+                  {tonightStats.rsvps}
+                </p>
+                <p className="font-mono text-[9px] uppercase tracking-widest text-white/60 mt-1">
+                  RSVPs
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="px-6 md:px-8 py-3 bg-black/20 border-t border-white/10">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-white/80">
+              Tap to open dashboard →
+            </p>
+          </div>
+        </Link>
+      )}
+
+      {/* Coming up + past list */}
+      {nights.length === 0 && !tonight ? (
+        <section className="rounded-2xl border border-line bg-s1 px-6 py-12 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-coral/10 border border-coral/30 mx-auto mb-5 flex items-center justify-center">
+            <svg
+              width="28"
+              height="28"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              className="text-coral"
             >
-              {RANGE_LABEL[r]}
-            </Link>
-          );
-        })}
-      </div>
-
-      {byDate.size === 0 ? (
-        <EmptyState
-          title={
-            q
-              ? "No matches"
+              <rect x="3" y="4" width="18" height="18" rx="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          </div>
+          <p className="font-display text-3xl text-cream uppercase tracking-wide mb-2">
+            {q
+              ? "Nothing matches"
               : range === "past"
               ? "No past events yet"
               : range === "upcoming"
-              ? "No upcoming events"
-              : range === "month"
-              ? "Nothing this month"
-              : "No nights this week"
-          }
-          body={
-            q
+              ? "Nothing booked"
+              : "No nights this week"}
+          </p>
+          <p className="text-muted text-sm leading-relaxed max-w-md mx-auto mb-6">
+            {q
               ? `Nothing named "${q}". Try a different search or change the range.`
-              : "Create an event to get your first guest list on the door."
-          }
-          action={
-            !q && (
-              <Link href="/owner/events/new" className="btn-primary inline-block">
-                + Create event
-              </Link>
-            )
-          }
-        />
-      ) : (
-        <div className="flex flex-col gap-5">
-          {[...byDate.entries()].map(([date, ns]) => (
-            <section key={date}>
-              <p className="label-mono mb-2">{fmtDate(date)}</p>
-              <div className="flex flex-col gap-2">
-                {ns.map((n) => {
-                  const s = statsFor(n.id);
-                  const cap = n.capacity_cap ?? 0;
-                  // Past nights jump straight to recap; current/upcoming go to daydash.
-                  const linkHref =
-                    range === "past"
-                      ? `/owner/events/${n.event_id}/recap?night=${n.id}`
-                      : `/owner/events/${n.event_id}?night=${n.id}`;
-                  return (
-                    <Link
-                      key={n.id}
-                      href={linkHref}
-                      className="card hover:border-coral/60 transition"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-sans text-cream font-semibold">
-                            {n.event?.name}
-                          </p>
-                          <p className="label-mono mt-1">
-                            Doors {fmtTime(n.doors_at)}
-                            {n.is_frozen ? " · FROZEN" : ""}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-display text-3xl leading-none text-cream">
-                            {s.scanned}
-                            <span className="text-muted">/{cap || "—"}</span>
-                          </p>
-                          <p className="label-mono mt-1">Scanned</p>
-                        </div>
-                      </div>
-                      <div className="mt-3 flex gap-4 label-mono">
-                        <span>{s.approved} approved</span>
-                        {s.pending > 0 && (
-                          <span className="text-gold">{s.pending} pending</span>
+              : range === "past"
+              ? "Once you run a night, the recap lands here."
+              : "Drop a flyer, set doors, invite your promoters. Two minutes to a real list on a real door."}
+          </p>
+          {!q && range !== "past" && (
+            <Link
+              href="/owner/events/new"
+              className="inline-flex items-center gap-2 bg-coral text-bg font-sans font-semibold text-xs uppercase tracking-[0.16em] px-5 py-3 rounded-full hover:brightness-110 transition"
+            >
+              + Create your first event
+            </Link>
+          )}
+        </section>
+      ) : remainingNights.length > 0 ? (
+        <section className="mt-2">
+          <p className="label-mono mb-3">
+            {tonight ? "Coming up" : RANGE_LABEL[range]} · {remainingNights.length}
+          </p>
+          <div className="grid gap-3 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+            {remainingNights.map((n) => {
+              const s = statsFor(n.id);
+              const cap = n.capacity_cap ?? 0;
+              const date = new Date(n.doors_at);
+              const lbl = dayLabel(date);
+              const linkHref =
+                range === "past"
+                  ? `/owner/events/${n.event_id}/recap?night=${n.id}`
+                  : `/owner/events/${n.event_id}?night=${n.id}`;
+              return (
+                <Link
+                  key={n.id}
+                  href={linkHref}
+                  className="card hover:border-coral/60 transition group flex gap-4 items-start p-4"
+                >
+                  <div className="w-12 shrink-0 bg-s2 border border-line rounded-md py-2 text-center">
+                    <p className="font-mono text-[9px] uppercase tracking-widest text-muted">
+                      {lbl.dow}
+                    </p>
+                    <p className="font-display text-2xl text-cream leading-none mt-0.5">
+                      {lbl.day}
+                    </p>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-sans font-semibold text-cream truncate group-hover:text-coral transition">
+                      {n.event?.name ?? "—"}
+                    </p>
+                    <p className="label-mono mt-1">
+                      Doors {fmtTime(n.doors_at)}
+                      {n.is_frozen ? " · LOCKED" : ""}
+                    </p>
+                    <div className="mt-3 flex gap-3 label-mono">
+                      <span className="text-cream">
+                        {s.scanned}
+                        {cap > 0 && (
+                          <span className="text-muted">/{cap}</span>
                         )}
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </section>
-          ))}
-        </div>
-      )}
+                      </span>
+                      <span>·</span>
+                      <span>{s.approved} approved</span>
+                      {s.pending > 0 && (
+                        <span className="text-gold">{s.pending} pending</span>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
 
-      <p className="label-mono mt-8 text-center">
-        {profile.full_name?.split(" ")[0]} · {account.account_type}
-      </p>
+      <style>{`
+        @keyframes wadl-pulse {
+          0% { box-shadow: 0 0 0 0 rgba(255,255,255,0.7); }
+          70% { box-shadow: 0 0 0 8px rgba(255,255,255,0); }
+          100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+        }
+      `}</style>
 
       {!profile.tour_completed_at && !profile.tour_dismissed_at && (
         <OnboardingTour alreadySeeded={!!profile.demo_seeded_at} />

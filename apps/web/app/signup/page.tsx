@@ -85,13 +85,24 @@ export default function SignupPage() {
   }
 
   return (
-    <main id="main-content" className="mobile-frame">
-      <div className="pt-8">
-        <p className="label-mono mb-3">01 / Account</p>
-        <h1 className="display-xl mb-2">Who are<br/>you?</h1>
-      </div>
+    <main
+      id="main-content"
+      className="min-h-screen w-full flex items-center justify-center px-6 py-12 relative overflow-hidden"
+    >
+      <div
+        className="absolute inset-0 -z-10 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse at top left, rgba(255,74,43,0.18), transparent 55%), radial-gradient(ellipse at bottom right, rgba(245,200,66,0.08), transparent 55%)",
+        }}
+      />
+      <div className="w-full max-w-md">
+      <p className="label-mono mb-3">01 / Account</p>
+      <h1 className="font-display text-5xl text-cream uppercase tracking-wide leading-[0.95] mb-8">
+        Who are<br/>you?
+      </h1>
 
-      <form onSubmit={onSubmit} className="mt-10 flex flex-col gap-5">
+      <form onSubmit={onSubmit} className="flex flex-col gap-5">
         <div>
           <label htmlFor="fullName" className="label-mono block mb-2">
             Full name
@@ -167,6 +178,7 @@ export default function SignupPage() {
           .
         </p>
       </form>
+      </div>
     </main>
   );
 }

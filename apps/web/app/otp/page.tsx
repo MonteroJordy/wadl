@@ -56,14 +56,25 @@ function OtpInner() {
   }
 
   return (
-    <main id="main-content" className="mobile-frame">
-      <div className="pt-8">
+    <main
+      id="main-content"
+      className="min-h-screen w-full flex items-center justify-center px-6 py-12 relative overflow-hidden"
+    >
+      <div
+        className="absolute inset-0 -z-10 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse at top left, rgba(255,74,43,0.18), transparent 55%), radial-gradient(ellipse at bottom right, rgba(245,200,66,0.08), transparent 55%)",
+        }}
+      />
+      <div className="w-full max-w-md">
         <p className="label-mono mb-3">Verify</p>
-        <h1 className="display-xl mb-4">Enter code.</h1>
-        <p className="text-muted text-sm">
+        <h1 className="font-display text-5xl text-cream uppercase tracking-wide leading-[0.95] mb-4">
+          Enter code.
+        </h1>
+        <p className="text-muted text-sm mb-10">
           Sent to <span className="text-cream">{phone || "your phone"}</span>.
         </p>
-      </div>
 
       <form onSubmit={onSubmit} className="mt-12 flex flex-col gap-4">
         <div>
@@ -100,10 +111,11 @@ function OtpInner() {
 
       <button
         onClick={() => router.push("/login")}
-        className="label-mono mt-auto pt-8 text-center hover:text-cream transition"
+        className="label-mono mt-8 hover:text-cream transition block"
       >
         ← Wrong number
       </button>
+      </div>
     </main>
   );
 }
