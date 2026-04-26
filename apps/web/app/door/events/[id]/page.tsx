@@ -51,18 +51,34 @@ export default async function DoorEventHome({
   const capacity = active?.capacity_cap ?? 0;
 
   return (
-    <main id="main-content" className="mobile-frame">
-      <header className="flex items-start justify-between pt-6 pb-4">
-        <div>
-          <p className="label-mono text-mint mb-1">Door / Staff</p>
-          <h1 className="display-lg leading-[0.95]">{resolved.event.name}</h1>
+    <main id="main-content" className="min-h-screen">
+      <header className="sticky top-0 z-30 backdrop-blur-md bg-bg/80 border-b border-mint/20">
+        <div className="max-w-2xl mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span
+              className="inline-block w-1.5 h-1.5 rounded-full bg-mint"
+              style={{ animation: "wadl-pulse-mint 2s infinite" }}
+            />
+            <p className="label-mono text-mint">Door</p>
+          </div>
+          <Link
+            href="/"
+            className="font-display text-xl text-coral tracking-wide"
+          >
+            WADL
+          </Link>
+          <form action="/api/auth/signout" method="post">
+            <button type="submit" className="label-mono hover:text-cream transition">
+              Sign out
+            </button>
+          </form>
         </div>
-        <form action="/api/auth/signout" method="post">
-          <button type="submit" className="label-mono hover:text-cream transition">
-            Sign out
-          </button>
-        </form>
       </header>
+
+      <div className="max-w-2xl mx-auto px-4 md:px-6 pt-6 pb-12 flex flex-col">
+        <h1 className="font-display text-4xl md:text-5xl text-cream uppercase tracking-wide leading-[0.95] mb-1">
+          {resolved.event.name}
+        </h1>
 
       {active ? (
         <>
@@ -144,9 +160,17 @@ export default async function DoorEventHome({
         </div>
       )}
 
-      <p className="label-mono mt-auto pt-8 text-center text-mint">
+      <p className="label-mono mt-8 text-center text-mint">
         Staff — scan or search only
       </p>
+      </div>
+      <style>{`
+        @keyframes wadl-pulse-mint {
+          0% { box-shadow: 0 0 0 0 rgba(0,217,126,0.7); }
+          70% { box-shadow: 0 0 0 8px rgba(0,217,126,0); }
+          100% { box-shadow: 0 0 0 0 rgba(0,217,126,0); }
+        }
+      `}</style>
     </main>
   );
 }

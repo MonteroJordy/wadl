@@ -295,7 +295,7 @@ export default async function DayDashPage({
         </div>
 
         {scanned > 0 && (
-          <div className="mt-4 pt-4 border-t border-line grid grid-cols-2 gap-3">
+          <div className="mt-4 pt-4 border-t border-line grid grid-cols-3 gap-3">
             <div>
               <p className="label-mono">Last scan</p>
               <p className="font-sans text-sm text-cream">
@@ -308,6 +308,57 @@ export default async function DayDashPage({
                 {recentScans} in
               </p>
             </div>
+            {(() => {
+              // Projected ETA to capacity at current pace.
+              if (!cap || cap <= 0) return <div />;
+              if (scanned >= cap) {
+                return (
+                  <div>
+                    <p className="label-mono text-coral">At cap</p>
+                    <p className="font-sans text-sm text-coral">Now</p>
+                  </div>
+                );
+              }
+              if (recentScans <= 0) {
+                return (
+                  <div>
+                    <p className="label-mono">Pace</p>
+                    <p className="font-sans text-sm text-muted">—</p>
+                  </div>
+                );
+              }
+              const perMin = recentScans / 30;
+              const remaining = cap - scanned;
+              const eta = Math.round(remaining / perMin);
+              return (
+                <div>
+                  <p
+                    className={`label-mono ${
+                      eta <= 30
+                        ? "text-coral"
+                        : eta <= 90
+                        ? "text-gold"
+                        : "text-mint"
+                    }`}
+                  >
+                    Cap in
+                  </p>
+                  <p
+                    className={`font-sans text-sm ${
+                      eta <= 30
+                        ? "text-coral"
+                        : eta <= 90
+                        ? "text-gold"
+                        : "text-cream"
+                    }`}
+                  >
+                    {eta < 60
+                      ? `~${eta}m`
+                      : `~${Math.floor(eta / 60)}h ${eta % 60}m`}
+                  </p>
+                </div>
+              );
+            })()}
           </div>
         )}
       </section>

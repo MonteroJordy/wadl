@@ -76,8 +76,21 @@ body {
 }
 
 @layer components {
+  /* Mobile-first column. Stays 375px on phones (intentional — the design
+     was sketched for that frame). Expands to 2xl on desktop so it doesn't
+     feel marooned. The body painted radial below makes the surrounding
+     viewport feel designed instead of empty. */
   .mobile-frame {
-    @apply mx-auto w-full max-w-frame min-h-screen bg-bg px-6 py-8 flex flex-col;
+    @apply mx-auto w-full max-w-frame md:max-w-2xl min-h-screen bg-transparent px-6 py-8 flex flex-col relative;
+  }
+  @media (min-width: 768px) {
+    body:has(.mobile-frame) {
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(ellipse 800px 600px at 50% -200px, rgba(255, 74, 43, 0.08), transparent 70%),
+        radial-gradient(ellipse 600px 500px at 50% 110%, rgba(245, 200, 66, 0.04), transparent 70%);
+      background-attachment: fixed;
+    }
   }
 
   .display-xl {
@@ -113,5 +126,15 @@ body {
 
   .card {
     @apply bg-s1 border border-line rounded-lg p-4;
+  }
+
+  /* Subtle entry animation so navigations don't snap. Disabled by the
+     prefers-reduced-motion rule above. */
+  main {
+    animation: wadl-page-fade 0.18s ease-out;
+  }
+  @keyframes wadl-page-fade {
+    from { opacity: 0; transform: translateY(2px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 }

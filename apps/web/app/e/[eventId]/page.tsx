@@ -91,31 +91,61 @@ export default async function EventDetailPage({
   const showNights = upcoming.length > 0 ? upcoming : nights;
 
   return (
-    <main id="main-content" className="mobile-frame">
-      <header className="flex items-center justify-between pt-6 pb-4">
-        <Link href="/discover" className="label-mono hover:text-cream">
-          ← Discover
-        </Link>
-        <Link href="/mytickets" className="label-mono hover:text-cream">
-          My tickets
-        </Link>
+    <main id="main-content" className="min-h-screen">
+      {/* Sticky chrome */}
+      <header className="sticky top-0 z-30 backdrop-blur-md bg-bg/80 border-b border-line">
+        <div className="max-w-5xl mx-auto px-4 md:px-8 py-3 flex items-center justify-between">
+          <Link href="/discover" className="label-mono hover:text-cream transition">
+            ← Discover
+          </Link>
+          <Link
+            href="/"
+            className="font-display text-2xl text-coral tracking-wide"
+          >
+            WADL
+          </Link>
+          <Link href="/mytickets" className="label-mono hover:text-cream transition">
+            My tickets
+          </Link>
+        </div>
       </header>
 
-      {event.flyer_url ? (
-        <div
-          className="w-full rounded-lg overflow-hidden border border-line mb-5"
-          style={{ aspectRatio: "4 / 5" }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={event.flyer_url}
-            alt={event.name}
-            className="w-full h-full object-cover"
-          />
+      <div className="max-w-5xl mx-auto px-4 md:px-8 pt-6 md:pt-10 pb-16 grid md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-6 md:gap-10">
+        {/* Flyer column */}
+        <div>
+          {event.flyer_url ? (
+            <div
+              className="w-full rounded-2xl overflow-hidden border border-line"
+              style={{ aspectRatio: "4 / 5" }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={event.flyer_url}
+                alt={event.name}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ) : (
+            <div
+              className="w-full rounded-2xl flex items-center justify-center border border-line"
+              style={{
+                aspectRatio: "4 / 5",
+                background:
+                  "linear-gradient(135deg, #1a050d 0%, #0a0a0a 50%, #14060a 100%)",
+              }}
+            >
+              <p className="font-display text-7xl text-coral/30 uppercase">
+                {event.name.slice(0, 2)}
+              </p>
+            </div>
+          )}
         </div>
-      ) : null}
 
-      <h1 className="display-lg mb-3">{event.name}</h1>
+        {/* Info column */}
+        <div className="flex flex-col">
+          <h1 className="font-display text-4xl md:text-6xl text-cream uppercase tracking-wide leading-[0.95] mb-3">
+            {event.name}
+          </h1>
 
       {event.venue?.name && (
         <div className="mb-4">
@@ -215,12 +245,14 @@ export default async function EventDetailPage({
         text={`${event.name} on WADL${event.venue?.name ? ` · ${event.venue.name}` : ""}`}
       />
 
-      <p className="label-mono mt-auto pt-8 text-center">
+      <p className="label-mono mt-8 pt-8 text-center md:text-left border-t border-line">
         Already have a ticket?{" "}
         <Link href="/mytickets" className="text-coral hover:brightness-125">
           My tickets →
         </Link>
       </p>
+        </div>
+      </div>
     </main>
   );
 }

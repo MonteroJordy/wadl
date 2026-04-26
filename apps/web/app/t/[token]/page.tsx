@@ -95,14 +95,25 @@ export default async function TicketPage({
 
   if (isPast) {
     return (
-      <main id="main-content" className="mobile-frame">
-        <header className="flex items-center justify-between pt-6 pb-4">
-          <Link href="/mytickets" className="label-mono hover:text-cream">
-            ← Tickets
-          </Link>
-          <p className="label-mono">Past event</p>
+      <main id="main-content" className="min-h-screen">
+        <header className="sticky top-0 z-30 backdrop-blur-md bg-bg/80 border-b border-line">
+          <div className="max-w-md mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
+            <Link href="/mytickets" className="label-mono hover:text-cream transition">
+              ← Tickets
+            </Link>
+            <Link
+              href="/"
+              className="font-display text-xl text-coral tracking-wide"
+            >
+              WADL
+            </Link>
+            <p className="label-mono">Past</p>
+          </div>
         </header>
-        <h1 className="display-lg mb-1">{guest.night.event.name}</h1>
+        <div className="max-w-md mx-auto px-4 md:px-6 pt-6 pb-12">
+        <h1 className="font-display text-3xl md:text-4xl text-cream uppercase tracking-wide leading-[0.95] mb-2">
+          {guest.night.event.name}
+        </h1>
         <p className="label-mono mb-6">
           {fmtDate(guest.night.night_date)} · Doors {fmtTime(guest.night.doors_at)}
         </p>
@@ -158,29 +169,41 @@ export default async function TicketPage({
           </Link>
         </div>
 
-        <p className="label-mono mt-auto pt-8 text-center break-all">
+        <p className="label-mono mt-8 text-center break-all">
           <span className="text-muted">Token:</span> {guest.check_in_token}
         </p>
+        </div>
       </main>
     );
   }
 
   return (
-    <main id="main-content" className="mobile-frame">
-      <header className="flex items-center justify-between pt-6 pb-4">
-        <Link href="/mytickets" className="label-mono hover:text-cream">
-          ← Tickets
-        </Link>
-        <StatusPill status={guest.status} />
+    <main id="main-content" className="min-h-screen">
+      <header className="sticky top-0 z-30 backdrop-blur-md bg-bg/80 border-b border-line">
+        <div className="max-w-md mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
+          <Link href="/mytickets" className="label-mono hover:text-cream transition">
+            ← Tickets
+          </Link>
+          <Link
+            href="/"
+            className="font-display text-xl text-coral tracking-wide"
+          >
+            WADL
+          </Link>
+          <StatusPill status={guest.status} />
+        </div>
       </header>
 
-      <h1 className="display-lg mb-1">{guest.night.event.name}</h1>
+      <div className="max-w-md mx-auto px-4 md:px-6 pt-6 pb-12 flex flex-col">
+      <h1 className="font-display text-3xl md:text-4xl text-cream uppercase tracking-wide leading-[0.95] mb-2">
+        {guest.night.event.name}
+      </h1>
       <p className="label-mono mb-6">
         {fmtDate(guest.night.night_date)} · Doors {fmtTime(guest.night.doors_at)}
       </p>
 
       <div
-        className={`rounded-lg p-6 flex items-center justify-center ${
+        className={`rounded-2xl p-6 flex items-center justify-center ${
           active ? "bg-cream" : "bg-s2 border border-line"
         }`}
         style={{ aspectRatio: "1 / 1" }}
@@ -249,9 +272,10 @@ export default async function TicketPage({
         </a>
       </p>
 
-      <p className="label-mono mt-auto pt-8 text-center">
+      <p className="label-mono mt-8 text-center">
         Show this screen at the door.
       </p>
+      </div>
     </main>
   );
 }

@@ -91,31 +91,42 @@ export default async function MyTicketsPage() {
   }
 
   return (
-    <main id="main-content" className="mobile-frame">
-      <header className="flex items-center justify-between pt-6 pb-4">
-        <Link href="/discover" className="label-mono hover:text-cream">
-          ← Discover
-        </Link>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/mytickets/profile"
-            className="label-mono hover:text-cream"
-          >
-            Profile
+    <main id="main-content" className="min-h-screen">
+      <header className="sticky top-0 z-30 backdrop-blur-md bg-bg/80 border-b border-line">
+        <div className="max-w-4xl mx-auto px-4 md:px-8 py-3 flex items-center justify-between">
+          <Link href="/discover" className="label-mono hover:text-cream transition">
+            ← Discover
           </Link>
-          <form action="/api/auth/signout" method="post">
-            <button
-              type="submit"
-              className="label-mono hover:text-cream transition"
+          <Link
+            href="/"
+            className="font-display text-2xl text-coral tracking-wide"
+          >
+            WADL
+          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/mytickets/profile"
+              className="label-mono hover:text-cream"
             >
-              Sign out
-            </button>
-          </form>
+              Profile
+            </Link>
+            <form action="/api/auth/signout" method="post">
+              <button
+                type="submit"
+                className="label-mono hover:text-cream transition"
+              >
+                Sign out
+              </button>
+            </form>
+          </div>
         </div>
       </header>
 
-      <h1 className="display-lg mb-2">My tickets.</h1>
-      <p className="label-mono mb-6">{phoneWithPlus}</p>
+      <div className="max-w-4xl mx-auto px-4 md:px-8 pt-6 md:pt-10 pb-16">
+        <p className="label-mono mb-2">{phoneWithPlus}</p>
+        <h1 className="font-display text-5xl md:text-6xl text-cream uppercase tracking-wide leading-[0.95] mb-8">
+          My tickets<span className="text-coral">.</span>
+        </h1>
 
       {newUpgrades.length > 0 && (
         <section className="card border-coral mb-6">
@@ -149,9 +160,9 @@ export default async function MyTicketsPage() {
       ) : (
         <>
           {upcoming.length > 0 && (
-            <section className="mb-6">
-              <p className="label-mono mb-2">Upcoming</p>
-              <div className="flex flex-col gap-2">
+            <section className="mb-8">
+              <p className="label-mono mb-3">Upcoming · {upcoming.length}</p>
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
                 {upcoming.map((t) => (
                   <TicketCard key={t.id} t={t} />
                 ))}
@@ -161,8 +172,8 @@ export default async function MyTicketsPage() {
 
           {past.length > 0 && (
             <section>
-              <p className="label-mono mb-2">Past</p>
-              <div className="flex flex-col gap-2 opacity-70">
+              <p className="label-mono mb-3">Past · {past.length}</p>
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 opacity-70">
                 {past.map((t) => (
                   <TicketCard key={t.id} t={t} />
                 ))}
@@ -171,6 +182,7 @@ export default async function MyTicketsPage() {
           )}
         </>
       )}
+      </div>
     </main>
   );
 }
