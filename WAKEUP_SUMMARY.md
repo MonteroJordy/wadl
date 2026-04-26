@@ -1598,3 +1598,104 @@ Operator setup (one-time): in Twilio console → Phone Numbers → Active Number
 - **axe-core CI** — still manual a11y.
 
 Build green (40 routes — `/owner/dashboard` removed, `/api/webhooks/twilio/sms` added, net same after the deletion). Migration 17 added.
+
+---
+
+## Days 20–24 — prototype parity rebuild after the design reference landed
+
+User shared the design prototype at `wadl.tiiny.site` (166 screens). Day 19 audit had been working blind. This 5-day push builds the highest-perceived-gap surfaces against the prototype.
+
+### Commits
+
+- `ad446a6...` — Day 16 (web flow polish, prior session)
+- *(this run)*
+- Day 20 — Owner platform parity
+- Day 21 — Analytics dashboard expansion
+- Day 22 — Internal CMS + Guest post-event
+- Day 23 — SMS log + per-guest DM + branded promoter onboarding
+- Day 24 — Mobile parity (real QR, notifications inbox, approval queue)
+
+### What's now built that wasn't 5 days ago
+
+**Owner platform (Day 20):**
+- `/owner/holders` cross-event holder roster (separate from scorecards).
+- `/owner/events/[id]/guests/[guestId]/history` tier + flag timeline.
+- Capacity lockdown: when approved heads cross threshold, auto-flips `is_frozen` + closes all allocations + audit-logs + capacity_alert push. Coral lockdown banner on holder pages.
+- `/owner/events/[id]/override` — manually admit, bypassing caps + lockdown. Reason required, audit row records bypass.
+- `/owner/profile/notifications` — per-user channel + per-kind + quiet-hours preferences.
+- `components/activity-feed.tsx` mounted on daydash.
+- `/mytickets/event/[eventId]` multi-night QR grid for guests with multiple tickets on the same event.
+- `lib/sms.ts` writes every send to `sms_log` (account/event/guest/template/segments/cost).
+
+**Analytics (Day 21):**
+- Tabbed sub-pages: Overview / Attendance / Scorecards / Guests / Capacity / Tonight live / Compare.
+- `lib/analytics-extra.ts` — hour velocity, capacity rows w/ status, dwell time, best night/event/peak hour, retention, segments, top returning guests.
+- Tonight live: stat hero + RealtimeCounters + tier split bars (RSVP vs in) + promoter performance + live check-in feed.
+- Compare: side-by-side picker + show-rate / scanned / approved diff cards w/ tone arrows.
+
+**CMS (Day 22):**
+- `/admin/billing` — MRR / ARR / active plans + accounts table.
+- `/admin/operations` — system health + live-events table + 24h scans + 7d broadcasts + open-tickets.
+- `/admin/support` — filter by status, priority + status tones.
+- `/admin/feature-flags` — read-only registry, status badges.
+- `/admin/activity` — cross-account audit_log stream w/ action chips.
+- `/admin/users` — searchable + filter-by-role profiles.
+- `/admin/venues` — searchable venues w/ events count.
+- `components/admin-tabs.tsx` shared nav.
+
+**Guest post-event (Day 22):**
+- `/e/[eventId]` — at-capacity banner when all nights frozen, ended-event banner when all past, `ShareEventButton` (Web Share API + clipboard fallback).
+- `/t/[token]` — past-event branch: replaces QR with "✓ You attended" or "No-show" card, links to `/discover`.
+
+**SMS / Chat Hub / Promoter (Day 23):**
+- `/owner/sms-log` — outbound SMS log w/ status / cost / segments / event+guest joins.
+- Per-guest direct SMS via new `lib/guest-dm.ts` + `components/guest-dm-button.tsx` mounted on guest detail. Logs to `guest_messages` + `sms_log` + `audit_log`.
+- `/holder/claim/[token]` — branded onboarding card explaining what holders get.
+
+**Mobile (Day 24):**
+- Real QR codec via `react-native-qrcode-svg` (added to package.json — `npm install` materializes).
+- `/(owner)/notifications` — inbox screen with mark-all-read.
+- `/(owner)/queue/[eventId]` — approval queue with approve/reject actions.
+- Owner dashboard surfaces queue + notifications shortcuts.
+
+### Migrations added (1 this run)
+
+17. `20260503000001_day20_features.sql` — `profiles.notif_prefs jsonb`, `guest_messages`, `sms_log`, `support_tickets`, `feature_flags` (seeded).
+
+### Routes added (this run)
+
+- /owner/holders
+- /owner/events/[id]/guests/[guestId]/history
+- /owner/events/[id]/override
+- /owner/profile/notifications
+- /owner/sms-log
+- /mytickets/event/[eventId]
+- /owner/analytics/{attendance, scorecards, guests, capacity, tonight, compare}
+- /admin/{billing, operations, support, feature-flags, activity, users, venues}
+- Mobile: /(owner)/notifications, /(owner)/queue/[eventId]
+
+Total web routes: 56 (was 41 pre-Day-20). Total migrations: 17.
+
+### What still doesn't exist
+
+Per the prototype's 166-screen inventory:
+
+- **Compare two events with deeper diff** — basic compare ships; no per-tier or per-holder comparison yet.
+- **Demo Mode toggle** — sales-call ready toggle still missing (only the welcome wizard's "Load demo data" exists).
+- **dualctx context switcher** — owner-as-staff context switch; not in nav.
+- **escalate** — door staff "page the manager" UX missing.
+- **promoteronboard** beyond the branded claim card — no full onboarding wizard.
+- **smsdelivery** at /admin level (per-message Twilio delivery status webhook).
+- **postevent / posteventsummary** with feedback survey.
+- **Recurring event auto-create cron** still not wired.
+- **Stripe Connect callback handler** still missing.
+- **Apple Wallet `.pkpass`** still graceful 503.
+- **Mobile offline scanner queue** still missing.
+- **axe-core CI**.
+
+P0-1 (Vercel Root Directory operator action) still pending.
+
+### Build state
+
+- Web: clean. 56 routes. `npx next build` green from `apps/web/`.
+- Mobile: scaffold compiles after `npm install` materializes the new `react-native-qrcode-svg` dep + `npm install` from monorepo root. EAS Build profile defined in `apps/mobile/eas.json`. Operator must enroll in Apple Developer ($99/yr) to build for TestFlight.

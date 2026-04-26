@@ -135,19 +135,29 @@ export default function OwnerEventDetail() {
           </View>
         )}
 
-        <Pressable
-          onPress={() => router.push("/(door)/scan")}
-          className="bg-mint rounded-md py-4 mt-2 active:opacity-80"
-        >
-          <Text className="text-bg text-center font-semibold uppercase tracking-widest text-sm">
-            Open scanner
-          </Text>
-        </Pressable>
+        <View className="gap-2 mt-2">
+          <Pressable
+            onPress={() => router.push("/(door)/scan")}
+            className="bg-mint rounded-md py-4 active:opacity-80"
+          >
+            <Text className="text-bg text-center font-semibold uppercase tracking-widest text-sm">
+              Open scanner
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => router.push(`/(owner)/queue/${event.id}`)}
+            className="border border-coral/60 rounded-md py-3 active:opacity-80"
+          >
+            <Text className="text-coral text-center font-semibold uppercase tracking-widest text-xs">
+              Approval queue
+              {counts && counts.pending > 0 ? ` · ${counts.pending}` : ""}
+            </Text>
+          </Pressable>
+        </View>
 
         <Text className="text-muted text-xs leading-5 mt-6">
-          Approving guests, editing allocations, and broadcasting SMS live in
-          the web app at wadl-pearl.vercel.app — open it on a laptop for full
-          control.
+          Allocations, broadcasts, scorecards live in the web app at
+          wadl-pearl.vercel.app — open on a laptop for full control.
         </Text>
       </ScrollView>
     </SafeAreaView>

@@ -2,15 +2,9 @@ import { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import Svg, { Rect } from "react-native-svg";
+import QRCode from "react-native-qrcode-svg";
 import { fmtDate, fmtTime } from "@wadl/shared/format";
 import { supabase } from "../../../src/lib/supabase";
-// Cheap server-rendered QR via the existing web route. Avoids pulling a
-// native QR codec dep; React Native can render an Image from a URL just
-// fine, including SVGs via react-native-svg with a remote source we'd need
-// to vector-decode. Simpler: we use react-native-qrcode-svg if available,
-// else fall back to a remote PNG. Here we draw a placeholder grid (visual
-// stand-in) and ship the real QR via the web URL fallback.
 
 interface Ticket {
   full_name: string;
@@ -82,7 +76,13 @@ export default function TicketScreen() {
         style={{ width: 280, height: 280 }}
       >
         {active ? (
-          <PlaceholderQR seed={t.check_in_token} />
+          <QRCode
+            value={t.check_in_token}
+            size={260}
+            color="#0a0a0a"
+            backgroundColor="#F2EDE4"
+            ecl="M"
+          />
         ) : (
           <Text className="text-gold text-4xl font-black">PENDING</Text>
         )}
@@ -107,44 +107,3 @@ export default function TicketScreen() {
   );
 }
 
-/**
- * Minimal placeholder QR — deterministic grid from the token hash so each
- * ticket renders a unique pattern. Not a real QR; production should swap
- * in `react-native-qrcode-svg` (small dep, no extra config). This keeps
- * the scaffold dependency-light while still producing visible art.
- */
-function PlaceholderQR({ seed }: { seed: string }) {
-  const cells = 21;
-  const size = 280;
-  const cell = size / cells;
-  // Hash seed → bit grid.
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) {
-    h = (h * 31 + seed.charCodeAt(i)) >>> 0;
-  }
-  const bits: boolean[] = [];
-  for (let i = 0; i < cells * cells; i++) {
-    h = (h * 1664525 + 1013904223) >>> 0;
-    bits.push((h & 1) === 1);
-  }
-
-  return (
-    <Svg width={size} height={size}>
-      {bits.map((on, i) => {
-        if (!on) return null;
-        const x = (i % cells) * cell;
-        const y = Math.floor(i / cells) * cell;
-        return (
-          <Rect
-            key={i}
-            x={x}
-            y={y}
-            width={cell}
-            height={cell}
-            fill="#0a0a0a"
-          />
-        );
-      })}
-    </Svg>
-  );
-}

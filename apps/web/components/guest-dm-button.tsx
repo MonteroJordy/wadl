@@ -22,7 +22,7 @@ export default function GuestDmButton({
 
   if (!hasPhone) {
     return (
-      <p className="label-mono text-muted">No phone — can't DM.</p>
+      <p className="label-mono text-muted">No phone — can&apos;t DM.</p>
     );
   }
   if (optedOut) {

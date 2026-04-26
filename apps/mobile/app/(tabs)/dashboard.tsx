@@ -83,14 +83,24 @@ export default function OwnerDashboardScreen() {
           </Text>
         )}
 
-        <Pressable
-          onPress={() => router.push("/(door)/scan")}
-          className="bg-mint rounded-md py-4 mt-6 active:opacity-80"
-        >
-          <Text className="text-bg text-center font-semibold uppercase tracking-widest text-sm">
-            Open scanner
-          </Text>
-        </Pressable>
+        <View className="gap-2 mt-6">
+          <Pressable
+            onPress={() => router.push("/(door)/scan")}
+            className="bg-mint rounded-md py-4 active:opacity-80"
+          >
+            <Text className="text-bg text-center font-semibold uppercase tracking-widest text-sm">
+              Open scanner
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => router.push("/(owner)/notifications")}
+            className="border border-line rounded-md py-3 active:opacity-80"
+          >
+            <Text className="text-cream text-center font-semibold uppercase tracking-widest text-xs">
+              Notifications
+            </Text>
+          </Pressable>
+        </View>
 
         <View className="gap-3 mt-6">
           {nights.map((n) => (
