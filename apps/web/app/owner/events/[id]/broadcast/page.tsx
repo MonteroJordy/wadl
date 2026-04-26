@@ -43,6 +43,19 @@ export default async function BroadcastPage({
         label: `${a.holder_name} (${fmtDate(n.night_date)})`,
       });
 
+  // Day 34 — pull SMS templates so broadcast can pre-fill from saved copy.
+  const { data: templatesData } = await supabase
+    .from("sms_templates")
+    .select("id, key, label, body")
+    .eq("account_id", account.id)
+    .order("label");
+  const templates = (templatesData ?? []) as Array<{
+    id: string;
+    key: string;
+    label: string;
+    body: string;
+  }>;
+
   return (
     <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 pt-12 pb-8 md:py-12">
       <Link
@@ -60,6 +73,7 @@ export default async function BroadcastPage({
         eventId={event.id}
         nights={nights}
         allocations={allocations}
+        templates={templates}
       />
     </main>
   );

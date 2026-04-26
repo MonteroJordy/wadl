@@ -1,8 +1,14 @@
 import { useEffect, useState } from "react";
-import { View, Text, Pressable, ActivityIndicator } from "react-native";
+import { View, Text, Pressable, ActivityIndicator, Linking } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import Constants from "expo-constants";
 import { supabase } from "../../src/lib/supabase";
+
+const WEB_URL =
+  (Constants.expoConfig?.extra as { webUrl?: string })?.webUrl ??
+  process.env.EXPO_PUBLIC_WEB_URL ??
+  "https://wadl-pearl.vercel.app";
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -62,6 +68,33 @@ export default function ProfileScreen() {
         )}
       </View>
       <View className="gap-2 mb-6">
+        {/* Day 34 — explicit "during-the-night only" framing. */}
+        <View className="bg-s1 border border-line rounded-md p-4 mb-2">
+          <Text className="text-coral text-[10px] uppercase tracking-widest mb-2">
+            Mobile = at the door
+          </Text>
+          <Text className="text-cream/80 text-sm leading-relaxed">
+            Allocations, scorecards, settings, broadcasts, billing — they all
+            live on the web. Mobile is the door tool: scan, search, escalate,
+            recap.
+          </Text>
+        </View>
+        <Pressable
+          onPress={() => Linking.openURL(`${WEB_URL}/owner`)}
+          className="bg-s1 border border-line rounded-md py-3 active:opacity-80"
+        >
+          <Text className="text-cream text-center font-semibold uppercase tracking-widest text-xs">
+            Open web dashboard ↗
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={() => Linking.openURL(`${WEB_URL}/help`)}
+          className="bg-s1 border border-line rounded-md py-3 active:opacity-80"
+        >
+          <Text className="text-cream text-center font-semibold uppercase tracking-widest text-xs">
+            Help ↗
+          </Text>
+        </Pressable>
         <Pressable
           onPress={() => router.push("/(auth)/dualctx")}
           className="bg-s1 border border-line rounded-md py-3 active:opacity-80"

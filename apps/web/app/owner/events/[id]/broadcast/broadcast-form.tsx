@@ -16,15 +16,23 @@ interface AllocOpt {
   night_id: string;
   label: string;
 }
+interface TemplateOpt {
+  id: string;
+  key: string;
+  label: string;
+  body: string;
+}
 
 export default function BroadcastForm({
   eventId,
   nights,
   allocations,
+  templates = [],
 }: {
   eventId: string;
   nights: NightOpt[];
   allocations: AllocOpt[];
+  templates?: TemplateOpt[];
 }) {
   const [body, setBody] = useState("");
   const [nightId, setNightId] = useState<string>("");
@@ -167,9 +175,29 @@ export default function BroadcastForm({
       </div>
 
       <div>
-        <label className="label-mono block mb-2">
-          Message ({body.length}/160)
-        </label>
+        <div className="flex items-baseline justify-between mb-2">
+          <label className="label-mono">
+            Message ({body.length}/160)
+          </label>
+          {templates.length > 0 && (
+            <select
+              value=""
+              onChange={(e) => {
+                const t = templates.find((x) => x.id === e.target.value);
+                if (t) setBody(t.body.slice(0, 160));
+              }}
+              className="bg-s2 border border-line rounded px-2 py-1 text-xs font-mono text-cream"
+              aria-label="Load saved template"
+            >
+              <option value="">Load template…</option>
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}

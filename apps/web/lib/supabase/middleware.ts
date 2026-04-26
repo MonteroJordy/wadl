@@ -26,6 +26,8 @@ const PUBLIC_PATHS = [
   "/privacy",
   "/terms",
   "/docs",
+  "/help",
+  "/contact",
   "/sitemap.xml",
   "/robots.txt",
   "/holder/claim",
