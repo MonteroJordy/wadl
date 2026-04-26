@@ -76,6 +76,86 @@ export default async function TicketPage({
   });
 
   const active = guest.status === "approved";
+  // Past-event view: when doors_at is more than 6h in the past, switch to a
+  // post-event "you attended" UI instead of showing the (now-useless) QR.
+  const isPast =
+    new Date(guest.night.doors_at).getTime() < Date.now() - 6 * 60 * 60_000;
+  // Look for an approved scan to know if they actually came.
+  const admin2 = createAdminClient();
+  const { data: scan } = isPast
+    ? await admin2
+        .from("check_ins")
+        .select("scanned_at")
+        .eq("guest_id", guest.id)
+        .eq("state", "approved")
+        .order("scanned_at", { ascending: false })
+        .limit(1)
+        .maybeSingle<{ scanned_at: string }>()
+    : { data: null };
+
+  if (isPast) {
+    return (
+      <main id="main-content" className="mobile-frame">
+        <header className="flex items-center justify-between pt-6 pb-4">
+          <Link href="/mytickets" className="label-mono hover:text-cream">
+            ← Tickets
+          </Link>
+          <p className="label-mono">Past event</p>
+        </header>
+        <h1 className="display-lg mb-1">{guest.night.event.name}</h1>
+        <p className="label-mono mb-6">
+          {fmtDate(guest.night.night_date)} · Doors {fmtTime(guest.night.doors_at)}
+        </p>
+
+        {guest.night.event.flyer_url && (
+          <div
+            className="w-full rounded-lg overflow-hidden border border-line mb-5"
+            style={{ aspectRatio: "4 / 5" }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={guest.night.event.flyer_url}
+              alt={guest.night.event.name}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+
+        <div className="card mb-4">
+          {scan ? (
+            <>
+              <p className="label-mono text-mint mb-1">✓ You attended</p>
+              <p className="font-sans text-cream">
+                Scanned in at{" "}
+                {new Date(scan.scanned_at).toLocaleString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="label-mono text-coral mb-1">No-show</p>
+              <p className="font-sans text-cream/80 text-sm">
+                We don&apos;t have a record of you scanning in. Talk to the
+                host if that&apos;s a mistake.
+              </p>
+            </>
+          )}
+        </div>
+
+        <Link href="/discover" className="btn-primary text-center">
+          What&apos;s next →
+        </Link>
+
+        <p className="label-mono mt-auto pt-8 text-center break-all">
+          <span className="text-muted">Token:</span> {guest.check_in_token}
+        </p>
+      </main>
+    );
+  }
 
   return (
     <main id="main-content" className="mobile-frame">

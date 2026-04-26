@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import AdminTabs from "@/components/admin-tabs";
 
 export const dynamic = "force-dynamic";
 
@@ -29,25 +30,19 @@ export default async function AdminLayout({
 
   return (
     <div>
-      <header className="border-b border-coral/30 bg-s1 px-4 md:px-8 py-3 flex items-center gap-4 sticky top-0 z-30">
-        <p className="font-display text-xl text-coral tracking-wide">WADL · ADMIN</p>
-        <nav className="flex gap-3">
-          <Link href="/admin" className="label-mono hover:text-cream">
-            Stats
+      <header className="border-b border-coral/30 bg-s1 sticky top-0 z-30">
+        <div className="px-4 md:px-8 py-3 flex items-center gap-4">
+          <p className="font-display text-xl text-coral tracking-wide">
+            WADL · ADMIN
+          </p>
+          <Link
+            href="/owner"
+            className="ml-auto label-mono hover:text-cream"
+          >
+            ← My owner view
           </Link>
-          <Link href="/admin/accounts" className="label-mono hover:text-cream">
-            Accounts
-          </Link>
-          <Link href="/admin/events" className="label-mono hover:text-cream">
-            Events
-          </Link>
-          <Link href="/admin/guests" className="label-mono hover:text-cream">
-            Guests
-          </Link>
-        </nav>
-        <Link href="/owner" className="ml-auto label-mono hover:text-cream">
-          ← My owner view
-        </Link>
+        </div>
+        <AdminTabs />
       </header>
       {children}
     </div>

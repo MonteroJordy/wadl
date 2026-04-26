@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fmtDate, fmtTime } from "@/lib/format";
+import ShareEventButton from "@/components/share-event-button";
+import { getAppUrl } from "@/lib/app-url";
 
 export const dynamic = "force-dynamic";
 
@@ -134,6 +136,39 @@ export default async function EventDetailPage({
         </div>
       )}
 
+      {(() => {
+        const allFrozen = nights.length > 0 && nights.every((n) => n.is_frozen);
+        const allPast = nights.length > 0 && upcoming.length === 0;
+        if (allPast) {
+          return (
+            <div className="card border-line text-center mb-6">
+              <p className="label-mono mb-2">This event ended</p>
+              <p className="text-cream/80 text-sm">
+                Doors are closed. Browse other tonight + upcoming events.
+              </p>
+              <Link
+                href="/discover"
+                className="btn-primary inline-block mt-3"
+              >
+                Discover events
+              </Link>
+            </div>
+          );
+        }
+        if (allFrozen) {
+          return (
+            <div className="card border-coral mb-6">
+              <p className="label-mono text-coral mb-1">⚠ At capacity</p>
+              <p className="text-cream/80 text-sm">
+                Every night sold out. Want to be next time? Follow the host
+                for the next drop.
+              </p>
+            </div>
+          );
+        }
+        return null;
+      })()}
+
       <p className="label-mono mb-2">{upcoming.length > 0 ? "Upcoming nights" : "All nights"}</p>
       <div className="flex flex-col gap-2 mb-6">
         {showNights.map((n) => {
@@ -165,6 +200,12 @@ export default async function EventDetailPage({
           );
         })}
       </div>
+
+      <ShareEventButton
+        url={`${getAppUrl()}/e/${event.id}`}
+        title={event.name}
+        text={`${event.name} on WADL${event.venue?.name ? ` · ${event.venue.name}` : ""}`}
+      />
 
       <p className="label-mono mt-auto pt-8 text-center">
         Already have a ticket?{" "}
