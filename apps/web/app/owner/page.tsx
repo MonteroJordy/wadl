@@ -212,6 +212,13 @@ export default async function OwnerWeekViewPage({
         <div className="min-w-0">
           <p className="label-mono mb-1">
             {RANGE_LABEL[range]} · {account.display_name}
+            {account.handle && (
+              <>
+                {" · "}
+                <span className="text-cream">@{account.handle}</span>
+              </>
+            )}
+            {account.city && <> · {account.city}</>}
           </p>
           <h1 className="font-display text-5xl md:text-6xl text-cream uppercase leading-[0.9] tracking-wide">
             {tonight ? "Tonight" : RANGE_LABEL[range]}

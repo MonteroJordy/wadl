@@ -46,6 +46,12 @@ export interface Account {
   account_type: AccountType;
   display_name: string;
   owner_user_id: string;
+  /** Day 42 — @-style social handle (without leading @). Brand + individual mostly. */
+  handle?: string | null;
+  /** Day 42 — operating city. Cosmetic; informs filtering + headers. */
+  city?: string | null;
+  /** Day 25 — Stripe Connect link. */
+  stripe_connect_account_id?: string | null;
   created_at: string;
   updated_at: string;
 }

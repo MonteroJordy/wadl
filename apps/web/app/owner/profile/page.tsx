@@ -5,6 +5,7 @@ import { getAppUrl } from "@/lib/app-url";
 import { getVapidPublicKey } from "@/lib/push";
 import PushSubscribeButton from "@/components/push-subscribe";
 import EmptyState from "@/components/empty-state";
+import AccountMetaForm from "./account-meta-form";
 
 export const dynamic = "force-dynamic";
 
@@ -90,6 +91,31 @@ export default async function ProfilePage() {
             <span className="text-cream">{profile.email}</span>
           </p>
         )}
+        {(account.handle || account.city) && (
+          <p className="label-mono mt-2 truncate">
+            {account.handle && (
+              <>
+                <span className="text-muted">@</span>
+                <span className="text-cream">{account.handle}</span>
+              </>
+            )}
+            {account.handle && account.city && " · "}
+            {account.city && (
+              <>
+                <span className="text-muted">in</span>{" "}
+                <span className="text-cream">{account.city}</span>
+              </>
+            )}
+          </p>
+        )}
+      </section>
+
+      <section className="card mb-4">
+        <p className="label-mono mb-3">Edit handle + city</p>
+        <AccountMetaForm
+          initialHandle={account.handle ?? null}
+          initialCity={account.city ?? null}
+        />
       </section>
 
       <section className="card mb-4">
