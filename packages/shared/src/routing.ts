@@ -9,9 +9,12 @@ export function nextOnboardingStep(
   account: Account | null,
   hasVenue: boolean
 ): string {
-  if (!profile || !profile.full_name) return "/signup";
-  if (!profile.account_id || !account) return "/entitysetup";
-  if (account.account_type === "venue" && !hasVenue) return "/venuesetup";
+  // Day 32 — single unified setup screen replaces signup → entitysetup →
+  // venuesetup. Until profile + account + (venue if venue-type) are all
+  // present, send them to /setup.
+  if (!profile || !profile.full_name) return "/setup";
+  if (!profile.account_id || !account) return "/setup";
+  if (account.account_type === "venue" && !hasVenue) return "/setup";
   // First-time owners see the 5-step welcome wizard before the dashboard.
   if (!profile.onboarding_completed_at) return "/welcome";
   return "/owner";
