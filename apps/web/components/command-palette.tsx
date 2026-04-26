@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface Hit {
-  kind: "event" | "guest" | "allocation" | "audit";
+  kind: "event" | "guest" | "allocation" | "audit" | "nav" | "sms";
   href: string;
   title: string;
   subtitle?: string;
@@ -15,6 +15,8 @@ const KIND_LABEL: Record<Hit["kind"], string> = {
   guest: "Guest",
   allocation: "Holder",
   audit: "Audit",
+  nav: "Go",
+  sms: "SMS",
 };
 
 export default function CommandPalette() {

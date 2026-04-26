@@ -149,18 +149,24 @@ export default async function AuditLogPage({
   }
 
   return (
-    <main id="main-content" className="mobile-frame">
-      <header className="flex items-center justify-between pt-6 pb-4">
+    <main
+      id="main-content"
+      className="mx-auto w-full max-w-4xl px-4 md:px-8 pt-6 pb-16"
+    >
+      <header className="mb-6">
         <Link
           href={`/owner/events/${event.id}`}
-          className="label-mono hover:text-cream"
+          className="label-mono hover:text-cream transition mb-2 inline-block"
         >
-          ← Back
+          ← {event.name}
         </Link>
-        <p className="label-mono">Audit log</p>
+        <h1 className="font-display text-4xl md:text-5xl text-cream uppercase tracking-wide leading-[0.9]">
+          Audit log
+        </h1>
+        <p className="label-mono mt-2">
+          Every add, approve, reject, override, scan, opt-out — attributed and timestamped.
+        </p>
       </header>
-
-      <h1 className="display-lg mb-2">{event.name}</h1>
       <p className="label-mono mb-4">{total} entries</p>
 
       {distinctActions.length > 0 && (
