@@ -78,71 +78,142 @@ export default async function AllocationsPage({
     byNight.get(a.event_night_id)!.push(a);
   }
 
+  // Aggregate stats — total cap, used, headroom.
+  const totalCap = allocs.reduce((s, a) => s + a.cap, 0);
+  const totalUsed = Array.from(usedByAlloc.values()).reduce((s, n) => s + n, 0);
+  const fillPct = totalCap === 0 ? 0 : Math.round((totalUsed / totalCap) * 100);
+
   return (
-    <main id="main-content" className="mobile-frame">
-      <header className="flex items-center justify-between pt-6 pb-4">
-        <Link href={`/owner/events/${event.id}`} className="label-mono hover:text-cream">
-          ← Back
+    <main
+      id="main-content"
+      className="mx-auto w-full max-w-5xl px-4 md:px-8 pt-6 pb-16"
+    >
+      <header className="flex items-end justify-between gap-4 mb-6">
+        <div className="min-w-0">
+          <Link
+            href={`/owner/events/${event.id}`}
+            className="label-mono hover:text-cream transition mb-2 inline-block"
+          >
+            ← {event.name}
+          </Link>
+          <h1 className="font-display text-4xl md:text-5xl text-cream uppercase tracking-wide leading-[0.9]">
+            Allocations
+          </h1>
+          <p className="label-mono mt-2">
+            {allocs.length} {allocs.length === 1 ? "holder" : "holders"} · {totalUsed}/{totalCap} used
+          </p>
+        </div>
+        <Link
+          href={`/owner/events/${event.id}/allocations/new`}
+          className="shrink-0 inline-flex items-center gap-2 bg-coral text-bg font-sans font-semibold text-xs uppercase tracking-[0.16em] px-5 py-3 rounded-full hover:brightness-110 transition"
+        >
+          + New
         </Link>
-        <p className="label-mono">Allocations</p>
       </header>
 
-      <h1 className="display-lg mb-2">{event.name}</h1>
-      <p className="label-mono mb-6">
-        {allocs.length} {allocs.length === 1 ? "holder" : "holders"}
-      </p>
-
-      <Link
-        href={`/owner/events/${event.id}/allocations/new`}
-        className="btn-primary text-center mb-6 block"
-      >
-        + New allocation
-      </Link>
+      {/* Aggregate fill bar */}
+      {totalCap > 0 && (
+        <div className="card mb-6">
+          <div className="flex items-end justify-between mb-3">
+            <p className="label-mono">Total capacity</p>
+            <p className={`label-mono ${fillPct >= 90 ? "text-coral" : fillPct >= 70 ? "text-gold" : "text-mint"}`}>
+              {fillPct}% filled
+            </p>
+          </div>
+          <div className="h-2 bg-s3 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full ${
+                fillPct >= 90 ? "bg-coral" : fillPct >= 70 ? "bg-gold" : "bg-mint"
+              }`}
+              style={{ width: `${Math.min(100, fillPct)}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {nights.length === 0 ? (
-        <EmptyState
-          title="No nights yet"
-          body="Add nights from settings, then come back to distribute allocations."
-        />
+        <section className="rounded-2xl border border-line bg-s1 px-6 py-16 text-center">
+          <p className="font-display text-3xl text-cream uppercase tracking-wide mb-2">
+            No nights yet
+          </p>
+          <p className="text-muted text-sm leading-relaxed max-w-md mx-auto mb-6">
+            Add nights from settings, then come back to distribute the list.
+          </p>
+          <Link
+            href={`/owner/events/${event.id}/settings`}
+            className="inline-flex items-center gap-2 bg-coral text-bg font-sans font-semibold text-xs uppercase tracking-[0.16em] px-5 py-3 rounded-full hover:brightness-110 transition"
+          >
+            Open settings
+          </Link>
+        </section>
       ) : allocs.length === 0 ? (
-        <EmptyState
-          title="No allocations yet"
-          body="Add a promoter, artist, or brand allocation to start distributing the list."
-        />
+        <section className="rounded-2xl border border-line bg-s1 px-6 py-16 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-coral/10 border border-coral/30 mx-auto mb-5 flex items-center justify-center">
+            <span className="font-display text-3xl text-coral">+</span>
+          </div>
+          <p className="font-display text-3xl text-cream uppercase tracking-wide mb-2">
+            No allocations yet
+          </p>
+          <p className="text-muted text-sm leading-relaxed max-w-md mx-auto mb-6">
+            Drop a promoter, artist, or brand a magic link. They add names up
+            to their cap. Every name gets attributed back.
+          </p>
+          <Link
+            href={`/owner/events/${event.id}/allocations/new`}
+            className="inline-flex items-center gap-2 bg-coral text-bg font-sans font-semibold text-xs uppercase tracking-[0.16em] px-5 py-3 rounded-full hover:brightness-110 transition"
+          >
+            + Add first allocation
+          </Link>
+        </section>
       ) : (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-8">
           {nights.map((n) => {
             const list = byNight.get(n.id) ?? [];
             if (list.length === 0) return null;
             return (
               <section key={n.id}>
-                <p className="label-mono mb-2">{fmtDate(n.night_date)}</p>
-                <div className="flex flex-col gap-2">
+                <p className="label-mono mb-3">{fmtDate(n.night_date)} · {list.length}</p>
+                <div className="grid gap-2 grid-cols-1 md:grid-cols-2">
                   {list.map((a) => {
                     const used = usedByAlloc.get(a.id) ?? 0;
+                    const pct = a.cap === 0 ? 0 : (used / a.cap) * 100;
+                    const tone =
+                      pct >= 100 ? "coral" : pct >= 80 ? "gold" : "mint";
                     return (
                       <Link
                         key={a.id}
                         href={`/owner/events/${event.id}/allocations/${a.id}`}
-                        className="card hover:border-coral transition"
+                        className="card hover:border-coral/60 transition group"
                       >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="font-sans text-cream font-semibold">
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-sans text-cream font-semibold truncate group-hover:text-coral transition">
                               {a.holder_name}
                             </p>
-                            <div className="flex gap-2 mt-1 label-mono">
-                              {a.auto_approve && <span className="text-mint">Auto-approve</span>}
-                              {!a.list_open && <span className="text-coral">Closed</span>}
+                            <div className="flex flex-wrap gap-2 mt-1 label-mono">
+                              {a.auto_approve && (
+                                <span className="text-mint">Auto-approve</span>
+                              )}
+                              {!a.list_open && (
+                                <span className="text-coral">Closed</span>
+                              )}
+                              {a.list_open && !a.auto_approve && (
+                                <span>Host approves</span>
+                              )}
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className="font-display text-2xl leading-none text-cream">
+                          <div className="text-right shrink-0">
+                            <p className="font-display text-3xl leading-none text-cream">
                               {used}
-                              <span className="text-muted">/{a.cap}</span>
+                              <span className="text-muted text-xl">/{a.cap}</span>
                             </p>
-                            <p className="label-mono mt-1">Used</p>
                           </div>
+                        </div>
+                        <div className="h-1 bg-s3 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full bg-${tone}`}
+                            style={{ width: `${Math.min(100, pct)}%` }}
+                          />
                         </div>
                       </Link>
                     );

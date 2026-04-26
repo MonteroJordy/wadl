@@ -3,6 +3,7 @@ import { View, Text, Pressable, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { BarCodeScanner } from "expo-barcode-scanner";
+import * as Haptics from "expo-haptics";
 import { supabase } from "../../src/lib/supabase";
 import {
   enqueue,
@@ -142,6 +143,7 @@ export default function DoorScanScreen() {
           error: netErr instanceof Error ? netErr.message : String(netErr),
         });
         setQueued(await pendingCount());
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
         setResult({
           state: "approved",
           name: undefined,
@@ -151,6 +153,7 @@ export default function DoorScanScreen() {
       }
 
       if (!guest) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
         setResult({ state: "not_found", body: "Not on list." });
         return;
       }
@@ -161,6 +164,7 @@ export default function DoorScanScreen() {
           scanned_by: u.user.id,
           state: "do_not_admit",
         });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
         setResult({
           state: "do_not_admit",
           name: guest.full_name,
@@ -169,6 +173,7 @@ export default function DoorScanScreen() {
         return;
       }
       if (guest.status !== "approved") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
         setResult({ state: "not_found", body: "Not approved." });
         return;
       }
@@ -182,6 +187,7 @@ export default function DoorScanScreen() {
         .limit(1)
         .maybeSingle();
       if (prior) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
         setResult({
           state: "already_used",
           name: guest.full_name,
@@ -195,6 +201,7 @@ export default function DoorScanScreen() {
         scanned_by: u.user.id,
         state: "approved",
       });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       setResult({
         state: "approved",
         name: guest.full_name,

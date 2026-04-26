@@ -75,33 +75,53 @@ export default async function QueuePage({
   }
 
   return (
-    <main id="main-content" className="mobile-frame">
-      <header className="flex items-center justify-between pt-6 pb-4">
-        <Link href={`/owner/events/${event.id}`} className="label-mono hover:text-cream">
-          ← Back
+    <main
+      id="main-content"
+      className="mx-auto w-full max-w-4xl px-4 md:px-8 pt-6 pb-16"
+    >
+      <header className="mb-6">
+        <Link
+          href={`/owner/events/${event.id}`}
+          className="label-mono hover:text-cream transition mb-2 inline-block"
+        >
+          ← {event.name}
         </Link>
-        <p className="label-mono">Queue</p>
+        <h1 className="font-display text-4xl md:text-5xl text-cream uppercase tracking-wide leading-[0.9]">
+          Approval queue
+        </h1>
+        <p className="label-mono mt-2">
+          {pending.length === 0
+            ? "Nothing pending"
+            : `${pending.length} pending · approve or reject`}
+        </p>
       </header>
 
-      <h1 className="display-lg mb-2">{event.name}</h1>
-      <p className="label-mono mb-6">
-        {pending.length} pending
-      </p>
-
       {pending.length === 0 ? (
-        <EmptyState
-          title="Queue empty"
-          body="Nothing waiting for approval. Auto-approved allocations bypass this view."
-        />
+        <section className="rounded-2xl border border-line bg-s1 px-6 py-16 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-mint/10 border border-mint/30 mx-auto mb-5 flex items-center justify-center">
+            <span className="font-display text-3xl text-mint">✓</span>
+          </div>
+          <p className="font-display text-3xl text-cream uppercase tracking-wide mb-2">
+            Queue empty
+          </p>
+          <p className="text-muted text-sm leading-relaxed max-w-md mx-auto">
+            Nothing waiting for review. Auto-approved allocations bypass this
+            view — you only see RSVPs from holders who require host approval.
+          </p>
+        </section>
       ) : (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-8">
           {nights.map((n) => {
             const list = byNight.get(n.id) ?? [];
             if (list.length === 0) return null;
             return (
               <section key={n.id}>
-                <p className="label-mono mb-2">{fmtDate(n.night_date)} · {list.length} pending</p>
-                <BulkActions eventId={event.id} nightId={n.id} count={list.length} />
+                <p className="label-mono mb-3">
+                  {fmtDate(n.night_date)} · {list.length} pending
+                </p>
+                <div className="mb-3">
+                  <BulkActions eventId={event.id} nightId={n.id} count={list.length} />
+                </div>
                 <div className="flex flex-col gap-2">
                   {list.map((g) => (
                     <QueueRow
