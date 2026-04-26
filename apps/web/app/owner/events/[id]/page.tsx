@@ -5,7 +5,7 @@ import { fmtHour } from "@/lib/recap";
 import FreezeButton from "./freeze-button";
 import EmptyState from "@/components/empty-state";
 import RealtimeCounters from "@/components/realtime-counters";
-import ActivityFeed from "@/components/activity-feed";
+import ActivityFeedRealtime from "@/components/activity-feed-realtime";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -589,12 +589,27 @@ async function renderActivity(nightId: string, eventId: string) {
   }>;
   return (
     <section className="mt-6">
-      <p className="label-mono mb-2">Live activity</p>
-      <ActivityFeed
-        rows={rows}
+      <p className="label-mono mb-2">
+        Live activity
+        <span
+          className="inline-block w-1.5 h-1.5 rounded-full bg-mint ml-2 align-middle"
+          style={{ animation: "wadl-pulse-mint 2s infinite" }}
+          aria-hidden="true"
+        />
+      </p>
+      <ActivityFeedRealtime
+        initialRows={rows}
+        eventId={eventId}
         emptyTitle="Quiet so far"
         emptyBody="Holders haven't added anyone and the door hasn't opened yet."
       />
+      <style>{`
+        @keyframes wadl-pulse-mint {
+          0% { box-shadow: 0 0 0 0 rgba(0,217,126,0.7); }
+          70% { box-shadow: 0 0 0 6px rgba(0,217,126,0); }
+          100% { box-shadow: 0 0 0 0 rgba(0,217,126,0); }
+        }
+      `}</style>
     </section>
   );
 }
