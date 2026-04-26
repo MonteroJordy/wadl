@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import EmptyState from "@/components/empty-state";
+import ToggleButton from "./toggle-button";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +25,7 @@ export default async function AdminFeatureFlagsPage() {
     <main id="main-content" className="mx-auto max-w-5xl px-6 pt-6 pb-12">
       <h1 className="display-lg mb-2">Feature flags</h1>
       <p className="label-mono mb-6">
-        Read-only registry. Toggle from SQL or the future flag-edit UI.
+        Toggle on/off live. Rollout % + target stay editable via SQL for now.
       </p>
 
       {flags.length === 0 ? (
@@ -52,16 +53,8 @@ export default async function AdminFeatureFlagsPage() {
                   <td className="py-2 text-muted text-xs max-w-md">
                     {f.description ?? ""}
                   </td>
-                  <td className="py-2 label-mono">
-                    {f.enabled ? (
-                      <span className="text-mint">live</span>
-                    ) : f.rollout_target === "beta" ? (
-                      <span className="text-gold">beta</span>
-                    ) : f.rollout_target === "dev" ? (
-                      <span className="text-coral">dev</span>
-                    ) : (
-                      <span className="text-muted">off</span>
-                    )}
+                  <td className="py-2">
+                    <ToggleButton flagKey={f.key} enabled={f.enabled} />
                   </td>
                   <td className="py-2 text-right">{f.rollout_pct}%</td>
                   <td className="py-2 label-mono">{f.rollout_target ?? "—"}</td>
