@@ -2,6 +2,7 @@ import AuthedShell, { type NavSection } from "@/components/authed-shell";
 import { requireOwnerContext } from "@/lib/owner";
 import CommandPalette from "@/components/command-palette";
 import NotificationBell from "@/components/notification-bell";
+import { hiddenNavHrefs } from "@wadl/shared/account-type";
 
 export const dynamic = "force-dynamic";
 
@@ -78,6 +79,16 @@ export default async function OwnerLayout({
       : []),
   ];
 
+  // Day 41: hide nav items irrelevant to this account type. Brands skip
+  // webhooks; individuals skip both webhooks + sms_templates.
+  const hidden = hiddenNavHrefs(account.account_type);
+  const filteredSections: NavSection[] = sections
+    .map((s) => ({
+      ...s,
+      items: s.items.filter((it) => !hidden.has(it.href)),
+    }))
+    .filter((s) => s.items.length > 0);
+
   return (
     <AuthedShell
       user={{ full_name: profile.full_name, phone: profile.phone }}
@@ -85,7 +96,7 @@ export default async function OwnerLayout({
         display_name: account.display_name,
         account_type: account.account_type,
       }}
-      sections={sections}
+      sections={filteredSections}
       brand="WADL"
       brandSub={account.display_name}
       brandTone="coral"

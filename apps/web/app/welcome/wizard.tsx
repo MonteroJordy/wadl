@@ -9,7 +9,10 @@ import {
   skipWelcomeAction,
 } from "./actions";
 import { useToast } from "@/components/toast";
-import { accountEntityLabel } from "@wadl/shared/account-type";
+import {
+  accountEntityLabel,
+  welcomeStep1Pitch,
+} from "@wadl/shared/account-type";
 import type { AccountType } from "@wadl/shared/types";
 
 interface InitialState {
@@ -160,27 +163,28 @@ export default function WelcomeWizard({ initial }: { initial: InitialState }) {
           ))}
         </div>
 
-      {step === 1 && (
-        <section className="flex-1 animate-fade-in">
-          <h1 className="display-lg mb-3">
-            Welcome, {initial.fullName.split(" ")[0]}.
-          </h1>
-          <p className="text-cream/80 leading-relaxed mb-6">
-            You&apos;re 5 minutes from your first guest list. We&apos;ll walk
-            you through it.
-          </p>
-          <ul className="text-muted text-sm leading-relaxed space-y-2 mb-8">
-            <li>• Pick your role</li>
-            <li>• Set up your venue</li>
-            <li>• Create your first event</li>
-            <li>• Invite your first holder</li>
-            <li>• Run the door</li>
-          </ul>
-          <button type="button" onClick={next} className="btn-primary">
-            Let&apos;s go →
-          </button>
-        </section>
-      )}
+      {step === 1 && (() => {
+        const pitch = welcomeStep1Pitch(initial.accountType);
+        return (
+          <section className="flex-1 animate-fade-in">
+            <h1 className="display-lg mb-3">
+              {pitch.headline.replace(
+                /Welcome\.?/i,
+                `Welcome, ${initial.fullName.split(" ")[0]}.`
+              )}
+            </h1>
+            <p className="text-cream/80 leading-relaxed mb-6">{pitch.blurb}</p>
+            <ul className="text-muted text-sm leading-relaxed space-y-2 mb-8">
+              {pitch.steps.map((s) => (
+                <li key={s}>• {s}</li>
+              ))}
+            </ul>
+            <button type="button" onClick={next} className="btn-primary">
+              Let&apos;s go →
+            </button>
+          </section>
+        );
+      })()}
 
       {step === 2 && (
         <section className="flex-1 animate-fade-in">

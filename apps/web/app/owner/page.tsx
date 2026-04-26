@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireOwnerContext, fmtDate, fmtTime } from "@/lib/owner";
 import OnboardingTour from "@/components/onboarding-tour";
+import { dashboardFraming } from "@wadl/shared/account-type";
 
 export const dynamic = "force-dynamic";
 
@@ -397,30 +398,37 @@ export default async function OwnerWeekViewPage({
               <line x1="3" y1="10" x2="21" y2="10" />
             </svg>
           </div>
-          <p className="font-display text-3xl text-cream uppercase tracking-wide mb-2">
-            {q
-              ? "Nothing matches"
-              : range === "past"
-              ? "No past events yet"
-              : range === "upcoming"
-              ? "Nothing booked"
-              : "No nights this week"}
-          </p>
-          <p className="text-muted text-sm leading-relaxed max-w-md mx-auto mb-6">
-            {q
-              ? `Nothing named "${q}". Try a different search or change the range.`
-              : range === "past"
-              ? "Once you run a night, the recap lands here."
-              : "Drop a flyer, set doors, invite your promoters. Two minutes to a real list on a real door."}
-          </p>
-          {!q && range !== "past" && (
-            <Link
-              href="/owner/events/new"
-              className="inline-flex items-center gap-2 bg-coral text-bg font-sans font-semibold text-xs uppercase tracking-[0.16em] px-5 py-3 rounded-full hover:brightness-110 transition"
-            >
-              + Create your first event
-            </Link>
-          )}
+          {(() => {
+            const framing = dashboardFraming(account.account_type);
+            return (
+              <>
+                <p className="font-display text-3xl text-cream uppercase tracking-wide mb-2">
+                  {q
+                    ? "Nothing matches"
+                    : range === "past"
+                    ? "No past events yet"
+                    : range === "upcoming"
+                    ? "Nothing booked"
+                    : framing.emptyTitle}
+                </p>
+                <p className="text-muted text-sm leading-relaxed max-w-md mx-auto mb-6">
+                  {q
+                    ? `Nothing named "${q}". Try a different search or change the range.`
+                    : range === "past"
+                    ? "Once you run a night, the recap lands here."
+                    : framing.emptyBody}
+                </p>
+                {!q && range !== "past" && (
+                  <Link
+                    href="/owner/events/new"
+                    className="inline-flex items-center gap-2 bg-coral text-bg font-sans font-semibold text-xs uppercase tracking-[0.16em] px-5 py-3 rounded-full hover:brightness-110 transition"
+                  >
+                    {framing.emptyCtaLabel}
+                  </Link>
+                )}
+              </>
+            );
+          })()}
         </section>
       ) : remainingNights.length > 0 ? (
         <section className="mt-2">
