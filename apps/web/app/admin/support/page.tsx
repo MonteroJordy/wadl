@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import EmptyState from "@/components/empty-state";
+import StatusButton from "./status-button";
 
 export const dynamic = "force-dynamic";
 
@@ -97,17 +98,18 @@ export default async function AdminSupportPage({
                     {r.body}
                   </p>
                 </div>
-                <div className="text-right shrink-0">
+                <div className="text-right shrink-0 flex flex-col items-end gap-2">
                   <p
                     className={`label-mono ${PRIORITY_TONE[r.priority] ?? ""}`}
                   >
                     {r.priority}
                   </p>
                   <p
-                    className={`label-mono mt-1 ${STATUS_TONE[r.status] ?? ""}`}
+                    className={`label-mono ${STATUS_TONE[r.status] ?? ""}`}
                   >
                     {r.status}
                   </p>
+                  <StatusButton ticketId={r.id} currentStatus={r.status} />
                 </div>
               </div>
             </li>
