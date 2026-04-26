@@ -55,6 +55,8 @@ export default function SetupPage() {
   const [email, setEmail] = useState("");
   const [accountType, setAccountType] = useState<AccountType | null>(null);
   const [accountName, setAccountName] = useState("");
+  const [handle, setHandle] = useState("");
+  const [accountCity, setAccountCity] = useState("Miami");
   const [venueName, setVenueName] = useState("");
   const [venueCity, setVenueCity] = useState("Miami");
   const [loading, setLoading] = useState(false);
@@ -98,7 +100,7 @@ export default function SetupPage() {
     const trimName = fullName.trim();
     const trimAccount = accountName.trim();
     const trimVenue = venueName.trim();
-    const trimCity = venueCity.trim();
+    const trimVenueCity = venueCity.trim();
 
     if (!trimName) return setError("Enter your full name.");
     if (!accountType) return setError("Pick what you run.");
@@ -140,12 +142,16 @@ export default function SetupPage() {
     }
 
     // 2. Account row.
+    const trimHandle = handle.trim().replace(/^@/, "");
+    const trimCity = accountCity.trim();
     const { data: account, error: accErr } = await supabase
       .from("accounts")
       .insert({
         account_type: accountType,
         display_name: trimAccount,
         owner_user_id: user.id,
+        handle: trimHandle || null,
+        city: trimCity || null,
       })
       .select("id")
       .single();
@@ -166,7 +172,7 @@ export default function SetupPage() {
       const { error: venueErr } = await supabase.from("venues").insert({
         account_id: account.id,
         name: trimVenue,
-        city: trimCity || null,
+        city: trimVenueCity || null,
       });
       if (venueErr) {
         setLoading(false);
@@ -343,6 +349,48 @@ export default function SetupPage() {
                 required
               />
             </div>
+          )}
+
+          {/* Day 42 — handle for brand + individual.
+              Venue accounts use venue.name as identity. Brands + individuals
+              live by their @ — surface it during setup so the dashboard
+              header reads "@mainframe · Miami" instead of just a flat name. */}
+          {(accountType === "brand" || accountType === "individual") && (
+            <>
+              <div>
+                <label htmlFor="handle" className="label-mono block mb-2">
+                  Handle <span className="text-muted">(without @)</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-coral text-lg">@</span>
+                  <input
+                    id="handle"
+                    type="text"
+                    value={handle}
+                    onChange={(e) =>
+                      setHandle(e.target.value.replace(/^@/, "").replace(/\s/g, ""))
+                    }
+                    placeholder={
+                      accountType === "brand" ? "mainframe" : "djdiplo"
+                    }
+                    className="input-dark flex-1"
+                  />
+                </div>
+              </div>
+              <div>
+                <label htmlFor="accountCity" className="label-mono block mb-2">
+                  City
+                </label>
+                <input
+                  id="accountCity"
+                  type="text"
+                  value={accountCity}
+                  onChange={(e) => setAccountCity(e.target.value)}
+                  placeholder="Miami"
+                  className="input-dark"
+                />
+              </div>
+            </>
           )}
 
           {accountType === "venue" && (
