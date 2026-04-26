@@ -53,8 +53,8 @@ export default async function TonightLivePage() {
   if (nights.length === 0) {
     return (
       <EmptyState
-        title="Nothing live tonight"
-        body="When a night's doors are within 8h ago → 18h ahead, it lights up here."
+        title="Quiet tonight"
+        body="No doors within an 8h-ago to 18h-ahead window. Live counters, hour velocity, real-time tier mix — they'll all be here when a night opens."
       />
     );
   }

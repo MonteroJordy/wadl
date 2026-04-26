@@ -11,7 +11,7 @@ export default async function GuestsAnalyticsPage() {
   const x = await computeExtraAnalytics(account.id);
 
   if (x.segments.first_timers + x.segments.returning + x.segments.regulars === 0) {
-    return <EmptyState title="No guest data yet" body="Once guests check in, retention + segments populate." />;
+    return <EmptyState title="No regulars yet" body="First-timers, returning, regulars — the cohort math kicks in after a few nights with check-ins." />;
   }
 
   return (

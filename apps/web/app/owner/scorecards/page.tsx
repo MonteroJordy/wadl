@@ -19,8 +19,8 @@ export default async function ScorecardsPage() {
 
       {cards.length === 0 ? (
         <EmptyState
-          title="No scorecard data yet"
-          body="Once allocations have approved guests with scanned check-ins, holders show up here ranked."
+          title="Run a night first"
+          body="Holders rank here by show rate after the first event with check-ins. The harder the door, the sharper the grade."
         />
       ) : (
         <div className="flex flex-col gap-2">

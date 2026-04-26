@@ -46,8 +46,8 @@ export default async function CompareEventsPage({
   if (events.length < 2) {
     return (
       <EmptyState
-        title="Need 2+ events"
-        body="Compare unlocks once you've run two events with check-ins."
+        title="Need a second night"
+        body="Two nights with check-ins unlock side-by-side. Pace this Friday vs. last; promoter-by-promoter deltas; what changed and why."
       />
     );
   }

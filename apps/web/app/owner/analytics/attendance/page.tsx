@@ -20,7 +20,7 @@ export default async function AttendancePage() {
   ]);
 
   if (a.trend.length === 0)
-    return <EmptyState title="Nothing yet" body="Run an event in the last 90 days." />;
+    return <EmptyState title="Nothing to plot" body="Run a night in the last 90 days. Attendance, show rate, tier mix all show up here once a door's been open." />;
 
   // Bucket trend by month for the secondary chart.
   const byMonth = new Map<string, number>();

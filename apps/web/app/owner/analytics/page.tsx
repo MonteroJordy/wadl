@@ -15,8 +15,8 @@ export default async function AnalyticsOverviewPage() {
   if (a.trend.length === 0) {
     return (
       <EmptyState
-        title="Nothing yet"
-        body="Run an event in the last 90 days and analytics will populate."
+        title="Nothing to chart"
+        body="Run a night. The next morning, every chart on this page tells you who came, who didn't, and who's worth booking again."
       />
     );
   }

@@ -29,14 +29,14 @@ export default async function PayoutsPage({
         <p className="label-mono mb-1">Promoter payouts</p>
         <h1 className="display-lg leading-[0.95] mb-6">Coming soon</h1>
         <EmptyState
-          title="Stripe Connect not enabled"
-          body="Set STRIPE_CONNECT_CLIENT_ID on the deployment to enable promoter payout flows. Each promoter onboards via Stripe Connect Express and gets paid commission per scanned-in head."
+          title="Pay your promoters"
+          body="Stripe Connect is wired but not turned on yet. Each holder onboards via Express; commission per scanned head pays out weekly. Email when you want it live."
           action={
             <a
-              href="mailto:jmontero@mainframeagency.com?subject=Enable%20Stripe%20Connect"
-              className="btn-primary inline-block"
+              href="mailto:jmontero@mainframeagency.com?subject=Turn%20on%20Stripe%20Connect"
+              className="btn-ghost inline-block"
             >
-              Email support
+              Email the founder
             </a>
           }
         />

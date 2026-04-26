@@ -26,7 +26,7 @@ export default async function CapacityAnalyticsPage() {
   const x = await computeExtraAnalytics(account.id);
 
   if (x.capacityRows.length === 0)
-    return <EmptyState title="No capacity data yet" body="Add capacity_cap to event nights." />;
+    return <EmptyState title="Set caps to plot" body="Drop a capacity number on each night in event settings. The how-full-was-it chart populates after the first run." />;
 
   const withCap = x.capacityRows.filter((r) => r.cap > 0);
   const avgUtil =

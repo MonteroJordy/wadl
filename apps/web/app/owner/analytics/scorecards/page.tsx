@@ -18,7 +18,7 @@ export default async function ScorecardsAnalyticsPage() {
   const cards = await computeScorecards(account.id);
 
   if (cards.length === 0)
-    return <EmptyState title="No promoter data yet" body="Run an event with allocations." />;
+    return <EmptyState title="No promoters graded" body="Allocations + check-ins → grades. Drop a magic link, run a night, the rankings sort themselves." />;
 
   return (
     <div className="flex flex-col gap-3">

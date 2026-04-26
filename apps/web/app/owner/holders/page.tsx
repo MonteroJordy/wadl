@@ -112,7 +112,7 @@ export default async function HoldersPage({
       {holders.length === 0 ? (
         <EmptyState
           title="No holders yet"
-          body="Once you create allocations on an event, the holders will roll up here."
+          body="Drop a promoter, artist, or brand a magic link. Their show rate ranks here after the first night."
           action={
             <Link href="/owner" className="btn-ghost inline-block">
               Back to events

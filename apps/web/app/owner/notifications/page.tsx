@@ -55,8 +55,8 @@ export default async function NotificationsPage() {
 
       {rows.length === 0 ? (
         <EmptyState
-          title="No notifications"
-          body="When RSVPs come in, capacity gets tight, or staff get added — you'll see them here."
+          title="Inbox zero"
+          body="RSVPs, capacity alerts, staff joins, escalations — they all land here when the night gets loud."
         />
       ) : (
         <ul className="flex flex-col gap-2">

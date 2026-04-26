@@ -113,8 +113,8 @@ export default async function SmsLogPage({
 
       {rows.length === 0 ? (
         <EmptyState
-          title="No SMS yet"
-          body="Sends from RSVP confirmations, broadcasts, tier upgrades, and staff invites will land here."
+          title="Quiet line"
+          body="Every text WADL fires — RSVP QRs, broadcasts, tier upgrades, staff invites — lands here. Quiet means nothing's going out."
         />
       ) : (
         <ul className="flex flex-col gap-2">

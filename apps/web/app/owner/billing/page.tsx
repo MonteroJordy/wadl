@@ -25,14 +25,14 @@ export default async function BillingPage() {
 
       {!hasStripe ? (
         <EmptyState
-          title="Billing coming soon"
-          body="Stripe isn't wired up yet. Reach out to the founder to set up your account."
+          title="Free for now"
+          body="WADL is free while we hammer it into shape. Pricing flips on with your first paying customer — we'll email before any card hits."
           action={
             <a
               href="mailto:jmontero@mainframeagency.com"
-              className="btn-primary inline-block"
+              className="btn-ghost inline-block"
             >
-              Email support
+              Email the founder
             </a>
           }
         />
