@@ -31,6 +31,9 @@ export default async function OwnerLayout({
         { href: "/owner/calendar", label: "Calendar" },
         { href: "/owner/events/new", label: "+ New event" },
         { href: "/owner/holders", label: "Holders" },
+        ...(account.account_type !== "venue"
+          ? [{ href: "/owner/partners", label: "Venue partners" }]
+          : []),
         { href: "/owner/scorecards", label: "Scorecards" },
         { href: "/owner/analytics", label: "Analytics" },
         { href: "/owner/flags", label: "Flag list" },
