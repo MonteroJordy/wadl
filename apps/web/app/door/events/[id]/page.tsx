@@ -5,6 +5,7 @@ import {
   resolveActiveNight,
 } from "@/lib/door";
 import { fmtDate, fmtTime } from "@/lib/format";
+import EscalateButton from "@/components/escalate-button";
 
 export const dynamic = "force-dynamic";
 
@@ -123,6 +124,10 @@ export default async function DoorEventHome({
               <p className="label-mono">By name</p>
             </Link>
           </section>
+
+          {resolved.role !== "door_manager" && (
+            <EscalateButton eventId={params.id} />
+          )}
 
           {resolved.role === "door_manager" && (
             <Link

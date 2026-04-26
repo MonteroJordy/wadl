@@ -1,4 +1,4 @@
-import { requireOwnerContext, fmtDate } from "@/lib/owner";
+import { requireOwnerContext } from "@/lib/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
 import EmptyState from "@/components/empty-state";
 
@@ -13,6 +13,9 @@ interface LogRow {
   provider: string;
   provider_sid: string | null;
   status: string;
+  twilio_status: string | null;
+  twilio_error_code: string | null;
+  status_updated_at: string | null;
   error: string | null;
   segments: number | null;
   cost_estimate_usd: number | null;
@@ -21,10 +24,25 @@ interface LogRow {
   guest: { id: string; full_name: string } | null;
 }
 
+// Tones map to actual delivery outcomes. "delivered" / "sent" are mint
+// (positive), terminal failure modes are coral, in-flight or unknown
+// statuses are muted.
 const STATUS_TONE: Record<string, string> = {
+  delivered: "text-mint",
   sent: "text-mint",
+  failed: "text-coral",
+  undelivered: "text-coral",
   opted_out: "text-coral",
+  config_error: "text-coral",
+  queued: "text-muted",
+  sending: "text-muted",
+  accepted: "text-muted",
 };
+
+// Display label preferring the latest Twilio status when present.
+function effectiveStatus(r: LogRow): string {
+  return r.twilio_status ?? r.status;
+}
 
 export default async function SmsLogPage({
   searchParams,
@@ -38,20 +56,29 @@ export default async function SmsLogPage({
   let query = admin
     .from("sms_log")
     .select(
-      "id, to_phone, body, template_key, provider, provider_sid, status, error, segments, cost_estimate_usd, created_at, event:events(id, name), guest:guests(id, full_name)"
+      "id, to_phone, body, template_key, provider, provider_sid, status, twilio_status, twilio_error_code, status_updated_at, error, segments, cost_estimate_usd, created_at, event:events(id, name), guest:guests(id, full_name)"
     )
     .eq("account_id", account.id)
     .order("created_at", { ascending: false })
     .limit(200);
-  if (status) query = query.eq("status", status);
+  // Twilio-callback statuses (delivered/failed/undelivered) live primarily
+  // on twilio_status; row.status overwrites only on terminal callbacks. Fall
+  // back to either-column match so old rows still surface in filters.
+  if (status) {
+    if (["delivered", "failed", "undelivered"].includes(status)) {
+      query = query.or(`status.eq.${status},twilio_status.eq.${status}`);
+    } else {
+      query = query.eq("status", status);
+    }
+  }
   const { data } = await query;
   const rows = (data ?? []) as unknown as LogRow[];
 
-  const sentCount = rows.filter((r) => r.status === "sent").length;
-  const totalCost = rows.reduce(
-    (s, r) => s + (r.cost_estimate_usd ?? 0),
-    0
-  );
+  const deliveredCount = rows.filter((r) => effectiveStatus(r) === "delivered").length;
+  const failedCount = rows.filter((r) =>
+    ["failed", "undelivered"].includes(effectiveStatus(r))
+  ).length;
+  const totalCost = rows.reduce((s, r) => s + (r.cost_estimate_usd ?? 0), 0);
 
   return (
     <main
@@ -62,12 +89,14 @@ export default async function SmsLogPage({
         <p className="label-mono mb-1">Outbound SMS</p>
         <h1 className="display-lg">Message log</h1>
         <p className="label-mono mt-2">
-          Last 200 sends · {sentCount} delivered · est ${totalCost.toFixed(2)}
+          Last 200 sends · {deliveredCount} delivered
+          {failedCount > 0 && <> · {failedCount} failed</>} · est $
+          {totalCost.toFixed(2)}
         </p>
       </header>
 
-      <div className="flex gap-1 mb-4">
-        {["", "sent", "opted_out", "config_error"].map((s) => (
+      <div className="flex flex-wrap gap-1 mb-4">
+        {["", "delivered", "failed", "undelivered", "sent", "opted_out", "config_error"].map((s) => (
           <a
             key={s || "all"}
             href={s ? `/owner/sms-log?status=${s}` : "/owner/sms-log"}
@@ -93,8 +122,17 @@ export default async function SmsLogPage({
             <li key={r.id} className="card">
               <div className="flex items-baseline justify-between gap-3 mb-2">
                 <p className="font-mono text-sm text-cream">{r.to_phone}</p>
-                <span className={`label-mono ${STATUS_TONE[r.status] ?? "text-muted"}`}>
-                  {r.status}
+                <span
+                  className={`label-mono ${
+                    STATUS_TONE[effectiveStatus(r)] ?? "text-muted"
+                  }`}
+                  title={
+                    r.status_updated_at
+                      ? `Updated ${new Date(r.status_updated_at).toLocaleString()}`
+                      : undefined
+                  }
+                >
+                  {effectiveStatus(r).replace("_", " ")}
                 </span>
               </div>
               <p className="text-cream/80 text-sm leading-relaxed mb-2">

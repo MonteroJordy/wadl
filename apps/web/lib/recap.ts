@@ -213,6 +213,89 @@ function emptyRecap(): RecapData {
   };
 }
 
+// ============================================================================
+// Day 26: Feedback aggregation. Surfaced inside the existing recap page.
+// ============================================================================
+
+export interface FeedbackTagCount {
+  tag: string;
+  count: number;
+}
+
+export interface FeedbackComment {
+  id: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+}
+
+export interface FeedbackAggregate {
+  responseCount: number;
+  averageRating: number; // 0..5
+  ratingDist: Record<1 | 2 | 3 | 4 | 5, number>;
+  topTags: FeedbackTagCount[];
+  recentComments: FeedbackComment[]; // last 10 with comment != null
+}
+
+export async function computeFeedback(
+  eventId: string
+): Promise<FeedbackAggregate> {
+  const admin = createAdminClient();
+  const { data: rows } = await admin
+    .from("event_feedback")
+    .select("id, rating, tags, comment, created_at")
+    .eq("event_id", eventId)
+    .order("created_at", { ascending: false })
+    .limit(500);
+
+  const list =
+    (rows ?? []) as Array<{
+      id: string;
+      rating: number;
+      tags: string[] | null;
+      comment: string | null;
+      created_at: string;
+    }>;
+
+  const dist: Record<1 | 2 | 3 | 4 | 5, number> = {
+    1: 0, 2: 0, 3: 0, 4: 0, 5: 0,
+  };
+  const tagCounts = new Map<string, number>();
+  let sum = 0;
+
+  for (const r of list) {
+    const rk = (r.rating as 1 | 2 | 3 | 4 | 5);
+    if (rk >= 1 && rk <= 5) dist[rk]++;
+    sum += r.rating;
+    for (const t of r.tags ?? []) {
+      tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
+    }
+  }
+
+  const topTags: FeedbackTagCount[] = [...tagCounts.entries()]
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  const recentComments: FeedbackComment[] = list
+    .filter((r) => r.comment && r.comment.trim().length > 0)
+    .slice(0, 10)
+    .map((r) => ({
+      id: r.id,
+      rating: r.rating,
+      comment: r.comment!,
+      created_at: r.created_at,
+    }));
+
+  return {
+    responseCount: list.length,
+    averageRating: list.length === 0 ? 0 : sum / list.length,
+    ratingDist: dist,
+    topTags,
+    recentComments,
+  };
+}
+
 export function fmtHour(h: number): string {
   const d = new Date();
   d.setHours(h, 0, 0, 0);

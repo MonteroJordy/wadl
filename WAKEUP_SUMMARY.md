@@ -1699,3 +1699,199 @@ P0-1 (Vercel Root Directory operator action) still pending.
 
 - Web: clean. 56 routes. `npx next build` green from `apps/web/`.
 - Mobile: scaffold compiles after `npm install` materializes the new `react-native-qrcode-svg` dep + `npm install` from monorepo root. EAS Build profile defined in `apps/mobile/eas.json`. Operator must enroll in Apple Developer ($99/yr) to build for TestFlight.
+
+---
+
+## Days 25–28 — gap-list run from a Cowork session
+
+User picked "all of it" against the four-theme menu (backend hardening / post-event loop / real-night UX / pitch readiness), so this run is sequenced as four logical days produced in one Cowork session. Build verified via `tsc --noEmit` + `next lint` after each day; full `next build` was hitting sandbox compute limits but TS + lint were clean throughout.
+
+**Operator action:** sandbox couldn't `git commit` (Cowork FUSE mount blocks unlink, including `.git/index.lock`). Files are written; staging is partially done from the failed commit. Run from your terminal in `~/Downloads/wadl`:
+
+```
+rm -f .git/index.lock                # release the sandbox-lefover lock
+git add -A
+git commit -m "Days 25-28: gap-list run (backend + post-event + real-night + pitch)"
+```
+
+If you'd rather split into per-day commits, the file groups are listed under each day below.
+
+### Migrations added
+
+18. `20260504000001_day25_backend.sql` — sms_log delivery columns (`twilio_status`, `twilio_error_code`, `status_updated_at`) + `connect_accounts` table + `event_template_runs` audit table + `accounts.stripe_connect_account_id` pointer.
+19. `20260505000001_day26_feedback.sql` — `event_feedback` table (rating 1–5, tags array, comment, one-per-guest unique partial index).
+
+No migrations on Days 27 + 28 — code-only.
+
+---
+
+## Day 25 — Backend hardening
+
+Closes the loop on three integrations that were stubbed since their original days.
+
+### Files
+
+- `app/api/webhooks/twilio/sms/status/route.ts` — Twilio status callback receiver. Updates `sms_log` row by `provider_sid` with the lifecycle progression (queued → sending → sent → delivered/failed/undelivered). Terminal statuses overwrite `row.status`; in-flight statuses only annotate. HMAC-SHA1 signature validation, dev-mode warning fallback. Maps known Twilio ErrorCode → human description.
+- `lib/sms.ts` — passes `StatusCallback` URL on every Twilio send so the webhook fires automatically. Skipped for non-https `NEXT_PUBLIC_APP_URL`.
+- `app/owner/sms-log/page.tsx` — renders `delivered`/`failed`/`undelivered`/`queued`/`sent` pills with a STATUS_TONE map. Filter pills include the new statuses; filters with delivery values match either `status` or `twilio_status` so old rows still surface. Header summary shows delivered + failed counts.
+- `app/api/webhooks/stripe/connect/route.ts` — Stripe Connect events webhook. Handles `account.updated` (upserts `connect_accounts`, updates `accounts.stripe_connect_account_id` pointer), `account.application.deauthorized` (clears the pointer + deletes the row), `payout.paid` + `transfer.created` (audit-log only). HMAC-SHA256 signature validation with 5-min timestamp drift cap. Looks up the WADL account via `metadata.wadl_account_id` (set during OAuth callback).
+- `app/api/billing/connect/callback/route.ts` — OAuth return URL for the existing `/owner/payouts` "Connect Stripe account" button. Exchanges code at `connect.stripe.com/oauth/token`, fetches the Stripe account once, stamps `metadata.wadl_account_id` on the connected account, upserts `connect_accounts`, audit-logs the link. Redirects back to `/owner/payouts?connect=ok` or `?connect_error=...`.
+- `app/owner/payouts/page.tsx` — now reads `connect_accounts`. Three states: ready (charges + payouts enabled, mint), in-progress (some flag flipped, gold), pending (no row, coral CTA). Success + error banners via search params.
+- `app/api/cron/recurring-events/route.ts` — daily cron worker. Reads `event_templates` rows with `cadence_days` set whose `next_run_at` is past (or null). Clones via shared `lib/event-template.ts`. Writes one `event_template_runs` audit row per attempt (created/skipped/error). Bumps `next_run_at` by `cadence_days`. 23-hour idempotency guard against double-fire. Auth: `Authorization: Bearer $CRON_SECRET` OR `x-vercel-cron: 1` header.
+- `lib/event-template.ts` — extracted `cloneTemplate()` helper, used by both the existing `createFromTemplateAction` user trigger AND the new cron worker. Single source of truth for clone logic.
+- `apps/web/vercel.json` — new file (was at repo root only). Adds `crons: [{ path: "/api/cron/recurring-events", schedule: "0 9 * * *" }]`. Vercel reads from `apps/web/vercel.json` after the operator's still-pending Root Directory change.
+- `lib/supabase/middleware.ts` — `/api/cron` added to `PUBLIC_PATHS` (cron uses bearer auth, not a session).
+- Migration 18 — schema additions described above. RLS on `connect_accounts` + `event_template_runs` via the existing account-ownership pattern.
+
+### What's NOT in this commit
+
+Apple Wallet `.pkpass` byte stream still returns the graceful 503/501. Adding `passkit-generator` requires npm registry access the Cowork sandbox doesn't have. Path to ship: install on the host (`cd apps/web && npm install passkit-generator`), then implement the actual byte-stream branch in `app/api/wallet/apple/[token]/route.ts` — the cert/key/passTypeId/teamId env-loading and the empty-cert 503 fallback are already in place.
+
+### New env vars
+
+| Var | Surface | Purpose |
+|---|---|---|
+| `STRIPE_CONNECT_WEBHOOK_SECRET` | server | `whsec_…` for the new Stripe Connect webhook. Configure on Stripe Dashboard → Developers → Webhooks → Add endpoint, mode = Connect, events = account.updated + account.application.deauthorized + payout.paid + transfer.created. |
+| `CRON_SECRET` | server | Bearer secret for `/api/cron/*` when manually invoked. Vercel-internal cron uses the `x-vercel-cron: 1` header instead, which is auto-trusted. |
+
+(`STRIPE_SECRET_KEY` and `STRIPE_CONNECT_CLIENT_ID` were already required for the existing Connect button — no change.)
+
+### Operator setup
+
+1. Twilio status callback: in Twilio console → Phone Numbers → Active Numbers → Status Callback URL, set to `https://<host>/api/webhooks/twilio/sms/status` (POST). Optional — `lib/sms.ts` also passes the URL per-message. Either works.
+2. Stripe Connect webhook: dashboard → Developers → Webhooks → Add endpoint. URL = `https://<host>/api/webhooks/stripe/connect`. Mode = Connect (not Account). Events: account.updated, account.application.deauthorized, payout.paid, transfer.created. Copy the signing secret to `STRIPE_CONNECT_WEBHOOK_SECRET`.
+3. Stripe Connect OAuth: dashboard → Connect → Settings → Redirect URI, add `https://<host>/api/billing/connect/callback`.
+4. Vercel cron: deploys automatically from `apps/web/vercel.json` once the Vercel project Root Directory is set to `apps/web` (P0-1 from Day 19 — still pending).
+
+---
+
+## Day 26 — Close post-event loop
+
+The recap surface (`/owner/events/[id]/recap`) was already built on a prior day. This run adds the guest-side feedback survey that feeds into it.
+
+### Files
+
+- `app/e/[eventId]/feedback/page.tsx` — survey landing page. Past-event guard (only renders after the latest night of the event). Token in `?token=...` resolves the guest_id so the submission gets attributed (still anonymous to the venue's view). Already-submitted detection via the unique partial index. Submitted state shows a thanks card.
+- `app/e/[eventId]/feedback/form.tsx` — client form. 5-star tap-to-rate, multi-select tag picker (music / vibe / door / crowd / drinks / venue / value, allow-listed server-side), optional 1000-char comment with live char count.
+- `app/e/[eventId]/feedback/actions.ts` — `submitFeedbackAction` server action. Tag allow-list filter, deduped, capped at 5. Anonymous submissions allowed (no token). Unique-violation handling for repeat attempts.
+- `app/e/[eventId]/page.tsx` — past-event branch now offers "Leave feedback" (ghost) alongside "Discover events" (primary).
+- `app/t/[token]/page.tsx` — past-event branch ("✓ You attended" / "No-show") now links to feedback with the token pre-filled.
+- `lib/recap.ts` — new `computeFeedback(eventId)` function returns `{ responseCount, averageRating, ratingDist, topTags, recentComments }`. Exported alongside the existing `computeRecap`.
+- `app/owner/events/[id]/recap/page.tsx` — new "Guest feedback" card block (event-scoped only — survey is one per event, not per night). Shows average + 5/4/3/2/1 distribution bars + top tags + last 10 commented responses with rating dots.
+- `app/owner/page.tsx` — past-range event rows now route directly to `/recap` instead of `/daydash`. Active/upcoming still go to daydash.
+- Migration 19 — `event_feedback` table with one-per-guest unique partial index and owner-scoped RLS select policy.
+
+---
+
+## Day 27 — Real-night UX gaps
+
+Door-of-the-club ergonomics. Three discrete additions.
+
+### dualctx — context switcher at signin
+
+- `app/dualctx/page.tsx` — server component. Pulls the user's `event_staff` rows where `event_nights.doors_at` is within ±18 hours of now. If no shifts → fallthrough to `nextOnboardingStep` (so it's safe to land here arbitrarily). Otherwise renders three cards: Owner (coral) / Door staff or manager (mint, with shift name + doors_at + +N more if multiple) / Guest (lavender). Mobile-frame layout matching the prototype.
+- `app/page.tsx` (root) — after `nextOnboardingStep` resolves to `/owner`, if the same user has a door-staff/manager shift in the next 18h, redirect to `/dualctx` instead. Onboarding-incomplete owners still finish onboarding first; the picker is for established owners working their own door.
+
+### escalate — door staff page-the-manager
+
+- `lib/notification-kinds.ts` — adds `door_escalation` kind with coral tone + "Door needs you" label. (`notifications.kind` has no CHECK constraint — no migration needed.)
+- `app/api/notifications/escalate/route.ts` — POST endpoint. Verifies the user is `event_staff` for the target event (or owner self-bypass). Rate-limited 3/min/user via existing `lib/rate-limit`. Effects: (1) inserts `door_escalation` notification scoped to the venue's account, fires push, (2) SMSes door_manager phones directly with reason + reporter name (falls back to account owner phone if no manager); `skipOptOutCheck=true` because this is operational not marketing, (3) audit-logged with reason + reporter_role + sms_sent count.
+- `components/escalate-button.tsx` — client component. Closed → big "PAGE MANAGER" coral card. Tap → reason picker with 6 presets ("ID dispute", "Crowd / line management", "Guest list confusion", "Approval needed", "Capacity question", "Refusing entry") + free-text fallback (200 char cap). Submitted → coral confirmation card showing SMS count.
+- `app/door/events/[id]/page.tsx` — escalate button mounted under the SCAN / SEARCH grid for door staff (hidden for door_managers since they ARE the escalation target).
+
+### Mobile offline scanner queue
+
+- `apps/mobile/src/lib/offline-queue.ts` — AsyncStorage-backed scan queue. (Used AsyncStorage instead of `react-native-mmkv` since `@react-native-async-storage/async-storage` is already in `apps/mobile/package.json` — no new native dep.) API: `enqueue(scan)`, `pending()`, `pendingCount()`, `markSynced(id)`, `markError(id, err)`, `syncPending(send)`, `clear()`. Idempotent on `(token, scanned_at)`. Synced rows kept (not deleted) for post-event audit until manual purge.
+- `apps/mobile/app/(door)/scan.tsx` — wraps the network call in try/catch. Network failure → enqueue scan with `event_night_id: null`, show green "Offline · queued for sync" overlay (door staff knows the line keeps moving). On screen mount + on demand, `drainQueue()` resolves missing event_night_ids server-side, inserts via `check_ins`, and marks synced. Header gains a coral "N queued · sync" indicator + sync result toast.
+
+### override polish
+
+- `app/owner/events/[id]/override/override-form.tsx` — reason field gains a chip-picker row with 6 preset reasons ("VIP arrival", "Staff comp", "Capacity bump", "Headliner +1", "Press / media", "Door fix"). Tapping a chip writes it into the textarea; tapping again clears. Reason is still required for the audit log; the chip is just a one-tap path to the common cases.
+
+---
+
+## Day 28 — Pitch readiness
+
+### Demo-mode toggle
+
+- `lib/demo-mode.ts` — server-side helper, reads the `wadl_demo_mode` cookie via `next/headers`. Cookie value `"1"` = on.
+- `components/demo-mode-banner.tsx` — server component sticky coral banner. Renders nothing when off. "● Demo mode — sample data · SMS muted" + a `manage` link to `/demo-mode`.
+- `app/demo-mode/page.tsx` — toggle UI. Three sections: Status (with on/off button), Sample dataset (links to `/welcome` which has the existing demo-seed action from Day 22), What's muted (transparent about what demo mode does NOT do — SMS, push, Stripe still fire; demo mode is a visual indicator, not a kill switch).
+- `app/demo-mode/actions.ts` — server actions `enableDemoModeAction` / `disableDemoModeAction`. One-year cookie, `revalidatePath("/", "layout")` so the banner appears immediately.
+- `app/layout.tsx` — `<DemoModeBanner />` mounted inside `<ToastProvider>`, before children, so it stays sticky-top across every page.
+- `lib/supabase/middleware.ts` — `/demo-mode` added to `PUBLIC_PATHS` (sales calls walk non-authed prospects through it).
+
+### Holder onboarding wizard
+
+- `app/h/[token]/intro-wizard.tsx` — client component, 5-card overlay shown on first holder visit. Cards: "You're a holder" (with the holder's name + cap + auto-approve flags), "Add names, no account needed", "Tier matters", "Approval flow", "Show up well" (show rate / cap escalation). Bottom-sheet style on mobile, modal on desktop. Progress dots, Skip + Back/Next buttons. Dismissal stored in localStorage keyed per-token so dismissing one allocation doesn't affect another. `?intro=1` query param force-shows the wizard for a fresh walkthrough.
+- `app/h/[token]/page.tsx` — wizard mounted at the bottom of the page. `searchParams.intro === "1"` flips the `force` flag.
+
+### Deeper compare-events
+
+- `app/owner/analytics/compare/page.tsx` — two new sections below the existing 3-card summary: (1) "By tier" — for the union of tier keys on either event, side-by-side approved + show rate with diff column (% change for approved, percentage points for show rate); (2) "Top holders" — for the union of holder names, side-by-side scanned heads with absolute delta column, top 8 by |delta| magnitude (so the most-changed holders surface, not just the biggest).
+
+---
+
+### Days 25–28 — what still doesn't exist
+
+- Apple Wallet `.pkpass` real byte stream (sandbox-blocked from installing `passkit-generator` — see Day 25 §"What's NOT in this commit").
+- Six unfired notification kinds from Day 19 (still tracked in audit). New kind `door_escalation` does fire from Day 27 — that's 6 → 5.
+- `sms_templates` still not read at send time (Day 19 P3 carryover).
+- Mobile EAS Build still requires the operator's $99 Apple Developer enrollment.
+- axe-core CI still manual.
+- The dualctx page only handles owner+staff; the prototype's full multi-context flow (including a guest-also-staff edge case) is the smaller of the two real-world cases and stays unbuilt.
+
+### Build state — Days 25–28
+
+- Web: `tsc --noEmit` clean, `next lint` clean. Full `next build` was timing out in the Cowork sandbox (compute limit, not a code issue) — verify in your local terminal before pushing to main: `cd apps/web && npx next build`.
+- Mobile: only adds `apps/mobile/src/lib/offline-queue.ts` + edits `apps/mobile/app/(door)/scan.tsx`. No new dependencies. `cd apps/mobile && npm install && npm run typecheck` should be clean once node_modules materialize.
+
+### File groups (if you want per-day commits instead of one mega-commit)
+
+```
+Day 25:
+  apps/web/app/api/webhooks/twilio/sms/status/route.ts
+  apps/web/app/api/webhooks/stripe/connect/route.ts
+  apps/web/app/api/billing/connect/callback/route.ts
+  apps/web/app/api/cron/recurring-events/route.ts
+  apps/web/app/owner/sms-log/page.tsx
+  apps/web/app/owner/payouts/page.tsx
+  apps/web/lib/sms.ts
+  apps/web/lib/event-template.ts
+  apps/web/lib/supabase/middleware.ts
+  apps/web/vercel.json
+  apps/web/supabase/migrations/20260504000001_day25_backend.sql
+
+Day 26:
+  apps/web/app/e/[eventId]/feedback/page.tsx
+  apps/web/app/e/[eventId]/feedback/form.tsx
+  apps/web/app/e/[eventId]/feedback/actions.ts
+  apps/web/app/e/[eventId]/page.tsx
+  apps/web/app/t/[token]/page.tsx
+  apps/web/app/owner/events/[id]/recap/page.tsx
+  apps/web/app/owner/page.tsx
+  apps/web/lib/recap.ts
+  apps/web/supabase/migrations/20260505000001_day26_feedback.sql
+
+Day 27:
+  apps/web/app/dualctx/page.tsx
+  apps/web/app/page.tsx
+  apps/web/app/api/notifications/escalate/route.ts
+  apps/web/app/door/events/[id]/page.tsx
+  apps/web/app/owner/events/[id]/override/override-form.tsx
+  apps/web/components/escalate-button.tsx
+  apps/web/lib/notification-kinds.ts
+  apps/mobile/src/lib/offline-queue.ts
+  apps/mobile/app/(door)/scan.tsx
+
+Day 28:
+  apps/web/app/demo-mode/page.tsx
+  apps/web/app/demo-mode/actions.ts
+  apps/web/app/h/[token]/intro-wizard.tsx
+  apps/web/app/h/[token]/page.tsx
+  apps/web/app/owner/analytics/compare/page.tsx
+  apps/web/app/layout.tsx
+  apps/web/components/demo-mode-banner.tsx
+  apps/web/lib/demo-mode.ts
+  apps/web/lib/supabase/middleware.ts   (also touched on Day 25 — split or keep on whichever)
+```

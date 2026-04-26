@@ -152,6 +152,33 @@ export default function OverrideForm({
         <label className="label-mono block mb-2" htmlFor="ov-reason">
           Reason (required for audit)
         </label>
+        <div className="flex flex-wrap gap-1 mb-2">
+          {[
+            "VIP arrival",
+            "Staff comp",
+            "Capacity bump",
+            "Headliner +1",
+            "Press / media",
+            "Door fix",
+          ].map((preset) => (
+            <button
+              key={preset}
+              type="button"
+              onClick={() =>
+                setReason((cur) =>
+                  cur.trim() === preset ? "" : preset
+                )
+              }
+              className={`px-2 py-1 rounded-full border text-[10px] font-mono uppercase tracking-wider ${
+                reason.trim() === preset
+                  ? "border-coral bg-s2 text-cream"
+                  : "border-line bg-s1 text-muted hover:text-cream"
+              }`}
+            >
+              {preset}
+            </button>
+          ))}
+        </div>
         <textarea
           id="ov-reason"
           value={reason}

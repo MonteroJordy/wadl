@@ -18,7 +18,8 @@ export type NotificationKind =
   | "referral_arrived"
   | "guest_flagged"
   | "tier_upgraded"
-  | "broadcast_sent";
+  | "broadcast_sent"
+  | "door_escalation";
 
 export interface NotificationPayload {
   [key: string]: unknown;
@@ -40,6 +41,7 @@ export const KIND_LABEL: Record<NotificationKind, string> = {
   guest_flagged: "Guest flagged",
   tier_upgraded: "Tier upgraded",
   broadcast_sent: "Broadcast sent",
+  door_escalation: "Door needs you",
 };
 
 export const KIND_TONE: Record<NotificationKind, "coral" | "gold" | "mint"> = {
@@ -54,4 +56,5 @@ export const KIND_TONE: Record<NotificationKind, "coral" | "gold" | "mint"> = {
   guest_flagged: "coral",
   tier_upgraded: "mint",
   broadcast_sent: "mint",
+  door_escalation: "coral",
 };

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOwnerContext, fmtDate } from "@/lib/owner";
-import { computeRecap, fmtHour } from "@/lib/recap";
+import { computeRecap, computeFeedback, fmtHour } from "@/lib/recap";
 import EmptyState from "@/components/empty-state";
 
 export const dynamic = "force-dynamic";
@@ -41,6 +41,8 @@ export default async function RecapPage({
 
   const recap = await computeRecap(event.id, activeNight?.id);
   const peakCount = recap.peakHour?.count ?? 0;
+  // Feedback is event-scoped; survey is one-per-event-per-guest (not per night).
+  const feedback = activeNight ? null : await computeFeedback(event.id);
 
   const scopeLabel = activeNight
     ? fmtDate(activeNight.night_date)
@@ -251,6 +253,80 @@ export default async function RecapPage({
               </div>
             )}
           </section>
+
+          {feedback && feedback.responseCount > 0 && (
+            <section className="card mb-4">
+              <p className="label-mono mb-3">
+                Guest feedback
+                <span className="text-muted"> · {feedback.responseCount} response{feedback.responseCount === 1 ? "" : "s"}</span>
+              </p>
+              <div className="flex items-baseline gap-3 mb-3">
+                <p className="font-display text-3xl text-coral leading-none">
+                  {feedback.averageRating.toFixed(1)}
+                </p>
+                <p className="label-mono">/ 5 average</p>
+              </div>
+              <div className="flex flex-col gap-1 mb-4">
+                {([5, 4, 3, 2, 1] as const).map((stars) => {
+                  const c = feedback.ratingDist[stars] ?? 0;
+                  const pctVal =
+                    feedback.responseCount === 0
+                      ? 0
+                      : (c / feedback.responseCount) * 100;
+                  return (
+                    <div key={stars} className="flex items-center gap-2">
+                      <p className="label-mono w-8 shrink-0">{stars}★</p>
+                      <div className="flex-1 h-2 bg-s2 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-coral rounded-full"
+                          style={{ width: `${pctVal}%` }}
+                        />
+                      </div>
+                      <p className="label-mono w-8 text-right shrink-0">{c}</p>
+                    </div>
+                  );
+                })}
+              </div>
+              {feedback.topTags.length > 0 && (
+                <>
+                  <p className="label-mono mb-2">Top tags</p>
+                  <div className="flex flex-wrap gap-1 mb-4">
+                    {feedback.topTags.map((t) => (
+                      <span
+                        key={t.tag}
+                        className="px-2 py-1 rounded-full border border-line bg-s1 label-mono"
+                      >
+                        {t.tag} · {t.count}
+                      </span>
+                    ))}
+                  </div>
+                </>
+              )}
+              {feedback.recentComments.length > 0 && (
+                <>
+                  <p className="label-mono mb-2">Recent comments</p>
+                  <div className="flex flex-col gap-2">
+                    {feedback.recentComments.map((c) => (
+                      <div
+                        key={c.id}
+                        className="border-l-2 border-coral pl-3 py-1"
+                      >
+                        <p className="label-mono mb-1">
+                          {"★".repeat(c.rating)}
+                          <span className="text-muted">
+                            {"★".repeat(5 - c.rating)}
+                          </span>
+                        </p>
+                        <p className="text-cream/80 text-sm leading-relaxed whitespace-pre-wrap">
+                          {c.comment}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </section>
+          )}
 
           <div className="grid grid-cols-2 gap-2">
             <Link

@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fmtDate, fmtTime } from "@/lib/owner";
 import HolderAddForm from "./form";
+import HolderIntroWizard from "./intro-wizard";
 
 export const dynamic = "force-dynamic";
 
@@ -33,8 +34,10 @@ function ErrorFrame({ title, body }: { title: string; body: string }) {
 
 export default async function HolderPage({
   params,
+  searchParams,
 }: {
   params: { token: string };
+  searchParams: { intro?: string };
 }) {
   const admin = createAdminClient();
 
@@ -181,6 +184,15 @@ export default async function HolderPage({
       <p className="label-mono mt-auto pt-8 text-center">
         Powered by WADL
       </p>
+
+      <HolderIntroWizard
+        token={params.token}
+        holderName={alloc.holder_name}
+        cap={alloc.cap}
+        autoApprove={alloc.auto_approve}
+        plusOnesAllowed={alloc.plus_ones_allowed}
+        force={searchParams.intro === "1"}
+      />
     </main>
   );
 }

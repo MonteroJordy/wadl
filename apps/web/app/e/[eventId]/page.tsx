@@ -143,15 +143,23 @@ export default async function EventDetailPage({
           return (
             <div className="card border-line text-center mb-6">
               <p className="label-mono mb-2">This event ended</p>
-              <p className="text-cream/80 text-sm">
-                Doors are closed. Browse other tonight + upcoming events.
+              <p className="text-cream/80 text-sm mb-3">
+                Doors are closed. Tell the venue how it went, or browse what&apos;s next.
               </p>
-              <Link
-                href="/discover"
-                className="btn-primary inline-block mt-3"
-              >
-                Discover events
-              </Link>
+              <div className="grid grid-cols-2 gap-2">
+                <Link
+                  href={`/e/${event.id}/feedback`}
+                  className="btn-ghost text-center"
+                >
+                  Leave feedback
+                </Link>
+                <Link
+                  href="/discover"
+                  className="btn-primary text-center"
+                >
+                  Discover events
+                </Link>
+              </div>
             </div>
           );
         }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { nextOnboardingStep } from "@/lib/routing";
 import type { Account, Profile } from "@/lib/types";
 import MarketingFooter from "@/components/marketing-footer";
@@ -56,7 +57,37 @@ export default async function RootPage() {
         .eq("account_id", account.id);
       hasVenue = (count ?? 0) > 0;
     }
-    redirect(nextOnboardingStep(profile, account, hasVenue));
+
+    // Day 27 — dualctx check. If this user is an owner AND has any
+    // door_staff/door_manager shift in the next 18h, send them to the
+    // context picker instead of straight to /owner. Onboarding-incomplete
+    // owners still finish onboarding first; the picker is for established
+    // owners who happen to be working their own door tonight.
+    const onboardingTarget = nextOnboardingStep(profile, account, hasVenue);
+    if (
+      onboardingTarget === "/owner" &&
+      profile &&
+      (profile.role === "owner" || profile.account_id)
+    ) {
+      const admin = createAdminClient();
+      const horizonStart = new Date(Date.now() - 18 * 60 * 60 * 1000).toISOString();
+      const horizonEnd = new Date(Date.now() + 18 * 60 * 60 * 1000).toISOString();
+      const { data: shifts } = await admin
+        .from("event_staff")
+        .select(
+          "event_id, role, event:events!inner(event_nights!inner(doors_at))"
+        )
+        .eq("user_id", user.id)
+        .in("role", ["door_staff", "door_manager"])
+        .gte("event.event_nights.doors_at", horizonStart)
+        .lte("event.event_nights.doors_at", horizonEnd)
+        .limit(1);
+      if (shifts && shifts.length > 0) {
+        redirect("/dualctx");
+      }
+    }
+
+    redirect(onboardingTarget);
   }
 
   // Anonymous → public landing.

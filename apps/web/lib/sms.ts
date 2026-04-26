@@ -11,7 +11,7 @@
  *   TWILIO_MESSAGING_SERVICE_SID or TWILIO_FROM_NUMBER.
  */
 
-import { isDevMode } from "@/lib/app-url";
+import { isDevMode, getAppUrl } from "@/lib/app-url";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export interface SendSmsInput {
@@ -123,6 +123,17 @@ export async function sendSms({
   const params = new URLSearchParams({ To: to, Body: body });
   if (msgService) params.set("MessagingServiceSid", msgService);
   else if (from) params.set("From", from);
+  // Day 25: ask Twilio to call us back with delivered/failed status. The
+  // /api/webhooks/twilio/sms/status route updates the sms_log row keyed by
+  // MessageSid. Skipped on non-https URLs (Twilio requires public HTTPS).
+  try {
+    const appUrl = getAppUrl();
+    if (appUrl.startsWith("https://")) {
+      params.set("StatusCallback", `${appUrl}/api/webhooks/twilio/sms/status`);
+    }
+  } catch {
+    /* NEXT_PUBLIC_APP_URL not set — skip callback */
+  }
 
   const res = await fetch(
     `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`,

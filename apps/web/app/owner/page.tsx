@@ -288,10 +288,15 @@ export default async function OwnerWeekViewPage({
                 {ns.map((n) => {
                   const s = statsFor(n.id);
                   const cap = n.capacity_cap ?? 0;
+                  // Past nights jump straight to recap; current/upcoming go to daydash.
+                  const linkHref =
+                    range === "past"
+                      ? `/owner/events/${n.event_id}/recap?night=${n.id}`
+                      : `/owner/events/${n.event_id}?night=${n.id}`;
                   return (
                     <Link
                       key={n.id}
-                      href={`/owner/events/${n.event_id}?night=${n.id}`}
+                      href={linkHref}
                       className="card hover:border-coral/60 transition"
                     >
                       <div className="flex items-start justify-between gap-3">

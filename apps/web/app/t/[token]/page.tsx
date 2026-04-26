@@ -146,9 +146,17 @@ export default async function TicketPage({
           )}
         </div>
 
-        <Link href="/discover" className="btn-primary text-center">
-          What&apos;s next →
-        </Link>
+        <div className="grid grid-cols-2 gap-2 mb-2">
+          <Link
+            href={`/e/${guest.night.event.id}/feedback?token=${guest.check_in_token}`}
+            className="btn-ghost text-center"
+          >
+            Leave feedback
+          </Link>
+          <Link href="/discover" className="btn-primary text-center">
+            What&apos;s next →
+          </Link>
+        </div>
 
         <p className="label-mono mt-auto pt-8 text-center break-all">
           <span className="text-muted">Token:</span> {guest.check_in_token}

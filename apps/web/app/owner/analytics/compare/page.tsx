@@ -128,6 +128,149 @@ export default async function CompareEventsPage({
         </div>
       </section>
 
+      <section className="card">
+        <p className="label-mono mb-3">By tier · approved &amp; show rate</p>
+        {(() => {
+          // Union of tier keys across both recaps so missing rows render as 0.
+          const tierKeys = Array.from(
+            new Set([
+              ...recapA.tiers.map((t) => t.tier),
+              ...recapB.tiers.map((t) => t.tier),
+            ])
+          );
+          if (tierKeys.length === 0) {
+            return (
+              <p className="text-muted text-sm">
+                No tier data on either event yet.
+              </p>
+            );
+          }
+          return (
+            <div className="flex flex-col gap-2">
+              {tierKeys.map((tier) => {
+                const a = recapA.tiers.find((t) => t.tier === tier);
+                const b = recapB.tiers.find((t) => t.tier === tier);
+                const aApproved = a?.approved ?? 0;
+                const bApproved = b?.approved ?? 0;
+                const aShow = a?.showRate ?? 0;
+                const bShow = b?.showRate ?? 0;
+                const apprDiff = diffPct(aApproved, bApproved);
+                const showDiffT = {
+                  label:
+                    bShow === 0
+                      ? "—"
+                      : `${aShow > bShow ? "+" : ""}${Math.round((aShow - bShow) * 100)}pt`,
+                  tone:
+                    aShow > bShow
+                      ? "text-mint"
+                      : aShow < bShow
+                      ? "text-coral"
+                      : "text-muted",
+                };
+                return (
+                  <div
+                    key={tier}
+                    className="flex items-center justify-between gap-3 border-b border-line/40 pb-2 last:border-b-0 last:pb-0"
+                  >
+                    <p className="label-mono uppercase tracking-wider w-20 shrink-0">
+                      {tier}
+                    </p>
+                    <div className="flex-1 grid grid-cols-2 gap-3 text-right">
+                      <div>
+                        <p className="font-sans text-cream text-sm">
+                          {aApproved} <span className="text-muted">approved</span>
+                        </p>
+                        <p className="label-mono">
+                          {Math.round(aShow * 100)}% show
+                        </p>
+                      </div>
+                      <div>
+                        <p className="font-sans text-cream text-sm">
+                          {bApproved} <span className="text-muted">approved</span>
+                        </p>
+                        <p className="label-mono">
+                          {Math.round(bShow * 100)}% show
+                        </p>
+                      </div>
+                    </div>
+                    <div className="w-20 text-right shrink-0">
+                      <p className={`label-mono ${apprDiff.tone}`}>{apprDiff.label}</p>
+                      <p className={`label-mono ${showDiffT.tone}`}>{showDiffT.label}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+      </section>
+
+      <section className="card">
+        <p className="label-mono mb-3">Top holders · scanned heads</p>
+        {(() => {
+          // Union holders by name (allocations may differ across events).
+          const holderKeys = Array.from(
+            new Set([
+              ...recapA.topHolders.map((h) => h.holder_name),
+              ...recapB.topHolders.map((h) => h.holder_name),
+            ])
+          );
+          // Rank by combined scan delta magnitude — show top 8.
+          const rows = holderKeys
+            .map((name) => {
+              const a = recapA.topHolders.find((h) => h.holder_name === name);
+              const b = recapB.topHolders.find((h) => h.holder_name === name);
+              return {
+                name,
+                a: a?.scanned ?? 0,
+                b: b?.scanned ?? 0,
+                aShow: a?.showRate ?? 0,
+                bShow: b?.showRate ?? 0,
+              };
+            })
+            .sort((x, y) => Math.abs(y.a - y.b) - Math.abs(x.a - x.b))
+            .slice(0, 8);
+          if (rows.length === 0) {
+            return (
+              <p className="text-muted text-sm">
+                No holder activity to compare.
+              </p>
+            );
+          }
+          return (
+            <div className="flex flex-col gap-2">
+              {rows.map((r) => {
+                const delta = r.a - r.b;
+                const tone =
+                  delta > 0
+                    ? "text-mint"
+                    : delta < 0
+                    ? "text-coral"
+                    : "text-muted";
+                const sign = delta > 0 ? "+" : "";
+                return (
+                  <div
+                    key={r.name}
+                    className="flex items-center justify-between gap-3 border-b border-line/40 pb-2 last:border-b-0 last:pb-0"
+                  >
+                    <p className="font-sans text-cream truncate flex-1">
+                      {r.name}
+                    </p>
+                    <p className="label-mono w-16 text-right shrink-0">
+                      {r.a} / {r.b}
+                    </p>
+                    <p className={`label-mono w-12 text-right shrink-0 ${tone}`}>
+                      {sign}
+                      {delta}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+      </section>
+
       <p className="label-mono">
         Open recap for{" "}
         <Link

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Bebas_Neue, Epilogue, DM_Mono } from "next/font/google";
 import "./globals.css";
 import CookieConsent from "@/components/cookie-consent";
+import DemoModeBanner from "@/components/demo-mode-banner";
 import { ToastProvider } from "@/components/toast";
 
 const bebas = Bebas_Neue({
@@ -65,6 +66,7 @@ export default function RootLayout({
           Skip to content
         </a>
         <ToastProvider>
+          <DemoModeBanner />
           {children}
           <CookieConsent />
         </ToastProvider>
