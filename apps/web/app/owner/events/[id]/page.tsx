@@ -206,6 +206,34 @@ export default async function DayDashPage({
         <RealtimeCounters nightId={active.id} />
       </div>
 
+      {(allocRes.count ?? 0) === 0 && approvedHeads === 0 && (
+        <div className="card border-coral/40 mb-6 bg-s2">
+          <p className="label-mono text-coral mb-1">Set up your list</p>
+          <p className="text-cream font-sans font-semibold mb-3">
+            No allocations yet
+          </p>
+          <p className="text-muted text-sm leading-relaxed mb-4">
+            An allocation is a slice of your door given to a promoter, artist,
+            or partner. They get a magic link, add guests up to their cap, and
+            you see who added whom — no accounts on their end.
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <Link
+              href={`/owner/events/${event.id}/allocations/new`}
+              className="btn-primary text-center"
+            >
+              Add allocation
+            </Link>
+            <Link
+              href={`/owner/events/${event.id}/staff`}
+              className="btn-ghost text-center"
+            >
+              Invite door staff
+            </Link>
+          </div>
+        </div>
+      )}
+
       {nights.length > 1 && (
         <div className="flex gap-2 mb-6 overflow-x-auto">
           {nights.map((n) => {

@@ -61,14 +61,24 @@ export default function ProfileScreen() {
           </Text>
         )}
       </View>
-      <Pressable
-        onPress={signOut}
-        className="bg-s1 border border-line rounded-md py-4 mb-6 active:opacity-80"
-      >
-        <Text className="text-cream text-center font-semibold uppercase tracking-widest text-sm">
-          Sign out
-        </Text>
-      </Pressable>
+      <View className="gap-2 mb-6">
+        <Pressable
+          onPress={() => router.push("/(auth)/dualctx")}
+          className="bg-s1 border border-line rounded-md py-3 active:opacity-80"
+        >
+          <Text className="text-cream text-center font-semibold uppercase tracking-widest text-xs">
+            Switch role
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={signOut}
+          className="bg-s1 border border-coral/40 rounded-md py-4 active:opacity-80"
+        >
+          <Text className="text-coral text-center font-semibold uppercase tracking-widest text-sm">
+            Sign out
+          </Text>
+        </Pressable>
+      </View>
     </SafeAreaView>
   );
 }

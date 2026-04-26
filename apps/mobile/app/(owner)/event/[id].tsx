@@ -153,6 +153,14 @@ export default function OwnerEventDetail() {
               {counts && counts.pending > 0 ? ` · ${counts.pending}` : ""}
             </Text>
           </Pressable>
+          <Pressable
+            onPress={() => router.push(`/(owner)/event/${event.id}/recap`)}
+            className="border border-line rounded-md py-3 active:opacity-80"
+          >
+            <Text className="text-cream text-center font-semibold uppercase tracking-widest text-xs">
+              Recap
+            </Text>
+          </Pressable>
         </View>
 
         <Text className="text-muted text-xs leading-5 mt-6">

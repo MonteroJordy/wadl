@@ -10,6 +10,7 @@ import {
   syncPending,
   type QueuedScan,
 } from "../../src/lib/offline-queue";
+import EscalateButton from "../../src/components/EscalateButton";
 
 interface ScanGuest {
   id: string;
@@ -294,6 +295,8 @@ export default function DoorScanScreen() {
       <Text className="text-muted text-[10px] uppercase tracking-widest text-center mt-4 px-6">
         Hold steady. Auto-continues after each scan.
       </Text>
+
+      <EscalateButton />
     </SafeAreaView>
   );
 }

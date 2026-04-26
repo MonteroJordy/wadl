@@ -41,10 +41,18 @@ export async function POST(req: Request) {
     );
   }
 
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Day 29: dual-auth — cookies for web, Authorization: Bearer for mobile.
+  const bearer = req.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
+  let user: { id: string } | null = null;
+  if (bearer) {
+    const adminAuth = createAdminClient();
+    const { data } = await adminAuth.auth.getUser(bearer);
+    user = data.user ?? null;
+  } else {
+    const supabase = createClient();
+    const { data } = await supabase.auth.getUser();
+    user = data.user ?? null;
+  }
   if (!user) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }

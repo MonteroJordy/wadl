@@ -1895,3 +1895,55 @@ Day 28:
   apps/web/lib/demo-mode.ts
   apps/web/lib/supabase/middleware.ts   (also touched on Day 25 — split or keep on whichever)
 ```
+
+---
+
+## Day 29 — Web ↔ mobile parity push
+
+User flagged the flow felt "off" and pointed at mobile / web parity. Big finding during orientation: **mobile's root layout was redirecting every authed user to `/(tabs)/discover` — the guest tab — regardless of role.** Owners signing in on phone were landing on the guest discover screen. Fixed.
+
+### What changed
+
+**Mobile root routing (`apps/mobile/app/_layout.tsx`)** — role-aware landing after signin. Pulls `profiles.role` + `event_staff` shifts in the next 18h, then routes:
+- owner + active door shift → `/(auth)/dualctx`
+- owner only → `/(tabs)/dashboard`
+- door staff only → `/(door)/scan`
+- otherwise → `/(tabs)/discover`
+
+**Mobile dualctx (`apps/mobile/app/(auth)/dualctx.tsx`)** — context picker mirroring the web version. Three cards: Owner, Door staff/manager (with shift name + doors_at + +N more), Guest (My tickets). Shown when an owner has a door shift tonight.
+
+**Mobile escalate button (`apps/mobile/src/components/EscalateButton.tsx` + wired into `app/(door)/scan.tsx`)** — door staff page-the-manager flow on mobile. 6 preset reasons, POSTs to the existing `/api/notifications/escalate` web route with a Bearer token. Auto-resolves the active event from the user's first event_staff shift in the next 18h.
+
+**Web escalate route dual-auth (`apps/web/app/api/notifications/escalate/route.ts`)** — when `Authorization: Bearer <jwt>` is present, validates via `supabase.auth.getUser(jwt)` using the admin client; otherwise falls back to cookie-based session auth. Same RLS / rate-limit / SMS-fanout flow either way.
+
+**Mobile recap (`apps/mobile/app/(owner)/event/[id]/recap.tsx`)** — postevent recap mirroring `/owner/events/[id]/recap`. Show rate hero + tier breakdown + top holders + guest feedback aggregate (rating distribution bars + top tags + recent comments). Reads stats client-side from Supabase.
+
+**Daydash recap link (mobile `app/(owner)/event/[id].tsx`)** — third button under "Open scanner" + "Approval queue" links to the new recap screen.
+
+**Mobile profile "Switch role"** — surfaces the dualctx picker from the profile tab so an owner working their own door can flip surfaces without signing out.
+
+**Web first-time setup CTA (`apps/web/app/owner/events/[id]/page.tsx`)** — when a freshly-created event has 0 allocations AND 0 approved heads, daydash shows a coral "Set up your list" card with one-paragraph allocation explainer + two-button row (`Add allocation` / `Invite door staff`). Closes the "I created an event, now what?" gap.
+
+### Files
+
+```
+Day 29:
+  apps/mobile/app/_layout.tsx
+  apps/mobile/app/(auth)/dualctx.tsx                    (new)
+  apps/mobile/app/(door)/scan.tsx
+  apps/mobile/app/(owner)/event/[id].tsx
+  apps/mobile/app/(owner)/event/[id]/recap.tsx          (new)
+  apps/mobile/app/(tabs)/profile.tsx
+  apps/mobile/src/components/EscalateButton.tsx         (new)
+  apps/web/app/api/notifications/escalate/route.ts
+  apps/web/app/owner/events/[id]/page.tsx
+```
+
+### What's still NOT in mobile parity
+
+Allocations list / detail · Scorecards / analytics · Owner-side guest list (search, approve, manual add) · Broadcasts / Chat Hub · Override / Lockdown · Holder claim (`/h/[token]` is web-only) · Universal links / deep-link routing · Stripe Connect onboarding · Owner settings · Co-owner invite / accept. Mobile is intentionally scoped to "what an owner needs at the door tonight" + "what a guest needs to RSVP" + "what a holder needs to add names." Cross-event admin work stays on web.
+
+### Build state
+
+- Web: `tsc --noEmit` clean, `next lint` clean. Production deploy on `wadl-pearl.vercel.app` is on commit `c8362bd` (Days 25-28). Day 29 needs a fresh commit + push + redeploy to land.
+- Mobile: edits use existing patterns. No new dependencies. `cd apps/mobile && npm install && npm run typecheck` should be clean once node_modules materialize.

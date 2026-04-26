@@ -30,8 +30,44 @@ export default function RootLayout() {
     const inAuth = segments[0] === "(auth)";
     if (!session && !inAuth) {
       router.replace("/(auth)/login");
-    } else if (session && inAuth) {
-      router.replace("/(tabs)/discover");
+      return;
+    }
+    if (session && inAuth) {
+      // Day 29: role-aware landing — avoids dumping owners on the guest tab.
+      (async () => {
+        const userId = session.user.id;
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("role, account_id")
+          .eq("id", userId)
+          .maybeSingle<{ role: string | null; account_id: string | null }>();
+        // Door shift in the next 18h?
+        const horizonStart = new Date(Date.now() - 18 * 60 * 60 * 1000).toISOString();
+        const horizonEnd = new Date(Date.now() + 18 * 60 * 60 * 1000).toISOString();
+        const { data: shifts } = await supabase
+          .from("event_staff")
+          .select("event_id, role, event:events!inner(event_nights!inner(doors_at))")
+          .eq("user_id", userId)
+          .in("role", ["door_staff", "door_manager"])
+          .gte("event.event_nights.doors_at", horizonStart)
+          .lte("event.event_nights.doors_at", horizonEnd)
+          .limit(1);
+        const hasShiftTonight = (shifts ?? []).length > 0;
+        const isOwner = prof?.role === "owner" || !!prof?.account_id;
+        if (isOwner && hasShiftTonight) {
+          router.replace("/(auth)/dualctx");
+          return;
+        }
+        if (isOwner) {
+          router.replace("/(tabs)/dashboard");
+          return;
+        }
+        if (hasShiftTonight) {
+          router.replace("/(door)/scan");
+          return;
+        }
+        router.replace("/(tabs)/discover");
+      })();
     }
   }, [session, ready, segments, router]);
 
