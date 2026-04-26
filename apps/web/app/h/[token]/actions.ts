@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
 import { enqueueWebhook } from "@/lib/webhooks";
 import { hit, LIMITS } from "@/lib/rate-limit";
+import { checkAndLockdown } from "@/lib/lockdown";
 
 interface TokenLookup {
   token: string;
@@ -141,6 +142,36 @@ export async function addHolderGuestAction(token: string, formData: FormData) {
         allocation_id: allocation.id,
         cap: allocation.cap,
       });
+    }
+
+    // Check capacity-lockdown threshold for the night.
+    if (status === "approved") {
+      const { data: nightCapRow } = await admin
+        .from("event_nights")
+        .select("capacity_cap, lockdown_threshold_pct")
+        .eq("id", allocation.event_night_id)
+        .maybeSingle<{
+          capacity_cap: number | null;
+          lockdown_threshold_pct: number;
+        }>();
+      if (nightCapRow?.capacity_cap) {
+        const { data: nightApproved } = await admin
+          .from("guests")
+          .select("plus_ones")
+          .eq("event_night_id", allocation.event_night_id)
+          .eq("status", "approved");
+        const totalApproved = ((nightApproved ?? []) as Array<{ plus_ones: number }>)
+          .reduce((s, g) => s + 1 + (g.plus_ones ?? 0), 0);
+        await checkAndLockdown({
+          nightId: allocation.event_night_id,
+          eventId: nightRow.event.id,
+          accountId: nightRow.event.account_id,
+          eventName: nightRow.event.name,
+          capacityCap: nightCapRow.capacity_cap,
+          thresholdPct: nightCapRow.lockdown_threshold_pct,
+          approvedHeads: totalApproved,
+        });
+      }
     }
   }
 

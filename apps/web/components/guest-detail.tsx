@@ -192,6 +192,13 @@ export default function GuestDetail({
           Open guest QR
         </Link>
       )}
+
+      <Link
+        href={`/owner/events/${guest.night.event.id}/guests/${guest.id}/history`}
+        className="label-mono block text-center mt-4 hover:text-cream"
+      >
+        Tier + flag history →
+      </Link>
     </main>
   );
 }

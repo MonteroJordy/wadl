@@ -5,6 +5,8 @@ import { fmtHour } from "@/lib/recap";
 import FreezeButton from "./freeze-button";
 import EmptyState from "@/components/empty-state";
 import RealtimeCounters from "@/components/realtime-counters";
+import ActivityFeed from "@/components/activity-feed";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -470,6 +472,12 @@ export default async function DayDashPage({
           Templates
         </Link>
         <Link
+          href={`/owner/events/${event.id}/override`}
+          className="label-mono text-center py-2 hover:text-cream transition text-coral"
+        >
+          Override admit
+        </Link>
+        <Link
           href={`/embed/${event.id}`}
           target="_blank"
           className="label-mono text-center py-2 hover:text-cream transition"
@@ -477,6 +485,37 @@ export default async function DayDashPage({
           Embed widget
         </Link>
       </section>
+
+      {await renderActivity(active.id, event.id)}
     </main>
+  );
+}
+
+async function renderActivity(nightId: string, eventId: string) {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("audit_log")
+    .select(
+      "id, action, context, created_at, actor:profiles!actor_user_id(full_name)"
+    )
+    .eq("event_id", eventId)
+    .order("created_at", { ascending: false })
+    .limit(15);
+  const rows = (data ?? []) as unknown as Array<{
+    id: string;
+    action: string;
+    context: Record<string, unknown> | null;
+    created_at: string;
+    actor: { full_name: string | null } | null;
+  }>;
+  return (
+    <section className="mt-6">
+      <p className="label-mono mb-2">Live activity</p>
+      <ActivityFeed
+        rows={rows}
+        emptyTitle="Quiet so far"
+        emptyBody="Holders haven't added anyone and the door hasn't opened yet."
+      />
+    </section>
   );
 }

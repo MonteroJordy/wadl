@@ -111,6 +111,16 @@ export default async function HolderPage({
         </div>
       ) : null}
 
+      {night.is_frozen && (
+        <div className="card border-coral mb-5">
+          <p className="label-mono text-coral mb-1">⚠ Capacity lockdown</p>
+          <p className="text-cream text-sm">
+            The night hit its capacity threshold and the host closed all
+            lists. Already-on names keep their spot; no new adds.
+          </p>
+        </div>
+      )}
+
       <section className="card mb-5">
         <p className="label-mono mb-1">Your list</p>
         <p className="font-display text-4xl text-cream leading-none">

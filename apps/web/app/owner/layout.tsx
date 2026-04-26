@@ -29,6 +29,7 @@ export default async function OwnerLayout({
         { href: "/owner", label: "This week", matchPrefix: "/owner/events" },
         { href: "/owner/calendar", label: "Calendar" },
         { href: "/owner/events/new", label: "+ New event" },
+        { href: "/owner/holders", label: "Holders" },
         { href: "/owner/scorecards", label: "Scorecards" },
         { href: "/owner/analytics", label: "Analytics" },
         { href: "/owner/flags", label: "Flag list" },
