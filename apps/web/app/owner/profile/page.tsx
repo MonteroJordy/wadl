@@ -6,6 +6,7 @@ import { getVapidPublicKey } from "@/lib/push";
 import PushSubscribeButton from "@/components/push-subscribe";
 import EmptyState from "@/components/empty-state";
 import AccountMetaForm from "./account-meta-form";
+import ShareLinkInput from "./share-link";
 
 export const dynamic = "force-dynamic";
 
@@ -188,12 +189,7 @@ export default async function ProfilePage() {
         <p className="text-muted text-sm mb-2">
           Send this link to anyone you want to invite to the platform:
         </p>
-        <input
-          readOnly
-          value={getAppUrl()}
-          onFocus={(e) => e.currentTarget.select()}
-          className="input-dark text-xs font-mono"
-        />
+        <ShareLinkInput url={getAppUrl()} />
       </section>
 
       <section className="card border-coral/40 mb-4">
