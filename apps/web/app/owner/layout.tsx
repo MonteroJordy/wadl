@@ -92,7 +92,7 @@ export default async function OwnerLayout({
       topBarRight={
         <>
           <CommandPalette />
-          <NotificationBell unread={unread ?? 0} />
+          <NotificationBell unread={unread ?? 0} accountId={account.id} />
         </>
       }
     >

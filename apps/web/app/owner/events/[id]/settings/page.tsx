@@ -31,18 +31,24 @@ export default async function EventSettingsPage({
   }>).sort((a, b) => (a.doors_at < b.doors_at ? -1 : 1));
 
   return (
-    <main id="main-content" className="mobile-frame">
-      <header className="flex items-center justify-between pt-6 pb-4">
+    <main
+      id="main-content"
+      className="mx-auto w-full max-w-3xl px-4 md:px-8 pt-6 pb-16"
+    >
+      <header className="mb-6">
         <Link
           href={`/owner/events/${event.id}`}
-          className="label-mono hover:text-cream"
+          className="label-mono hover:text-cream transition mb-2 inline-block"
         >
-          ← Back
+          ← {event.name}
         </Link>
-        <p className="label-mono">Settings</p>
+        <h1 className="font-display text-4xl md:text-5xl text-cream uppercase tracking-wide leading-[0.9]">
+          Event settings
+        </h1>
+        <p className="label-mono mt-2">
+          Name, flyer, nights, capacity, lockdown — anything you can change before doors.
+        </p>
       </header>
-
-      <h1 className="display-lg mb-6">{event.name}</h1>
 
       <SettingsForm
         eventId={event.id}
