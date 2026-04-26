@@ -4,6 +4,7 @@ import FlagDnaForm from "@/components/flag-dna-form";
 import GuestCancelButton from "@/components/guest-cancel-button";
 import GuestNotesTags from "@/components/guest-notes-tags";
 import TierUpgradeButton from "@/components/tier-upgrade-button";
+import GuestDmButton from "@/components/guest-dm-button";
 
 interface GuestDetailData {
   id: string;
@@ -15,6 +16,7 @@ interface GuestDetailData {
   status: string;
   flag_dna: boolean;
   flag_reason: string | null;
+  sms_opted_out?: boolean;
   check_in_token: string | null;
   created_at: string;
   approved_at: string | null;
@@ -173,6 +175,15 @@ export default function GuestDetail({
           guestId={guest.id}
           initialFlagged={guest.flag_dna}
           initialReason={guest.flag_reason ?? ""}
+        />
+      </section>
+
+      <section className="mb-4">
+        <GuestDmButton
+          guestId={guest.id}
+          guestName={guest.full_name}
+          hasPhone={!!guest.phone}
+          optedOut={!!guest.sms_opted_out}
         />
       </section>
 

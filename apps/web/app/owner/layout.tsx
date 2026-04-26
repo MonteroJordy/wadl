@@ -50,6 +50,7 @@ export default async function OwnerLayout({
       items: [
         { href: "/owner/profile", label: "Profile + venues" },
         { href: "/owner/sms-templates", label: "SMS templates" },
+        { href: "/owner/sms-log", label: "SMS log" },
         { href: "/owner/webhooks", label: "Webhooks" },
         { href: "/owner/payouts", label: "Payouts" },
         { href: "/owner/billing", label: "Billing" },

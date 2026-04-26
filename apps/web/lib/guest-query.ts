@@ -10,6 +10,7 @@ interface RawGuest {
   status: string;
   flag_dna: boolean;
   flag_reason: string | null;
+  sms_opted_out: boolean;
   check_in_token: string | null;
   created_at: string;
   approved_at: string | null;
@@ -37,7 +38,7 @@ export async function fetchGuestForDetail(guestId: string, eventId: string) {
   const { data } = await admin
     .from("guests")
     .select(
-      "id, full_name, phone, email, plus_ones, tier, status, flag_dna, flag_reason, check_in_token, created_at, approved_at, notes, tags, " +
+      "id, full_name, phone, email, plus_ones, tier, status, flag_dna, flag_reason, sms_opted_out, check_in_token, created_at, approved_at, notes, tags, " +
         "allocation:allocations(holder_name), " +
         "night:event_nights!inner(night_date, doors_at, event:events!inner(id, name)), " +
         "check_ins(state, scanned_at, scanner:profiles(full_name))"

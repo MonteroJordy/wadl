@@ -79,10 +79,27 @@ export default async function HolderClaimPage({
         <p className="label-mono mt-1">Cap {data.allocation.cap}</p>
       </section>
 
+      <section className="card border-coral/30 mb-6">
+        <p className="label-mono text-coral mb-2">What you get when you claim</p>
+        <ul className="text-cream/80 text-sm leading-relaxed space-y-2">
+          <li>• A holder dashboard showing every event you&apos;ve been
+            allocated, your show rate per event, lifetime stats.</li>
+          <li>• One sign-in (phone OTP) — no app, no password, no account
+            creation per venue.</li>
+          <li>• Push notifications when an RSVP needs review, when capacity
+            hits 90%, when the host upgrades a guest&apos;s tier.</li>
+          <li>• You stay attributed across every venue you ever work — your
+            scorecard travels.</li>
+        </ul>
+      </section>
+
       <p className="text-cream/80 text-sm leading-relaxed mb-6">
-        Claiming links this allocation to your phone so you can manage your
-        list, see arrivals, and track your show rate over time at <a className="text-coral underline" href="/holder">/holder</a>.
-        The host gets notified.
+        The host gets a notification when you claim. From there, you manage
+        your list at{" "}
+        <a className="text-coral underline" href="/holder">
+          /holder
+        </a>
+        .
       </p>
 
       <ClaimForm token={params.token} signedIn={!!user} />
