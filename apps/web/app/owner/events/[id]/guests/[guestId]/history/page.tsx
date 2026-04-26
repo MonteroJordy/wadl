@@ -86,7 +86,7 @@ export default async function GuestHistoryPage({
         <p className="label-mono mb-2">Snapshot</p>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <p className="label-mono">RSVP'd</p>
+            <p className="label-mono">RSVP&apos;d</p>
             <p className="font-sans text-cream">{fmtDate(guest.created_at)}</p>
           </div>
           <div>

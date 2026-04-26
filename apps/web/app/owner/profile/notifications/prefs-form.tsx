@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { saveNotifPrefsAction, type NotifPrefs } from "./actions";
 import { useToast } from "@/components/toast";
-import { KIND_LABEL, type NotificationKind } from "@/lib/notifications";
+import { KIND_LABEL, type NotificationKind } from "@/lib/notification-kinds";
 
 const KINDS: NotificationKind[] = [
   "rsvp_pending",
