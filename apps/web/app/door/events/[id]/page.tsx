@@ -1,11 +1,17 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  requireDoorContext,
-  resolveActiveNight,
-} from "@/lib/door";
+import { requireDoorContext, resolveActiveNight } from "@/lib/door";
 import { fmtDate, fmtTime } from "@/lib/format";
 import EscalateButton from "@/components/escalate-button";
+import {
+  CapacityMeter,
+  Chip,
+  IconArrow,
+  IconQr,
+  IconSearch,
+  WFrame,
+  Wordmark,
+} from "@/components/wadl";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +28,7 @@ export default async function DoorEventHome({
   const { nights, active } = await resolveActiveNight(
     admin,
     params.id,
-    searchParams.night
+    searchParams.night,
   );
 
   let inCount = 0;
@@ -43,134 +49,331 @@ export default async function DoorEventHome({
     ]);
     inCount = checkInsRes.count ?? 0;
     for (const g of guestsRes.data ?? []) {
-      if (g.status === "approved") approvedCount += 1 + (g.plus_ones ?? 0);
-      else if (g.status === "pending") pendingCount += 1 + (g.plus_ones ?? 0);
+      if (g.status === "approved")
+        approvedCount += 1 + (g.plus_ones ?? 0);
+      else if (g.status === "pending")
+        pendingCount += 1 + (g.plus_ones ?? 0);
     }
   }
 
   const capacity = active?.capacity_cap ?? 0;
+  const pct =
+    capacity > 0 ? Math.round((inCount / capacity) * 100) : 0;
 
   return (
-    <main id="main-content" className="min-h-screen">
-      <header className="sticky top-0 z-30 backdrop-blur-md bg-bg/80 border-b border-mint/20">
-        <div className="max-w-2xl mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span
-              className="inline-block w-1.5 h-1.5 rounded-full bg-mint"
-              style={{ animation: "wadl-pulse-mint 2s infinite" }}
-            />
-            <p className="label-mono text-mint">Door</p>
+    <main id="main-content">
+      <WFrame style={{ paddingBottom: 32, background: "#000" }}>
+        {/* Top status bar */}
+        <div
+          style={{
+            padding: "16px 20px 0",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div>
+            <div
+              className="w-type-meta"
+              style={{
+                color: "var(--w-acc)",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <span
+                className="w-pulse"
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: 99,
+                  background: "currentColor",
+                  display: "inline-block",
+                }}
+              />
+              LIVE · {resolved.event.name.toUpperCase()}
+            </div>
+            {active ? (
+              <div
+                style={{
+                  fontFamily: "var(--w-mono)",
+                  fontSize: 13,
+                  marginTop: 4,
+                }}
+              >
+                <strong style={{ color: "var(--w-fg)" }}>{inCount}</strong>
+                <span style={{ color: "var(--w-fg-dim)" }}>
+                  {capacity ? ` / ${capacity}` : ""}
+                  {capacity ? ` · ${pct}%` : ""}
+                </span>
+              </div>
+            ) : null}
           </div>
-          <Link
-            href="/"
-            className="font-display text-xl text-coral tracking-wide"
+          <Wordmark variant="monogrid" size={14} />
+        </div>
+
+        <div style={{ padding: "24px 20px 0" }}>
+          <div className="w-type-meta">DOOR</div>
+          <div className="w-type-display-md" style={{ marginTop: 6 }}>
+            {resolved.event.name}
+          </div>
+          {active ? (
+            <div className="w-type-meta" style={{ marginTop: 8 }}>
+              {fmtDate(active.night_date).toUpperCase()} · DOORS{" "}
+              {fmtTime(active.doors_at).toUpperCase()}
+              {active.is_frozen ? " · FROZEN" : ""}
+            </div>
+          ) : null}
+        </div>
+
+        {/* Multi-night picker */}
+        {nights.length > 1 && active ? (
+          <div
+            style={{
+              padding: "16px 20px 0",
+              display: "flex",
+              gap: 6,
+              overflowX: "auto",
+            }}
+            className="w-noscroll"
           >
-            WADL
-          </Link>
+            {nights.map((n) => {
+              const isActive = n.id === active.id;
+              return (
+                <Link
+                  key={n.id}
+                  href={`/door/events/${params.id}?night=${n.id}`}
+                  style={{
+                    textDecoration: "none",
+                    flexShrink: 0,
+                  }}
+                >
+                  <Chip tone={isActive ? "neutral" : "ghost"}>
+                    {fmtDate(n.night_date).toUpperCase()}
+                  </Chip>
+                </Link>
+              );
+            })}
+          </div>
+        ) : null}
+
+        {active ? (
+          <>
+            {/* Big-stat IN card */}
+            <div style={{ padding: "24px 20px 0" }}>
+              <div
+                className="w-card"
+                style={{
+                  padding: 22,
+                  borderColor: "var(--w-acc)",
+                  background: "var(--w-acc-soft)",
+                }}
+              >
+                <div
+                  className="w-type-meta"
+                  style={{ color: "var(--w-acc)" }}
+                >
+                  IN
+                </div>
+                <div
+                  style={{
+                    fontFamily: "var(--w-display)",
+                    fontSize: 88,
+                    fontWeight: 700,
+                    letterSpacing: "-0.04em",
+                    lineHeight: 0.92,
+                    marginTop: 4,
+                  }}
+                >
+                  {inCount}
+                  <span style={{ color: "var(--w-fg-dim)", fontSize: 44 }}>
+                    {capacity ? `/${capacity}` : ""}
+                  </span>
+                </div>
+                {capacity > 0 && (
+                  <div style={{ marginTop: 14 }}>
+                    <CapacityMeter
+                      current={inCount}
+                      total={capacity}
+                      accent
+                      label="CAPACITY"
+                    />
+                  </div>
+                )}
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 8,
+                    marginTop: 14,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <Chip tone="ok">{approvedCount} APPROVED</Chip>
+                  {pendingCount > 0 && (
+                    <Chip tone="warn">{pendingCount} PENDING</Chip>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Action grid */}
+            <div
+              style={{
+                padding: "16px 20px 0",
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 10,
+              }}
+            >
+              <Link
+                href={`/door/events/${params.id}/scan?night=${active.id}`}
+                style={{ textDecoration: "none", color: "inherit" }}
+              >
+                <div
+                  className="w-card"
+                  style={{
+                    padding: 24,
+                    textAlign: "center",
+                    borderColor: "var(--w-acc)",
+                    background: "var(--w-acc-soft)",
+                    color: "var(--w-fg)",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 48,
+                      height: 48,
+                      margin: "0 auto",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "var(--w-acc)",
+                    }}
+                  >
+                    <IconQr size={32} />
+                  </div>
+                  <div
+                    className="w-type-display-md"
+                    style={{ marginTop: 8, fontSize: 28 }}
+                  >
+                    Scan
+                  </div>
+                  <div className="w-type-meta" style={{ marginTop: 4 }}>
+                    CAMERA QR
+                  </div>
+                </div>
+              </Link>
+              <Link
+                href={`/door/events/${params.id}/search?night=${active.id}`}
+                style={{ textDecoration: "none", color: "inherit" }}
+              >
+                <div
+                  className="w-card"
+                  style={{
+                    padding: 24,
+                    textAlign: "center",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 48,
+                      height: 48,
+                      margin: "0 auto",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "var(--w-fg)",
+                    }}
+                  >
+                    <IconSearch size={32} />
+                  </div>
+                  <div
+                    className="w-type-display-md"
+                    style={{ marginTop: 8, fontSize: 28 }}
+                  >
+                    Search
+                  </div>
+                  <div className="w-type-meta" style={{ marginTop: 4 }}>
+                    BY NAME
+                  </div>
+                </div>
+              </Link>
+            </div>
+
+            {resolved.role !== "door_manager" && (
+              <div style={{ padding: "32px 20px 0" }}>
+                <EscalateButton eventId={params.id} />
+              </div>
+            )}
+
+            {resolved.role === "door_manager" && (
+              <div
+                style={{ padding: "24px 20px 0", textAlign: "center" }}
+              >
+                <Link
+                  href={`/manager/events/${params.id}`}
+                  style={{
+                    color: "var(--w-warn)",
+                    textDecoration: "none",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                  className="w-type-meta"
+                >
+                  MANAGER VIEW <IconArrow size={12} />
+                </Link>
+              </div>
+            )}
+          </>
+        ) : (
+          <div style={{ padding: "32px 20px 0" }}>
+            <div
+              className="w-card"
+              style={{ padding: 24, textAlign: "center" }}
+            >
+              <div className="w-type-meta">NO NIGHTS YET</div>
+            </div>
+          </div>
+        )}
+
+        <div
+          className="w-type-meta"
+          style={{
+            marginTop: "auto",
+            paddingTop: 24,
+            paddingBottom: 12,
+            textAlign: "center",
+            color: "var(--w-fg-dim)",
+          }}
+        >
+          STAFF · SCAN OR SEARCH ONLY
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            paddingTop: 8,
+          }}
+        >
           <form action="/api/auth/signout" method="post">
-            <button type="submit" className="label-mono hover:text-cream transition">
-              Sign out
+            <button
+              type="submit"
+              className="w-type-meta"
+              style={{
+                background: "transparent",
+                border: 0,
+                color: "var(--w-fg-dim)",
+                cursor: "pointer",
+              }}
+            >
+              SIGN OUT
             </button>
           </form>
         </div>
-      </header>
-
-      <div className="max-w-2xl mx-auto px-4 md:px-6 pt-6 pb-12 flex flex-col">
-        <h1 className="font-display text-4xl md:text-5xl text-cream uppercase tracking-wide leading-[0.95] mb-1">
-          {resolved.event.name}
-        </h1>
-
-      {active ? (
-        <>
-          <p className="label-mono mb-4">
-            {fmtDate(active.night_date)} · Doors {fmtTime(active.doors_at)}
-            {active.is_frozen ? " · FROZEN" : ""}
-          </p>
-
-          {nights.length > 1 && (
-            <div className="flex gap-2 mb-4 overflow-x-auto">
-              {nights.map((n) => {
-                const isActive = n.id === active.id;
-                return (
-                  <Link
-                    key={n.id}
-                    href={`/door/events/${params.id}?night=${n.id}`}
-                    className={`shrink-0 px-3 py-2 rounded-md border text-xs font-mono uppercase tracking-wider ${
-                      isActive
-                        ? "border-mint bg-s2 text-cream"
-                        : "border-line bg-s1 text-muted hover:text-cream"
-                    }`}
-                  >
-                    {fmtDate(n.night_date)}
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-
-          <section className="card border-mint/40 mb-4">
-            <p className="label-mono text-mint mb-1">In</p>
-            <p className="font-display text-7xl leading-none text-mint">
-              {inCount}
-              <span className="text-muted text-4xl">/{capacity || "—"}</span>
-            </p>
-            <div className="flex gap-4 mt-3">
-              <span className="label-mono">
-                {approvedCount} approved
-              </span>
-              {pendingCount > 0 && (
-                <span className="label-mono text-gold">{pendingCount} pending</span>
-              )}
-            </div>
-          </section>
-
-          <section className="grid grid-cols-2 gap-2">
-            <Link
-              href={`/door/events/${params.id}/scan?night=${active.id}`}
-              className="card text-center border-mint/40 hover:border-mint transition"
-            >
-              <p className="font-display text-3xl text-mint mb-1">SCAN</p>
-              <p className="label-mono">Camera QR</p>
-            </Link>
-            <Link
-              href={`/door/events/${params.id}/search?night=${active.id}`}
-              className="card text-center hover:border-mint transition"
-            >
-              <p className="font-display text-3xl text-cream mb-1">SEARCH</p>
-              <p className="label-mono">By name</p>
-            </Link>
-          </section>
-
-          {resolved.role !== "door_manager" && (
-            <EscalateButton eventId={params.id} />
-          )}
-
-          {resolved.role === "door_manager" && (
-            <Link
-              href={`/manager/events/${params.id}`}
-              className="label-mono block mt-6 text-center text-gold hover:brightness-125"
-            >
-              Manager view →
-            </Link>
-          )}
-        </>
-      ) : (
-        <div className="card text-center mt-4">
-          <p className="label-mono mb-2">No nights yet</p>
-        </div>
-      )}
-
-      <p className="label-mono mt-8 text-center text-mint">
-        Staff — scan or search only
-      </p>
-      </div>
-      <style>{`
-        @keyframes wadl-pulse-mint {
-          0% { box-shadow: 0 0 0 0 rgba(0,217,126,0.7); }
-          70% { box-shadow: 0 0 0 8px rgba(0,217,126,0); }
-          100% { box-shadow: 0 0 0 0 rgba(0,217,126,0); }
-        }
-      `}</style>
+      </WFrame>
     </main>
   );
 }

@@ -133,7 +133,7 @@ export default function CloneForm({
           {sourceAllocCount > 0 && ` · ${sourceAllocCount} allocation${sourceAllocCount === 1 ? "" : "s"}`}
         </p>
 
-        {error && <p className="text-coral text-sm">{error}</p>}
+        {error && <p className="text-err text-sm">{error}</p>}
 
         <button type="submit" className="btn-primary" disabled={pending}>
           {pending ? "Cloning…" : "Clone event"}

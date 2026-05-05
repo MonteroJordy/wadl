@@ -131,7 +131,7 @@ export default function GuestNotesTags({
         placeholder="Private notes — only your team sees these."
       />
 
-      {error && <p className="text-coral text-sm mt-2">{error}</p>}
+      {error && <p className="text-err text-sm mt-2">{error}</p>}
       {saved && <p className="text-mint text-sm mt-2">{saved}</p>}
     </section>
   );

@@ -135,7 +135,7 @@ export default function AllocationControls({
           <span className="font-sans text-cream text-sm font-semibold">Allow +1s</span>
         </label>
 
-        {error && <p className="text-coral text-sm">{error}</p>}
+        {error && <p className="text-err text-sm">{error}</p>}
         {saved && <p className="text-mint text-sm">{saved}</p>}
 
         <button type="submit" className="btn-primary" disabled={pending}>

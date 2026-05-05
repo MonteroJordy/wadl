@@ -224,7 +224,7 @@ export default function SettingsForm({
         </button>
       </form>
 
-      {error && <p className="text-coral text-sm mt-4">{error}</p>}
+      {error && <p className="text-err text-sm mt-4">{error}</p>}
       {saved && <p className="text-mint text-sm mt-4">{saved}</p>}
     </>
   );

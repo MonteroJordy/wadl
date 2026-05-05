@@ -95,7 +95,7 @@ export default function BulkFlagForm({ items }: { items: FlagItem[] }) {
                 {it.event_name} · {it.night_date}
               </p>
               {it.reason && (
-                <p className="text-coral text-sm mt-1">{it.reason}</p>
+                <p className="text-err text-sm mt-1">{it.reason}</p>
               )}
             </div>
           </li>

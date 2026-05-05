@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { Avatar, Wordmark } from "@/components/wadl";
 
 export interface NavSection {
   label: string;
@@ -12,9 +13,7 @@ export interface NavSection {
 export interface NavItem {
   href: string;
   label: string;
-  /** Path prefix that should also activate this item. */
   matchPrefix?: string;
-  /** Optional badge count rendered next to the label. */
   badge?: number;
 }
 
@@ -36,7 +35,6 @@ interface Props {
   brand: string;
   brandSub?: string;
   brandTone?: "coral" | "gold" | "mint";
-  /** Right-aligned items rendered in a sticky top bar above the children. */
   topBarRight?: React.ReactNode;
 }
 
@@ -47,7 +45,6 @@ export default function AuthedShell({
   sections,
   brand,
   brandSub,
-  brandTone = "coral",
   topBarRight,
 }: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -59,62 +56,144 @@ export default function AuthedShell({
     return false;
   }
 
-  const toneText =
-    brandTone === "gold"
-      ? "text-gold"
-      : brandTone === "mint"
-      ? "text-mint"
-      : "text-coral";
-
-  const initial =
-    (user.full_name ?? "")
-      .split(" ")
-      .map((s) => s[0])
-      .filter(Boolean)
-      .slice(0, 2)
-      .join("")
-      .toUpperCase() || "?";
-
   return (
-    <div className="md:flex min-h-screen">
+    <div
+      className="w-app md:flex"
+      style={{ minHeight: "100vh", background: "var(--w-bg)" }}
+    >
       {/* Mobile hamburger */}
       <button
         type="button"
         onClick={() => setDrawerOpen(true)}
-        className="md:hidden fixed top-3 left-3 z-30 w-10 h-10 rounded-md bg-s2 border border-line flex items-center justify-center text-cream"
+        className="md:hidden"
         aria-label="Open navigation"
+        style={{
+          position: "fixed",
+          top: 12,
+          left: 12,
+          zIndex: 30,
+          width: 40,
+          height: 40,
+          borderRadius: 0,
+          background: "var(--w-surface-2)",
+          border: "1px solid var(--w-line)",
+          color: "var(--w-fg)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 18,
+          fontFamily: "var(--w-mono)",
+          cursor: "pointer",
+        }}
       >
-        <span className="font-display text-xl leading-none">≡</span>
+        ≡
       </button>
 
       {/* Mobile backdrop */}
       {drawerOpen && (
         <div
           onClick={() => setDrawerOpen(false)}
-          className="md:hidden fixed inset-0 bg-bg/80 backdrop-blur-sm z-30"
+          className="md:hidden"
           aria-hidden="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15,15,16,0.78)",
+            backdropFilter: "blur(6px)",
+            zIndex: 30,
+          }}
         />
       )}
 
       <aside
-        className={`fixed md:sticky md:top-0 inset-y-0 left-0 w-64 bg-s1 border-r border-line z-40 flex flex-col transform transition-transform duration-200 md:translate-x-0 md:h-screen ${
-          drawerOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className="md:sticky md:top-0"
+        style={{
+          width: 256,
+          background: "var(--w-surface-2)",
+          borderRight: "1px solid var(--w-line)",
+          zIndex: 40,
+          display: "flex",
+          flexDirection: "column",
+          height: "100vh",
+          position: "fixed",
+          left: 0,
+          top: 0,
+          bottom: 0,
+          transform: drawerOpen ? "translateX(0)" : "translateX(-100%)",
+          transition: "transform 0.2s ease",
+        }}
       >
-        <div className="px-5 py-6 border-b border-line">
-          <p className={`font-display text-2xl tracking-wide ${toneText}`}>
-            {brand}
-          </p>
-          {brandSub && (
-            <p className="label-mono mt-1 truncate">{brandSub}</p>
-          )}
+        {/* Tablet+ override via CSS */}
+        <style>{`
+          @media (min-width: 768px) {
+            aside.w-aside-tablet {
+              position: sticky !important;
+              transform: translateX(0) !important;
+              height: 100vh !important;
+            }
+          }
+        `}</style>
+        <div
+          className="w-aside-tablet"
+          style={{
+            padding: "20px 16px",
+            borderBottom: "1px solid var(--w-line)",
+          }}
+        >
+          <Wordmark variant="monogrid" size={20} />
+          <div
+            style={{
+              marginTop: 14,
+              padding: 10,
+              background: "#ffffff05",
+              border: "1px solid var(--w-line)",
+              borderRadius: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+            <Avatar
+              name={brand
+                .split(" ")
+                .map((s) => s[0] ?? "")
+                .join("")
+                .slice(0, 2)
+                .toUpperCase()}
+              size={32}
+              accent
+            />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div
+                style={{
+                  fontWeight: 600,
+                  fontSize: 13,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {brand}
+              </div>
+              {brandSub && (
+                <div className="w-type-meta" style={{ marginTop: 2, fontSize: 9 }}>
+                  {brandSub.toUpperCase()}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-3">
+        <nav style={{ flex: 1, overflowY: "auto", padding: "12px 0" }}>
           {sections.map((section) => (
-            <div key={section.label} className="mb-4">
-              <p className="label-mono px-5 mb-1">{section.label}</p>
-              <ul>
+            <div key={section.label} style={{ marginBottom: 16 }}>
+              <div
+                className="w-type-meta"
+                style={{ padding: "0 20px", marginBottom: 4 }}
+              >
+                {section.label.toUpperCase()}
+              </div>
+              <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                 {section.items.map((item) => {
                   const active = isActive(item);
                   return (
@@ -122,15 +201,43 @@ export default function AuthedShell({
                       <Link
                         href={item.href}
                         onClick={() => setDrawerOpen(false)}
-                        className={`flex items-center justify-between px-5 py-2.5 font-sans text-sm transition border-l-2 ${
-                          active
-                            ? "border-coral bg-coral/10 text-cream"
-                            : "border-transparent text-muted hover:text-cream hover:bg-s2"
-                        }`}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "10px 20px",
+                          fontSize: 14,
+                          fontWeight: active ? 600 : 500,
+                          textDecoration: "none",
+                          background: active ? "#ffffff10" : "transparent",
+                          color: active
+                            ? "var(--w-fg)"
+                            : "var(--w-fg-muted)",
+                          borderLeft: active
+                            ? "2px solid var(--w-acc)"
+                            : "2px solid transparent",
+                          transition: "background 0.12s, color 0.12s",
+                        }}
                       >
                         <span>{item.label}</span>
                         {typeof item.badge === "number" && item.badge > 0 && (
-                          <span className="ml-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-coral text-bg text-[10px] font-mono font-semibold">
+                          <span
+                            style={{
+                              marginLeft: 8,
+                              minWidth: 20,
+                              height: 18,
+                              padding: "0 6px",
+                              borderRadius: 999,
+                              background: "var(--w-acc)",
+                              color: "var(--w-acc-ink)",
+                              fontSize: 10,
+                              fontFamily: "var(--w-mono)",
+                              fontWeight: 600,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
                             {item.badge > 99 ? "99+" : item.badge}
                           </span>
                         )}
@@ -143,38 +250,118 @@ export default function AuthedShell({
           ))}
         </nav>
 
-        <div className="px-3 py-3 border-t border-line">
+        <div
+          style={{
+            padding: 12,
+            borderTop: "1px solid var(--w-line)",
+          }}
+        >
           <Link
             href="/owner/profile"
             onClick={() => setDrawerOpen(false)}
-            className="flex items-center gap-3 p-2 rounded hover:bg-s2 transition"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: 8,
+              borderRadius: 0,
+              textDecoration: "none",
+              color: "inherit",
+              transition: "background 0.12s",
+            }}
           >
-            <div className="w-9 h-9 rounded-full bg-coral/30 flex items-center justify-center font-sans font-semibold text-cream text-sm shrink-0">
-              {initial}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-sans text-sm text-cream truncate">
+            <Avatar
+              name={(user.full_name ?? "?").slice(0, 2).toUpperCase()}
+              size={36}
+            />
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 500,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
                 {user.full_name || "Profile"}
-              </p>
+              </div>
               {account && (
-                <p className="label-mono truncate">{account.display_name}</p>
+                <div
+                  className="w-type-meta"
+                  style={{
+                    marginTop: 2,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {account.display_name.toUpperCase()}
+                </div>
               )}
             </div>
           </Link>
-          <form action="/api/auth/signout" method="post" className="mt-1">
+          <form
+            action="/api/auth/signout"
+            method="post"
+            style={{ marginTop: 4 }}
+          >
             <button
               type="submit"
-              className="w-full text-left label-mono px-2 py-2 hover:text-cream transition"
+              className="w-type-meta"
+              style={{
+                width: "100%",
+                textAlign: "left",
+                padding: "8px",
+                background: "transparent",
+                border: 0,
+                color: "var(--w-fg-dim)",
+                cursor: "pointer",
+              }}
             >
-              Sign out
+              SIGN OUT
             </button>
           </form>
         </div>
       </aside>
 
-      <div className="flex-1 min-w-0">
+      <div
+        style={{
+          flex: 1,
+          minWidth: 0,
+          marginLeft: 0,
+        }}
+        className="w-content"
+      >
+        <style>{`
+          @media (min-width: 768px) {
+            .w-content {
+              margin-left: 256px !important;
+            }
+          }
+        `}</style>
         {topBarRight && (
-          <div className="sticky top-0 z-20 bg-bg/85 backdrop-blur-sm border-b border-line px-4 md:px-6 py-2 flex items-center justify-end gap-2 md:pl-6 pl-14">
+          <div
+            style={{
+              position: "sticky",
+              top: 0,
+              zIndex: 20,
+              background: "rgba(15,15,16,0.85)",
+              backdropFilter: "blur(8px)",
+              borderBottom: "1px solid var(--w-line)",
+              padding: "8px 24px 8px 64px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              gap: 8,
+            }}
+            className="w-topbar"
+          >
+            <style>{`
+              @media (min-width: 768px) {
+                .w-topbar { padding-left: 24px !important; }
+              }
+            `}</style>
             {topBarRight}
           </div>
         )}

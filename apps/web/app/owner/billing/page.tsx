@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireOwnerContext } from "@/lib/owner";
-import EmptyState from "@/components/empty-state";
+import { Button, Chip, IconCheck } from "@/components/wadl";
 
 export const dynamic = "force-dynamic";
 
@@ -8,81 +8,201 @@ export default async function BillingPage() {
   const { account } = await requireOwnerContext();
   const stripeKey = process.env.STRIPE_SECRET_KEY;
 
-  // Stripe portal flow only kicks in once the key is configured AND the
-  // account row carries a stripe_customer_id (set by an out-of-band
-  // provisioning step — that's a v1.2 thing).
   const hasStripe = Boolean(stripeKey);
   const customerId = (account as { stripe_customer_id?: string | null })
     .stripe_customer_id;
 
   return (
-    <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 py-12">
-      <p className="label-mono mb-1">Settings</p>
-      <h1 className="display-lg leading-[0.95] mb-2">Billing</h1>
-      <p className="text-muted text-sm mb-6">
-        {account.display_name} · {account.account_type}
-      </p>
+    <main
+      id="main-content"
+      className="w-app"
+      style={{
+        minHeight: "100vh",
+        background: "var(--w-bg)",
+        padding: "32px 24px 96px",
+      }}
+    >
+      <div style={{ maxWidth: 720, margin: "0 auto" }}>
+        <div
+          style={{
+            borderBottom: "1px solid var(--w-line)",
+            paddingBottom: 24,
+          }}
+        >
+          <div className="w-type-meta">SETTINGS · BILLING</div>
+          <div className="w-type-display-md" style={{ marginTop: 8 }}>
+            Billing
+          </div>
+          <p
+            className="w-type-body-sm"
+            style={{
+              color: "var(--w-fg-muted)",
+              marginTop: 8,
+            }}
+          >
+            {account.display_name} · {account.account_type}
+          </p>
+        </div>
 
-      {!hasStripe ? (
-        <EmptyState
-          title="Free for now"
-          body="WADL is free while we hammer it into shape. Pricing flips on with your first paying customer — we'll email before any card hits."
-          action={
+        {!hasStripe ? (
+          <div
+            className="w-card"
+            style={{
+              padding: "48px 32px",
+              textAlign: "center",
+              marginTop: 24,
+              borderColor: "var(--w-acc)",
+              background: "var(--w-acc-soft)",
+            }}
+          >
+            <Chip tone="acc">FREE WHILE WE HAMMER</Chip>
+            <div
+              className="w-type-h1"
+              style={{ marginTop: 12 }}
+            >
+              No card needed
+            </div>
+            <p
+              className="w-type-body-sm"
+              style={{
+                marginTop: 12,
+                maxWidth: 480,
+                marginInline: "auto",
+                lineHeight: 1.5,
+              }}
+            >
+              WADL is free while we hammer it into shape. Pricing flips on with
+              your first paying customer — we&apos;ll email before any card
+              hits.
+            </p>
             <a
               href="mailto:jmontero@mainframeagency.com"
-              className="btn-ghost inline-block"
+              className="w-btn w-btn--ghost"
+              style={{
+                marginTop: 24,
+                textDecoration: "none",
+                display: "inline-flex",
+              }}
             >
               Email the founder
             </a>
-          }
-        />
-      ) : !customerId ? (
-        <section className="card">
-          <p className="label-mono mb-2">Plan</p>
-          <p className="font-sans text-cream font-semibold mb-3">
-            Free trial — no card on file
-          </p>
-          <p className="text-muted text-sm mb-4">
-            Upgrade to keep running events past the trial. We&apos;ll create
-            your customer record at first checkout.
-          </p>
-          <Link
-            href="/api/billing/checkout"
-            className="btn-primary inline-block"
+          </div>
+        ) : !customerId ? (
+          <div
+            className="w-card"
+            style={{ padding: 22, marginTop: 24 }}
           >
-            Set up billing
-          </Link>
-        </section>
-      ) : (
-        <section className="card">
-          <p className="label-mono mb-2">Plan</p>
-          <p className="font-sans text-cream font-semibold mb-3">
-            Stripe customer · {customerId.slice(0, 12)}…
-          </p>
-          <p className="text-muted text-sm mb-4">
-            Manage your subscription, payment method, and invoices via the
-            Stripe Customer Portal.
-          </p>
-          <Link
-            href="/api/billing/portal"
-            className="btn-primary inline-block"
+            <div className="w-type-meta">PLAN</div>
+            <div
+              style={{
+                fontWeight: 600,
+                fontSize: 17,
+                marginTop: 6,
+              }}
+            >
+              Free trial — no card on file
+            </div>
+            <p
+              className="w-type-body-sm"
+              style={{
+                color: "var(--w-fg-muted)",
+                marginTop: 8,
+                marginBottom: 16,
+              }}
+            >
+              Upgrade to keep running events past the trial. We&apos;ll create
+              your customer record at first checkout.
+            </p>
+            <Link
+              href="/api/billing/checkout"
+              style={{ textDecoration: "none", display: "inline-flex" }}
+            >
+              <Button variant="primary">Set up billing</Button>
+            </Link>
+          </div>
+        ) : (
+          <div
+            className="w-card"
+            style={{ padding: 22, marginTop: 24 }}
           >
-            Open billing portal
-          </Link>
-        </section>
-      )}
+            <div className="w-type-meta">STRIPE CUSTOMER</div>
+            <div
+              style={{
+                fontFamily: "var(--w-mono)",
+                fontSize: 14,
+                marginTop: 6,
+              }}
+            >
+              {customerId.slice(0, 12)}…
+            </div>
+            <p
+              className="w-type-body-sm"
+              style={{
+                color: "var(--w-fg-muted)",
+                marginTop: 12,
+                marginBottom: 16,
+              }}
+            >
+              Manage your subscription, payment method, and invoices via the
+              Stripe Customer Portal.
+            </p>
+            <Link
+              href="/api/billing/portal"
+              style={{ textDecoration: "none", display: "inline-flex" }}
+            >
+              <Button variant="primary">Open billing portal</Button>
+            </Link>
+          </div>
+        )}
 
-      <section className="card mt-4">
-        <p className="label-mono mb-2">What you get</p>
-        <ul className="text-muted text-sm space-y-1 list-disc list-inside">
-          <li>Unlimited events &amp; nights</li>
-          <li>Unlimited allocations &amp; staff invites</li>
-          <li>QR scanner, name search, manual add at door</li>
-          <li>Recap, audit log, CSV / print export</li>
-          <li>Chat Hub AI parsing</li>
-          <li>Promoter scorecards across events</li>
-        </ul>
-      </section>
+        <div
+          className="w-card"
+          style={{ padding: 22, marginTop: 12 }}
+        >
+          <div className="w-type-meta">WHAT YOU GET</div>
+          <ul
+            style={{
+              listStyle: "none",
+              padding: 0,
+              marginTop: 12,
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+              fontSize: 14,
+              color: "var(--w-fg-muted)",
+            }}
+          >
+            {[
+              "Unlimited events & nights",
+              "Unlimited allocations & staff invites",
+              "QR scanner, name search, manual add at the door",
+              "Recap, audit log, CSV / print export",
+              "Chat Hub AI parsing",
+              "Per-tier promoter scorecards across events",
+            ].map((line) => (
+              <li
+                key={line}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 10,
+                }}
+              >
+                <span
+                  style={{
+                    color: "var(--w-acc)",
+                    flexShrink: 0,
+                    marginTop: 2,
+                  }}
+                >
+                  <IconCheck size={14} />
+                </span>
+                <span>{line}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
     </main>
   );
 }

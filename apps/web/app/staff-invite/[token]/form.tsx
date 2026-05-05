@@ -107,7 +107,7 @@ export default function InviteAcceptForm({
           You&apos;re already signed in as <span className="text-cream">{e164}</span>.
           Bind this invite to your account.
         </p>
-        {error && <p className="text-coral text-sm">{error}</p>}
+        {error && <p className="text-err text-sm">{error}</p>}
         <button
           type="button"
           onClick={onBindExisting}
@@ -138,7 +138,7 @@ export default function InviteAcceptForm({
           placeholder="••••••"
           required
         />
-        {error && <p className="text-coral text-sm">{error}</p>}
+        {error && <p className="text-err text-sm">{error}</p>}
         <button type="submit" className="btn-primary" disabled={pending}>
           {pending ? "Verifying…" : `Verify & join as ${roleLabel}`}
         </button>
@@ -175,7 +175,7 @@ export default function InviteAcceptForm({
           required
         />
       </div>
-      {error && <p className="text-coral text-sm">{error}</p>}
+      {error && <p className="text-err text-sm">{error}</p>}
       <button type="submit" className="btn-primary" disabled={pending}>
         {pending ? "Sending…" : "Text me the code"}
       </button>

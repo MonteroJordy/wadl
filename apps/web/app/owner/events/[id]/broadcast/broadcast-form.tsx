@@ -212,7 +212,7 @@ export default function BroadcastForm({
         </p>
       </div>
 
-      {err && <p className="text-coral text-sm">{err}</p>}
+      {err && <p className="text-err text-sm">{err}</p>}
 
       {!preview ? (
         <button

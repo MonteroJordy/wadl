@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { AccountType } from "@/lib/types";
 import { accountEntityLabel } from "@wadl/shared/account-type";
+import { Button, WFrame, Wordmark } from "@/components/wadl";
 
 const VALID_TYPES: AccountType[] = ["venue", "brand", "individual"];
 
@@ -17,12 +18,11 @@ function EntitySetupInner() {
   const [accountType, setAccountType] = useState<AccountType | null>(
     VALID_TYPES.includes(typeParam as AccountType)
       ? (typeParam as AccountType)
-      : null
+      : null,
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // If the user already has an account, skip ahead.
   useEffect(() => {
     const supabase = createClient();
     (async () => {
@@ -96,60 +96,107 @@ function EntitySetupInner() {
 
   const entity = accountType ? accountEntityLabel(accountType) : null;
   const label = entity
-    ? entity.noun.charAt(0).toUpperCase() + entity.noun.slice(1) + " name"
+    ? entity.noun.charAt(0).toUpperCase() +
+      entity.noun.slice(1) +
+      " name"
     : "Name";
 
   return (
-    <main
-      id="main-content"
-      className="min-h-screen w-full flex items-center justify-center px-6 py-12 relative overflow-hidden"
-    >
-      <div
-        className="absolute inset-0 -z-10 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(ellipse at top left, rgba(255,74,43,0.18), transparent 55%)",
-        }}
-      />
-      <div className="w-full max-w-md">
-        <p className="label-mono mb-3">02 / Entity</p>
-        <h1 className="font-display text-5xl text-cream uppercase tracking-wide leading-[0.95] mb-3">
-          Name it.
-        </h1>
-        <p className="text-muted text-sm mb-10">
-          This is what guests and staff will see on the list.
-        </p>
+    <main id="main-content">
+      <WFrame style={{ paddingBottom: 48 }}>
+        <div style={{ padding: "20px 24px 0" }}>
+          <Wordmark variant="monogrid" size={20} />
+        </div>
 
-        <form onSubmit={onSubmit} className="flex flex-col gap-5">
+        <div style={{ padding: "56px 24px 0" }}>
+          <div className="w-type-meta">02 / ENTITY</div>
+          <div
+            className="w-type-display-lg"
+            style={{ marginTop: 12, lineHeight: 0.94 }}
+          >
+            Name
+            <br />
+            it.
+          </div>
+          <p
+            className="w-type-body"
+            style={{
+              color: "var(--w-fg-muted)",
+              marginTop: 16,
+              maxWidth: 320,
+            }}
+          >
+            This is what guests and staff will see on the list.
+          </p>
+        </div>
+
+        <form
+          onSubmit={onSubmit}
+          style={{
+            padding: "32px 24px 0",
+            display: "flex",
+            flexDirection: "column",
+            gap: 14,
+          }}
+        >
           <div>
-            <label htmlFor="displayName" className="label-mono block mb-2">
-              {label}
+            <label htmlFor="displayName" className="w-label">
+              {label.toUpperCase()}
             </label>
             <input
               id="displayName"
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              className="input-dark"
+              className="w-input"
+              style={{ height: 56, fontSize: 16 }}
               placeholder={entity?.placeholder ?? ""}
               required
+              autoFocus
             />
           </div>
 
-          {error && <p className="text-coral text-sm">{error}</p>}
+          {error ? (
+            <p
+              className="w-type-body-sm"
+              style={{ color: "var(--w-err)" }}
+              role="alert"
+            >
+              {error}
+            </p>
+          ) : null}
 
-          <button type="submit" className="btn-primary mt-2" disabled={loading}>
-            {loading ? "Creating…" : "Continue"}
-          </button>
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            block
+            disabled={loading}
+          >
+            {loading ? "Creating…" : "Continue →"}
+          </Button>
         </form>
-      </div>
+
+        <div
+          className="w-type-meta"
+          style={{
+            marginTop: "auto",
+            paddingTop: 32,
+            paddingBottom: 16,
+            textAlign: "center",
+            color: "var(--w-fg-dim)",
+          }}
+        >
+          STEP 02 · 03
+        </div>
+      </WFrame>
     </main>
   );
 }
 
 export default function EntitySetupPage() {
   return (
-    <Suspense fallback={<main id="main-content" className="mobile-frame" />}>
+    <Suspense fallback={<main id="main-content" className="w-app w-frame" />}>
       <EntitySetupInner />
     </Suspense>
   );

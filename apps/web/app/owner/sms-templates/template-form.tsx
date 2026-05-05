@@ -126,7 +126,7 @@ export default function TemplateManager({
             <code>{`{{venue.name}}`}</code>
           </p>
         </div>
-        {error && <p className="text-coral text-sm">{error}</p>}
+        {error && <p className="text-err text-sm">{error}</p>}
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
@@ -154,7 +154,7 @@ export default function TemplateManager({
         </button>
       </div>
 
-      {error && <p className="text-coral text-sm mb-3">{error}</p>}
+      {error && <p className="text-err text-sm mb-3">{error}</p>}
 
       {templates.length === 0 ? (
         <p className="label-mono text-center text-mint">

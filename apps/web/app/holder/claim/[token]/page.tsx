@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { fmtDate, fmtTime } from "@/lib/format";
+import { Chip, IconCheck, WFrame, Wordmark } from "@/components/wadl";
 import ClaimForm from "./claim-form";
 
 export const dynamic = "force-dynamic";
@@ -24,12 +25,24 @@ interface TokenRow {
 
 function ErrorFrame({ title, body }: { title: string; body: string }) {
   return (
-    <main id="main-content" className="mobile-frame">
-      <div className="pt-12 text-center">
-        <p className="label-mono mb-3">WADL</p>
-        <h1 className="display-lg mb-3">{title}</h1>
-        <p className="text-muted text-sm">{body}</p>
-      </div>
+    <main id="main-content">
+      <WFrame style={{ paddingBottom: 48 }}>
+        <div style={{ padding: "20px 24px 0" }}>
+          <Wordmark variant="monogrid" size={18} />
+        </div>
+        <div style={{ padding: "96px 24px 0", textAlign: "center" }}>
+          <div className="w-type-meta">CLAIM</div>
+          <div className="w-type-display-md" style={{ marginTop: 12 }}>
+            {title}
+          </div>
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-fg-muted)", marginTop: 12 }}
+          >
+            {body}
+          </p>
+        </div>
+      </WFrame>
     </main>
   );
 }
@@ -43,16 +56,29 @@ export default async function HolderClaimPage({
   const { data } = await admin
     .from("allocation_tokens")
     .select(
-      "token, revoked_at, expires_at, allocation:allocations!inner(id, holder_name, cap, event_night:event_nights!inner(night_date, doors_at, event:events!inner(name)))"
+      "token, revoked_at, expires_at, allocation:allocations!inner(id, holder_name, cap, event_night:event_nights!inner(night_date, doors_at, event:events!inner(name)))",
     )
     .eq("token", params.token)
     .maybeSingle<TokenRow>();
 
-  if (!data) return <ErrorFrame title="Link not found." body="Check the link." />;
+  if (!data)
+    return (
+      <ErrorFrame title="Link not found." body="Check the link you were sent." />
+    );
   if (data.revoked_at)
-    return <ErrorFrame title="Link rotated." body="Ask the host for a new one." />;
+    return (
+      <ErrorFrame
+        title="Link rotated."
+        body="Ask the host for the current link."
+      />
+    );
   if (data.expires_at && new Date(data.expires_at).getTime() < Date.now()) {
-    return <ErrorFrame title="Link expired." body="Ask the host for a fresh one." />;
+    return (
+      <ErrorFrame
+        title="Link expired."
+        body="Ask the host for a fresh one."
+      />
+    );
   }
 
   const supabase = createClient();
@@ -61,48 +87,131 @@ export default async function HolderClaimPage({
   } = await supabase.auth.getUser();
 
   return (
-    <main id="main-content" className="mobile-frame">
-      <header className="pt-6 pb-4">
-        <p className="label-mono text-coral mb-2">Claim your allocation</p>
-        <h1 className="display-lg">{data.allocation.event_night.event.name}</h1>
-        <p className="label-mono mt-2">
-          {fmtDate(data.allocation.event_night.night_date)} · Doors{" "}
-          {fmtTime(data.allocation.event_night.doors_at)}
-        </p>
-      </header>
+    <main id="main-content">
+      <WFrame style={{ paddingBottom: 48 }}>
+        <div
+          style={{
+            padding: "20px 24px 0",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Wordmark variant="monogrid" size={18} />
+          <Chip tone="acc">CLAIM YOUR ALLOCATION</Chip>
+        </div>
 
-      <section className="card mb-6">
-        <p className="label-mono mb-1">Allocation</p>
-        <p className="font-sans text-cream font-semibold">
-          {data.allocation.holder_name}
-        </p>
-        <p className="label-mono mt-1">Cap {data.allocation.cap}</p>
-      </section>
+        <div style={{ padding: "32px 24px 0" }}>
+          <div className="w-type-meta">
+            {fmtDate(data.allocation.event_night.night_date).toUpperCase()} ·
+            DOORS {fmtTime(data.allocation.event_night.doors_at).toUpperCase()}
+          </div>
+          <div
+            className="w-type-display-md"
+            style={{ marginTop: 6, lineHeight: 1.0 }}
+          >
+            {data.allocation.event_night.event.name}
+          </div>
+        </div>
 
-      <section className="card border-coral/30 mb-6">
-        <p className="label-mono text-coral mb-2">What you get when you claim</p>
-        <ul className="text-cream/80 text-sm leading-relaxed space-y-2">
-          <li>• A holder dashboard showing every event you&apos;ve been
-            allocated, your show rate per event, lifetime stats.</li>
-          <li>• One sign-in (phone OTP) — no app, no password, no account
-            creation per venue.</li>
-          <li>• Push notifications when an RSVP needs review, when capacity
-            hits 90%, when the host upgrades a guest&apos;s tier.</li>
-          <li>• You stay attributed across every venue you ever work — your
-            scorecard travels.</li>
-        </ul>
-      </section>
+        <div style={{ padding: "24px 24px 0" }}>
+          <div className="w-card" style={{ padding: 18 }}>
+            <div className="w-type-meta">YOUR ALLOCATION</div>
+            <div
+              style={{
+                fontWeight: 600,
+                fontSize: 17,
+                marginTop: 6,
+              }}
+            >
+              {data.allocation.holder_name}
+            </div>
+            <div className="w-type-meta" style={{ marginTop: 8 }}>
+              CAP {data.allocation.cap}
+            </div>
+          </div>
+        </div>
 
-      <p className="text-cream/80 text-sm leading-relaxed mb-6">
-        The host gets a notification when you claim. From there, you manage
-        your list at{" "}
-        <a className="text-coral underline" href="/holder">
-          /holder
-        </a>
-        .
-      </p>
+        <div style={{ padding: "24px 24px 0" }}>
+          <div
+            className="w-card"
+            style={{
+              padding: 18,
+              borderColor: "var(--w-acc)",
+              background: "var(--w-acc-soft)",
+            }}
+          >
+            <div
+              className="w-type-meta"
+              style={{ color: "var(--w-acc-ink)" }}
+            >
+              WHAT YOU GET WHEN YOU CLAIM
+            </div>
+            <ul
+              style={{
+                marginTop: 12,
+                padding: 0,
+                listStyle: "none",
+                display: "flex",
+                flexDirection: "column",
+                gap: 10,
+                fontSize: 14,
+                lineHeight: 1.5,
+              }}
+            >
+              {[
+                "A holder dashboard — every event you've been allocated, your show rate per event, lifetime stats.",
+                "One sign-in (phone OTP) — no app, no password, no account creation per venue.",
+                "Push when an RSVP needs review, when capacity hits 90%, when the host upgrades a tier.",
+                "Stay attributed across every venue you ever work — your scorecard travels.",
+              ].map((line) => (
+                <li
+                  key={line}
+                  style={{
+                    display: "flex",
+                    gap: 10,
+                    alignItems: "flex-start",
+                  }}
+                >
+                  <span
+                    style={{
+                      color: "var(--w-acc-ink)",
+                      flexShrink: 0,
+                      marginTop: 2,
+                    }}
+                  >
+                    <IconCheck size={14} />
+                  </span>
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
 
-      <ClaimForm token={params.token} signedIn={!!user} />
+        <div
+          className="w-type-body-sm"
+          style={{
+            color: "var(--w-fg-muted)",
+            padding: "24px 24px 0",
+            lineHeight: 1.55,
+          }}
+        >
+          The host gets a notification when you claim. From there, you manage
+          your list at{" "}
+          <a
+            href="/holder"
+            style={{ color: "var(--w-acc)", textDecoration: "underline" }}
+          >
+            /holder
+          </a>
+          .
+        </div>
+
+        <div style={{ padding: "24px 24px 0" }}>
+          <ClaimForm token={params.token} signedIn={!!user} />
+        </div>
+      </WFrame>
     </main>
   );
 }

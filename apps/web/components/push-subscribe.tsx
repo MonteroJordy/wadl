@@ -167,7 +167,7 @@ export default function PushSubscribeButton({ vapidPublicKey }: Props) {
           </button>
         </>
       )}
-      {err && <p className="text-coral text-sm mt-2">{err}</p>}
+      {err && <p className="text-err text-sm mt-2">{err}</p>}
     </div>
   );
 }

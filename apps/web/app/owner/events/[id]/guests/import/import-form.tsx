@@ -249,7 +249,7 @@ export default function CsvImportForm({
           )}
         </div>
 
-        {err && <p className="text-coral text-sm mb-2">{err}</p>}
+        {err && <p className="text-err text-sm mb-2">{err}</p>}
 
         <div className="grid grid-cols-2 gap-2">
           <button
@@ -291,7 +291,7 @@ export default function CsvImportForm({
           <span className="text-cream">plus_ones</span> optional.
         </p>
       </div>
-      {err && <p className="text-coral text-sm">{err}</p>}
+      {err && <p className="text-err text-sm">{err}</p>}
       <button type="submit" className="btn-primary">
         Preview
       </button>

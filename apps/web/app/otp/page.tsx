@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { Button, IconBack, Wordmark } from "@/components/wadl";
 
 function OtpInner() {
   const router = useRouter();
@@ -41,7 +42,6 @@ function OtpInner() {
       return;
     }
 
-    // Root page decides the next onboarding step based on profile state.
     router.replace("/");
   }
 
@@ -50,7 +50,9 @@ function OtpInner() {
     setResendMsg(null);
     setError(null);
     const supabase = createClient();
-    const { error: resendError } = await supabase.auth.signInWithOtp({ phone });
+    const { error: resendError } = await supabase.auth.signInWithOtp({
+      phone,
+    });
     if (resendError) setError(resendError.message);
     else setResendMsg("Code resent.");
   }
@@ -58,27 +60,71 @@ function OtpInner() {
   return (
     <main
       id="main-content"
-      className="min-h-screen w-full flex items-center justify-center px-6 py-12 relative overflow-hidden"
+      className="w-app w-frame"
+      style={{ paddingBottom: 32 }}
     >
       <div
-        className="absolute inset-0 -z-10 pointer-events-none"
         style={{
-          background:
-            "radial-gradient(ellipse at top left, rgba(255,74,43,0.18), transparent 55%), radial-gradient(ellipse at bottom right, rgba(245,200,66,0.08), transparent 55%)",
+          padding: "20px 24px 0",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
         }}
-      />
-      <div className="w-full max-w-md">
-        <p className="label-mono mb-3">Verify</p>
-        <h1 className="font-display text-5xl text-cream uppercase tracking-wide leading-[0.95] mb-4">
-          Enter code.
-        </h1>
-        <p className="text-muted text-sm mb-10">
-          Sent to <span className="text-cream">{phone || "your phone"}</span>.
-        </p>
+      >
+        <button
+          type="button"
+          onClick={() => router.push("/login")}
+          aria-label="Back to login"
+          style={{
+            background: "transparent",
+            border: 0,
+            color: "var(--w-fg)",
+            width: 36,
+            height: 36,
+            borderRadius: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "inset 0 0 0 1px var(--w-line-2)",
+            cursor: "pointer",
+          }}
+        >
+          <IconBack />
+        </button>
+        <Wordmark variant="monogrid" size={18} />
+        <div style={{ width: 36 }} />
+      </div>
 
-      <form onSubmit={onSubmit} className="mt-12 flex flex-col gap-4">
+      <div style={{ padding: "72px 24px 0" }}>
+        <div className="w-type-meta">VERIFY</div>
+        <div className="w-type-display-lg" style={{ marginTop: 12 }}>
+          Enter
+          <br />
+          code.
+        </div>
+        <div
+          className="w-type-body"
+          style={{ color: "var(--w-fg-muted)", marginTop: 16 }}
+        >
+          Sent to{" "}
+          <span style={{ color: "var(--w-fg)" }}>
+            {phone || "your phone"}
+          </span>
+          .
+        </div>
+      </div>
+
+      <form
+        onSubmit={onSubmit}
+        style={{
+          padding: "40px 24px 0",
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+        }}
+      >
         <div>
-          <label htmlFor="code" className="label-mono block mb-2">
+          <label htmlFor="code" className="w-label">
             6-digit code
           </label>
           <input
@@ -91,30 +137,76 @@ function OtpInner() {
             maxLength={6}
             placeholder="••••••"
             value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-            className="input-dark tracking-[0.5em] text-center text-2xl"
+            onChange={(e) =>
+              setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+            }
+            className="w-input"
+            style={{
+              height: 64,
+              fontSize: 28,
+              textAlign: "center",
+              letterSpacing: "0.5em",
+              fontFamily: "var(--w-mono)",
+              paddingInlineStart: "0.5em",
+            }}
             required
+            autoFocus
           />
         </div>
 
-        {error && <p className="text-coral text-sm">{error}</p>}
-        {resendMsg && <p className="text-mint text-sm">{resendMsg}</p>}
+        {error ? (
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-err)" }}
+            role="alert"
+          >
+            {error}
+          </p>
+        ) : null}
+        {resendMsg ? (
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-ok)" }}
+            role="status"
+          >
+            {resendMsg}
+          </p>
+        ) : null}
 
-        <button type="submit" className="btn-primary" disabled={loading}>
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          block
+          disabled={loading}
+        >
           {loading ? "Verifying…" : "Verify"}
-        </button>
-
-        <button type="button" onClick={onResend} className="btn-ghost">
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="lg"
+          block
+          onClick={onResend}
+        >
           Resend code
-        </button>
+        </Button>
       </form>
 
-      <button
-        onClick={() => router.push("/login")}
-        className="label-mono mt-8 hover:text-cream transition block"
-      >
-        ← Wrong number
-      </button>
+      <div style={{ marginTop: "auto", padding: "32px 24px 16px" }}>
+        <button
+          onClick={() => router.push("/login")}
+          className="w-type-meta"
+          style={{
+            background: "transparent",
+            border: 0,
+            color: "var(--w-fg-dim)",
+            cursor: "pointer",
+            padding: 0,
+          }}
+        >
+          ← WRONG NUMBER
+        </button>
       </div>
     </main>
   );
@@ -122,7 +214,9 @@ function OtpInner() {
 
 export default function OtpPage() {
   return (
-    <Suspense fallback={<main id="main-content" className="mobile-frame" />}>
+    <Suspense
+      fallback={<main id="main-content" className="w-app w-frame" />}
+    >
       <OtpInner />
     </Suspense>
   );

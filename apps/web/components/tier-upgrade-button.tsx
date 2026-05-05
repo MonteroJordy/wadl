@@ -76,7 +76,7 @@ export default function TierUpgradeButton({
       >
         Cancel
       </button>
-      {error && <p className="text-coral text-sm mt-2">{error}</p>}
+      {error && <p className="text-err text-sm mt-2">{error}</p>}
     </div>
   );
 }

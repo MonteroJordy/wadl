@@ -46,7 +46,7 @@ export default function UploadForm({ eventId }: { eventId: string }) {
       {!pending && count > 0 && (
         <p className="label-mono mt-2 text-mint">{count} uploaded</p>
       )}
-      {err && <p className="text-coral text-sm mt-2">{err}</p>}
+      {err && <p className="text-err text-sm mt-2">{err}</p>}
       <p className="label-mono mt-3">JPG/PNG/WebP, ≤5 MB each.</p>
     </div>
   );

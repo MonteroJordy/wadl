@@ -59,7 +59,7 @@ export default function TemplateForm({ eventId }: { eventId: string }) {
           className="input-dark"
         />
       </div>
-      {err && <p className="text-coral text-sm">{err}</p>}
+      {err && <p className="text-err text-sm">{err}</p>}
       <button type="submit" className="btn-primary" disabled={pending}>
         {pending ? "Saving…" : "Save template"}
       </button>

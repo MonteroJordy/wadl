@@ -4,6 +4,9 @@ import { NextResponse, type NextRequest } from "next/server";
 const PUBLIC_PATHS = [
   "/login",
   "/otp",
+  "/forgot-password",
+  "/verify-email",
+  "/onboarding",
   "/api/auth",
   "/api/health",
   "/api/wallet",
@@ -14,6 +17,7 @@ const PUBLIC_PATHS = [
   "/api/cron",
   "/api/log/client-error",
   "/h",
+  "/d",
   "/discover",
   "/e",
   "/t",
@@ -35,6 +39,7 @@ const PUBLIC_PATHS = [
   "/manifest.json",
   "/icon.svg",
   "/service-worker.js",
+  "/dev",
 ];
 
 type CookieToSet = { name: string; value: string; options: CookieOptions };

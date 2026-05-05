@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOwnerContext, fmtDate } from "@/lib/owner";
+import { Chip } from "@/components/wadl";
 import QueueRow from "./row";
 import BulkActions from "./bulk";
-import EmptyState from "@/components/empty-state";
 
 export const dynamic = "force-dynamic";
 
@@ -33,11 +33,13 @@ export default async function QueuePage({
     .maybeSingle();
   if (!event) notFound();
 
-  const nights = ((event.event_nights ?? []) as Array<{
-    id: string;
-    night_date: string;
-    doors_at: string;
-  }>).sort((a, b) => (a.doors_at < b.doors_at ? -1 : 1));
+  const nights = (
+    (event.event_nights ?? []) as Array<{
+      id: string;
+      night_date: string;
+      doors_at: string;
+    }>
+  ).sort((a, b) => (a.doors_at < b.doors_at ? -1 : 1));
 
   const nightIds = nights.map((n) => n.id);
 
@@ -54,7 +56,9 @@ export default async function QueuePage({
     const [pRes, aRes] = await Promise.all([
       supabase
         .from("guests")
-        .select("id, event_night_id, allocation_id, full_name, plus_ones, created_at")
+        .select(
+          "id, event_night_id, allocation_id, full_name, plus_ones, created_at",
+        )
         .in("event_night_id", nightIds)
         .eq("status", "pending")
         .order("created_at", { ascending: true }),
@@ -77,73 +81,159 @@ export default async function QueuePage({
   return (
     <main
       id="main-content"
-      className="mx-auto w-full max-w-4xl px-4 md:px-8 pt-6 pb-16"
+      className="w-app"
+      style={{
+        minHeight: "100vh",
+        background: "var(--w-bg)",
+        padding: "32px 24px 96px",
+      }}
     >
-      <header className="mb-6">
+      <div style={{ maxWidth: 900, margin: "0 auto" }}>
         <Link
           href={`/owner/events/${event.id}`}
-          className="label-mono hover:text-cream transition mb-2 inline-block"
+          className="w-type-meta"
+          style={{ textDecoration: "none" }}
         >
-          ← {event.name}
+          ← {event.name.toUpperCase()}
         </Link>
-        <h1 className="font-display text-4xl md:text-5xl text-cream uppercase tracking-wide leading-[0.9]">
-          Approval queue
-        </h1>
-        <p className="label-mono mt-2">
-          {pending.length === 0
-            ? "Nothing pending"
-            : `${pending.length} pending · approve or reject`}
-        </p>
-      </header>
 
-      {pending.length === 0 ? (
-        <section className="rounded-2xl border border-line bg-s1 px-6 py-16 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-mint/10 border border-mint/30 mx-auto mb-5 flex items-center justify-center">
-            <span className="font-display text-3xl text-mint">✓</span>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "space-between",
+            borderBottom: "1px solid var(--w-line)",
+            paddingBottom: 24,
+            marginTop: 16,
+            gap: 16,
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <div className="w-type-meta">APPROVAL QUEUE</div>
+            <div className="w-type-display-md" style={{ marginTop: 8 }}>
+              Pending review
+            </div>
+            <p
+              className="w-type-body-sm"
+              style={{
+                color: "var(--w-fg-muted)",
+                marginTop: 8,
+              }}
+            >
+              {pending.length === 0
+                ? "Nothing pending — auto-approved allocations bypass this view."
+                : `${pending.length} pending · approve or reject below.`}
+            </p>
           </div>
-          <p className="font-display text-3xl text-cream uppercase tracking-wide mb-2">
-            Queue empty
-          </p>
-          <p className="text-muted text-sm leading-relaxed max-w-md mx-auto">
-            Nothing waiting for review. Auto-approved allocations bypass this
-            view — you only see RSVPs from holders who require host approval.
-          </p>
-        </section>
-      ) : (
-        <div className="flex flex-col gap-8">
-          {nights.map((n) => {
-            const list = byNight.get(n.id) ?? [];
-            if (list.length === 0) return null;
-            return (
-              <section key={n.id}>
-                <p className="label-mono mb-3">
-                  {fmtDate(n.night_date)} · {list.length} pending
-                </p>
-                <div className="mb-3">
-                  <BulkActions eventId={event.id} nightId={n.id} count={list.length} />
-                </div>
-                <div className="flex flex-col gap-2">
-                  {list.map((g) => (
-                    <QueueRow
-                      key={g.id}
-                      eventId={event.id}
-                      guestId={g.id}
-                      fullName={g.full_name}
-                      plusOnes={g.plus_ones}
-                      holderLabel={
-                        g.allocation_id
-                          ? holderById.get(g.allocation_id) ?? "Holder"
-                          : "Direct add"
-                      }
-                      addedAgo={ago(g.created_at)}
-                    />
-                  ))}
-                </div>
-              </section>
-            );
-          })}
+          {pending.length > 0 && (
+            <Chip tone="warn">{pending.length} PENDING</Chip>
+          )}
         </div>
-      )}
+
+        {pending.length === 0 ? (
+          <div
+            className="w-card"
+            style={{
+              padding: "64px 32px",
+              textAlign: "center",
+              marginTop: 24,
+            }}
+          >
+            <div
+              style={{
+                width: 64,
+                height: 64,
+                background: "oklch(0.86 0.18 145 / 0.18)",
+                color: "var(--w-ok)",
+                margin: "0 auto 16px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 32,
+                fontWeight: 700,
+              }}
+            >
+              ✓
+            </div>
+            <div className="w-type-h1">Queue empty</div>
+            <p
+              className="w-type-body-sm"
+              style={{
+                color: "var(--w-fg-muted)",
+                marginTop: 12,
+                maxWidth: 420,
+                marginInline: "auto",
+              }}
+            >
+              Nothing waiting for review. Auto-approved allocations bypass
+              this view — you only see RSVPs from holders who require host
+              approval.
+            </p>
+          </div>
+        ) : (
+          <div
+            style={{
+              marginTop: 28,
+              display: "flex",
+              flexDirection: "column",
+              gap: 32,
+            }}
+          >
+            {nights.map((n) => {
+              const list = byNight.get(n.id) ?? [];
+              if (list.length === 0) return null;
+              return (
+                <section key={n.id}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "baseline",
+                      justifyContent: "space-between",
+                      marginBottom: 12,
+                    }}
+                  >
+                    <span className="w-type-meta">
+                      {fmtDate(n.night_date).toUpperCase()} · {list.length}{" "}
+                      PENDING
+                    </span>
+                  </div>
+                  <div style={{ marginBottom: 12 }}>
+                    <BulkActions
+                      eventId={event.id}
+                      nightId={n.id}
+                      count={list.length}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 6,
+                    }}
+                  >
+                    {list.map((g) => (
+                      <QueueRow
+                        key={g.id}
+                        eventId={event.id}
+                        guestId={g.id}
+                        fullName={g.full_name}
+                        plusOnes={g.plus_ones}
+                        holderLabel={
+                          g.allocation_id
+                            ? (holderById.get(g.allocation_id) ?? "Holder")
+                            : "Direct add"
+                        }
+                        addedAgo={ago(g.created_at)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </main>
   );
 }

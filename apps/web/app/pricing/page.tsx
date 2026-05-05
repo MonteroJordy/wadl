@@ -1,5 +1,7 @@
 import Link from "next/link";
+import PublicShell from "@/components/public-shell";
 import MarketingFooter from "@/components/marketing-footer";
+import { Button, Chip, IconArrow, IconCheck } from "@/components/wadl";
 
 export const metadata = {
   title: "Pricing — WADL",
@@ -17,8 +19,6 @@ const TIERS = [
     name: "Starter",
     price: "Free",
     sub: "1 venue · forever",
-    accent: "border-line",
-    accentText: "text-cream",
     cta: { label: "Start free", href: "/signup" },
     features: [
       "1 venue",
@@ -34,10 +34,11 @@ const TIERS = [
     name: "Pro",
     price: "$199",
     sub: "per month · billed monthly",
-    accent: "border-coral",
-    accentText: "text-coral",
     highlight: true,
-    cta: { label: "Talk to us", href: "mailto:jmontero@mainframeagency.com?subject=WADL%20Pro%20signup" },
+    cta: {
+      label: "Talk to us",
+      href: "mailto:jmontero@mainframeagency.com?subject=WADL%20Pro%20signup",
+    },
     features: [
       "Up to 3 venues",
       "Unlimited events + nights",
@@ -54,9 +55,10 @@ const TIERS = [
     name: "Enterprise",
     price: "Custom",
     sub: "for venue groups",
-    accent: "border-gold",
-    accentText: "text-gold",
-    cta: { label: "Contact sales", href: "mailto:jmontero@mainframeagency.com?subject=WADL%20Enterprise" },
+    cta: {
+      label: "Contact sales",
+      href: "mailto:jmontero@mainframeagency.com?subject=WADL%20Enterprise",
+    },
     features: [
       "Unlimited venues",
       "White-label tickets + emails",
@@ -69,142 +71,225 @@ const TIERS = [
   },
 ];
 
+const FAQ = [
+  [
+    "Is there a per-guest fee?",
+    "No. Pro and Enterprise are flat. Starter caps at 50 guests per event so you can prove it works without committing.",
+  ],
+  [
+    "What about SMS costs?",
+    "Starter is BYO Twilio (you bring your own credentials). Pro includes a generous SMS allowance through our number. Enterprise lets you use your own number with branded sender.",
+  ],
+  [
+    "Can I cancel?",
+    "Anytime. Pro is month-to-month. Your data stays accessible for 90 days after cancel; export to CSV any time.",
+  ],
+  [
+    "Do I need a credit card to start?",
+    "No. Sign up free, run a real event, then upgrade if it earns its keep.",
+  ],
+];
+
 export default function PricingPage() {
   return (
     <>
-      <main id="main-content" className="bg-bg text-cream min-h-screen">
-        <header className="px-6 md:px-12 pt-6 pb-4 flex items-center justify-between max-w-6xl mx-auto">
-          <Link href="/" className="font-display text-2xl text-coral tracking-wide">
-            WADL
-          </Link>
-          <nav className="flex items-center gap-4 md:gap-6">
-            <Link href="/discover" className="label-mono hover:text-cream hidden md:inline">
-              Tonight
-            </Link>
-            <Link href="/login" className="label-mono hover:text-cream">
-              Sign in
-            </Link>
-            <Link
-              href="/signup"
-              className="bg-coral text-bg font-sans font-semibold text-xs uppercase tracking-[0.14em] px-4 py-2 rounded-md hover:brightness-110 transition"
-            >
-              Start free
-            </Link>
-          </nav>
-        </header>
-
-        <section className="px-6 md:px-12 pt-12 pb-8 max-w-6xl mx-auto text-center">
-          <p className="label-mono mb-4">Pricing</p>
-          <h1 className="font-display text-5xl md:text-7xl leading-[0.92] tracking-wide uppercase mb-4">
-            Honest pricing.<br />Door-first.
+      <PublicShell maxWidth="6xl" ambient>
+        <header style={{ textAlign: "center", marginBottom: 48 }}>
+          <div className="w-type-meta">PRICING</div>
+          <h1
+            className="w-type-display-lg"
+            style={{ marginTop: 12, lineHeight: 0.94 }}
+          >
+            Honest pricing.
+            <br />
+            Door-first.
           </h1>
-          <p className="text-cream/70 max-w-xl mx-auto">
+          <p
+            className="w-type-body"
+            style={{
+              color: "var(--w-fg-muted)",
+              marginTop: 16,
+              maxWidth: 540,
+              marginInline: "auto",
+            }}
+          >
             One venue, free forever. Bigger nights, bigger plan. We don&apos;t
             charge per-guest because that&apos;s the SaaS-bro move and you
             already pay enough for the bar.
           </p>
+        </header>
+
+        <section
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+            gap: 16,
+            marginBottom: 64,
+          }}
+        >
+          {TIERS.map((t) => (
+            <div
+              key={t.name}
+              className="w-card"
+              style={{
+                padding: 28,
+                display: "flex",
+                flexDirection: "column",
+                borderColor: t.highlight
+                  ? "var(--w-acc)"
+                  : "var(--w-line)",
+                background: t.highlight
+                  ? "var(--w-acc-soft)"
+                  : "var(--w-surface-2)",
+                position: "relative",
+              }}
+            >
+              {t.highlight && (
+                <Chip
+                  tone="acc"
+                  style={{
+                    position: "absolute",
+                    top: 16,
+                    right: 16,
+                  }}
+                >
+                  RECOMMENDED
+                </Chip>
+              )}
+              <div
+                className="w-type-meta"
+                style={{ color: t.highlight ? "var(--w-acc)" : "var(--w-fg-muted)" }}
+              >
+                {t.name.toUpperCase()}
+              </div>
+              <div
+                style={{
+                  fontFamily: "var(--w-display)",
+                  fontWeight: 700,
+                  fontSize: 56,
+                  letterSpacing: "-0.035em",
+                  lineHeight: 0.94,
+                  marginTop: 6,
+                }}
+              >
+                {t.price}
+              </div>
+              <div className="w-type-meta" style={{ marginTop: 6 }}>
+                {t.sub.toUpperCase()}
+              </div>
+              <ul
+                style={{
+                  flex: 1,
+                  marginTop: 22,
+                  marginBottom: 22,
+                  padding: 0,
+                  listStyle: "none",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                }}
+              >
+                {t.features.map((f) => (
+                  <li
+                    key={f}
+                    style={{
+                      display: "flex",
+                      gap: 10,
+                      fontSize: 14,
+                      color: "var(--w-fg)",
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    <span
+                      style={{
+                        color: t.highlight
+                          ? "var(--w-acc)"
+                          : "var(--w-fg-muted)",
+                        flexShrink: 0,
+                        marginTop: 2,
+                      }}
+                    >
+                      <IconCheck size={14} />
+                    </span>
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href={t.cta.href}
+                style={{ textDecoration: "none" }}
+              >
+                <Button variant={t.highlight ? "primary" : "ghost"} block>
+                  {t.cta.label}
+                </Button>
+              </Link>
+            </div>
+          ))}
         </section>
 
-        <section className="px-6 md:px-12 pb-12 max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-3 gap-4">
-            {TIERS.map((t) => (
-              <div
-                key={t.name}
-                className={`card border-2 ${t.accent} ${
-                  t.highlight ? "md:scale-105 md:shadow-xl md:shadow-coral/20" : ""
-                } flex flex-col`}
-              >
-                <p className={`label-mono mb-1 ${t.accentText}`}>{t.name}</p>
-                <p className="font-display text-5xl text-cream leading-none mb-1">
-                  {t.price}
-                </p>
-                <p className="label-mono mb-4">{t.sub}</p>
-                <ul className="flex-1 mb-6 space-y-2">
-                  {t.features.map((f) => (
-                    <li key={f} className="flex gap-2 text-sm text-cream/80">
-                      <span className={t.accentText}>✓</span>
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href={t.cta.href}
-                  className={`block text-center font-sans font-semibold text-sm uppercase tracking-[0.14em] py-3 rounded-md transition ${
-                    t.highlight
-                      ? "bg-coral text-bg hover:brightness-110"
-                      : "border border-line text-cream hover:border-cream/30"
-                  }`}
+        <section style={{ marginBottom: 56 }}>
+          <div className="w-type-meta">FAQ</div>
+          <h2
+            className="w-type-display-md"
+            style={{ marginTop: 8, marginBottom: 28 }}
+          >
+            The short answers.
+          </h2>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
+            }}
+          >
+            {FAQ.map(([q, a]) => (
+              <div key={q} className="w-card" style={{ padding: 18 }}>
+                <div style={{ fontWeight: 600, fontSize: 15 }}>{q}</div>
+                <p
+                  className="w-type-body-sm"
+                  style={{
+                    color: "var(--w-fg-muted)",
+                    marginTop: 8,
+                    lineHeight: 1.5,
+                  }}
                 >
-                  {t.cta.label}
-                </Link>
+                  {a}
+                </p>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="px-6 md:px-12 py-16 bg-s1 border-y border-line">
-          <div className="max-w-3xl mx-auto">
-            <p className="label-mono mb-3">FAQ</p>
-            <h2 className="font-display text-3xl md:text-4xl uppercase tracking-wide mb-8">
-              The short answers.
-            </h2>
-            <div className="space-y-6">
-              <div>
-                <p className="font-sans text-cream font-semibold mb-1">
-                  Is there a per-guest fee?
-                </p>
-                <p className="text-cream/70 text-sm">
-                  No. Pro and Enterprise are flat. Starter caps at 50 guests
-                  per event so you can prove it works without committing.
-                </p>
-              </div>
-              <div>
-                <p className="font-sans text-cream font-semibold mb-1">
-                  What about SMS costs?
-                </p>
-                <p className="text-cream/70 text-sm">
-                  Starter is BYO Twilio (you bring your own credentials).
-                  Pro includes a generous SMS allowance through our number.
-                  Enterprise lets you use your own number with branded sender.
-                </p>
-              </div>
-              <div>
-                <p className="font-sans text-cream font-semibold mb-1">
-                  Can I cancel?
-                </p>
-                <p className="text-cream/70 text-sm">
-                  Anytime. Pro is month-to-month. Your data stays accessible
-                  for 90 days after cancel; export to CSV any time.
-                </p>
-              </div>
-              <div>
-                <p className="font-sans text-cream font-semibold mb-1">
-                  Do I need a credit card to start?
-                </p>
-                <p className="text-cream/70 text-sm">
-                  No. Sign up free, run a real event, then upgrade if it earns
-                  its keep.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="px-6 md:px-12 py-16 max-w-3xl mx-auto text-center">
-          <h2 className="font-display text-3xl md:text-4xl uppercase tracking-wide mb-4">
-            Try it on a real night.
-          </h2>
-          <p className="text-cream/70 mb-6">
+        <section
+          style={{
+            textAlign: "center",
+            padding: "32px 0 16px",
+          }}
+        >
+          <h2 className="w-type-display-md">Try it on a real night.</h2>
+          <p
+            className="w-type-body"
+            style={{
+              color: "var(--w-fg-muted)",
+              marginTop: 12,
+            }}
+          >
             Five minutes to set up. Free for your first venue.
           </p>
           <Link
             href="/signup"
-            className="bg-coral text-bg font-sans font-semibold text-sm uppercase tracking-[0.14em] px-8 py-4 rounded-md hover:brightness-110 transition inline-block"
+            style={{
+              display: "inline-flex",
+              marginTop: 24,
+              textDecoration: "none",
+            }}
           >
-            Start free →
+            <Button variant="primary" size="lg">
+              Start free <IconArrow size={14} />
+            </Button>
           </Link>
         </section>
-      </main>
+      </PublicShell>
       <MarketingFooter />
     </>
   );

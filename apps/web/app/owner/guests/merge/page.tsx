@@ -66,7 +66,7 @@ export default async function GuestMergePage({
     return (
       <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 pt-12 pb-8 md:py-12">
         <h1 className="display-lg mb-4">Merge guests</h1>
-        <p className="text-coral text-sm">
+        <p className="text-err text-sm">
           One or both guests not found, or not in your account.
         </p>
         <Link href="/owner" className="btn-ghost mt-6 inline-block">

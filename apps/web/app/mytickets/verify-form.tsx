@@ -70,7 +70,7 @@ export default function MyTicketsVerify() {
           placeholder="••••••"
           required
         />
-        {error && <p className="text-coral text-sm">{error}</p>}
+        {error && <p className="text-err text-sm">{error}</p>}
         <button type="submit" className="btn-primary" disabled={pending}>
           {pending ? "Verifying…" : "See my tickets"}
         </button>
@@ -103,7 +103,7 @@ export default function MyTicketsVerify() {
           required
         />
       </div>
-      {error && <p className="text-coral text-sm">{error}</p>}
+      {error && <p className="text-err text-sm">{error}</p>}
       <button type="submit" className="btn-primary" disabled={pending}>
         {pending ? "Sending…" : "Send code"}
       </button>

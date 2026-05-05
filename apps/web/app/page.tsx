@@ -1,20 +1,25 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { nextOnboardingStep } from "@/lib/routing";
-import type { Account, Profile } from "@/lib/types";
+import type { Profile } from "@/lib/types";
 import MarketingFooter from "@/components/marketing-footer";
+import {
+  Avatar,
+  Button,
+  Chip,
+  CredPill,
+  IconArrow,
+  Wordmark,
+} from "@/components/wadl";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
-  title: "WADL — One door, one list, one truth.",
+  title: "WADL — Replace the WhatsApp door.",
   description:
-    "Stop losing the door to chaos. WADL turns nightlife guest lists into a single attributed list every venue trusts.",
+    "Google Sheets, group chats, names yelled across the door at midnight. WADL turns nightlife guest lists into one attributed list every venue trusts.",
   openGraph: {
-    title: "WADL — One door, one list, one truth.",
+    title: "WADL — Replace the WhatsApp door.",
     description:
-      "Stop losing the door to chaos. WADL turns nightlife guest lists into a single attributed list every venue trusts.",
+      "Google Sheets, group chats, names at the door at midnight. WADL is one list every venue trusts.",
     images: ["/api/og/landing"],
     type: "website",
   },
@@ -25,245 +30,526 @@ export const metadata = {
 };
 
 export default async function RootPage() {
+  // Auth-aware nav, no forced redirect. Logged-in operators can browse the
+  // marketing surface; the nav swaps Sign-in/Start-free for a Dashboard CTA.
   const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Authed users still bounce: guest → /mytickets, owner → /owner.
+  let profile: Profile | null = null;
   if (user) {
-    const { data: profile } = await supabase
+    const { data } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", user.id)
       .maybeSingle<Profile>();
-
-    if (profile?.role === "guest") redirect("/mytickets");
-
-    let account: Account | null = null;
-    if (profile?.account_id) {
-      const { data } = await supabase
-        .from("accounts")
-        .select("*")
-        .eq("id", profile.account_id)
-        .maybeSingle<Account>();
-      account = data;
-    }
-    let hasVenue = false;
-    if (account?.account_type === "venue") {
-      const { count } = await supabase
-        .from("venues")
-        .select("id", { count: "exact", head: true })
-        .eq("account_id", account.id);
-      hasVenue = (count ?? 0) > 0;
-    }
-
-    // Day 27 — dualctx check. If this user is an owner AND has any
-    // door_staff/door_manager shift in the next 18h, send them to the
-    // context picker instead of straight to /owner. Onboarding-incomplete
-    // owners still finish onboarding first; the picker is for established
-    // owners who happen to be working their own door tonight.
-    const onboardingTarget = nextOnboardingStep(profile, account, hasVenue);
-    if (
-      onboardingTarget === "/owner" &&
-      profile &&
-      (profile.role === "owner" || profile.account_id)
-    ) {
-      const admin = createAdminClient();
-      const horizonStart = new Date(Date.now() - 18 * 60 * 60 * 1000).toISOString();
-      const horizonEnd = new Date(Date.now() + 18 * 60 * 60 * 1000).toISOString();
-      const { data: shifts } = await admin
-        .from("event_staff")
-        .select(
-          "event_id, role, event:events!inner(event_nights!inner(doors_at))"
-        )
-        .eq("user_id", user.id)
-        .in("role", ["door_staff", "door_manager"])
-        .gte("event.event_nights.doors_at", horizonStart)
-        .lte("event.event_nights.doors_at", horizonEnd)
-        .limit(1);
-      if (shifts && shifts.length > 0) {
-        redirect("/dualctx");
-      }
-    }
-
-    redirect(onboardingTarget);
+    profile = data;
   }
 
-  // Anonymous → public landing.
+  const dashboardHref =
+    profile?.role === "guest"
+      ? "/mytickets"
+      : profile?.account_id
+        ? "/owner"
+        : "/signup"; // incomplete onboarding — wizard picks up where they left off
+
+  const initials =
+    (profile?.full_name ?? "")
+      .split(" ")
+      .map((s) => s[0] ?? "")
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() ||
+    (user?.email ?? user?.phone ?? "??").slice(0, 2).toUpperCase();
+
   return (
     <>
-      <main id="main-content" className="bg-bg text-cream">
-        {/* Top nav */}
-        <header className="px-6 md:px-12 pt-6 pb-4 flex items-center justify-between max-w-6xl mx-auto">
-          <Link
-            href="/"
-            className="font-display text-2xl text-coral tracking-wide"
-            aria-label="WADL home"
-          >
-            WADL
+      <main
+        id="main-content"
+        className="w-app"
+        style={{ minHeight: "100vh", background: "var(--w-bg)" }}
+      >
+        {/* Top nav — auth-aware */}
+        <header
+          style={{
+            padding: "20px 24px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            maxWidth: 1200,
+            margin: "0 auto",
+            gap: 12,
+          }}
+        >
+          <Link href="/" aria-label="WADL home" style={{ textDecoration: "none" }}>
+            <Wordmark variant="monogrid" size={22} />
           </Link>
-          <nav className="flex items-center gap-4 md:gap-6">
+          <nav
+            style={{ display: "flex", alignItems: "center", gap: 18 }}
+          >
             <Link
               href="/pricing"
-              className="label-mono hover:text-cream"
+              className="w-type-meta hidden sm:inline"
+              style={{ textDecoration: "none" }}
             >
-              Pricing
+              PRICING
             </Link>
             <Link
               href="/discover"
-              className="label-mono hover:text-cream hidden md:inline"
+              className="w-type-meta hidden sm:inline"
+              style={{ textDecoration: "none" }}
             >
-              Tonight
+              TONIGHT
             </Link>
-            <Link
-              href="/login"
-              className="label-mono hover:text-cream"
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/signup"
-              className="bg-coral text-bg font-sans font-semibold text-xs uppercase tracking-[0.14em] px-4 py-2 rounded-md hover:brightness-110 transition"
-            >
-              Start free
-            </Link>
+            {user ? (
+              <Link
+                href={dashboardHref}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  height: 36,
+                  padding: "0 14px",
+                  background: "var(--w-acc)",
+                  color: "var(--w-acc-ink)",
+                  fontFamily: "var(--w-sans)",
+                  fontWeight: 600,
+                  fontSize: 13,
+                  textDecoration: "none",
+                  letterSpacing: "-0.005em",
+                }}
+              >
+                <Avatar name={initials} size={20} />
+                Dashboard
+                <IconArrow size={12} />
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="w-type-meta"
+                  style={{ textDecoration: "none" }}
+                >
+                  SIGN IN
+                </Link>
+                <Link
+                  href="/signup"
+                  className="w-btn w-btn--primary"
+                  style={{
+                    height: 36,
+                    fontSize: 13,
+                    textDecoration: "none",
+                  }}
+                >
+                  Start free
+                </Link>
+              </>
+            )}
           </nav>
         </header>
 
         {/* Hero */}
-        <section className="px-6 md:px-12 pt-12 md:pt-24 pb-16 md:pb-32 max-w-6xl mx-auto">
-          <p className="label-mono mb-4">For nightlife operators</p>
-          <h1 className="font-display text-5xl md:text-7xl lg:text-8xl leading-[0.92] tracking-wide uppercase mb-6 md:mb-8 text-cream max-w-4xl">
-            Stop losing the door to chaos.
+        <section
+          style={{
+            padding: "64px 24px 80px",
+            maxWidth: 1200,
+            margin: "0 auto",
+          }}
+        >
+          <Chip tone="acc">
+            <span
+              className="w-pulse"
+              style={{
+                width: 6,
+                height: 6,
+                background: "currentColor",
+                borderRadius: 0,
+                display: "inline-block",
+              }}
+            />
+            BUILT WITH MIAMI OPERATORS
+          </Chip>
+          <h1
+            style={{
+              fontFamily: "var(--w-display)",
+              fontWeight: 700,
+              fontSize: "clamp(56px, 9vw, 120px)",
+              lineHeight: 0.92,
+              letterSpacing: "-0.045em",
+              marginTop: 20,
+              maxWidth: 1000,
+            }}
+          >
+            Replace the
+            <br />
+            <span
+              style={{
+                background: "var(--w-acc)",
+                color: "var(--w-acc-ink)",
+                padding: "0 14px",
+                display: "inline-block",
+              }}
+            >
+              WhatsApp door.
+            </span>
           </h1>
-          <p className="text-base md:text-xl text-cream/80 leading-relaxed max-w-2xl mb-8">
-            WADL turns nightlife guest lists into a single attributed list
-            every venue trusts. One door, one truth, every name accounted for.
+          <p
+            className="w-type-body"
+            style={{
+              color: "var(--w-fg-muted)",
+              marginTop: 24,
+              fontSize: 19,
+              lineHeight: 1.45,
+              maxWidth: 680,
+            }}
+          >
+            Google Sheets. Group chats. Names yelled across the door at
+            midnight. WADL turns nightlife guest lists into one attributed
+            list every venue trusts — and the data nobody else has on their
+            promoters.
           </p>
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href="/signup"
-              className="bg-coral text-bg font-sans font-semibold text-sm uppercase tracking-[0.14em] px-6 py-4 rounded-md hover:brightness-110 transition inline-block"
-            >
-              Start free →
-            </Link>
-            <Link
-              href="/pricing"
-              className="border border-line text-cream font-sans font-semibold text-sm uppercase tracking-[0.14em] px-6 py-4 rounded-md hover:border-cream/30 transition inline-block"
-            >
-              See pricing
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 12,
+              marginTop: 32,
+            }}
+          >
+            {user ? (
+              <Link href={dashboardHref} style={{ textDecoration: "none" }}>
+                <Button variant="primary" size="lg">
+                  Open dashboard <IconArrow size={14} />
+                </Button>
+              </Link>
+            ) : (
+              <Link href="/signup" style={{ textDecoration: "none" }}>
+                <Button variant="primary" size="lg">
+                  Start free — 4 minutes <IconArrow size={14} />
+                </Button>
+              </Link>
+            )}
+            <Link href="/pricing" style={{ textDecoration: "none" }}>
+              <Button variant="ghost" size="lg">
+                See pricing
+              </Button>
             </Link>
           </div>
         </section>
 
-        {/* Three feature blocks */}
+        {/* The pain */}
         <section
-          id="features"
-          className="px-6 md:px-12 py-16 md:py-24 bg-s1 border-y border-line"
+          style={{
+            padding: "64px 24px",
+            background: "var(--w-surface-2)",
+            borderTop: "1px solid var(--w-line)",
+            borderBottom: "1px solid var(--w-line)",
+          }}
         >
-          <div className="max-w-6xl mx-auto">
-            <p className="label-mono mb-3">What you get</p>
-            <h2 className="font-display text-3xl md:text-5xl uppercase tracking-wide mb-12">
-              Built for the door, not the deck.
+          <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+            <div className="w-type-meta">THE NIGHT BEFORE</div>
+            <h2
+              className="w-type-display-md"
+              style={{ marginTop: 12, maxWidth: 720 }}
+            >
+              Right now your guest list lives in three Google Sheets and a
+              WhatsApp.
             </h2>
-
-            <div className="grid md:grid-cols-3 gap-6 md:gap-8">
-              <div className="card border-coral/30">
-                <p className="font-display text-2xl text-coral mb-2">01</p>
-                <h3 className="font-sans font-semibold text-cream text-lg mb-2">
-                  Magic links for promoters
-                </h3>
-                <p className="text-cream/70 text-sm leading-relaxed">
-                  Send a holder a link. They add names. No app, no account,
-                  no password reset at midnight. Cap enforced server-side.
-                </p>
-              </div>
-              <div className="card border-gold/30">
-                <p className="font-display text-2xl text-gold mb-2">02</p>
-                <h3 className="font-sans font-semibold text-cream text-lg mb-2">
-                  Chat Hub AI
-                </h3>
-                <p className="text-cream/70 text-sm leading-relaxed">
-                  Paste a WhatsApp dump. AI parses names, +1s, tiers, holders.
-                  Review, commit. The list is on the door in seconds.
-                </p>
-              </div>
-              <div className="card border-mint/30">
-                <p className="font-display text-2xl text-mint mb-2">03</p>
-                <h3 className="font-sans font-semibold text-cream text-lg mb-2">
-                  Door scanner
-                </h3>
-                <p className="text-cream/70 text-sm leading-relaxed">
-                  QR scanner with five fail states. Approved, already in,
-                  not on list, wrong night, do not admit. Works offline.
-                </p>
-              </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns:
+                  "repeat(auto-fit, minmax(280px, 1fr))",
+                gap: 20,
+                marginTop: 40,
+              }}
+            >
+              {[
+                {
+                  k: "01",
+                  t: "Names dumped into chats",
+                  d: "Promoters paste names with no tier labels. Mid-event adds arrive in a group chat with 47 people scrolling past.",
+                },
+                {
+                  k: "02",
+                  t: "Door staff copy-paste",
+                  d: "A bouncer with a Google Sheet open on a laptop. New names get typed in by hand. The line stops moving.",
+                },
+                {
+                  k: "03",
+                  t: "Nobody owns the truth",
+                  d: "When a name isn't on the list, it's a fight at the door. When promoters take credit they didn't earn, you can't prove it.",
+                },
+              ].map((p) => (
+                <div
+                  key={p.k}
+                  className="w-card"
+                  style={{ padding: 24 }}
+                >
+                  <div className="w-type-meta">{p.k}</div>
+                  <h3
+                    className="w-type-h2"
+                    style={{ marginTop: 8 }}
+                  >
+                    {p.t}
+                  </h3>
+                  <p
+                    className="w-type-body-sm"
+                    style={{
+                      color: "var(--w-fg-muted)",
+                      marginTop: 8,
+                      lineHeight: 1.55,
+                    }}
+                  >
+                    {p.d}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* Trust strip */}
-        <section className="px-6 md:px-12 py-16 max-w-6xl mx-auto">
-          <p className="label-mono mb-6 text-center">Built with operators in Miami</p>
-          <div className="flex flex-wrap items-center justify-center gap-x-8 md:gap-x-16 gap-y-4 opacity-60">
-            <p className="font-display text-2xl tracking-wider text-cream/60">
-              The Patio
-            </p>
-            <p className="font-display text-2xl tracking-wider text-cream/60">
-              Wynwood
-            </p>
-            <p className="font-display text-2xl tracking-wider text-cream/60">
-              Brickell Nights
-            </p>
-            <p className="font-display text-2xl tracking-wider text-cream/60">
-              South Beach Co.
-            </p>
-            <p className="font-display text-2xl tracking-wider text-cream/60">
-              + your venue
+        {/* What WADL does */}
+        <section
+          style={{
+            padding: "80px 24px",
+            maxWidth: 1200,
+            margin: "0 auto",
+          }}
+        >
+          <div className="w-type-meta">WHAT YOU GET</div>
+          <h2
+            className="w-type-display-md"
+            style={{ marginTop: 12, maxWidth: 800 }}
+          >
+            One link per tier. One scan at the door. One score per promoter.
+          </h2>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit, minmax(300px, 1fr))",
+              gap: 20,
+              marginTop: 40,
+            }}
+          >
+            <div
+              className="w-card"
+              style={{
+                padding: 24,
+                borderColor: "var(--w-acc)",
+                background: "var(--w-acc-soft)",
+              }}
+            >
+              <div
+                className="w-type-meta"
+                style={{ color: "var(--w-acc-ink)" }}
+              >
+                THE WEDGE
+              </div>
+              <h3
+                className="w-type-h2"
+                style={{ marginTop: 8 }}
+              >
+                Sub-links per tier
+              </h3>
+              <p
+                className="w-type-body-sm"
+                style={{
+                  marginTop: 10,
+                  lineHeight: 1.55,
+                }}
+              >
+                Diplo&apos;s 25-spot list = 5 AAA · 10 VIP · 10 GA. Three
+                links, three audiences. AAA in his Signal group, VIP in his
+                inner circle, GA in his Instagram bio.
+              </p>
+              <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+                <CredPill tier="GA" />
+                <CredPill tier="VIP" />
+                <CredPill tier="AAA" />
+              </div>
+            </div>
+
+            <div className="w-card" style={{ padding: 24 }}>
+              <div className="w-type-meta">02</div>
+              <h3 className="w-type-h2" style={{ marginTop: 8 }}>
+                Magic-link holders
+              </h3>
+              <p
+                className="w-type-body-sm"
+                style={{
+                  color: "var(--w-fg-muted)",
+                  marginTop: 8,
+                  lineHeight: 1.55,
+                }}
+              >
+                Send a holder a link. They add names, set caps, approve.
+                No app, no account, no password reset at midnight.
+              </p>
+            </div>
+
+            <div className="w-card" style={{ padding: 24 }}>
+              <div className="w-type-meta">03</div>
+              <h3 className="w-type-h2" style={{ marginTop: 8 }}>
+                Door scanner + manual
+              </h3>
+              <p
+                className="w-type-body-sm"
+                style={{
+                  color: "var(--w-fg-muted)",
+                  marginTop: 8,
+                  lineHeight: 1.55,
+                }}
+              >
+                QR scan with five fail states. Tap-to-search by name when the
+                phone won&apos;t scan. Works offline; sync when reception
+                returns.
+              </p>
+            </div>
+
+            <div className="w-card" style={{ padding: 24 }}>
+              <div className="w-type-meta">04</div>
+              <h3 className="w-type-h2" style={{ marginTop: 8 }}>
+                Per-tier promoter scoring
+              </h3>
+              <p
+                className="w-type-body-sm"
+                style={{
+                  color: "var(--w-fg-muted)",
+                  marginTop: 8,
+                  lineHeight: 1.55,
+                }}
+              >
+                AAA at 100% check-in but GA at 40%? Cap his GA at 5 next
+                event. The data nobody else has.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Co-host strip */}
+        <section
+          style={{
+            padding: "64px 24px",
+            background: "var(--w-surface-2)",
+            borderTop: "1px solid var(--w-line)",
+            borderBottom: "1px solid var(--w-line)",
+          }}
+        >
+          <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+            <div className="w-type-meta">VENUE × BRAND</div>
+            <h2
+              className="w-type-display-md"
+              style={{ marginTop: 12, maxWidth: 720 }}
+            >
+              When a brand brings a show into your room, you both own the
+              door.
+            </h2>
+            <p
+              className="w-type-body"
+              style={{
+                color: "var(--w-fg-muted)",
+                marginTop: 16,
+                maxWidth: 640,
+              }}
+            >
+              Equal capabilities. The brand invites the venue (or vice versa)
+              by handle, email, or phone. If they&apos;re not on WADL yet,
+              the invite spins them up an account.
             </p>
           </div>
         </section>
 
         {/* Founder note */}
-        <section className="px-6 md:px-12 py-16 md:py-24 bg-s1 border-y border-line">
-          <div className="max-w-3xl mx-auto">
-            <p className="label-mono mb-3">A note from the founder</p>
-            <h2 className="font-display text-3xl md:text-4xl uppercase tracking-wide mb-6">
-              I work the door too.
-            </h2>
-            <div className="text-cream/80 leading-relaxed space-y-4 text-base md:text-lg">
-              <p>
-                I&apos;m Jordy. I run nights in Miami. The list is a Google
-                Sheet that becomes three Google Sheets that becomes a WhatsApp
-                screenshot at the door. Fights start over names that aren&apos;t there.
-                Promoters take credit for arrivals they didn&apos;t bring. The line
-                stops moving.
-              </p>
-              <p>
-                WADL is the tool I needed. It went from a notebook sketch to a
-                shipped product because every weekend I pay for what isn&apos;t
-                there. If you run nights, you know exactly what I mean.
-              </p>
-              <p className="font-display text-xl text-coral mt-6">— Jordy</p>
-            </div>
+        <section
+          style={{
+            padding: "80px 24px",
+            maxWidth: 720,
+            margin: "0 auto",
+          }}
+        >
+          <div className="w-type-meta">A NOTE FROM THE FOUNDER</div>
+          <h2
+            className="w-type-display-md"
+            style={{ marginTop: 12 }}
+          >
+            I work the door too.
+          </h2>
+          <div
+            className="w-type-body"
+            style={{
+              color: "var(--w-fg-muted)",
+              marginTop: 20,
+              display: "flex",
+              flexDirection: "column",
+              gap: 16,
+              fontSize: 16,
+              lineHeight: 1.55,
+            }}
+          >
+            <p>
+              I&apos;m Jordy. I run nights in Miami. The list is a Google
+              Sheet that becomes three Google Sheets that becomes a WhatsApp
+              screenshot at the door. Fights start over names that
+              aren&apos;t there. Promoters take credit for arrivals they
+              didn&apos;t bring. The line stops moving.
+            </p>
+            <p>
+              WADL is the tool I needed. If you run nights, you know exactly
+              what I mean.
+            </p>
+            <p style={{ color: "var(--w-acc)", fontWeight: 600 }}>— Jordy</p>
           </div>
         </section>
 
-        {/* CTA */}
-        <section className="px-6 md:px-12 py-16 md:py-24 max-w-3xl mx-auto text-center">
-          <h2 className="font-display text-3xl md:text-5xl uppercase tracking-wide mb-4">
+        {/* Final CTA */}
+        <section
+          style={{
+            padding: "80px 24px 96px",
+            maxWidth: 720,
+            margin: "0 auto",
+            textAlign: "center",
+          }}
+        >
+          <h2 className="w-type-display-md">
             Run your next night with WADL.
           </h2>
-          <p className="text-cream/70 mb-8">
+          <p
+            className="w-type-body"
+            style={{ color: "var(--w-fg-muted)", marginTop: 12 }}
+          >
             Free for one venue. No card. Set up in under five minutes.
           </p>
-          <Link
-            href="/signup"
-            className="bg-coral text-bg font-sans font-semibold text-sm uppercase tracking-[0.14em] px-8 py-4 rounded-md hover:brightness-110 transition inline-block"
-          >
-            Start free →
-          </Link>
+          {user ? (
+            <Link
+              href={dashboardHref}
+              style={{
+                display: "inline-flex",
+                marginTop: 24,
+                textDecoration: "none",
+              }}
+            >
+              <Button variant="primary" size="lg">
+                Open dashboard <IconArrow size={14} />
+              </Button>
+            </Link>
+          ) : (
+            <Link
+              href="/signup"
+              style={{
+                display: "inline-flex",
+                marginTop: 24,
+                textDecoration: "none",
+              }}
+            >
+              <Button variant="primary" size="lg">
+                Start free <IconArrow size={14} />
+              </Button>
+            </Link>
+          )}
         </section>
       </main>
       <MarketingFooter />

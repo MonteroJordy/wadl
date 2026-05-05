@@ -4,10 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { normalizePhone } from "@/lib/routing";
+import { Button, Wordmark } from "@/components/wadl";
+
+type AuthTab = "phone" | "email";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [tab, setTab] = useState<"phone" | "email">("phone");
+  const [tab, setTab] = useState<AuthTab>("phone");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,7 +27,9 @@ export default function LoginPage() {
     }
     setLoading(true);
     const supabase = createClient();
-    const { error: otpError } = await supabase.auth.signInWithOtp({ phone: e164 });
+    const { error: otpError } = await supabase.auth.signInWithOtp({
+      phone: e164,
+    });
     setLoading(false);
     if (otpError) {
       setError(otpError.message);
@@ -46,9 +51,7 @@ export default function LoginPage() {
     const supabase = createClient();
     const { error: emailError } = await supabase.auth.signInWithOtp({
       email: trimmed,
-      options: {
-        emailRedirectTo: `${window.location.origin}/owner`,
-      },
+      options: { emailRedirectTo: `${window.location.origin}/owner` },
     });
     setLoading(false);
     if (emailError) {
@@ -61,150 +64,198 @@ export default function LoginPage() {
   return (
     <main
       id="main-content"
-      className="min-h-screen w-full grid md:grid-cols-2 relative overflow-hidden"
+      className="w-app w-frame"
+      style={{ paddingBottom: 32 }}
     >
+      <div style={{ padding: "20px 24px 0" }}>
+        <Wordmark variant="monogrid" size={20} />
+      </div>
+
+      <div style={{ padding: "72px 24px 0" }}>
+        <div className="w-type-display-lg">
+          The door,
+          <br />
+          de-jammed.
+        </div>
+        <div
+          className="w-type-body"
+          style={{
+            color: "var(--w-fg-muted)",
+            marginTop: 16,
+            maxWidth: 320,
+          }}
+        >
+          Sign in or create an account in seconds. Phone or email — we&apos;ll
+          send you a code.
+        </div>
+      </div>
+
+      {/* Tab toggle */}
       <div
-        className="hidden md:flex relative flex-col justify-between p-12 overflow-hidden"
+        role="tablist"
+        aria-label="Sign-in method"
         style={{
-          background:
-            "linear-gradient(160deg, #14060a 0%, #0a0a0a 55%, #1c0703 100%)",
+          display: "flex",
+          gap: 8,
+          padding: "32px 24px 0",
         }}
       >
-        <div
-          className="absolute -top-32 -left-32 w-[420px] h-[420px] rounded-full"
-          style={{
-            background:
-              "radial-gradient(closest-side, rgba(255,74,43,0.45), transparent 70%)",
-          }}
-        />
-        <div
-          className="absolute -bottom-40 -right-32 w-[460px] h-[460px] rounded-full"
-          style={{
-            background:
-              "radial-gradient(closest-side, rgba(245,200,66,0.18), transparent 70%)",
-          }}
-        />
-        <div className="relative">
-          <p className="font-display text-3xl text-coral tracking-wide">WADL</p>
-          <p className="label-mono mt-2">One door · one list · one truth</p>
-        </div>
-        <div className="relative max-w-md">
-          <p className="font-display text-5xl text-cream uppercase leading-[0.95] tracking-wide mb-4">
-            Door,<br />handled.
-          </p>
-          <p className="text-cream/70 text-sm leading-relaxed">
-            Replaces WhatsApp + spreadsheet chaos at every venue&apos;s door.
-            Every guest attributed, every promoter graded, every list closed
-            on time.
-          </p>
-        </div>
-        <p className="relative label-mono">Miami · Wynwood · LA · NYC · soon</p>
+        {(["phone", "email"] as const).map((t) => {
+          const active = tab === t;
+          return (
+            <button
+              key={t}
+              role="tab"
+              aria-selected={active}
+              type="button"
+              onClick={() => {
+                setTab(t);
+                setError(null);
+                setEmailSent(null);
+              }}
+              style={{
+                flex: 1,
+                height: 36,
+                borderRadius: 9999,
+                border: 0,
+                fontFamily: "var(--w-mono)",
+                fontSize: 11,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+                background: active ? "var(--w-acc)" : "transparent",
+                color: active ? "var(--w-acc-ink)" : "var(--w-fg-muted)",
+                boxShadow: active
+                  ? "none"
+                  : "inset 0 0 0 1px var(--w-line-2)",
+                transition: "background 0.12s, color 0.12s",
+              }}
+            >
+              {t === "phone" ? "Phone OTP" : "Email link"}
+            </button>
+          );
+        })}
       </div>
 
-      <div className="relative flex flex-col px-6 md:px-12 py-10 md:py-14 max-w-md w-full md:max-w-none mx-auto md:mx-0 md:justify-center">
-        <p className="label-mono mb-3 md:hidden">WADL</p>
-        <h1 className="font-display text-4xl md:text-5xl text-cream uppercase leading-[0.95] tracking-wide mb-2 md:hidden">
-          Door,<br />handled.
-        </h1>
-        <p className="text-muted text-sm leading-relaxed mb-8 md:mb-10 max-w-[360px] md:hidden">
-          One list. One QR. Every guest attributed.
-        </p>
-
-        <div className="md:max-w-sm">
-        <p className="label-mono mb-2 hidden md:block">Sign in</p>
-        <h2 className="font-display text-3xl text-cream uppercase tracking-wide mb-6 hidden md:block">
-          Get to work.
-        </h2>
-
-      <div className="flex gap-1 mt-10 mb-2">
-        {(["phone", "email"] as const).map((t) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => {
-              setTab(t);
-              setError(null);
-              setEmailSent(null);
-            }}
-            className={`flex-1 px-3 py-2 rounded-md border text-xs font-mono uppercase tracking-wider ${
-              tab === t
-                ? "border-coral bg-s2 text-cream"
-                : "border-line bg-s1 text-muted"
-            }`}
+      {/* Form */}
+      <div style={{ padding: "16px 24px 0" }}>
+        {tab === "phone" ? (
+          <form
+            onSubmit={onPhoneSubmit}
+            style={{ display: "flex", flexDirection: "column", gap: 12 }}
           >
-            {t === "phone" ? "Phone OTP" : "Email link"}
-          </button>
-        ))}
+            <div>
+              <label htmlFor="phone" className="w-label">
+                Phone
+              </label>
+              <input
+                id="phone"
+                name="phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                placeholder="(305) 799 0518"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="w-input"
+                style={{ height: 56, fontSize: 16 }}
+                required
+              />
+            </div>
+            {error ? <ErrorLine>{error}</ErrorLine> : null}
+            <Button
+              variant="primary"
+              size="lg"
+              block
+              type="submit"
+              disabled={loading}
+            >
+              {loading ? "Sending code…" : "Send code"}
+            </Button>
+          </form>
+        ) : (
+          <form
+            onSubmit={onEmailSubmit}
+            style={{ display: "flex", flexDirection: "column", gap: 12 }}
+          >
+            <div>
+              <label htmlFor="email" className="w-label">
+                Email
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                placeholder="you@venue.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-input"
+                style={{ height: 56, fontSize: 16 }}
+                required
+              />
+            </div>
+            {error ? <ErrorLine>{error}</ErrorLine> : null}
+            {emailSent ? (
+              <p
+                className="w-type-body-sm"
+                style={{ color: "var(--w-ok)" }}
+              >
+                Magic link sent to{" "}
+                <span style={{ color: "var(--w-fg)" }}>{emailSent}</span>.
+                Check your inbox.
+              </p>
+            ) : null}
+            <Button
+              variant="primary"
+              size="lg"
+              block
+              type="submit"
+              disabled={loading}
+            >
+              {loading ? "Sending…" : "Send magic link"}
+            </Button>
+          </form>
+        )}
       </div>
 
-      {tab === "phone" ? (
-        <form onSubmit={onPhoneSubmit} className="mt-6 flex flex-col gap-4">
-          <div>
-            <label htmlFor="phone" className="label-mono block mb-2">
-              Phone
-            </label>
-            <input
-              id="phone"
-              name="phone"
-              type="tel"
-              inputMode="tel"
-              autoComplete="tel"
-              placeholder="(305) 799 0518"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="input-dark"
-              required
-            />
-          </div>
-          {error && <p className="text-coral text-sm font-sans">{error}</p>}
-          <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? "Sending code…" : "Send code"}
-          </button>
-        </form>
-      ) : (
-        <form onSubmit={onEmailSubmit} className="mt-6 flex flex-col gap-4">
-          <div>
-            <label htmlFor="email" className="label-mono block mb-2">
-              Email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              placeholder="you@venue.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="input-dark"
-              required
-            />
-          </div>
-          {error && <p className="text-coral text-sm font-sans">{error}</p>}
-          {emailSent && (
-            <p className="text-mint text-sm">
-              Magic link sent to <span className="text-cream">{emailSent}</span>. Check your inbox.
-            </p>
-          )}
-          <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? "Sending…" : "Send magic link"}
-          </button>
-        </form>
-      )}
-
-      <p className="label-mono mt-8 md:mt-10">
-          By continuing you agree to our{" "}
-          <a href="/terms" className="text-coral hover:text-cream underline">
-            terms
+      <div
+        style={{
+          padding: "32px 24px 24px",
+          marginTop: "auto",
+          textAlign: "center",
+        }}
+      >
+        <span className="w-type-meta" style={{ color: "var(--w-fg-dim)" }}>
+          BY CONTINUING YOU AGREE TO{" "}
+          <a
+            href="/terms"
+            style={{ color: "var(--w-fg-muted)", textDecoration: "none" }}
+          >
+            TERMS
           </a>{" "}
-          and{" "}
-          <a href="/privacy" className="text-coral hover:text-cream underline">
-            privacy policy
+          ·{" "}
+          <a
+            href="/privacy"
+            style={{ color: "var(--w-fg-muted)", textDecoration: "none" }}
+          >
+            PRIVACY
           </a>
-          .
-        </p>
-        </div>
+        </span>
       </div>
     </main>
+  );
+}
+
+function ErrorLine({ children }: { children: React.ReactNode }) {
+  return (
+    <p
+      className="w-type-body-sm"
+      style={{ color: "var(--w-err)", marginTop: -4 }}
+      role="alert"
+    >
+      {children}
+    </p>
   );
 }

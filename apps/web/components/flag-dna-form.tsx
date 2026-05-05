@@ -71,7 +71,7 @@ export default function FlagDnaForm({
         >
           {pending ? "Working…" : "Remove flag"}
         </button>
-        {error && <p className="text-coral text-sm mt-2">{error}</p>}
+        {error && <p className="text-err text-sm mt-2">{error}</p>}
         {saved && <p className="text-mint text-sm mt-2">{saved}</p>}
       </div>
     );
@@ -113,7 +113,7 @@ export default function FlagDnaForm({
           autoFocus
         />
       </div>
-      {error && <p className="text-coral text-sm">{error}</p>}
+      {error && <p className="text-err text-sm">{error}</p>}
       <div className="grid grid-cols-2 gap-2">
         <button
           type="button"

@@ -1,20 +1,16 @@
 import Link from "next/link";
 import { requireOwnerContext, fmtDate } from "@/lib/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
-import EmptyState from "@/components/empty-state";
+import {
+  Avatar,
+  Button,
+  CapacityMeter,
+  Chip,
+  IconArrow,
+} from "@/components/wadl";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Holders — WADL" };
-
-interface HolderAgg {
-  key: string;
-  display_name: string;
-  events: Set<string>;
-  approved: number;
-  scanned: number;
-  cap_total: number;
-  most_recent_at: string;
-}
 
 interface AllocRow {
   id: string;
@@ -27,7 +23,23 @@ interface AllocRow {
     doors_at: string;
     event: { id: string; name: string; account_id: string };
   };
-  guests: Array<{ status: string; plus_ones: number; check_ins: Array<{ state: string }> }>;
+  guests: Array<{
+    status: string;
+    plus_ones: number;
+    check_ins: Array<{ state: string }>;
+  }>;
+}
+
+interface HolderAgg {
+  key: string;
+  display_name: string;
+  events: Set<string>;
+  approved: number;
+  scanned: number;
+  cap_total: number;
+  most_recent_at: string;
+  phones: Set<string>;
+  emails: Set<string>;
 }
 
 export default async function HoldersPage({
@@ -44,13 +56,13 @@ export default async function HoldersPage({
     .select(
       "id, holder_name, holder_phone, holder_email, cap, " +
         "event_night:event_nights!inner(night_date, doors_at, event:events!inner(id, name, account_id)), " +
-        "guests(status, plus_ones, check_ins(state))"
+        "guests(status, plus_ones, check_ins(state))",
     );
   const rows = ((rowsRaw ?? []) as unknown as AllocRow[]).filter(
-    (r) => r.event_night.event.account_id === account.id
+    (r) => r.event_night.event.account_id === account.id,
   );
 
-  const byKey = new Map<string, HolderAgg & { phones: Set<string>; emails: Set<string> }>();
+  const byKey = new Map<string, HolderAgg>();
   for (const r of rows) {
     const key = r.holder_name.toLowerCase().trim();
     if (q && !key.includes(q)) continue;
@@ -83,82 +95,299 @@ export default async function HoldersPage({
   }
 
   const holders = [...byKey.values()].sort((a, b) =>
-    a.most_recent_at < b.most_recent_at ? 1 : -1
+    a.most_recent_at < b.most_recent_at ? 1 : -1,
   );
+
+  // Aggregate summary across visible holders
+  const totalApproved = holders.reduce((s, h) => s + h.approved, 0);
+  const totalScanned = holders.reduce((s, h) => s + h.scanned, 0);
+  const totalCap = holders.reduce((s, h) => s + h.cap_total, 0);
+  const aggShowRate =
+    totalApproved === 0 ? 0 : Math.round((totalScanned / totalApproved) * 100);
 
   return (
     <main
       id="main-content"
-      className="mx-auto max-w-frame md:max-w-3xl px-6 pt-12 pb-8 md:py-12"
+      className="w-app"
+      style={{
+        minHeight: "100vh",
+        background: "var(--w-bg)",
+        padding: "32px 24px 96px",
+      }}
     >
-      <header className="mb-6">
-        <p className="label-mono mb-1">Holders</p>
-        <h1 className="display-lg">All promoters + partners</h1>
-        <p className="label-mono mt-2">
-          {holders.length} unique holder{holders.length === 1 ? "" : "s"} across this account
-        </p>
-      </header>
+      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+        {/* Header */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "space-between",
+            borderBottom: "1px solid var(--w-line)",
+            paddingBottom: 24,
+            gap: 16,
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <div className="w-type-meta">HOLDERS · ALL ACCOUNT</div>
+            <div className="w-type-display-md" style={{ marginTop: 8 }}>
+              Promoters &amp; partners
+            </div>
+            <p
+              className="w-type-body-sm"
+              style={{
+                color: "var(--w-fg-muted)",
+                marginTop: 8,
+              }}
+            >
+              {holders.length} unique holder
+              {holders.length === 1 ? "" : "s"} · ranked by show rate
+            </p>
+          </div>
+          <Link href="/owner" style={{ textDecoration: "none" }}>
+            <Button variant="ghost">← Events</Button>
+          </Link>
+        </div>
 
-      <form action="/owner/holders" method="get" className="mb-4">
-        <input
-          type="text"
-          name="q"
-          defaultValue={q}
-          placeholder="Search by holder name…"
-          className="input-dark"
-        />
-      </form>
+        {/* Aggregate KPI */}
+        {holders.length > 0 && (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: 16,
+              marginTop: 28,
+            }}
+          >
+            <KPI
+              eyebrow="HOLDERS"
+              big={String(holders.length)}
+              sub="active across this account"
+            />
+            <KPI
+              eyebrow="HEADS DELIVERED"
+              big={String(totalApproved)}
+              sub={`of ${totalCap} cap`}
+            />
+            <KPI
+              eyebrow="SHOW RATE"
+              big={`${aggShowRate}%`}
+              sub={`${totalScanned} scanned in`}
+              accent
+            />
+          </div>
+        )}
 
-      {holders.length === 0 ? (
-        <EmptyState
-          title="No holders yet"
-          body="Drop a promoter, artist, or brand a magic link. Their show rate ranks here after the first night."
-          action={
-            <Link href="/owner" className="btn-ghost inline-block">
+        {/* Search */}
+        <form
+          action="/owner/holders"
+          method="get"
+          style={{ marginTop: 28 }}
+        >
+          <input
+            type="text"
+            name="q"
+            defaultValue={q}
+            placeholder="search by holder name…"
+            className="w-input"
+          />
+        </form>
+
+        {/* List */}
+        {holders.length === 0 ? (
+          <div
+            className="w-card"
+            style={{
+              padding: "64px 32px",
+              textAlign: "center",
+              marginTop: 28,
+            }}
+          >
+            <div className="w-type-h1">No holders yet</div>
+            <p
+              className="w-type-body-sm"
+              style={{
+                color: "var(--w-fg-muted)",
+                marginTop: 12,
+                maxWidth: 440,
+                marginInline: "auto",
+              }}
+            >
+              Drop a promoter, artist, or brand a magic link. Their show rate
+              ranks here after the first night.
+            </p>
+            <Link
+              href="/owner"
+              className="w-btn w-btn--primary"
+              style={{
+                marginTop: 24,
+                textDecoration: "none",
+                display: "inline-flex",
+              }}
+            >
               Back to events
             </Link>
-          }
-        />
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {holders.map((h) => {
-            const showRate = h.approved === 0 ? 0 : h.scanned / h.approved;
-            return (
-              <li key={h.key}>
-                <Link
-                  href={`/owner/scorecards/${encodeURIComponent(h.key)}`}
-                  className="card flex items-start justify-between gap-3 hover:border-coral/60 transition"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="font-sans text-cream font-semibold truncate">
-                      {h.display_name}
-                    </p>
-                    <p className="label-mono mt-1">
-                      {h.events.size} event{h.events.size === 1 ? "" : "s"} ·{" "}
-                      cap {h.cap_total} · last {fmtDate(h.most_recent_at)}
-                    </p>
-                    {(h.phones.size > 0 || h.emails.size > 0) && (
-                      <p className="label-mono mt-1 truncate">
-                        {[...h.phones].slice(0, 1).join(" ")}
-                        {h.phones.size > 0 && h.emails.size > 0 ? " · " : ""}
-                        {[...h.emails].slice(0, 1).join(" ")}
-                      </p>
-                    )}
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="font-display text-3xl text-cream leading-none">
-                      {Math.round(showRate * 100)}%
-                    </p>
-                    <p className="label-mono mt-1">
-                      <span className="text-mint">{h.scanned}</span>/{h.approved}
-                    </p>
-                  </div>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+          </div>
+        ) : (
+          <ul
+            style={{
+              listStyle: "none",
+              padding: 0,
+              margin: "20px 0 0",
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
+            }}
+          >
+            {holders.map((h) => {
+              const showRate =
+                h.approved === 0
+                  ? 0
+                  : Math.round((h.scanned / h.approved) * 100);
+              const showRateColor =
+                showRate >= 80
+                  ? "var(--w-ok)"
+                  : showRate >= 60
+                    ? "var(--w-fg)"
+                    : "var(--w-warn)";
+              return (
+                <li key={h.key}>
+                  <Link
+                    href={`/owner/scorecards/${encodeURIComponent(h.key)}`}
+                    style={{ textDecoration: "none", color: "inherit" }}
+                  >
+                    <div
+                      className="w-card"
+                      style={{
+                        padding: 18,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 14,
+                      }}
+                    >
+                      <Avatar name={h.display_name} size={40} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div
+                          style={{
+                            fontWeight: 600,
+                            fontSize: 15,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {h.display_name}
+                        </div>
+                        <div
+                          className="w-type-meta"
+                          style={{ marginTop: 4 }}
+                        >
+                          {h.events.size} EVENT
+                          {h.events.size === 1 ? "" : "S"} · CAP {h.cap_total}{" "}
+                          · LAST {fmtDate(h.most_recent_at).toUpperCase()}
+                        </div>
+                        {h.cap_total > 0 && (
+                          <div
+                            style={{
+                              marginTop: 10,
+                              maxWidth: 280,
+                            }}
+                          >
+                            <CapacityMeter
+                              current={h.scanned}
+                              total={h.cap_total}
+                              accent
+                              label="DELIVERED"
+                            />
+                          </div>
+                        )}
+                      </div>
+                      <div
+                        style={{
+                          textAlign: "right",
+                          flexShrink: 0,
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "flex-end",
+                          gap: 6,
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontFamily: "var(--w-display)",
+                            fontWeight: 700,
+                            fontSize: 32,
+                            letterSpacing: "-0.025em",
+                            lineHeight: 1,
+                            color: showRateColor,
+                          }}
+                        >
+                          {showRate}%
+                        </div>
+                        <div className="w-type-meta">
+                          {h.scanned}/{h.approved}
+                        </div>
+                        <Chip tone="ghost">
+                          <IconArrow size={12} />
+                        </Chip>
+                      </div>
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
     </main>
+  );
+}
+
+function KPI({
+  eyebrow,
+  big,
+  sub,
+  accent,
+}: {
+  eyebrow: string;
+  big: string;
+  sub?: string;
+  accent?: boolean;
+}) {
+  return (
+    <div
+      className="w-card"
+      style={{
+        padding: 18,
+        borderColor: accent ? "var(--w-acc)" : "var(--w-line)",
+        background: accent ? "var(--w-acc-soft)" : "var(--w-surface-2)",
+      }}
+    >
+      <div className="w-type-meta">{eyebrow}</div>
+      <div
+        style={{
+          fontFamily: "var(--w-display)",
+          fontWeight: 700,
+          fontSize: 32,
+          letterSpacing: "-0.025em",
+          marginTop: 6,
+          lineHeight: 1,
+        }}
+      >
+        {big}
+      </div>
+      {sub && (
+        <div
+          className="w-type-body-sm"
+          style={{
+            color: "var(--w-fg-muted)",
+            marginTop: 8,
+          }}
+        >
+          {sub}
+        </div>
+      )}
+    </div>
   );
 }

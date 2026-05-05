@@ -7,6 +7,12 @@ import EmptyState from "@/components/empty-state";
 import RealtimeCounters from "@/components/realtime-counters";
 import ActivityFeedRealtime from "@/components/activity-feed-realtime";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  Button,
+  CapacityMeter,
+  Chip,
+  IconArrow,
+} from "@/components/wadl";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +48,7 @@ export default async function DayDashPage({
   const { data: event } = await supabase
     .from("events")
     .select(
-      "id, name, description, flyer_url, event_type, venue_id, account_id, event_nights(id, night_date, doors_at, cutoff_at, capacity_cap, lockdown_threshold_pct, is_frozen)"
+      "id, name, description, flyer_url, event_type, venue_id, account_id, event_nights(id, night_date, doors_at, cutoff_at, capacity_cap, lockdown_threshold_pct, is_frozen)",
     )
     .eq("id", params.id)
     .eq("account_id", account.id)
@@ -63,23 +69,59 @@ export default async function DayDashPage({
 
   if (nights.length === 0) {
     return (
-      <main id="main-content" className="mobile-frame">
-        <Link href="/owner" className="label-mono hover:text-cream">
-          ← Back
-        </Link>
-        <h1 className="display-lg mt-4 mb-6">{event.name}</h1>
-        <EmptyState
-          title="No nights yet"
-          body="Add a night from settings to start building the list."
-          action={
+      <main
+        id="main-content"
+        className="w-app"
+        style={{
+          minHeight: "100vh",
+          background: "var(--w-bg)",
+          padding: "32px 24px 96px",
+        }}
+      >
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          <Link
+            href="/owner"
+            className="w-type-meta"
+            style={{ textDecoration: "none" }}
+          >
+            ← BACK
+          </Link>
+          <div className="w-type-display-md" style={{ marginTop: 12 }}>
+            {event.name}
+          </div>
+          <div
+            className="w-card"
+            style={{
+              padding: "64px 32px",
+              textAlign: "center",
+              marginTop: 24,
+            }}
+          >
+            <div className="w-type-h1">No nights yet</div>
+            <p
+              className="w-type-body-sm"
+              style={{
+                color: "var(--w-fg-muted)",
+                marginTop: 12,
+                maxWidth: 420,
+                marginInline: "auto",
+              }}
+            >
+              Add a night from settings to start building the list.
+            </p>
             <Link
               href={`/owner/events/${event.id}/settings`}
-              className="btn-primary inline-block"
+              className="w-btn w-btn--primary"
+              style={{
+                marginTop: 24,
+                textDecoration: "none",
+                display: "inline-flex",
+              }}
             >
               Go to settings
             </Link>
-          }
-        />
+          </div>
+        </div>
       </main>
     );
   }
@@ -88,16 +130,19 @@ export default async function DayDashPage({
   const now = Date.now();
   const upcoming = nights.find((n) => new Date(n.doors_at).getTime() >= now);
   const defaultNight = upcoming ?? nights[0];
-  const active = nights.find((n) => n.id === searchParams.night) ?? defaultNight;
+  const active =
+    nights.find((n) => n.id === searchParams.night) ?? defaultNight;
 
-  // Live analytics fetch. Pull check_ins with joined guest/allocation so
-  // we can show last-scan, arrival curve, and top holder inline.
+  // Live analytics fetch.
   const [guestsRes, checkInsRes, allocRes, pendingRes] = await Promise.all([
-    supabase.from("guests").select("status, plus_ones").eq("event_night_id", active.id),
+    supabase
+      .from("guests")
+      .select("status, plus_ones")
+      .eq("event_night_id", active.id),
     supabase
       .from("check_ins")
       .select(
-        "state, scanned_at, guest:guests!inner(plus_ones, allocation_id, allocation:allocations(holder_name))"
+        "state, scanned_at, guest:guests!inner(plus_ones, allocation_id, allocation:allocations(holder_name))",
       )
       .eq("event_night_id", active.id),
     supabase
@@ -149,14 +194,13 @@ export default async function DayDashPage({
   }
 
   const recentScans = approvedScans.filter(
-    (c) => Date.now() - new Date(c.scanned_at).getTime() < 30 * 60_000
+    (c) => Date.now() - new Date(c.scanned_at).getTime() < 30 * 60_000,
   ).length;
 
   const topHolderEntry = [...holderScans.values()].sort(
-    (a, b) => b.count - a.count
+    (a, b) => b.count - a.count,
   )[0];
 
-  // Build an hour array spanning first scan hour → now (or a 4-hour window).
   const currentHour = new Date().getHours();
   const earliestHour =
     hourCounts.size > 0 ? Math.min(...hourCounts.keys()) : currentHour;
@@ -169,413 +213,711 @@ export default async function DayDashPage({
   const cap = active.capacity_cap ?? 0;
   const pctFull = cap > 0 ? Math.round((scanned / cap) * 100) : 0;
   const totalList = approvedHeads + pendingHeads;
+  const allocCount = allocRes.count ?? 0;
+  const pendingCount = pendingRes.count ?? 0;
 
   return (
-    <main id="main-content" className="mobile-frame">
-      <header className="flex items-center justify-between pt-6 pb-4">
-        <Link href="/owner" className="label-mono hover:text-cream">
-          ← Back
-        </Link>
-        <Link
-          href={`/owner/events/${event.id}/settings`}
-          className="label-mono hover:text-cream"
-        >
-          Settings
-        </Link>
-      </header>
-
-      {event.flyer_url ? (
+    <main
+      id="main-content"
+      className="w-app"
+      style={{
+        minHeight: "100vh",
+        background: "var(--w-bg)",
+        padding: "32px 24px 96px",
+      }}
+    >
+      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+        {/* Top bar */}
         <div
-          className="w-full rounded-lg overflow-hidden mb-4 border border-line"
-          style={{ aspectRatio: "4 / 5" }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 16,
+            gap: 12,
+            flexWrap: "wrap",
+          }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={event.flyer_url}
-            alt={event.name}
-            className="w-full h-full object-cover"
-          />
+          <Link
+            href="/owner"
+            className="w-type-meta"
+            style={{ textDecoration: "none" }}
+          >
+            ← BACK
+          </Link>
+          <Link
+            href={`/owner/events/${event.id}/settings`}
+            className="w-type-meta"
+            style={{ textDecoration: "none" }}
+          >
+            SETTINGS →
+          </Link>
         </div>
-      ) : null}
 
-      <h1 className="display-lg mb-1">{event.name}</h1>
-      <div className="flex items-center justify-between mb-6">
-        <p className="label-mono">
-          {fmtDate(active.night_date)} · Doors {fmtTime(active.doors_at)}
-        </p>
-        <RealtimeCounters nightId={active.id} />
-      </div>
-
-      {(allocRes.count ?? 0) === 0 && approvedHeads === 0 && (
-        <div className="card border-coral/40 mb-6 bg-s2">
-          <p className="label-mono text-coral mb-1">Set up your list</p>
-          <p className="text-cream font-sans font-semibold mb-3">
-            No allocations yet
-          </p>
-          <p className="text-muted text-sm leading-relaxed mb-4">
-            An allocation is a slice of your door given to a promoter, artist,
-            or partner. They get a magic link, add guests up to their cap, and
-            you see who added whom — no accounts on their end.
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <Link
-              href={`/owner/events/${event.id}/allocations/new`}
-              className="btn-primary text-center"
+        {/* Hero */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "space-between",
+            borderBottom: "1px solid var(--w-line)",
+            paddingBottom: 24,
+            gap: 16,
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div className="w-type-meta">
+              {fmtDate(active.night_date).toUpperCase()} · DOORS{" "}
+              {fmtTime(active.doors_at).toUpperCase()}
+              {active.is_frozen ? " · FROZEN" : ""}
+            </div>
+            <div
+              className="w-type-display-md"
+              style={{ marginTop: 8 }}
             >
-              Add allocation
-            </Link>
-            <Link
-              href={`/owner/events/${event.id}/staff`}
-              className="btn-ghost text-center"
-            >
-              Invite door staff
-            </Link>
+              {event.name}
+            </div>
           </div>
+          <RealtimeCounters nightId={active.id} />
         </div>
-      )}
 
-      {nights.length > 1 && (
-        <div className="flex gap-2 mb-6 overflow-x-auto">
-          {nights.map((n) => {
-            const isActive = n.id === active.id;
-            return (
-              <Link
-                key={n.id}
-                href={`/owner/events/${event.id}?night=${n.id}`}
-                className={`shrink-0 px-3 py-2 rounded-md border text-xs font-mono uppercase tracking-wider ${
-                  isActive
-                    ? "border-coral bg-s2 text-cream"
-                    : "border-line bg-s1 text-muted hover:text-cream"
-                }`}
-              >
-                {fmtDate(n.night_date)}
-              </Link>
-            );
-          })}
-        </div>
-      )}
-
-      <section className="card mb-4">
-        <div className="flex items-end justify-between">
-          <div>
-            <p className="label-mono">Scanned in</p>
-            <p className="font-display text-6xl leading-none text-cream">
-              {scanned}
-              <span className="text-muted">/{cap || "—"}</span>
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="label-mono">Full</p>
-            <p className="font-display text-4xl text-coral leading-none">
-              {pctFull}%
-            </p>
-          </div>
-        </div>
-        <div className="h-2 bg-s3 rounded-full mt-4 overflow-hidden">
+        {/* Setup nudge */}
+        {allocCount === 0 && approvedHeads === 0 && (
           <div
-            className="h-full bg-coral"
-            style={{ width: `${Math.min(100, pctFull)}%` }}
-          />
-        </div>
-        <div className="grid grid-cols-3 gap-2 mt-4">
-          <div>
-            <p className="label-mono">Approved</p>
-            <p className="font-display text-2xl text-cream">{approvedHeads}</p>
-          </div>
-          <div>
-            <p className="label-mono">Pending</p>
-            <p className="font-display text-2xl text-gold">{pendingHeads}</p>
-          </div>
-          <div>
-            <p className="label-mono">Allocs</p>
-            <p className="font-display text-2xl text-cream">
-              {allocRes.count ?? 0}
+            className="w-card"
+            style={{
+              padding: 20,
+              marginTop: 24,
+              borderColor: "var(--w-acc)",
+              background: "var(--w-acc-soft)",
+            }}
+          >
+            <div className="w-type-meta" style={{ color: "var(--w-acc-ink)" }}>
+              SET UP YOUR LIST
+            </div>
+            <div className="w-type-h2" style={{ marginTop: 6 }}>
+              No allocations yet
+            </div>
+            <p
+              className="w-type-body-sm"
+              style={{ marginTop: 8, lineHeight: 1.5 }}
+            >
+              An allocation is a slice of your door given to a promoter, artist,
+              or partner. They get a magic link, add guests up to their cap,
+              and you see who added whom — no accounts on their end.
             </p>
-          </div>
-        </div>
-
-        {scanned > 0 && (
-          <div className="mt-4 pt-4 border-t border-line grid grid-cols-3 gap-3">
-            <div>
-              <p className="label-mono">Last scan</p>
-              <p className="font-sans text-sm text-cream">
-                {lastScanAt ? ago(lastScanAt) : "—"}
-              </p>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 8,
+                marginTop: 14,
+              }}
+            >
+              <Link
+                href={`/owner/events/${event.id}/allocations/new`}
+                style={{ textDecoration: "none" }}
+              >
+                <Button variant="primary" block>
+                  Add allocation
+                </Button>
+              </Link>
+              <Link
+                href={`/owner/events/${event.id}/staff`}
+                style={{ textDecoration: "none" }}
+              >
+                <Button variant="ghost" block>
+                  Invite door staff
+                </Button>
+              </Link>
             </div>
-            <div>
-              <p className="label-mono">Last 30m</p>
-              <p className="font-sans text-sm text-cream">
-                {recentScans} in
-              </p>
-            </div>
-            {(() => {
-              // Projected ETA to capacity at current pace.
-              if (!cap || cap <= 0) return <div />;
-              if (scanned >= cap) {
-                return (
-                  <div>
-                    <p className="label-mono text-coral">At cap</p>
-                    <p className="font-sans text-sm text-coral">Now</p>
-                  </div>
-                );
-              }
-              if (recentScans <= 0) {
-                return (
-                  <div>
-                    <p className="label-mono">Pace</p>
-                    <p className="font-sans text-sm text-muted">—</p>
-                  </div>
-                );
-              }
-              const perMin = recentScans / 30;
-              const remaining = cap - scanned;
-              const eta = Math.round(remaining / perMin);
-              return (
-                <div>
-                  <p
-                    className={`label-mono ${
-                      eta <= 30
-                        ? "text-coral"
-                        : eta <= 90
-                        ? "text-gold"
-                        : "text-mint"
-                    }`}
-                  >
-                    Cap in
-                  </p>
-                  <p
-                    className={`font-sans text-sm ${
-                      eta <= 30
-                        ? "text-coral"
-                        : eta <= 90
-                        ? "text-gold"
-                        : "text-cream"
-                    }`}
-                  >
-                    {eta < 60
-                      ? `~${eta}m`
-                      : `~${Math.floor(eta / 60)}h ${eta % 60}m`}
-                  </p>
-                </div>
-              );
-            })()}
           </div>
         )}
-      </section>
 
-      {hours.length > 0 && scanned > 0 && (
-        <section className="card mb-4">
-          <p className="label-mono mb-3">Arrivals by hour</p>
-          <div className="flex items-end gap-1 h-20">
-            {hours.map((b) => {
-              const h = (b.count / peakHourCount) * 100;
-              const isPeak = b.count > 0 && b.count === peakHourCount;
+        {/* Multi-night picker */}
+        {nights.length > 1 && (
+          <div
+            style={{
+              display: "flex",
+              gap: 6,
+              marginTop: 20,
+              overflowX: "auto",
+            }}
+            className="w-noscroll"
+          >
+            {nights.map((n) => {
+              const isActive = n.id === active.id;
               return (
-                <div
-                  key={b.hour}
-                  className="flex-1 flex flex-col items-center gap-1"
-                  title={`${fmtHour(b.hour)}: ${b.count}`}
+                <Link
+                  key={n.id}
+                  href={`/owner/events/${event.id}?night=${n.id}`}
+                  style={{ textDecoration: "none", flexShrink: 0 }}
                 >
-                  <div
-                    className={`w-full rounded-t ${
-                      isPeak ? "bg-coral" : "bg-mint/60"
-                    }`}
-                    style={{ height: `${Math.max(4, h)}%` }}
-                  />
-                  <p className="label-mono text-[9px]">{fmtHour(b.hour)}</p>
-                </div>
+                  <Chip tone={isActive ? "neutral" : "ghost"}>
+                    {fmtDate(n.night_date).toUpperCase()}
+                  </Chip>
+                </Link>
               );
             })}
           </div>
+        )}
+
+        {/* Big stat strip — Scanned in / Full / Approved / Pending / Allocs */}
+        <section
+          className="w-card"
+          style={{ padding: 24, marginTop: 24 }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-end",
+              justifyContent: "space-between",
+              gap: 16,
+              flexWrap: "wrap",
+            }}
+          >
+            <div>
+              <div className="w-type-meta">SCANNED IN</div>
+              <div
+                style={{
+                  fontFamily: "var(--w-display)",
+                  fontSize: 88,
+                  fontWeight: 700,
+                  letterSpacing: "-0.04em",
+                  lineHeight: 0.92,
+                  marginTop: 4,
+                }}
+              >
+                {scanned}
+                <span style={{ color: "var(--w-fg-dim)", fontSize: 44 }}>
+                  /{cap || "—"}
+                </span>
+              </div>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div className="w-type-meta">FULL</div>
+              <div
+                style={{
+                  fontFamily: "var(--w-display)",
+                  fontSize: 56,
+                  fontWeight: 700,
+                  letterSpacing: "-0.035em",
+                  lineHeight: 0.92,
+                  color: "var(--w-acc-ink)",
+                  background: "var(--w-acc)",
+                  padding: "0 14px",
+                  display: "inline-block",
+                  marginTop: 4,
+                }}
+              >
+                {pctFull}%
+              </div>
+            </div>
+          </div>
+          {cap > 0 && (
+            <div style={{ marginTop: 18 }}>
+              <CapacityMeter
+                current={scanned}
+                total={cap}
+                accent
+                label="DOOR CAPACITY"
+              />
+            </div>
+          )}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: 12,
+              marginTop: 18,
+            }}
+          >
+            <BigStat
+              label="APPROVED"
+              value={approvedHeads}
+            />
+            <BigStat
+              label="PENDING"
+              value={pendingHeads}
+              tone={pendingHeads > 0 ? "warn" : "neutral"}
+            />
+            <BigStat label="ALLOCS" value={allocCount} />
+          </div>
+
+          {scanned > 0 && (
+            <div
+              style={{
+                marginTop: 18,
+                paddingTop: 16,
+                borderTop: "1px solid var(--w-line)",
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
+                gap: 12,
+              }}
+            >
+              <MiniStat
+                label="LAST SCAN"
+                value={lastScanAt ? ago(lastScanAt) : "—"}
+              />
+              <MiniStat label="LAST 30M" value={`${recentScans} in`} />
+              {(() => {
+                if (!cap || cap <= 0) return null;
+                if (scanned >= cap) {
+                  return (
+                    <MiniStat
+                      label="AT CAP"
+                      value="Now"
+                      tone="err"
+                    />
+                  );
+                }
+                if (recentScans <= 0) {
+                  return <MiniStat label="PACE" value="—" tone="muted" />;
+                }
+                const perMin = recentScans / 30;
+                const remaining = cap - scanned;
+                const eta = Math.round(remaining / perMin);
+                const tone =
+                  eta <= 30 ? "err" : eta <= 90 ? "warn" : "ok";
+                return (
+                  <MiniStat
+                    label="CAP IN"
+                    tone={tone}
+                    value={
+                      eta < 60
+                        ? `~${eta}m`
+                        : `~${Math.floor(eta / 60)}h ${eta % 60}m`
+                    }
+                  />
+                );
+              })()}
+            </div>
+          )}
         </section>
-      )}
 
-      {topHolderEntry && (
-        <section className="card mb-4">
-          <p className="label-mono mb-1">Top holder so far</p>
-          <p className="font-sans text-cream font-semibold">
-            {topHolderEntry.name}
-          </p>
-          <p className="label-mono mt-1">
-            <span className="text-mint">{topHolderEntry.count}</span> scanned in
-          </p>
-        </section>
-      )}
+        {/* Arrivals by hour */}
+        {hours.length > 0 && scanned > 0 && (
+          <section
+            className="w-card"
+            style={{ padding: 20, marginTop: 12 }}
+          >
+            <div className="w-type-meta">ARRIVALS BY HOUR</div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-end",
+                gap: 4,
+                height: 96,
+                marginTop: 14,
+              }}
+            >
+              {hours.map((b) => {
+                const h = (b.count / peakHourCount) * 100;
+                const isPeak = b.count > 0 && b.count === peakHourCount;
+                return (
+                  <div
+                    key={b.hour}
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: 4,
+                    }}
+                    title={`${fmtHour(b.hour)}: ${b.count}`}
+                  >
+                    <div
+                      style={{
+                        width: "100%",
+                        height: `${Math.max(4, h)}%`,
+                        background: isPeak
+                          ? "var(--w-acc)"
+                          : "oklch(0.86 0.18 145 / 0.6)",
+                      }}
+                    />
+                    <div
+                      className="w-type-meta"
+                      style={{ fontSize: 9 }}
+                    >
+                      {fmtHour(b.hour)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
-      <section className="grid grid-cols-2 gap-2 mb-4">
-        <Link
-          href={`/owner/events/${event.id}/allocations`}
-          className="card text-center hover:border-coral transition"
-        >
-          <p className="label-mono mb-1">Manage</p>
-          <p className="font-sans font-semibold text-cream">Allocations</p>
-        </Link>
-        <Link
-          href={`/owner/events/${event.id}/queue`}
-          className="card text-center hover:border-coral transition"
-        >
-          <p className="label-mono mb-1">Review</p>
-          <p className="font-sans font-semibold text-cream">
-            Queue
-            {(pendingRes.count ?? 0) > 0 && (
-              <span className="ml-1 text-gold">· {pendingRes.count}</span>
-            )}
-          </p>
-        </Link>
-      </section>
+        {/* Top holder */}
+        {topHolderEntry && (
+          <section
+            className="w-card"
+            style={{ padding: 20, marginTop: 12 }}
+          >
+            <div className="w-type-meta">TOP HOLDER SO FAR</div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                justifyContent: "space-between",
+                marginTop: 8,
+                gap: 16,
+              }}
+            >
+              <div
+                style={{
+                  fontWeight: 600,
+                  fontSize: 17,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {topHolderEntry.name}
+              </div>
+              <div
+                style={{
+                  fontFamily: "var(--w-mono)",
+                  fontSize: 16,
+                  fontWeight: 600,
+                  color: "var(--w-ok)",
+                }}
+              >
+                {topHolderEntry.count}
+                <span
+                  style={{
+                    color: "var(--w-fg-muted)",
+                    fontWeight: 400,
+                    marginLeft: 4,
+                  }}
+                >
+                  scanned in
+                </span>
+              </div>
+            </div>
+          </section>
+        )}
 
-      <section className="grid grid-cols-2 gap-2 mb-4">
-        <Link
-          href={`/owner/events/${event.id}/staff`}
-          className="card text-center hover:border-coral transition"
-        >
-          <p className="label-mono mb-1">Door</p>
-          <p className="font-sans font-semibold text-cream">Staff</p>
-        </Link>
-        <Link
-          href={`/door/events/${event.id}?night=${active.id}`}
-          className="card text-center border-mint/40 hover:border-mint transition"
-        >
-          <p className="label-mono mb-1 text-mint">Live</p>
-          <p className="font-sans font-semibold text-mint">Door view</p>
-        </Link>
-      </section>
-
-      <section className="grid grid-cols-3 gap-2 mb-4">
-        <Link
-          href={`/owner/events/${event.id}/chathub`}
-          className="card text-center hover:border-coral transition"
-        >
-          <p className="label-mono mb-1">Paste</p>
-          <p className="font-sans font-semibold text-cream">Chat Hub</p>
-        </Link>
-        <Link
-          href={`/owner/events/${event.id}/waitlist`}
-          className="card text-center hover:border-coral transition"
-        >
-          <p className="label-mono mb-1">Backups</p>
-          <p className="font-sans font-semibold text-cream">Waitlist</p>
-        </Link>
-        <Link
-          href={`/owner/events/${event.id}/co-owners`}
-          className="card text-center hover:border-coral transition"
-        >
-          <p className="label-mono mb-1">Share</p>
-          <p className="font-sans font-semibold text-cream">Co-owners</p>
-        </Link>
-      </section>
-
-      <section className="grid grid-cols-3 gap-2 mb-4">
-        <Link
-          href={`/owner/events/${event.id}/recap?night=${active.id}`}
-          className="card text-center hover:border-coral transition"
-        >
-          <p className="label-mono mb-1">Post</p>
-          <p className="font-sans font-semibold text-cream">Recap</p>
-        </Link>
-        <Link
-          href={`/owner/events/${event.id}/scorecards`}
-          className="card text-center hover:border-coral transition"
-        >
-          <p className="label-mono mb-1">Holders</p>
-          <p className="font-sans font-semibold text-cream">Scorecards</p>
-        </Link>
-        <Link
-          href={`/owner/events/${event.id}/audit`}
-          className="card text-center hover:border-coral transition"
-        >
-          <p className="label-mono mb-1">Trail</p>
-          <p className="font-sans font-semibold text-cream">Audit log</p>
-        </Link>
-      </section>
-
-      <div className="mb-4">
-        <FreezeButton
-          eventId={event.id}
-          nightId={active.id}
-          frozen={active.is_frozen}
+        {/* Action grids */}
+        <ActionGrid
+          rows={[
+            [
+              {
+                href: `/owner/events/${event.id}/allocations`,
+                eyebrow: "MANAGE",
+                label: "Allocations",
+                badge: allocCount > 0 ? `${allocCount}` : undefined,
+              },
+              {
+                href: `/owner/events/${event.id}/queue`,
+                eyebrow: "REVIEW",
+                label: "Queue",
+                badge:
+                  pendingCount > 0 ? `${pendingCount} pending` : undefined,
+                accent: pendingCount > 0,
+              },
+            ],
+            [
+              {
+                href: `/owner/events/${event.id}/staff`,
+                eyebrow: "DOOR",
+                label: "Staff",
+              },
+              {
+                href: `/door/events/${event.id}?night=${active.id}`,
+                eyebrow: "LIVE",
+                label: "Door view",
+                ok: true,
+              },
+            ],
+            [
+              {
+                href: `/owner/events/${event.id}/chathub`,
+                eyebrow: "PASTE",
+                label: "Chat Hub",
+              },
+              {
+                href: `/owner/events/${event.id}/waitlist`,
+                eyebrow: "BACKUPS",
+                label: "Waitlist",
+              },
+              {
+                href: `/owner/events/${event.id}/co-owners`,
+                eyebrow: "SHARE",
+                label: "Co-owners",
+              },
+            ],
+            [
+              {
+                href: `/owner/events/${event.id}/recap?night=${active.id}`,
+                eyebrow: "POST",
+                label: "Recap",
+              },
+              {
+                href: `/owner/events/${event.id}/scorecards`,
+                eyebrow: "HOLDERS",
+                label: "Scorecards",
+              },
+              {
+                href: `/owner/events/${event.id}/audit`,
+                eyebrow: "TRAIL",
+                label: "Audit log",
+              },
+            ],
+          ]}
         />
+
+        {/* Freeze + secondary links */}
+        <div style={{ marginTop: 16 }}>
+          <FreezeButton
+            eventId={event.id}
+            nightId={active.id}
+            frozen={active.is_frozen}
+          />
+        </div>
+
+        {totalList === 0 && (
+          <div style={{ marginTop: 16 }}>
+            <EmptyState
+              title="No guests yet"
+              body="Invite a promoter or share the discovery page to start the list."
+            />
+          </div>
+        )}
+
+        {/* Tertiary links — secondary toolbox */}
+        <section
+          style={{
+            marginTop: 24,
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+            gap: 4,
+            border: "1px solid var(--w-line)",
+            background: "var(--w-surface-2)",
+          }}
+        >
+          {[
+            ["EXPORT CSV", `/owner/events/${event.id}/export`],
+            ["EXPORT PDF", `/owner/events/${event.id}/export/pdf`],
+            ["PRINT ROSTER", `/owner/events/${event.id}/print`],
+            ["CLONE EVENT", `/owner/events/${event.id}/clone`],
+            ["IMPORT CSV", `/owner/events/${event.id}/guests/import`],
+            ["BROADCAST SMS", `/owner/events/${event.id}/broadcast`],
+            ["TEMPLATES", `/owner/events/${event.id}/template`],
+            ["EMBED WIDGET", `/embed/${event.id}`, "_blank"],
+          ].map(([label, href, target]) => (
+            <Link
+              key={label}
+              href={href as string}
+              target={(target as string | undefined) ?? undefined}
+              className="w-type-meta"
+              style={{
+                textDecoration: "none",
+                padding: "12px 14px",
+                borderRight: "1px solid var(--w-line)",
+                color: "var(--w-fg-muted)",
+              }}
+            >
+              {label}
+            </Link>
+          ))}
+          <Link
+            href={`/owner/events/${event.id}/override`}
+            className="w-type-meta"
+            style={{
+              textDecoration: "none",
+              padding: "12px 14px",
+              color: "var(--w-err)",
+            }}
+          >
+            OVERRIDE ADMIT
+          </Link>
+        </section>
+
+        {await renderActivity(active.id, event.id)}
       </div>
-
-      {totalList === 0 && (
-        <EmptyState
-          title="No guests yet"
-          body="Invite a promoter or share the discovery page to start the list."
-        />
-      )}
-
-      <section className="grid grid-cols-2 gap-2 mt-4">
-        <Link
-          href={`/owner/events/${event.id}/export`}
-          className="label-mono text-center py-2 hover:text-cream transition"
-        >
-          Export CSV
-        </Link>
-        <Link
-          href={`/owner/events/${event.id}/export/pdf`}
-          className="label-mono text-center py-2 hover:text-cream transition"
-        >
-          Export PDF
-        </Link>
-        <Link
-          href={`/owner/events/${event.id}/print`}
-          className="label-mono text-center py-2 hover:text-cream transition"
-        >
-          Print roster
-        </Link>
-        <Link
-          href={`/owner/events/${event.id}/clone`}
-          className="label-mono text-center py-2 hover:text-cream transition"
-        >
-          Clone event
-        </Link>
-      </section>
-
-      <section className="grid grid-cols-2 gap-2 mt-2">
-        <Link
-          href={`/owner/events/${event.id}/guests/import`}
-          className="label-mono text-center py-2 hover:text-cream transition"
-        >
-          Import CSV
-        </Link>
-        <Link
-          href={`/owner/events/${event.id}/broadcast`}
-          className="label-mono text-center py-2 hover:text-cream transition"
-        >
-          Broadcast SMS
-        </Link>
-        <Link
-          href={`/owner/events/${event.id}/template`}
-          className="label-mono text-center py-2 hover:text-cream transition"
-        >
-          Templates
-        </Link>
-        <Link
-          href={`/owner/events/${event.id}/override`}
-          className="label-mono text-center py-2 hover:text-cream transition text-coral"
-        >
-          Override admit
-        </Link>
-        <Link
-          href={`/embed/${event.id}`}
-          target="_blank"
-          className="label-mono text-center py-2 hover:text-cream transition"
-        >
-          Embed widget
-        </Link>
-      </section>
-
-      {await renderActivity(active.id, event.id)}
     </main>
   );
 }
 
-async function renderActivity(nightId: string, eventId: string) {
+function BigStat({
+  label,
+  value,
+  tone = "neutral",
+}: {
+  label: string;
+  value: number;
+  tone?: "neutral" | "warn";
+}) {
+  const color =
+    tone === "warn" && value > 0 ? "var(--w-warn)" : "var(--w-fg)";
+  return (
+    <div>
+      <div className="w-type-meta">{label}</div>
+      <div
+        style={{
+          fontFamily: "var(--w-display)",
+          fontSize: 32,
+          fontWeight: 700,
+          letterSpacing: "-0.025em",
+          lineHeight: 1,
+          marginTop: 6,
+          color,
+        }}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function MiniStat({
+  label,
+  value,
+  tone = "neutral",
+}: {
+  label: string;
+  value: string;
+  tone?: "neutral" | "ok" | "warn" | "err" | "muted";
+}) {
+  const color =
+    tone === "ok"
+      ? "var(--w-ok)"
+      : tone === "warn"
+        ? "var(--w-warn)"
+        : tone === "err"
+          ? "var(--w-err)"
+          : tone === "muted"
+            ? "var(--w-fg-muted)"
+            : "var(--w-fg)";
+  return (
+    <div>
+      <div className="w-type-meta" style={{ color }}>
+        {label}
+      </div>
+      <div
+        style={{
+          fontFamily: "var(--w-mono)",
+          fontSize: 14,
+          fontWeight: 500,
+          marginTop: 4,
+          color,
+        }}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+interface ActionCell {
+  href: string;
+  eyebrow: string;
+  label: string;
+  badge?: string;
+  accent?: boolean;
+  ok?: boolean;
+}
+
+function ActionGrid({ rows }: { rows: ActionCell[][] }) {
+  return (
+    <div
+      style={{
+        marginTop: 12,
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+      }}
+    >
+      {rows.map((row, ri) => (
+        <div
+          key={ri}
+          style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${row.length}, 1fr)`,
+            gap: 8,
+          }}
+        >
+          {row.map((cell) => (
+            <Link
+              key={cell.href}
+              href={cell.href}
+              style={{ textDecoration: "none", color: "inherit" }}
+            >
+              <div
+                className="w-card"
+                style={{
+                  padding: 18,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  borderColor: cell.accent
+                    ? "var(--w-acc)"
+                    : cell.ok
+                      ? "oklch(0.86 0.18 145 / 0.5)"
+                      : "var(--w-line)",
+                  background: cell.accent
+                    ? "var(--w-acc-soft)"
+                    : "var(--w-surface-2)",
+                }}
+              >
+                <div>
+                  <div
+                    className="w-type-meta"
+                    style={{
+                      color: cell.accent
+                        ? "var(--w-acc-ink)"
+                        : cell.ok
+                          ? "var(--w-ok)"
+                          : "var(--w-fg-muted)",
+                    }}
+                  >
+                    {cell.eyebrow}
+                  </div>
+                  <div
+                    style={{
+                      fontWeight: 600,
+                      fontSize: 15,
+                      marginTop: 4,
+                      color: cell.ok ? "var(--w-ok)" : "var(--w-fg)",
+                    }}
+                  >
+                    {cell.label}
+                  </div>
+                  {cell.badge && (
+                    <div
+                      className="w-type-meta"
+                      style={{
+                        marginTop: 4,
+                        color: cell.accent
+                          ? "var(--w-acc-ink)"
+                          : "var(--w-fg-muted)",
+                      }}
+                    >
+                      {cell.badge.toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <span style={{ color: "var(--w-fg-dim)" }}>
+                  <IconArrow size={14} />
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+async function renderActivity(_nightId: string, eventId: string) {
   const admin = createAdminClient();
   const { data } = await admin
     .from("audit_log")
     .select(
-      "id, action, context, created_at, actor:profiles!actor_user_id(full_name)"
+      "id, action, context, created_at, actor:profiles!actor_user_id(full_name)",
     )
     .eq("event_id", eventId)
     .order("created_at", { ascending: false })
@@ -588,28 +930,35 @@ async function renderActivity(nightId: string, eventId: string) {
     actor: { full_name: string | null } | null;
   }>;
   return (
-    <section className="mt-6">
-      <p className="label-mono mb-2">
-        Live activity
+    <section style={{ marginTop: 32 }}>
+      <div
+        className="w-type-meta"
+        style={{
+          marginBottom: 12,
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        }}
+      >
+        LIVE ACTIVITY
         <span
-          className="inline-block w-1.5 h-1.5 rounded-full bg-mint ml-2 align-middle"
-          style={{ animation: "wadl-pulse-mint 2s infinite" }}
+          className="w-pulse"
+          style={{
+            display: "inline-block",
+            width: 6,
+            height: 6,
+            background: "var(--w-ok)",
+            borderRadius: 0,
+          }}
           aria-hidden="true"
         />
-      </p>
+      </div>
       <ActivityFeedRealtime
         initialRows={rows}
         eventId={eventId}
         emptyTitle="Quiet so far"
         emptyBody="Holders haven't added anyone and the door hasn't opened yet."
       />
-      <style>{`
-        @keyframes wadl-pulse-mint {
-          0% { box-shadow: 0 0 0 0 rgba(0,217,126,0.7); }
-          70% { box-shadow: 0 0 0 6px rgba(0,217,126,0); }
-          100% { box-shadow: 0 0 0 0 rgba(0,217,126,0); }
-        }
-      `}</style>
     </section>
   );
 }

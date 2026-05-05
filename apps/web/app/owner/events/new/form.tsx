@@ -4,6 +4,15 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { createEventAction } from "./actions";
 import type { EventType } from "@/lib/types";
+import {
+  Button,
+  Chip,
+  CoverPlaceholder,
+  IconArrow,
+  IconPlus,
+  WFrame,
+  Wordmark,
+} from "@/components/wadl";
 
 interface NightRow {
   key: string;
@@ -13,10 +22,10 @@ interface NightRow {
 }
 
 const EVENT_TYPES: { id: EventType; label: string }[] = [
-  { id: "venue_owned",    label: "Venue-owned" },
+  { id: "venue_owned", label: "Venue-owned" },
   { id: "brand_takeover", label: "Brand takeover" },
-  { id: "co_produced",    label: "Co-produced" },
-  { id: "brand_pop_up",   label: "Brand pop-up" },
+  { id: "co_produced", label: "Co-produced" },
+  { id: "brand_pop_up", label: "Brand pop-up" },
 ];
 
 function newNight(): NightRow {
@@ -51,6 +60,8 @@ export default function NewEventForm({
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
+  const isMultiNight = nights.length > 1;
+
   function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0] ?? null;
     setFlyerFile(f);
@@ -58,7 +69,9 @@ export default function NewEventForm({
   }
 
   function updateNight(i: number, patch: Partial<NightRow>) {
-    setNights((rows) => rows.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+    setNights((rows) =>
+      rows.map((r, idx) => (idx === i ? { ...r, ...patch } : r)),
+    );
   }
   function removeNight(i: number) {
     setNights((rows) => rows.filter((_, idx) => idx !== i));
@@ -71,17 +84,28 @@ export default function NewEventForm({
     if (!name.trim()) return setError("Event name required.");
     if (nights.length === 0) return setError("Add at least one night.");
 
-    const payload = nights.map((n) => {
-      if (!n.date) throw new Error("every night needs a date");
-      // datetime-local style: YYYY-MM-DDTHH:mm (browser-local).
-      const doors = new Date(`${n.date}T${n.time || "22:00"}:00`);
-      return {
-        night_date: n.date,
-        doors_at: doors.toISOString(),
-        cutoff_at: null,
-        capacity_cap: n.capacity ? parseInt(n.capacity, 10) : defaultCapacity,
-      };
-    });
+    let payload: Array<{
+      night_date: string;
+      doors_at: string;
+      cutoff_at: null;
+      capacity_cap: number | null;
+    }>;
+    try {
+      payload = nights.map((n) => {
+        if (!n.date) throw new Error("every night needs a date");
+        const doors = new Date(`${n.date}T${n.time || "22:00"}:00`);
+        return {
+          night_date: n.date,
+          doors_at: doors.toISOString(),
+          cutoff_at: null,
+          capacity_cap: n.capacity
+            ? parseInt(n.capacity, 10)
+            : defaultCapacity,
+        };
+      });
+    } catch (err) {
+      return setError((err as Error).message);
+    }
 
     for (const n of payload) {
       if (!n.doors_at || Number.isNaN(new Date(n.doors_at).getTime())) {
@@ -89,10 +113,6 @@ export default function NewEventForm({
       }
     }
 
-    // Day 43 — non-venue accounts prepend the venue partner name into the
-    // description so it surfaces on /e/[id] and the daydash header without
-    // a schema change. When the partner-venue directory ships, this can
-    // migrate to a real foreign key.
     let composedDescription = description.trim();
     if (accountType !== "venue" && partnerVenue.trim()) {
       const prefix = `at ${partnerVenue.trim()}`;
@@ -117,203 +137,409 @@ export default function NewEventForm({
   }
 
   return (
-    <main id="main-content" className="mobile-frame">
-      <header className="flex items-center justify-between pt-6 pb-4">
-        <Link href="/owner" className="label-mono hover:text-cream transition">
-          ← Back
-        </Link>
-        <p className="label-mono">New event</p>
-      </header>
-
-      <h1 className="display-lg mb-6">Build it.</h1>
-
-      <form onSubmit={onSubmit} className="flex flex-col gap-5">
-        <div>
-          <label htmlFor="name" className="label-mono block mb-2">Event name</label>
-          <input
-            id="name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="input-dark"
-            placeholder="Space presents: Diplo"
-            required
-          />
+    <main id="main-content">
+      <WFrame style={{ paddingBottom: 96 }}>
+        {/* Top bar */}
+        <div
+          style={{
+            padding: "20px 24px 0",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Link
+            href="/owner"
+            className="w-type-meta"
+            style={{ textDecoration: "none" }}
+          >
+            ← BACK
+          </Link>
+          <Wordmark variant="monogrid" size={16} />
+          <span className="w-type-meta">
+            NEW EVENT · STEP 1 OF 1
+          </span>
         </div>
 
-        <div>
-          <p className="label-mono mb-2">Event type</p>
-          <div className="grid grid-cols-2 gap-2">
-            {EVENT_TYPES.map((t) => {
-              const active = eventType === t.id;
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => setEventType(t.id)}
-                  className={`border rounded-md px-3 py-3 text-left text-sm font-sans transition ${
-                    active
-                      ? "border-coral bg-s2 text-cream"
-                      : "border-line bg-s1 text-muted hover:text-cream"
-                  }`}
-                >
-                  {t.label}
-                </button>
-              );
-            })}
+        <div style={{ padding: "32px 24px 0" }}>
+          <div className="w-type-meta">FOR YOUR ACCOUNT</div>
+          <div
+            className="w-type-display-md"
+            style={{ marginTop: 6, lineHeight: 1.0 }}
+          >
+            Build it.
           </div>
         </div>
 
-        {accountType === "venue" && venues.length > 0 && (
+        <form
+          onSubmit={onSubmit}
+          style={{
+            padding: "32px 24px 0",
+            display: "flex",
+            flexDirection: "column",
+            gap: 20,
+          }}
+        >
+          {/* Cover */}
           <div>
-            <label htmlFor="venue" className="label-mono block mb-2">Venue</label>
-            <select
-              id="venue"
-              value={venueId}
-              onChange={(e) => setVenueId(e.target.value)}
-              className="input-dark"
-            >
-              {venues.map((v) => (
-                <option key={v.id} value={v.id}>{v.name}</option>
-              ))}
-              <option value="none">No venue</option>
-            </select>
-          </div>
-        )}
-
-        {accountType !== "venue" && (
-          <div>
-            <label htmlFor="partnerVenue" className="label-mono block mb-2">
-              {accountType === "brand" ? "Venue partner" : "Venue"}{" "}
-              <span className="text-muted">(free text — picker later)</span>
-            </label>
-            <input
-              id="partnerVenue"
-              type="text"
-              value={partnerVenue}
-              onChange={(e) => setPartnerVenue(e.target.value)}
-              placeholder={
-                accountType === "brand"
-                  ? "Wynwood Studios"
-                  : "Floyd Miami"
-              }
-              className="input-dark"
-            />
-            <p className="label-mono mt-1">
-              {accountType === "brand"
-                ? "Where the takeover lands. Saved to event description for now; full partner-venue directory ships next."
-                : "Venue you're booking the night at. Free-text for now."}
-            </p>
-          </div>
-        )}
-
-        <div>
-          <p className="label-mono mb-2">Flyer (4:5 image)</p>
-          {flyerPreview && (
-            <div
-              className="rounded-md overflow-hidden border border-line mb-2"
-              style={{ aspectRatio: "4 / 5", maxWidth: 200 }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={flyerPreview}
-                alt="Flyer preview"
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
-          <input
-            id="flyer-file"
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={onPickFile}
-            className="input-dark file:mr-3 file:bg-s3 file:text-cream file:border-0 file:rounded file:px-3 file:py-1 file:text-xs"
-          />
-          <p className="label-mono mt-2">Or paste a URL instead:</p>
-          <input
-            id="flyer-url"
-            type="url"
-            value={flyerUrl}
-            onChange={(e) => setFlyerUrl(e.target.value)}
-            className="input-dark mt-1"
-            placeholder="https://…"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="description" className="label-mono block mb-2">Description (optional)</label>
-          <textarea
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="input-dark min-h-[80px]"
-            placeholder="Guest list open 10–midnight…"
-          />
-        </div>
-
-        <div>
-          <p className="label-mono mb-2">Nights</p>
-          <div className="flex flex-col gap-3">
-            {nights.map((n, i) => (
-              <div key={n.key} className="card">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="label-mono">Night {i + 1}</p>
-                  {nights.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeNight(i)}
-                      className="label-mono text-coral hover:brightness-125"
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="date"
-                    value={n.date}
-                    onChange={(e) => updateNight(i, { date: e.target.value })}
-                    className="input-dark"
-                    required
-                  />
-                  <input
-                    type="time"
-                    value={n.time}
-                    onChange={(e) => updateNight(i, { time: e.target.value })}
-                    className="input-dark"
-                    required
-                  />
-                </div>
-                <input
-                  type="number"
-                  min={1}
-                  value={n.capacity}
-                  onChange={(e) => updateNight(i, { capacity: e.target.value })}
-                  className="input-dark mt-2"
-                  placeholder={
-                    defaultCapacity
-                      ? `Capacity (default ${defaultCapacity})`
-                      : "Capacity"
-                  }
+            <span className="w-label">COVER · 4:5</span>
+            {flyerPreview ? (
+              <div
+                style={{
+                  width: 200,
+                  aspectRatio: "4 / 5",
+                  border: "1px solid var(--w-line)",
+                  background: "var(--w-surface-2)",
+                  overflow: "hidden",
+                  marginBottom: 8,
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={flyerPreview}
+                  alt="Flyer preview"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
                 />
               </div>
-            ))}
+            ) : (
+              <div style={{ width: 200, marginBottom: 8 }}>
+                <CoverPlaceholder />
+              </div>
+            )}
+            <input
+              id="flyer-file"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={onPickFile}
+              className="w-input"
+              style={{ height: 44, fontSize: 13 }}
+            />
+            <p className="w-type-meta" style={{ marginTop: 8 }}>
+              OR PASTE A URL
+            </p>
+            <input
+              id="flyer-url"
+              type="url"
+              value={flyerUrl}
+              onChange={(e) => setFlyerUrl(e.target.value)}
+              className="w-input"
+              placeholder="https://…"
+              style={{ marginTop: 4 }}
+            />
           </div>
-          <button
-            type="button"
-            onClick={() => setNights((r) => [...r, newNight()])}
-            className="btn-ghost mt-3"
+
+          {/* Title */}
+          <div>
+            <label htmlFor="name" className="w-label">
+              TITLE
+            </label>
+            <input
+              id="name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-input"
+              placeholder="Space presents: Diplo"
+              required
+              autoFocus
+            />
+          </div>
+
+          {/* Event type */}
+          <div>
+            <span className="w-label">EVENT TYPE</span>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 6,
+              }}
+            >
+              {EVENT_TYPES.map((t) => {
+                const active = eventType === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setEventType(t.id)}
+                    style={{
+                      height: 44,
+                      padding: "0 14px",
+                      background: active
+                        ? "var(--w-acc-soft)"
+                        : "transparent",
+                      border: "1px solid",
+                      borderColor: active
+                        ? "var(--w-acc)"
+                        : "var(--w-line-2)",
+                      color: active
+                        ? "var(--w-fg)"
+                        : "var(--w-fg-muted)",
+                      fontFamily: "var(--w-sans)",
+                      fontWeight: active ? 600 : 500,
+                      fontSize: 13,
+                      cursor: "pointer",
+                      textAlign: "left",
+                    }}
+                  >
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Venue (account-type aware) */}
+          {accountType === "venue" && venues.length > 0 && (
+            <div>
+              <label htmlFor="venue" className="w-label">
+                VENUE
+              </label>
+              <select
+                id="venue"
+                value={venueId}
+                onChange={(e) => setVenueId(e.target.value)}
+                className="w-input"
+              >
+                {venues.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.name}
+                  </option>
+                ))}
+                <option value="none">No venue</option>
+              </select>
+            </div>
+          )}
+
+          {accountType !== "venue" && (
+            <div>
+              <label htmlFor="partnerVenue" className="w-label">
+                {accountType === "brand"
+                  ? "VENUE PARTNER"
+                  : "VENUE (FREE TEXT)"}
+              </label>
+              <input
+                id="partnerVenue"
+                type="text"
+                value={partnerVenue}
+                onChange={(e) => setPartnerVenue(e.target.value)}
+                placeholder={
+                  accountType === "brand"
+                    ? "Wynwood Studios"
+                    : "Floyd Miami"
+                }
+                className="w-input"
+              />
+              <p className="w-type-meta" style={{ marginTop: 6 }}>
+                {accountType === "brand"
+                  ? "WHERE THE TAKEOVER LANDS · DIRECTORY SHIPS LATER"
+                  : "VENUE FOR THE NIGHT · FREE TEXT FOR NOW"}
+              </p>
+            </div>
+          )}
+
+          {/* Description */}
+          <div>
+            <label htmlFor="description" className="w-label">
+              DESCRIPTION (OPTIONAL)
+            </label>
+            <textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-input"
+              style={{
+                height: 96,
+                padding: "12px 16px",
+                resize: "vertical",
+              }}
+              placeholder="Guest list open 10–midnight…"
+            />
+          </div>
+
+          {/* Schedule toggle */}
+          <div>
+            <span className="w-label">SCHEDULE</span>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 4,
+                padding: 4,
+                background: "#ffffff08",
+              }}
+            >
+              {[
+                { single: true, l: "Single night" },
+                { single: false, l: "Multi-night" },
+              ].map((o) => {
+                const active = isMultiNight ? !o.single : o.single;
+                return (
+                  <button
+                    key={o.l}
+                    type="button"
+                    onClick={() => {
+                      if (o.single && nights.length > 1) {
+                        setNights([nights[0]]);
+                      } else if (!o.single && nights.length === 1) {
+                        setNights([nights[0], newNight()]);
+                      }
+                    }}
+                    style={{
+                      height: 40,
+                      border: 0,
+                      background: active ? "var(--w-fg)" : "transparent",
+                      color: active
+                        ? "var(--w-ink)"
+                        : "var(--w-fg-muted)",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      fontSize: 14,
+                      fontFamily: "inherit",
+                    }}
+                  >
+                    {o.l}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Nights */}
+          <div>
+            <span className="w-label">NIGHTS · {nights.length}</span>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 10,
+              }}
+            >
+              {nights.map((n, i) => (
+                <div
+                  key={n.key}
+                  className="w-card"
+                  style={{ padding: 14 }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      marginBottom: 12,
+                    }}
+                  >
+                    <Chip tone="ghost">
+                      NIGHT {String(i + 1).padStart(2, "0")}
+                    </Chip>
+                    {nights.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeNight(i)}
+                        className="w-type-meta"
+                        style={{
+                          background: "transparent",
+                          border: 0,
+                          color: "var(--w-err)",
+                          cursor: "pointer",
+                          padding: 0,
+                        }}
+                      >
+                        REMOVE
+                      </button>
+                    )}
+                  </div>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: 8,
+                    }}
+                  >
+                    <div>
+                      <span className="w-type-meta">DATE</span>
+                      <input
+                        type="date"
+                        value={n.date}
+                        onChange={(e) =>
+                          updateNight(i, { date: e.target.value })
+                        }
+                        className="w-input"
+                        style={{ height: 44, marginTop: 4 }}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <span className="w-type-meta">DOORS</span>
+                      <input
+                        type="time"
+                        value={n.time}
+                        onChange={(e) =>
+                          updateNight(i, { time: e.target.value })
+                        }
+                        className="w-input"
+                        style={{ height: 44, marginTop: 4 }}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div style={{ marginTop: 8 }}>
+                    <span className="w-type-meta">CAPACITY</span>
+                    <input
+                      type="number"
+                      min={1}
+                      value={n.capacity}
+                      onChange={(e) =>
+                        updateNight(i, { capacity: e.target.value })
+                      }
+                      className="w-input"
+                      style={{ height: 44, marginTop: 4 }}
+                      placeholder={
+                        defaultCapacity
+                          ? `default ${defaultCapacity}`
+                          : "e.g. 400"
+                      }
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              block
+              onClick={() => setNights((r) => [...r, newNight()])}
+              style={{ marginTop: 10 }}
+            >
+              <IconPlus size={14} /> Add another night
+            </Button>
+          </div>
+
+          {error ? (
+            <p
+              className="w-type-body-sm"
+              style={{ color: "var(--w-err)" }}
+              role="alert"
+            >
+              {error}
+            </p>
+          ) : null}
+
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            block
+            disabled={pending}
           >
-            + Add night
-          </button>
-        </div>
-
-        {error && <p className="text-coral text-sm">{error}</p>}
-
-        <button type="submit" className="btn-primary mt-4" disabled={pending}>
-          {pending ? "Creating…" : "Create event"}
-        </button>
-      </form>
+            {pending ? "Creating…" : "Create event"} <IconArrow size={14} />
+          </Button>
+        </form>
+      </WFrame>
     </main>
   );
 }

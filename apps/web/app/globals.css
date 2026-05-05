@@ -3,28 +3,83 @@
 @tailwind utilities;
 
 :root {
-  --bg: #0a0a0a;
-  --s1: #111111;
-  --s2: #181818;
-  --s3: #222222;
-  --coral: #ff4a2b;
-  --gold: #f5c842;
-  --mint: #00d97e;
-  --lav: #a78bfa;
-  --cream: #f2ede4;
-  --muted: rgba(242, 237, 228, 0.5);
-  --line: rgba(255, 255, 255, 0.07);
+  /* === Legacy CSS vars — REMAPPED to the new palette. Names stay so
+     pages using var(--coral), var(--cream), etc. inherit the repaint
+     without code changes. New work should use --w-* directly. === */
+  --bg: #0a0a0b;
+  --s1: #0f0f10;
+  --s2: #1c1c1e;
+  --s3: #232326;
+  --coral: oklch(0.7 0.24 260);     /* was #ff4a2b — now cobalt */
+  --gold: oklch(0.86 0.16 85);      /* was #f5c842 — now warn   */
+  --mint: oklch(0.86 0.18 145);     /* was #00d97e — now ok     */
+  --lav: oklch(0.7 0.24 260);       /* collapsed into accent    */
+  --cream: #f3f1ec;
+  --muted: #a8a6a0;
+  --line: #2a2a2e;
+
+  /* Legacy font CSS vars — chain to the new families so font-display,
+     font-sans, font-mono Tailwind utilities resolve to Inter Tight + JBM
+     without touching the existing 168 files. */
+  --font-bebas: var(--font-inter-tight);
+  --font-epilogue: var(--font-inter-tight);
+  --font-dm-mono: var(--font-jb-mono);
+
+  /* === New design system — verbatim from /tmp/wadl-handoff-2/tokens.css
+     (v2 — highlighter yellow, sharp corners). === */
+  --w-ink: #0a0a0b;
+  --w-bg: #0f0f10;
+  --w-surface: #15151730;
+  --w-surface-2: #1c1c1e;
+  --w-surface-3: #232326;
+  --w-line: #2a2a2e;
+  --w-line-2: #38383d;
+
+  --w-fg: #f3f1ec;
+  --w-fg-muted: #a8a6a0;
+  --w-fg-dim: #6b6a66;
+  --w-fg-faint: #4a4945;
+
+  /* Accent flipped to highlighter yellow; ink-on-accent is dark. */
+  --w-acc: oklch(0.94 0.22 110);
+  --w-acc-ink: #0a0a0b;
+  --w-acc-soft: oklch(0.94 0.22 110 / 0.16);
+
+  --w-ga: #f3f1ec;
+  --w-vip: oklch(0.7 0.24 260);   /* VIP keeps cobalt for the holo gradient */
+  --w-aaa: #f3f1ec;
+
+  --w-ok: oklch(0.86 0.18 145);
+  --w-warn: oklch(0.86 0.16 85);
+  --w-err: oklch(0.7 0.2 25);
+
+  --w-sans: var(--font-inter-tight), -apple-system, BlinkMacSystemFont,
+    "Helvetica Neue", sans-serif;
+  --w-display: var(--font-inter-tight), -apple-system, sans-serif;
+  --w-mono: var(--font-jb-mono), "SF Mono", "IBM Plex Mono", ui-monospace,
+    monospace;
+
+  /* Sharp by default. */
+  --w-r-xs: 0px;
+  --w-r-sm: 0px;
+  --w-r-md: 0px;
+  --w-r-lg: 0px;
+
+  --w-shadow-card: 0 1px 0 0 #ffffff08 inset, 0 0 0 1px var(--w-line);
 }
 
 html,
 body {
-  background-color: var(--bg);
-  color: var(--cream);
+  background-color: var(--w-bg);
+  color: var(--w-fg);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  font-family: var(--font-epilogue), system-ui, sans-serif;
+  font-family: var(--w-sans);
+  font-feature-settings: "ss01", "ss02", "cv11";
+  letter-spacing: -0.01em;
 }
 
 /* a11y: skip link for keyboard users — visible only on focus. */
@@ -33,11 +88,11 @@ body {
   top: 8px;
   left: 8px;
   z-index: 100;
-  background: var(--coral);
-  color: var(--bg);
+  background: var(--w-acc);
+  color: var(--w-acc-ink);
   padding: 8px 14px;
   border-radius: 6px;
-  font-family: ui-monospace, monospace;
+  font-family: var(--w-mono);
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.14em;
@@ -47,21 +102,18 @@ body {
 }
 .skip-link:focus {
   transform: translateY(0);
-  outline: 2px solid var(--cream);
+  outline: 2px solid var(--w-fg);
   outline-offset: 2px;
 }
 
-/* a11y: ensure keyboard focus is always visible. Browsers strip outline on
-   click; focus-visible only fires for keyboard nav, so this is non-intrusive. */
+/* a11y: keyboard focus ring uses the new accent. */
 *:focus-visible {
-  outline: 2px solid var(--coral);
+  outline: 2px solid var(--w-acc);
   outline-offset: 2px;
 }
 
-/* Inputs already replace outline with a coral border — keep that, but also
-   add a subtle ring under focus-visible for extra contrast. */
 .input-dark:focus-visible {
-  outline: 2px solid var(--coral);
+  outline: 2px solid var(--w-acc);
   outline-offset: 1px;
 }
 
@@ -76,56 +128,168 @@ body {
 }
 
 @layer components {
-  /* Mobile-first column. Stays 375px on phones (intentional — the design
-     was sketched for that frame). Expands to 2xl on desktop so it doesn't
-     feel marooned. The body painted radial below makes the surrounding
-     viewport feel designed instead of empty. */
+  /* Mobile-first column. Stays 375px on phones, expands on desktop. The
+     legacy coral/gold radial body paint is removed — the new system runs
+     on near-black ink with a single cobalt accent. */
   .mobile-frame {
     @apply mx-auto w-full max-w-frame md:max-w-2xl min-h-screen bg-transparent px-6 py-8 flex flex-col relative;
   }
   @media (min-width: 768px) {
     body:has(.mobile-frame) {
-      background-color: var(--bg);
-      background-image:
-        radial-gradient(ellipse 800px 600px at 50% -200px, rgba(255, 74, 43, 0.08), transparent 70%),
-        radial-gradient(ellipse 600px 500px at 50% 110%, rgba(245, 200, 66, 0.04), transparent 70%);
-      background-attachment: fixed;
+      background-color: var(--w-ink);
     }
   }
 
+  /* === LEGACY component classes — repainted to the new system. The
+     class names are kept so 168 existing files don't have to change. === */
   .display-xl {
-    @apply font-display text-5xl leading-none tracking-wide text-cream uppercase;
+    font-family: var(--w-display);
+    font-weight: 700;
+    font-size: 56px;
+    line-height: 0.94;
+    letter-spacing: -0.035em;
+    color: var(--w-fg);
+    text-transform: none;
   }
 
   .display-lg {
-    @apply font-display text-4xl leading-none tracking-wide text-cream uppercase;
+    font-family: var(--w-display);
+    font-weight: 700;
+    font-size: 38px;
+    line-height: 1.0;
+    letter-spacing: -0.03em;
+    color: var(--w-fg);
+    text-transform: none;
   }
 
   .label-mono {
-    @apply font-mono text-[10px] uppercase tracking-[0.18em] text-muted;
+    font-family: var(--w-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--w-fg-muted);
   }
 
   .input-dark {
-    @apply w-full bg-s2 border border-line text-cream px-4 py-4 rounded-md
-           font-sans text-base placeholder:text-muted
-           focus:border-coral focus:outline-none transition-colors;
+    width: 100%;
+    background: #ffffff06;
+    border: 1px solid var(--w-line);
+    color: var(--w-fg);
+    padding: 14px 16px;
+    border-radius: var(--w-r-sm);
+    font-family: var(--w-sans);
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.12s, background 0.12s;
+  }
+  .input-dark::placeholder {
+    color: var(--w-fg-dim);
+  }
+  .input-dark:focus {
+    border-color: var(--w-acc);
+    background: #ffffff0a;
   }
 
   .btn-primary {
-    @apply w-full bg-coral text-bg font-sans font-semibold
-           text-sm uppercase tracking-[0.14em] py-4 rounded-md
-           disabled:opacity-40 disabled:cursor-not-allowed
-           hover:brightness-110 transition;
+    width: 100%;
+    background: var(--w-acc);
+    color: var(--w-acc-ink);
+    font-family: var(--w-sans);
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: -0.005em;
+    padding: 14px 18px;
+    border-radius: 9999px;
+    border: 0;
+    cursor: pointer;
+    transition: filter 0.12s, transform 0.08s;
+    text-transform: none;
+  }
+  .btn-primary:hover:not(:disabled) {
+    filter: brightness(1.05);
+  }
+  .btn-primary:active {
+    transform: translateY(1px);
+  }
+  .btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 
   .btn-ghost {
-    @apply w-full bg-transparent border border-line text-cream font-sans
-           font-semibold text-sm uppercase tracking-[0.14em] py-4 rounded-md
-           hover:border-cream/30 transition;
+    width: 100%;
+    background: transparent;
+    color: var(--w-fg);
+    font-family: var(--w-sans);
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: -0.005em;
+    padding: 14px 18px;
+    border-radius: 9999px;
+    border: 0;
+    box-shadow: inset 0 0 0 1px var(--w-line-2);
+    cursor: pointer;
+    transition: background 0.12s;
+    text-transform: none;
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: #ffffff0a;
   }
 
   .card {
-    @apply bg-s1 border border-line rounded-lg p-4;
+    background: var(--w-surface-2);
+    border: 1px solid var(--w-line);
+    border-radius: var(--w-r-md);
+    padding: 16px;
+  }
+
+  /* `text-coral` continues to resolve to the cobalt accent (via the
+     Tailwind color remap). The previous override that forced it to the
+     err token was overcorrecting brand uses (e.g. the inline "WADL"
+     wordmark on legacy static pages). Errors that need true red use
+     `text-err` directly — swept in subsequent passes. */
+  /* `text-mint` / `text-gold` already chain to ok/warn via the remap;
+     no extra override needed. */
+
+  /* === Bebas-era inline patterns neutralized ===
+     A lot of legacy markup still combines `font-display` with `uppercase`
+     + `tracking-wide`/`tracking-widest`/`tracking-[0.NNem]` to mimic the
+     old Bebas Neue look. Inter Tight is meant to read tight and
+     sentence-case, so wherever those classes coexist with `font-display`,
+     reset them. Surgical compound selectors so unrelated `.uppercase` /
+     `.tracking-*` callers aren't affected. */
+  .font-display.uppercase {
+    text-transform: none;
+  }
+  .font-display.tracking-wide,
+  .font-display.tracking-wider,
+  .font-display.tracking-widest,
+  .font-display[class*="tracking-\\["] {
+    letter-spacing: -0.025em;
+  }
+  /* Same treatment for any element using the legacy `.display-xl` /
+     `.display-lg` classes that still have inline tracking + uppercase
+     applied alongside. */
+  .display-xl.uppercase,
+  .display-lg.uppercase {
+    text-transform: none;
+  }
+  .display-xl.tracking-wide,
+  .display-xl.tracking-wider,
+  .display-xl.tracking-widest,
+  .display-lg.tracking-wide,
+  .display-lg.tracking-wider,
+  .display-lg.tracking-widest {
+    letter-spacing: -0.035em;
+  }
+  /* Custom mono labels that used `tracking-[0.14em]` etc. for the cream
+     uppercase look — keep them uppercase but tighten letter-spacing and
+     ensure they read in JetBrains Mono via the legacy chain. */
+  .label-mono.tracking-wide,
+  .label-mono.tracking-wider,
+  .label-mono.tracking-widest {
+    letter-spacing: 0.06em;
   }
 
   /* Subtle entry animation so navigations don't snap. Disabled by the
@@ -136,5 +300,350 @@ body {
   @keyframes wadl-page-fade {
     from { opacity: 0; transform: translateY(2px); }
     to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* ============================================================
+   NEW DESIGN SYSTEM — repaint primitives. Apply by wrapping a
+   subtree in `.w-app` (typically the root <body> once we flip).
+   Names mirror the handoff so component ports are 1:1 reads.
+   ============================================================ */
+
+.w-app,
+.w-app * {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.w-app {
+  font-family: var(--w-sans);
+  color: var(--w-fg);
+  background: var(--w-bg);
+  font-feature-settings: "ss01", "ss02", "cv11";
+  letter-spacing: -0.01em;
+}
+
+/* Typographic scale (verbatim from tokens.css) */
+.w-type-display-xl {
+  font-family: var(--w-display);
+  font-weight: 700;
+  font-size: 88px;
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+}
+.w-type-display-lg {
+  font-family: var(--w-display);
+  font-weight: 700;
+  font-size: 56px;
+  line-height: 0.94;
+  letter-spacing: -0.035em;
+}
+.w-type-display-md {
+  font-family: var(--w-display);
+  font-weight: 700;
+  font-size: 38px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+.w-type-h1 {
+  font-weight: 600;
+  font-size: 28px;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+}
+.w-type-h2 {
+  font-weight: 600;
+  font-size: 22px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+.w-type-h3 {
+  font-weight: 600;
+  font-size: 17px;
+  line-height: 1.2;
+  letter-spacing: -0.012em;
+}
+.w-type-body {
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 1.45;
+  letter-spacing: -0.005em;
+}
+.w-type-body-sm {
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.w-type-meta {
+  font-family: var(--w-mono);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--w-fg-muted);
+}
+.w-type-meta-lg {
+  font-family: var(--w-mono);
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--w-fg-muted);
+}
+.w-type-num {
+  font-family: var(--w-mono);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Buttons — sharp rectangles, highlighter accent */
+.w-btn {
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 0;
+  border: 0;
+  font-family: var(--w-sans);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: -0.005em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.08s ease, background 0.12s ease,
+    box-shadow 0.12s ease, filter 0.12s ease;
+}
+.w-btn:active {
+  transform: translateY(1px);
+}
+.w-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.w-btn--primary {
+  background: var(--w-acc);
+  color: var(--w-acc-ink);
+}
+.w-btn--primary:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+.w-btn--solid {
+  background: var(--w-fg);
+  color: var(--w-ink);
+}
+.w-btn--solid:hover:not(:disabled) {
+  filter: brightness(0.96);
+}
+.w-btn--ghost {
+  background: transparent;
+  color: var(--w-fg);
+  box-shadow: inset 0 0 0 1px var(--w-line-2);
+}
+.w-btn--ghost:hover:not(:disabled) {
+  background: #ffffff0a;
+}
+.w-btn--lg {
+  height: 56px;
+  padding: 0 24px;
+  font-size: 16px;
+}
+.w-btn--block {
+  width: 100%;
+}
+
+/* Inputs */
+.w-input {
+  width: 100%;
+  height: 52px;
+  padding: 0 16px;
+  border-radius: var(--w-r-sm);
+  background: #ffffff06;
+  border: 1px solid var(--w-line);
+  color: var(--w-fg);
+  font-family: var(--w-sans);
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.12s, background 0.12s;
+}
+.w-input:focus {
+  border-color: var(--w-acc);
+  background: #ffffff0a;
+}
+.w-input::placeholder {
+  color: var(--w-fg-dim);
+}
+.w-label {
+  font-family: var(--w-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--w-fg-muted);
+  margin-bottom: 8px;
+  display: block;
+}
+
+/* Card */
+.w-card {
+  background: var(--w-surface-2);
+  border: 1px solid var(--w-line);
+  border-radius: var(--w-r-md);
+}
+/* List rows in cards — first row should not have a top border. */
+.w-card > .w-list-edit-row:first-child {
+  border-top: 0 !important;
+}
+
+/* Chips — square (no longer pill-shaped) */
+.w-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 0;
+  font-family: var(--w-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: #ffffff10;
+  color: var(--w-fg);
+}
+.w-chip--acc {
+  background: var(--w-acc);
+  color: var(--w-acc-ink);
+}
+.w-chip--ok {
+  background: oklch(0.86 0.18 145 / 0.18);
+  color: var(--w-ok);
+}
+.w-chip--warn {
+  background: oklch(0.86 0.16 85 / 0.18);
+  color: var(--w-warn);
+}
+.w-chip--err {
+  background: oklch(0.7 0.2 25 / 0.18);
+  color: var(--w-err);
+}
+.w-chip--ghost {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--w-line-2);
+  color: var(--w-fg-muted);
+}
+
+/* Divider */
+.w-rule {
+  height: 1px;
+  background: var(--w-line);
+  border: 0;
+  margin: 0;
+}
+.w-rule--strong {
+  background: var(--w-line-2);
+}
+
+/* Capacity meter — sharp */
+.w-meter {
+  height: 4px;
+  background: #ffffff10;
+  border-radius: 0;
+  overflow: hidden;
+}
+.w-meter > i {
+  display: block;
+  height: 100%;
+  background: var(--w-fg);
+}
+.w-meter--acc > i {
+  background: var(--w-acc);
+}
+
+/* Hatched fill (AAA tier) */
+.w-hatch {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--w-fg) 0 1px,
+    transparent 1px 4px
+  );
+}
+
+/* QR-ish decorative pattern */
+.w-qr-deco {
+  background:
+    radial-gradient(#0a0a0b 25%, transparent 25%) 0 0 / 8px 8px,
+    radial-gradient(#0a0a0b 25%, transparent 25%) 4px 4px / 8px 8px,
+    var(--w-fg);
+}
+
+/* Hide scrollbar inside artboards */
+.w-noscroll::-webkit-scrollbar {
+  display: none;
+}
+.w-noscroll {
+  scrollbar-width: none;
+}
+
+/* Scanner viewfinder */
+@keyframes wScan {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(100%); }
+  100% { transform: translateY(0); }
+}
+.w-scanline {
+  animation: wScan 2.4s cubic-bezier(0.65, 0.05, 0.36, 1) infinite;
+}
+
+@keyframes wPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.w-pulse {
+  animation: wPulse 1.6s ease-in-out infinite;
+}
+
+/* Holographic shimmer (top-tier credentials) */
+@keyframes wHolo {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.w-holo {
+  background: linear-gradient(
+    110deg,
+    oklch(0.7 0.24 260) 0%,
+    oklch(0.75 0.2 230) 30%,
+    oklch(0.65 0.25 295) 50%,
+    oklch(0.75 0.2 230) 70%,
+    oklch(0.7 0.24 260) 100%
+  );
+  background-size: 200% 100%;
+  animation: wHolo 4s linear infinite;
+}
+
+/* Mobile frame variant for the new design system. Use `.w-frame` in
+   place of `.mobile-frame` on repainted screens — it inherits the
+   handoff's near-black canvas instead of the legacy radial. */
+.w-frame {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 375px;
+  min-height: 100vh;
+  background: var(--w-bg);
+  color: var(--w-fg);
+  font-family: var(--w-sans);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+@media (min-width: 768px) {
+  .w-frame {
+    max-width: 420px;
+    box-shadow: 0 0 0 1px var(--w-line);
+    border-radius: var(--w-r-lg);
+    margin-block: 32px;
+    min-height: calc(100vh - 64px);
+  }
+  body:has(.w-frame) {
+    background-color: var(--w-ink);
   }
 }

@@ -98,8 +98,8 @@ export default function NotificationBell({
       )}
       <style jsx>{`
         @keyframes ping-once {
-          0% { box-shadow: 0 0 0 0 rgba(255, 74, 43, 0.7); }
-          100% { box-shadow: 0 0 0 12px rgba(255, 74, 43, 0); }
+          0% { box-shadow: 0 0 0 0 oklch(0.7 0.24 260 / 0.7); }
+          100% { box-shadow: 0 0 0 12px oklch(0.7 0.24 260 / 0); }
         }
         :global(.animate-ping-once) {
           animation: ping-once 1.4s ease-out;

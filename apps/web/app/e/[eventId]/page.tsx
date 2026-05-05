@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { fmtDate, fmtTime } from "@/lib/format";
 import ShareEventButton from "@/components/share-event-button";
 import { getAppUrl } from "@/lib/app-url";
+import { Button, Chip, IconPin, Wordmark } from "@/components/wadl";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,8 @@ export async function generateMetadata({
   }
   const venueLine = [ev.venue?.name, ev.venue?.city].filter(Boolean).join(" · ");
   const description =
-    ev.description?.slice(0, 200) ?? `RSVP to ${ev.name}${venueLine ? ` at ${venueLine}` : ""}`;
+    ev.description?.slice(0, 200) ??
+    `RSVP to ${ev.name}${venueLine ? ` at ${venueLine}` : ""}`;
   const ogImage = `/api/og/event/${params.eventId}`;
   return {
     title: ev.name,
@@ -63,7 +65,11 @@ interface EventDetail {
     capacity_cap: number | null;
     is_frozen: boolean;
   }>;
-  venue: { name: string | null; city: string | null; address: string | null } | null;
+  venue: {
+    name: string | null;
+    city: string | null;
+    address: string | null;
+  } | null;
 }
 
 export default async function EventDetailPage({
@@ -75,7 +81,7 @@ export default async function EventDetailPage({
   const { data: event } = await admin
     .from("events")
     .select(
-      "id, name, description, flyer_url, event_nights(id, night_date, doors_at, cutoff_at, capacity_cap, is_frozen), venue:venues(name, city, address)"
+      "id, name, description, flyer_url, event_nights(id, night_date, doors_at, cutoff_at, capacity_cap, is_frozen), venue:venues(name, city, address)",
     )
     .eq("id", params.eventId)
     .maybeSingle<EventDetail>();
@@ -83,176 +89,379 @@ export default async function EventDetailPage({
   if (!event) notFound();
 
   const nights = [...event.event_nights].sort((a, b) =>
-    a.doors_at < b.doors_at ? -1 : 1
+    a.doors_at < b.doors_at ? -1 : 1,
   );
 
   const now = Date.now();
-  const upcoming = nights.filter((n) => new Date(n.doors_at).getTime() >= now - 2 * 60 * 60_000);
+  const upcoming = nights.filter(
+    (n) => new Date(n.doors_at).getTime() >= now - 2 * 60 * 60_000,
+  );
   const showNights = upcoming.length > 0 ? upcoming : nights;
 
-  return (
-    <main id="main-content" className="min-h-screen">
-      {/* Sticky chrome */}
-      <header className="sticky top-0 z-30 backdrop-blur-md bg-bg/80 border-b border-line">
-        <div className="max-w-5xl mx-auto px-4 md:px-8 py-3 flex items-center justify-between">
-          <Link href="/discover" className="label-mono hover:text-cream transition">
-            ← Discover
-          </Link>
-          <Link
-            href="/"
-            className="font-display text-2xl text-coral tracking-wide"
-          >
-            WADL
-          </Link>
-          <Link href="/mytickets" className="label-mono hover:text-cream transition">
-            My tickets
-          </Link>
-        </div>
-      </header>
+  const allPast = nights.length > 0 && upcoming.length === 0;
+  const allFrozen = nights.length > 0 && nights.every((n) => n.is_frozen);
+  const firstNight = showNights[0];
 
-      <div className="max-w-5xl mx-auto px-4 md:px-8 pt-6 md:pt-10 pb-16 grid md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-6 md:gap-10">
-        {/* Flyer column */}
-        <div>
+  return (
+    <main
+      id="main-content"
+      className="w-app"
+      style={{ minHeight: "100vh", background: "var(--w-bg)" }}
+    >
+      {/* tiny nav */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "16px 24px",
+          borderBottom: "1px solid var(--w-line)",
+        }}
+      >
+        <Link href="/discover" style={{ textDecoration: "none" }}>
+          <Wordmark variant="monogrid" size={16} />
+        </Link>
+        <span className="w-type-meta">EVENT · {event.name.toUpperCase()}</span>
+        <Link
+          href="/login"
+          className="w-btn w-btn--ghost"
+          style={{ height: 36, textDecoration: "none" }}
+        >
+          Sign in
+        </Link>
+      </div>
+
+      <div
+        className="event-grid"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr",
+          minHeight: "calc(100vh - 60px)",
+        }}
+      >
+        {/* left — cover */}
+        <div
+          style={{
+            position: "relative",
+            background:
+              "linear-gradient(135deg, oklch(0.32 0.06 255), oklch(0.18 0.04 280))",
+            overflow: "hidden",
+            minHeight: 480,
+          }}
+        >
           {event.flyer_url ? (
-            <div
-              className="w-full rounded-2xl overflow-hidden border border-line"
-              style={{ aspectRatio: "4 / 5" }}
-            >
+            <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={event.flyer_url}
                 alt={event.name}
-                className="w-full h-full object-cover"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  opacity: 0.5,
+                }}
               />
+            </>
+          ) : null}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              padding: "48px 32px 40px",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "flex-end",
+              background:
+                "linear-gradient(135deg, transparent 0%, rgba(15,15,16,0.65) 100%)",
+            }}
+          >
+            <div className="w-type-meta">
+              {firstNight ? fmtDate(firstNight.night_date).toUpperCase() : ""}
+              {firstNight ? ` · DOORS ${fmtTime(firstNight.doors_at)}` : ""}
             </div>
-          ) : (
             <div
-              className="w-full rounded-2xl flex items-center justify-center border border-line"
               style={{
-                aspectRatio: "4 / 5",
-                background:
-                  "linear-gradient(135deg, #1a050d 0%, #0a0a0a 50%, #14060a 100%)",
+                fontSize: "clamp(56px, 9vw, 96px)",
+                fontWeight: 800,
+                letterSpacing: "-0.045em",
+                lineHeight: 0.9,
+                marginTop: 18,
+                fontFamily: "var(--w-display)",
               }}
             >
-              <p className="font-display text-7xl text-coral/30 uppercase">
-                {event.name.slice(0, 2)}
-              </p>
+              {event.name}
             </div>
-          )}
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                marginTop: 32,
+                flexWrap: "wrap",
+              }}
+            >
+              {event.venue?.name && (
+                <Chip
+                  tone="ghost"
+                  style={{ background: "rgba(0,0,0,0.4)" }}
+                >
+                  <IconPin size={12} /> {event.venue.name}
+                  {event.venue.city ? ` · ${event.venue.city}` : ""}
+                </Chip>
+              )}
+              {firstNight?.capacity_cap && (
+                <Chip
+                  tone="ghost"
+                  style={{ background: "rgba(0,0,0,0.4)" }}
+                >
+                  {firstNight.capacity_cap} CAP
+                </Chip>
+              )}
+              {nights.length > 1 && (
+                <Chip
+                  tone="ghost"
+                  style={{ background: "rgba(0,0,0,0.4)" }}
+                >
+                  {nights.length} NIGHTS
+                </Chip>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Info column */}
-        <div className="flex flex-col">
-          <h1 className="font-display text-4xl md:text-6xl text-cream uppercase tracking-wide leading-[0.95] mb-3">
+        {/* right — RSVP card */}
+        <div
+          style={{
+            padding: "48px 32px",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <div className="w-type-meta">PUBLIC EVENT</div>
+          <div
+            className="w-type-h1"
+            style={{ marginTop: 8 }}
+          >
             {event.name}
-          </h1>
+          </div>
 
-      {event.venue?.name && (
-        <div className="mb-4">
-          <p className="label-mono">Venue</p>
-          <p className="font-sans text-cream">{event.venue.name}</p>
-          <p className="label-mono">
-            {[event.venue.address, event.venue.city].filter(Boolean).join(" · ")}
-          </p>
-        </div>
-      )}
+          {event.description && (
+            <p
+              className="w-type-body"
+              style={{
+                color: "var(--w-fg-muted)",
+                marginTop: 12,
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              {event.description}
+            </p>
+          )}
 
-      {event.description && (
-        <div className="mb-6">
-          <p className="label-mono">About</p>
-          <p className="text-cream text-sm leading-relaxed whitespace-pre-wrap">
-            {event.description}
-          </p>
-        </div>
-      )}
-
-      {(() => {
-        const allFrozen = nights.length > 0 && nights.every((n) => n.is_frozen);
-        const allPast = nights.length > 0 && upcoming.length === 0;
-        if (allPast) {
-          return (
-            <div className="card border-line text-center mb-6">
-              <p className="label-mono mb-2">This event ended</p>
-              <p className="text-cream/80 text-sm mb-3">
-                Doors are closed. Tell the venue how it went, or browse what&apos;s next.
+          {allPast ? (
+            <div
+              className="w-card"
+              style={{ padding: 18, marginTop: 24 }}
+            >
+              <Chip tone="ghost">EVENT ENDED</Chip>
+              <p
+                className="w-type-body-sm"
+                style={{
+                  color: "var(--w-fg-muted)",
+                  marginTop: 12,
+                }}
+              >
+                Doors are closed. Tell the venue how it went, or browse what&apos;s
+                next.
               </p>
-              <div className="grid grid-cols-2 gap-2">
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 8,
+                  marginTop: 16,
+                }}
+              >
                 <Link
                   href={`/e/${event.id}/feedback`}
-                  className="btn-ghost text-center"
+                  className="w-btn w-btn--ghost"
+                  style={{ textDecoration: "none" }}
                 >
                   Leave feedback
                 </Link>
                 <Link
                   href="/discover"
-                  className="btn-primary text-center"
+                  className="w-btn w-btn--primary"
+                  style={{ textDecoration: "none" }}
                 >
-                  Discover events
+                  Discover
                 </Link>
               </div>
             </div>
-          );
-        }
-        if (allFrozen) {
-          return (
-            <div className="card border-coral mb-6">
-              <p className="label-mono text-coral mb-1">⚠ At capacity</p>
-              <p className="text-cream/80 text-sm">
-                Every night sold out. Want to be next time? Follow the host
-                for the next drop.
+          ) : allFrozen ? (
+            <div
+              className="w-card"
+              style={{
+                padding: 18,
+                marginTop: 24,
+                borderColor: "var(--w-warn)",
+              }}
+            >
+              <Chip tone="warn">⚠ AT CAPACITY</Chip>
+              <p
+                className="w-type-body-sm"
+                style={{
+                  color: "var(--w-fg-muted)",
+                  marginTop: 12,
+                }}
+              >
+                Every night sold out. Want to be next time? Follow the host for
+                the next drop.
               </p>
             </div>
-          );
-        }
-        return null;
-      })()}
-
-      <p className="label-mono mb-2">{upcoming.length > 0 ? "Upcoming nights" : "All nights"}</p>
-      <div className="flex flex-col gap-2 mb-6">
-        {showNights.map((n) => {
-          const canRsvp = !n.is_frozen;
-          return (
-            <div key={n.id} className="card">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-sans text-cream font-semibold">
-                    {fmtDate(n.night_date)}
-                  </p>
-                  <p className="label-mono mt-1">
-                    Doors {fmtTime(n.doors_at)}
-                    {n.is_frozen ? " · CLOSED" : ""}
-                  </p>
-                </div>
-                {canRsvp ? (
-                  <Link
-                    href={`/e/${event.id}/rsvp?night=${n.id}`}
-                    className="bg-coral text-bg font-sans font-semibold text-xs uppercase tracking-[0.14em] px-4 py-3 rounded-md hover:brightness-110 transition shrink-0"
-                  >
-                    RSVP
-                  </Link>
-                ) : (
-                  <span className="label-mono">List closed</span>
-                )}
+          ) : (
+            <>
+              <div className="w-type-meta" style={{ marginTop: 28 }}>
+                {upcoming.length > 0 ? "UPCOMING NIGHTS" : "ALL NIGHTS"}
               </div>
-            </div>
-          );
-        })}
-      </div>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                  marginTop: 12,
+                }}
+              >
+                {showNights.map((n) => {
+                  const canRsvp = !n.is_frozen;
+                  return (
+                    <div
+                      key={n.id}
+                      className="w-card"
+                      style={{
+                        padding: 16,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 12,
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 15 }}>
+                          {fmtDate(n.night_date)}
+                        </div>
+                        <div
+                          className="w-type-meta"
+                          style={{ marginTop: 4 }}
+                        >
+                          DOORS {fmtTime(n.doors_at)}
+                          {n.is_frozen ? " · CLOSED" : ""}
+                        </div>
+                      </div>
+                      {canRsvp ? (
+                        <Link
+                          href={`/e/${event.id}/rsvp?night=${n.id}`}
+                          className="w-btn w-btn--primary"
+                          style={{ textDecoration: "none" }}
+                        >
+                          RSVP →
+                        </Link>
+                      ) : (
+                        <Chip tone="ghost">CLOSED</Chip>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
 
-      <ShareEventButton
-        url={`${getAppUrl()}/e/${event.id}`}
-        title={event.name}
-        text={`${event.name} on WADL${event.venue?.name ? ` · ${event.venue.name}` : ""}`}
-      />
+              <div style={{ marginTop: 24 }}>
+                <ShareEventButton
+                  url={`${getAppUrl()}/e/${event.id}`}
+                  title={event.name}
+                  text={`${event.name} on WADL${event.venue?.name ? ` · ${event.venue.name}` : ""}`}
+                />
+              </div>
 
-      <p className="label-mono mt-8 pt-8 text-center md:text-left border-t border-line">
-        Already have a ticket?{" "}
-        <Link href="/mytickets" className="text-coral hover:brightness-125">
-          My tickets →
-        </Link>
-      </p>
+              <div
+                style={{ flex: 1, minHeight: 24 }}
+                aria-hidden
+              />
+
+              <div
+                className="w-type-h3"
+                style={{ marginTop: 24 }}
+              >
+                Get on the list — 30 seconds.
+              </div>
+              <p
+                className="w-type-body-sm"
+                style={{
+                  color: "var(--w-fg-muted)",
+                  marginTop: 6,
+                }}
+              >
+                No account, no password. We text you a credential.
+              </p>
+              {firstNight && !firstNight.is_frozen && (
+                <Link
+                  href={`/e/${event.id}/rsvp?night=${firstNight.id}`}
+                  style={{ textDecoration: "none", marginTop: 14 }}
+                >
+                  <Button variant="primary" size="lg" block>
+                    Continue → RSVP
+                  </Button>
+                </Link>
+              )}
+            </>
+          )}
+
+          <div
+            className="w-type-meta"
+            style={{
+              marginTop: 32,
+              paddingTop: 16,
+              borderTop: "1px solid var(--w-line)",
+              color: "var(--w-fg-dim)",
+            }}
+          >
+            ALREADY HAVE A TICKET?{" "}
+            <Link
+              href="/mytickets"
+              style={{
+                color: "var(--w-acc)",
+                textDecoration: "none",
+              }}
+            >
+              MY TICKETS →
+            </Link>
+          </div>
         </div>
       </div>
+
+      <div
+        style={{
+          padding: "20px 32px",
+          borderTop: "1px solid var(--w-line)",
+          display: "flex",
+          justifyContent: "space-between",
+          fontFamily: "var(--w-mono)",
+          fontSize: 11,
+          color: "var(--w-fg-dim)",
+        }}
+      >
+        <span>POWERED BY WADL</span>
+        <span>SHARE · /e/{event.id.slice(0, 8)}</span>
+      </div>
+
+      <style>{`
+        @media (min-width: 900px) {
+          .event-grid {
+            grid-template-columns: 1.3fr 1fr !important;
+          }
+        }
+      `}</style>
     </main>
   );
 }

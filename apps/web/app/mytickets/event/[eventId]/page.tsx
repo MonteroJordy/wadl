@@ -60,7 +60,7 @@ export default async function MultiNightTicketsPage({
         type: "svg",
         errorCorrectionLevel: "M",
         margin: 1,
-        color: { dark: "#0a0a0a", light: "#F2EDE4" },
+        color: { dark: "#0a0a0a", light: "#f3f1ec" },
       })
     )
   );

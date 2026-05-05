@@ -116,7 +116,7 @@ export default function ActivityFeedRealtime({
           transition: box-shadow 0.4s ease;
         }
         [data-row-id].wadl-pulse-row {
-          box-shadow: 0 0 0 2px rgba(255, 74, 43, 0.35);
+          box-shadow: 0 0 0 2px oklch(0.7 0.24 260 / 0.35);
         }
       `}</style>
       <ActivityFeed

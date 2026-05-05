@@ -88,7 +88,7 @@ export default function CoOwnerAcceptForm({
           Accept invite to <span className="text-cream">{eventName}</span> with{" "}
           <span className="text-coral">{permission.replace("_", "-")}</span> permission.
         </p>
-        {error && <p className="text-coral text-sm">{error}</p>}
+        {error && <p className="text-err text-sm">{error}</p>}
         <button
           type="button"
           onClick={onBindExisting}
@@ -119,7 +119,7 @@ export default function CoOwnerAcceptForm({
           placeholder="••••••"
           required
         />
-        {error && <p className="text-coral text-sm">{error}</p>}
+        {error && <p className="text-err text-sm">{error}</p>}
         <button type="submit" className="btn-primary" disabled={pending}>
           {pending ? "Verifying…" : "Verify & accept"}
         </button>
@@ -151,7 +151,7 @@ export default function CoOwnerAcceptForm({
         placeholder="(305) 555 1234"
         required
       />
-      {error && <p className="text-coral text-sm">{error}</p>}
+      {error && <p className="text-err text-sm">{error}</p>}
       <button type="submit" className="btn-primary" disabled={pending}>
         {pending ? "Sending…" : "Text me the code"}
       </button>

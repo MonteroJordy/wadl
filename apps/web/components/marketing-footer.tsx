@@ -1,43 +1,76 @@
 import Link from "next/link";
+import { Wordmark } from "@/components/wadl";
 
 export default function MarketingFooter() {
   return (
-    <footer className="bg-bg border-t border-line px-6 md:px-12 py-10">
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-        <div>
-          <p className="font-display text-2xl text-coral tracking-wide mb-2">
-            WADL
-          </p>
-          <p className="label-mono">
-            One door, one list, one truth.
-          </p>
-          <p className="label-mono mt-2 text-muted">
-            © {new Date().getFullYear()} WADL. Built in Miami.
-          </p>
-        </div>
-        <nav className="flex flex-wrap gap-x-6 gap-y-3">
-          <Link href="/pricing" className="label-mono hover:text-cream">
-            Pricing
-          </Link>
-          <Link href="/discover" className="label-mono hover:text-cream">
-            Tonight
-          </Link>
-          <Link href="/docs/embed" className="label-mono hover:text-cream">
-            Embed widget
-          </Link>
-          <Link href="/privacy" className="label-mono hover:text-cream">
-            Privacy
-          </Link>
-          <Link href="/terms" className="label-mono hover:text-cream">
-            Terms
-          </Link>
-          <a
-            href="mailto:jmontero@mainframeagency.com"
-            className="label-mono hover:text-cream"
+    <footer
+      style={{
+        background: "var(--w-bg)",
+        borderTop: "1px solid var(--w-line)",
+        padding: "40px 24px",
+      }}
+    >
+      <div
+        className="max-w-6xl mx-auto"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 24,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-end",
+            gap: 24,
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <Wordmark variant="monogrid" size={24} />
+            <div className="w-type-meta" style={{ marginTop: 12 }}>
+              ONE DOOR · ONE LIST · ONE TRUTH
+            </div>
+            <div
+              className="w-type-meta"
+              style={{ marginTop: 8, color: "var(--w-fg-dim)" }}
+            >
+              © {new Date().getFullYear()} WADL · BUILT IN MIAMI
+            </div>
+          </div>
+          <nav
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 24,
+            }}
           >
-            Contact
-          </a>
-        </nav>
+            {[
+              ["Pricing", "/pricing"],
+              ["Tonight", "/discover"],
+              ["Embed widget", "/docs/embed"],
+              ["Privacy", "/privacy"],
+              ["Terms", "/terms"],
+            ].map(([label, href]) => (
+              <Link
+                key={href}
+                href={href}
+                className="w-type-meta"
+                style={{ textDecoration: "none" }}
+              >
+                {label.toUpperCase()}
+              </Link>
+            ))}
+            <a
+              href="mailto:jmontero@mainframeagency.com"
+              className="w-type-meta"
+              style={{ textDecoration: "none" }}
+            >
+              CONTACT
+            </a>
+          </nav>
+        </div>
       </div>
     </footer>
   );

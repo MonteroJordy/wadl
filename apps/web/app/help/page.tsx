@@ -1,11 +1,13 @@
 import Link from "next/link";
 import PublicShell from "@/components/public-shell";
 import MarketingFooter from "@/components/marketing-footer";
+import { Button, IconArrow } from "@/components/wadl";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Help — WADL",
-  description: "How WADL works at the door, and how to get help when it doesn't.",
+  description:
+    "How WADL works at the door, and how to get help when it doesn't.",
 };
 
 const FAQS = [
@@ -27,7 +29,7 @@ const FAQS = [
   },
   {
     q: "What happens at capacity?",
-    a: "When approved heads cross the lockdown threshold (default 90%), WADL auto-flips the night to frozen — all allocations close, no new RSVPs, and a coral capacity-alert pushes to staff. You can override individual entries from the daydash.",
+    a: "When approved heads cross the lockdown threshold (default 90%), WADL auto-flips the night to frozen — all allocations close, no new RSVPs, and a capacity-alert pushes to staff. You can override individual entries from the daydash.",
   },
   {
     q: "Wi-Fi died at the door.",
@@ -47,48 +49,134 @@ export default async function HelpPage() {
   return (
     <>
       <PublicShell maxWidth="4xl" ambient>
-        <header className="mb-8">
-          <p className="label-mono mb-2">Help</p>
-          <h1 className="font-display text-5xl md:text-6xl text-cream uppercase tracking-wide leading-[0.95]">
-            Stuck at the door<span className="text-coral">?</span>
+        <header style={{ marginBottom: 40 }}>
+          <div className="w-type-meta">HELP</div>
+          <h1
+            className="w-type-display-lg"
+            style={{ marginTop: 12, lineHeight: 0.94 }}
+          >
+            Stuck at the door
+            <span style={{ color: "var(--w-acc)" }}>?</span>
           </h1>
-          <p className="text-cream/70 text-base leading-relaxed mt-3 max-w-2xl">
+          <p
+            className="w-type-body"
+            style={{
+              color: "var(--w-fg-muted)",
+              marginTop: 16,
+              maxWidth: 640,
+            }}
+          >
             Eight things that fix 90% of door problems. Anything else, the
             founder reads every email — see Contact below.
           </p>
         </header>
 
-        <section className="flex flex-col gap-3 mb-12">
+        <section
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 10,
+            marginBottom: 56,
+          }}
+        >
           {FAQS.map((f, i) => (
             <details
               key={i}
-              className="card group hover:border-coral/40 transition"
+              className="w-card"
+              style={{
+                padding: 18,
+                cursor: "pointer",
+              }}
             >
-              <summary className="cursor-pointer flex items-start justify-between gap-4 list-none">
-                <p className="font-sans font-semibold text-cream pr-2">{f.q}</p>
-                <span className="font-display text-2xl text-coral shrink-0 group-open:rotate-45 transition">
+              <summary
+                style={{
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  justifyContent: "space-between",
+                  gap: 16,
+                  listStyle: "none",
+                }}
+              >
+                <span
+                  style={{
+                    fontWeight: 600,
+                    fontSize: 15,
+                    paddingRight: 8,
+                  }}
+                >
+                  {f.q}
+                </span>
+                <span
+                  style={{
+                    fontFamily: "var(--w-display)",
+                    fontSize: 22,
+                    color: "var(--w-acc)",
+                    flexShrink: 0,
+                    fontWeight: 600,
+                  }}
+                >
                   +
                 </span>
               </summary>
-              <p className="text-cream/80 text-sm leading-relaxed mt-3">{f.a}</p>
+              <p
+                className="w-type-body-sm"
+                style={{
+                  color: "var(--w-fg-muted)",
+                  marginTop: 12,
+                  lineHeight: 1.5,
+                }}
+              >
+                {f.a}
+              </p>
             </details>
           ))}
         </section>
 
-        <section className="card border-coral/40 bg-s2 text-center">
-          <p className="label-mono text-coral mb-2">Still stuck</p>
-          <p className="font-display text-3xl text-cream uppercase tracking-wide mb-3">
+        <section
+          className="w-card"
+          style={{
+            padding: 24,
+            textAlign: "center",
+            borderColor: "var(--w-acc)",
+            background: "var(--w-acc-soft)",
+          }}
+        >
+          <div
+            className="w-type-meta"
+            style={{ color: "var(--w-acc)" }}
+          >
+            STILL STUCK
+          </div>
+          <h2
+            className="w-type-h1"
+            style={{ marginTop: 8 }}
+          >
             Email the founder.
-          </p>
-          <p className="text-cream/70 text-sm mb-5 max-w-md mx-auto">
+          </h2>
+          <p
+            className="w-type-body-sm"
+            style={{
+              color: "var(--w-fg-muted)",
+              marginTop: 8,
+              maxWidth: 420,
+              marginInline: "auto",
+            }}
+          >
             Jordy reads every message. Reply usually within an hour during a
             real night, same day otherwise.
           </p>
           <Link
             href="/contact"
-            className="inline-flex items-center gap-2 bg-coral text-bg font-sans font-semibold text-xs uppercase tracking-[0.16em] px-5 py-3 rounded-full hover:brightness-110 transition"
+            style={{
+              display: "inline-flex",
+              marginTop: 20,
+              textDecoration: "none",
+            }}
           >
-            Contact →
+            <Button variant="primary">
+              Contact <IconArrow size={14} />
+            </Button>
           </Link>
         </section>
       </PublicShell>

@@ -162,7 +162,7 @@ export default function ManagerAddForm({
           </select>
         </div>
 
-        {error && <p className="text-coral text-sm">{error}</p>}
+        {error && <p className="text-err text-sm">{error}</p>}
 
         <button
           type="submit"

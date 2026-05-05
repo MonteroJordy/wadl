@@ -2,6 +2,13 @@ import Link from "next/link";
 import { requireOwnerContext, fmtDate, fmtTime } from "@/lib/owner";
 import OnboardingTour from "@/components/onboarding-tour";
 import { dashboardFraming } from "@wadl/shared/account-type";
+import {
+  Avatar,
+  CapacityMeter,
+  Chip,
+  IconArrow,
+  IconPlus,
+} from "@/components/wadl";
 
 export const dynamic = "force-dynamic";
 
@@ -64,7 +71,9 @@ function isSameDay(a: Date, b: Date): boolean {
 
 function dayLabel(date: Date): { dow: string; day: string } {
   return {
-    dow: date.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase(),
+    dow: date
+      .toLocaleDateString("en-US", { weekday: "short" })
+      .toUpperCase(),
     day: String(date.getDate()),
   };
 }
@@ -93,7 +102,7 @@ export default async function OwnerWeekViewPage({
   let eventsQ = supabase
     .from("events")
     .select(
-      "id, name, flyer_url, venue_id, event_nights(id, event_id, night_date, doors_at, capacity_cap, is_frozen)"
+      "id, name, flyer_url, venue_id, event_nights(id, event_id, night_date, doors_at, capacity_cap, is_frozen)",
     )
     .eq("account_id", account.id);
   if (q) eventsQ = eventsQ.ilike("name", `%${q}%`);
@@ -134,8 +143,8 @@ export default async function OwnerWeekViewPage({
         ? 1
         : -1
       : a.doors_at < b.doors_at
-      ? -1
-      : 1
+        ? -1
+        : 1,
   );
 
   let guests: GuestRow[] = [];
@@ -157,10 +166,10 @@ export default async function OwnerWeekViewPage({
   }
 
   function statsFor(nightId: string) {
-    let approved = 0,
-      pending = 0,
-      scanned = 0,
-      rsvps = 0;
+    let approved = 0;
+    let pending = 0;
+    let scanned = 0;
+    let rsvps = 0;
     for (const g of guests) {
       if (g.event_night_id !== nightId) continue;
       const heads = 1 + (g.plus_ones ?? 0);
@@ -175,15 +184,28 @@ export default async function OwnerWeekViewPage({
     return { approved, pending, scanned, rsvps };
   }
 
-  // Identify tonight's event (a night happening today).
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const tonight = nights.find((n) => {
-    const d = new Date(n.doors_at);
-    return isSameDay(d, today);
-  });
+  const tonight = nights.find((n) =>
+    isSameDay(new Date(n.doors_at), today),
+  );
   const tonightStats = tonight ? statsFor(tonight.id) : null;
   const remainingNights = nights.filter((n) => n !== tonight);
+
+  // Aggregate KPIs across the visible range
+  const liveNow = nights.filter((n) => {
+    const d = new Date(n.doors_at).getTime();
+    return d <= Date.now() && d >= Date.now() - 8 * 60 * 60_000;
+  }).length;
+  const totalRsvpd = nights.reduce(
+    (sum, n) => sum + statsFor(n.id).rsvps,
+    0,
+  );
+  const totalScanned = nights.reduce(
+    (sum, n) => sum + statsFor(n.id).scanned,
+    0,
+  );
+  const distinctEvents = new Set(nights.map((n) => n.event_id)).size;
 
   function rangeHref(r: Range) {
     const sp = new URLSearchParams();
@@ -202,310 +224,598 @@ export default async function OwnerWeekViewPage({
     return s ? `/owner?${s}` : "/owner";
   }
 
+  const tonightLabel = tonight
+    ? `${fmtDate(tonight.night_date)} · ${tonight.event?.name ?? "—"}`
+    : `${RANGE_LABEL[range]} · ${account.display_name}`;
+
   return (
     <main
       id="main-content"
-      className="mx-auto w-full max-w-6xl px-4 md:px-8 pt-6 pb-16"
+      className="w-app"
+      style={{
+        minHeight: "100vh",
+        background: "var(--w-bg)",
+        padding: "32px 24px 96px",
+      }}
     >
-      {/* Hero strip — owner's current focus */}
-      <header className="flex items-end justify-between gap-4 mb-6">
-        <div className="min-w-0">
-          <p className="label-mono mb-1">
-            {RANGE_LABEL[range]} · {account.display_name}
-            {account.handle && (
-              <>
-                {" · "}
-                <span className="text-cream">@{account.handle}</span>
-              </>
-            )}
-            {account.city && <> · {account.city}</>}
-          </p>
-          <h1 className="font-display text-5xl md:text-6xl text-cream uppercase leading-[0.9] tracking-wide">
-            {tonight ? "Tonight" : RANGE_LABEL[range]}
-          </h1>
-        </div>
-        <Link
-          href="/owner/events/new"
-          className="shrink-0 inline-flex items-center gap-2 bg-coral text-bg font-sans font-semibold text-xs uppercase tracking-[0.16em] px-5 py-3 rounded-full hover:brightness-110 transition"
+      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+        {/* Header — BizHome style */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "space-between",
+            borderBottom: "1px solid var(--w-line)",
+            paddingBottom: 24,
+            gap: 16,
+            flexWrap: "wrap",
+          }}
         >
-          + New event
-        </Link>
-      </header>
+          <div style={{ minWidth: 0 }}>
+            <div className="w-type-meta">
+              {tonightLabel.toUpperCase()}
+              {account.handle ? ` · @${account.handle}` : ""}
+              {account.city ? ` · ${account.city}` : ""}
+            </div>
+            <div className="w-type-display-md" style={{ marginTop: 8 }}>
+              {tonight ? "Tonight at the door" : RANGE_LABEL[range]}
+            </div>
+          </div>
+          <Link
+            href="/owner/events/new"
+            className="w-btn w-btn--primary"
+            style={{ textDecoration: "none" }}
+          >
+            <IconPlus /> New event
+          </Link>
+        </div>
 
-      {/* Compact search + range tabs row */}
-      <div className="flex flex-col md:flex-row gap-2 md:items-center mb-3">
-        <form action="/owner" method="get" className="flex-1">
-          <input
-            type="text"
-            name="q"
-            defaultValue={q}
-            placeholder="Search events…"
-            className="w-full bg-s2 border border-line text-cream px-4 py-2.5 rounded-md font-sans text-sm placeholder:text-muted focus:border-coral focus:outline-none transition-colors"
+        {/* KPI row */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: 16,
+            marginTop: 28,
+          }}
+        >
+          <KPI
+            eyebrow="DOORS"
+            big={tonight ? fmtTime(tonight.doors_at) : "—"}
+            sub={tonight ? "tonight" : "no event today"}
+            accent={Boolean(tonight)}
           />
-          {range !== "week" && (
-            <input type="hidden" name="range" value={range} />
-          )}
-          {venueFilter && (
-            <input type="hidden" name="venue" value={venueFilter} />
-          )}
-        </form>
-        <div className="flex gap-1 overflow-x-auto pb-1 md:pb-0">
+          <KPI
+            eyebrow="RSVP'D"
+            big={String(totalRsvpd)}
+            sub={`across ${nights.length} night${nights.length === 1 ? "" : "s"}`}
+          />
+          <KPI
+            eyebrow="EVENTS"
+            big={String(distinctEvents)}
+            sub={`${RANGE_LABEL[range].toLowerCase()}`}
+          />
+          <KPI
+            eyebrow="LIVE NOW"
+            big={String(liveNow)}
+            sub={`${totalScanned} checked in`}
+            accent={liveNow > 0}
+          />
+        </div>
+
+        {/* Filter row */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            marginTop: 28,
+            paddingBottom: 14,
+            borderBottom: "1px solid var(--w-line)",
+            flexWrap: "wrap",
+          }}
+        >
+          <form action="/owner" method="get" style={{ flex: 1, minWidth: 220 }}>
+            <input
+              type="text"
+              name="q"
+              defaultValue={q}
+              placeholder="search events…"
+              className="w-input"
+              style={{ height: 36, fontSize: 13 }}
+            />
+            {range !== "week" && (
+              <input type="hidden" name="range" value={range} />
+            )}
+            {venueFilter && (
+              <input type="hidden" name="venue" value={venueFilter} />
+            )}
+          </form>
           {RANGES.map((r) => {
             const active = r === range;
             return (
               <Link
                 key={r}
                 href={rangeHref(r)}
-                className={`shrink-0 px-3 py-1.5 rounded-full border text-[10px] font-mono uppercase tracking-wider transition ${
-                  active
-                    ? "border-coral bg-coral/10 text-cream"
-                    : "border-line bg-s1 text-muted hover:text-cream"
-                }`}
+                style={{
+                  textDecoration: "none",
+                  flexShrink: 0,
+                }}
               >
-                {RANGE_LABEL[r]}
+                <Chip tone={active ? "neutral" : "ghost"}>
+                  {RANGE_LABEL[r].toUpperCase()}
+                </Chip>
               </Link>
             );
           })}
         </div>
-      </div>
 
-      {/* Venue switcher pills */}
-      {venues.length > 1 && (
-        <div className="flex gap-1 overflow-x-auto pb-2 mb-6">
-          <Link
-            href={venueHref("")}
-            className={`shrink-0 px-3 py-1 rounded-full border text-[10px] font-mono uppercase tracking-wider ${
-              !venueFilter
-                ? "border-coral bg-s2 text-cream"
-                : "border-line bg-s1 text-muted hover:text-cream"
-            }`}
-          >
-            All venues
-          </Link>
-          {venues.map((v) => (
-            <Link
-              key={v.id}
-              href={venueHref(v.id)}
-              className={`shrink-0 px-3 py-1 rounded-full border text-[10px] font-mono uppercase tracking-wider ${
-                venueFilter === v.id
-                  ? "border-coral bg-s2 text-cream"
-                  : "border-line bg-s1 text-muted hover:text-cream"
-              }`}
-            >
-              {v.name}
-            </Link>
-          ))}
-        </div>
-      )}
-
-      {/* TONIGHT hero card — coral gradient, big stats */}
-      {tonight && tonightStats && (
-        <Link
-          href={`/owner/events/${tonight.event_id}?night=${tonight.id}`}
-          className="group block relative overflow-hidden rounded-2xl mb-6 isolate"
-        >
+        {/* Venue pills */}
+        {venues.length > 1 && (
           <div
-            className="absolute inset-0 -z-10"
             style={{
-              background:
-                "linear-gradient(135deg, #FF4A2B 0%, #FF7A3C 55%, #c9351c 100%)",
+              display: "flex",
+              gap: 6,
+              flexWrap: "wrap",
+              marginTop: 16,
             }}
-          />
-          <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-white/10 -z-10" />
-          <div className="absolute -bottom-20 -left-12 w-64 h-64 rounded-full bg-white/5 -z-10" />
+          >
+            <Link href={venueHref("")} style={{ textDecoration: "none" }}>
+              <Chip tone={!venueFilter ? "neutral" : "ghost"}>
+                ALL VENUES
+              </Chip>
+            </Link>
+            {venues.map((v) => (
+              <Link
+                key={v.id}
+                href={venueHref(v.id)}
+                style={{ textDecoration: "none" }}
+              >
+                <Chip tone={venueFilter === v.id ? "neutral" : "ghost"}>
+                  {v.name.toUpperCase()}
+                </Chip>
+              </Link>
+            ))}
+          </div>
+        )}
 
-          {tonight.event?.flyer_url && (
+        {/* TONIGHT hero card */}
+        {tonight && tonightStats && (
+          <Link
+            href={`/owner/events/${tonight.event_id}?night=${tonight.id}`}
+            style={{
+              display: "block",
+              textDecoration: "none",
+              color: "inherit",
+              marginTop: 28,
+            }}
+          >
             <div
-              className="absolute inset-0 -z-20 opacity-50"
+              className="w-card"
               style={{
-                backgroundImage: `url(${tonight.event.flyer_url})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
+                padding: 0,
+                overflow: "hidden",
+                borderColor: "var(--w-acc)",
               }}
-            />
-          )}
-
-          <div className="p-6 md:p-8">
-            <div className="flex items-center justify-between mb-3">
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/70">
-                Tonight · {fmtDate(tonight.night_date)}
-              </p>
-              <span className="inline-flex items-center gap-1.5 bg-black/25 px-3 py-1 rounded-full font-mono text-[10px] uppercase tracking-widest text-white">
-                <span
-                  className="w-1.5 h-1.5 rounded-full bg-white"
-                  style={{
-                    boxShadow: "0 0 0 0 rgba(255,255,255,0.7)",
-                    animation: "wadl-pulse 2s infinite",
-                  }}
-                />
-                Live
-              </span>
-            </div>
-
-            <h2 className="font-display text-4xl md:text-6xl text-white uppercase leading-[0.9] tracking-wide mb-1">
-              {tonight.event?.name}
-            </h2>
-            <p className="font-mono text-[10px] uppercase tracking-widest text-white/70 mb-6">
-              Doors {fmtTime(tonight.doors_at)}
-              {tonight.is_frozen ? " · LOCKDOWN" : ""}
-            </p>
-
-            <div className="grid grid-cols-3 gap-3 max-w-md">
-              <div>
-                <p className="font-display text-4xl md:text-5xl text-white leading-none">
-                  {tonightStats.scanned}
-                </p>
-                <p className="font-mono text-[9px] uppercase tracking-widest text-white/60 mt-1">
-                  In
-                </p>
-              </div>
-              <div>
-                <p className="font-display text-4xl md:text-5xl text-white/70 leading-none">
-                  {tonightStats.pending}
-                </p>
-                <p className="font-mono text-[9px] uppercase tracking-widest text-white/60 mt-1">
-                  Pending
-                </p>
-              </div>
-              <div>
-                <p className="font-display text-4xl md:text-5xl text-white leading-none">
-                  {tonightStats.rsvps}
-                </p>
-                <p className="font-mono text-[9px] uppercase tracking-widest text-white/60 mt-1">
-                  RSVPs
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="px-6 md:px-8 py-3 bg-black/20 border-t border-white/10">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-white/80">
-              Tap to open dashboard →
-            </p>
-          </div>
-        </Link>
-      )}
-
-      {/* Coming up + past list */}
-      {nights.length === 0 && !tonight ? (
-        <section className="rounded-2xl border border-line bg-s1 px-6 py-12 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-coral/10 border border-coral/30 mx-auto mb-5 flex items-center justify-center">
-            <svg
-              width="28"
-              height="28"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              className="text-coral"
             >
-              <rect x="3" y="4" width="18" height="18" rx="2" />
-              <line x1="16" y1="2" x2="16" y2="6" />
-              <line x1="8" y1="2" x2="8" y2="6" />
-              <line x1="3" y1="10" x2="21" y2="10" />
-            </svg>
-          </div>
-          {(() => {
-            const framing = dashboardFraming(account.account_type);
-            return (
-              <>
-                <p className="font-display text-3xl text-cream uppercase tracking-wide mb-2">
-                  {q
-                    ? "Nothing matches"
-                    : range === "past"
-                    ? "No past events yet"
-                    : range === "upcoming"
-                    ? "Nothing booked"
-                    : framing.emptyTitle}
-                </p>
-                <p className="text-muted text-sm leading-relaxed max-w-md mx-auto mb-6">
-                  {q
-                    ? `Nothing named "${q}". Try a different search or change the range.`
-                    : range === "past"
-                    ? "Once you run a night, the recap lands here."
-                    : framing.emptyBody}
-                </p>
-                {!q && range !== "past" && (
-                  <Link
-                    href="/owner/events/new"
-                    className="inline-flex items-center gap-2 bg-coral text-bg font-sans font-semibold text-xs uppercase tracking-[0.16em] px-5 py-3 rounded-full hover:brightness-110 transition"
-                  >
-                    {framing.emptyCtaLabel}
-                  </Link>
+              <div
+                style={{
+                  position: "relative",
+                  padding: 28,
+                  background:
+                    "linear-gradient(135deg, oklch(0.7 0.24 260) 0%, oklch(0.55 0.22 280) 100%)",
+                  color: "var(--w-acc-ink)",
+                }}
+              >
+                {tonight.event?.flyer_url && (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={tonight.event.flyer_url}
+                      alt=""
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        opacity: 0.32,
+                      }}
+                    />
+                  </>
                 )}
-              </>
-            );
-          })()}
-        </section>
-      ) : remainingNights.length > 0 ? (
-        <section className="mt-2">
-          <p className="label-mono mb-3">
-            {tonight ? "Coming up" : RANGE_LABEL[range]} · {remainingNights.length}
-          </p>
-          <div className="grid gap-3 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-            {remainingNights.map((n) => {
-              const s = statsFor(n.id);
-              const cap = n.capacity_cap ?? 0;
-              const date = new Date(n.doors_at);
-              const lbl = dayLabel(date);
-              const linkHref =
-                range === "past"
-                  ? `/owner/events/${n.event_id}/recap?night=${n.id}`
-                  : `/owner/events/${n.event_id}?night=${n.id}`;
-              return (
-                <Link
-                  key={n.id}
-                  href={linkHref}
-                  className="card hover:border-coral/60 transition group flex gap-4 items-start p-4"
-                >
-                  <div className="w-12 shrink-0 bg-s2 border border-line rounded-md py-2 text-center">
-                    <p className="font-mono text-[9px] uppercase tracking-widest text-muted">
-                      {lbl.dow}
-                    </p>
-                    <p className="font-display text-2xl text-cream leading-none mt-0.5">
-                      {lbl.day}
-                    </p>
+                <div style={{ position: "relative", zIndex: 1 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <span
+                      className="w-type-meta"
+                      style={{ color: "rgba(255,255,255,0.85)" }}
+                    >
+                      TONIGHT · {fmtDate(tonight.night_date).toUpperCase()}
+                    </span>
+                    <Chip tone="acc" style={{ background: "rgba(0,0,0,0.3)" }}>
+                      <span
+                        className="w-pulse"
+                        style={{
+                          width: 6,
+                          height: 6,
+                          borderRadius: 99,
+                          background: "currentColor",
+                        }}
+                      />
+                      LIVE
+                    </Chip>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-sans font-semibold text-cream truncate group-hover:text-coral transition">
-                      {n.event?.name ?? "—"}
-                    </p>
-                    <p className="label-mono mt-1">
-                      Doors {fmtTime(n.doors_at)}
-                      {n.is_frozen ? " · LOCKED" : ""}
-                    </p>
-                    <div className="mt-3 flex gap-3 label-mono">
-                      <span className="text-cream">
-                        {s.scanned}
-                        {cap > 0 && (
-                          <span className="text-muted">/{cap}</span>
-                        )}
-                      </span>
-                      <span>·</span>
-                      <span>{s.approved} approved</span>
-                      {s.pending > 0 && (
-                        <span className="text-gold">{s.pending} pending</span>
-                      )}
-                    </div>
+                  <div
+                    style={{
+                      fontSize: "clamp(40px, 5vw, 64px)",
+                      fontWeight: 700,
+                      letterSpacing: "-0.04em",
+                      lineHeight: 0.92,
+                      marginTop: 16,
+                      fontFamily: "var(--w-display)",
+                    }}
+                  >
+                    {tonight.event?.name}
                   </div>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-      ) : null}
+                  <div
+                    className="w-type-meta"
+                    style={{
+                      color: "rgba(255,255,255,0.85)",
+                      marginTop: 8,
+                    }}
+                  >
+                    DOORS {fmtTime(tonight.doors_at)}
+                    {tonight.is_frozen ? " · LOCKDOWN" : ""}
+                  </div>
 
-      <style>{`
-        @keyframes wadl-pulse {
-          0% { box-shadow: 0 0 0 0 rgba(255,255,255,0.7); }
-          70% { box-shadow: 0 0 0 8px rgba(255,255,255,0); }
-          100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
-        }
-      `}</style>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(3, 1fr)",
+                      gap: 12,
+                      marginTop: 28,
+                      maxWidth: 460,
+                    }}
+                  >
+                    <BigStat
+                      n={tonightStats.scanned}
+                      label="IN"
+                    />
+                    <BigStat
+                      n={tonightStats.pending}
+                      label="PENDING"
+                      muted
+                    />
+                    <BigStat
+                      n={tonightStats.rsvps}
+                      label="RSVPS"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div
+                style={{
+                  padding: "12px 24px",
+                  background: "rgba(0,0,0,0.25)",
+                  borderTop: "1px solid rgba(255,255,255,0.1)",
+                }}
+              >
+                <span
+                  className="w-type-meta"
+                  style={{ color: "rgba(255,255,255,0.85)" }}
+                >
+                  TAP TO OPEN DASHBOARD →
+                </span>
+              </div>
+            </div>
+          </Link>
+        )}
+
+        {/* Empty / list */}
+        {nights.length === 0 && !tonight ? (
+          <section
+            className="w-card"
+            style={{
+              padding: "64px 32px",
+              textAlign: "center",
+              marginTop: 28,
+            }}
+          >
+            {(() => {
+              const framing = dashboardFraming(account.account_type);
+              return (
+                <>
+                  <div className="w-type-h1">
+                    {q
+                      ? "Nothing matches"
+                      : range === "past"
+                        ? "No past events"
+                        : range === "upcoming"
+                          ? "Nothing booked"
+                          : framing.emptyTitle}
+                  </div>
+                  <p
+                    className="w-type-body-sm"
+                    style={{
+                      color: "var(--w-fg-muted)",
+                      marginTop: 12,
+                      maxWidth: 480,
+                      marginInline: "auto",
+                    }}
+                  >
+                    {q
+                      ? `Nothing named "${q}". Try a different search or change the range.`
+                      : range === "past"
+                        ? "Once you run a night, the recap lands here."
+                        : framing.emptyBody}
+                  </p>
+                  {!q && range !== "past" && (
+                    <Link
+                      href="/owner/events/new"
+                      className="w-btn w-btn--primary"
+                      style={{
+                        marginTop: 24,
+                        textDecoration: "none",
+                        display: "inline-flex",
+                      }}
+                    >
+                      <IconPlus /> {framing.emptyCtaLabel}
+                    </Link>
+                  )}
+                </>
+              );
+            })()}
+          </section>
+        ) : remainingNights.length > 0 ? (
+          <section style={{ marginTop: 32 }}>
+            <div className="w-type-meta" style={{ marginBottom: 14 }}>
+              {tonight ? "COMING UP" : RANGE_LABEL[range].toUpperCase()} ·{" "}
+              {remainingNights.length}
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns:
+                  "repeat(auto-fill, minmax(280px, 1fr))",
+                gap: 12,
+              }}
+            >
+              {remainingNights.map((n) => {
+                const s = statsFor(n.id);
+                const cap = n.capacity_cap ?? 0;
+                const date = new Date(n.doors_at);
+                const lbl = dayLabel(date);
+                const linkHref =
+                  range === "past"
+                    ? `/owner/events/${n.event_id}/recap?night=${n.id}`
+                    : `/owner/events/${n.event_id}?night=${n.id}`;
+                return (
+                  <Link
+                    key={n.id}
+                    href={linkHref}
+                    style={{
+                      textDecoration: "none",
+                      color: "inherit",
+                    }}
+                  >
+                    <div
+                      className="w-card"
+                      style={{
+                        padding: 16,
+                        display: "flex",
+                        gap: 14,
+                        alignItems: "flex-start",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 48,
+                          flexShrink: 0,
+                          background: "#ffffff08",
+                          borderRadius: 0,
+                          padding: "8px 0",
+                          textAlign: "center",
+                          fontFamily: "var(--w-mono)",
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: 9,
+                            color: "var(--w-fg-muted)",
+                            letterSpacing: "0.06em",
+                          }}
+                        >
+                          {lbl.dow}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 20,
+                            fontWeight: 700,
+                            marginTop: 2,
+                          }}
+                        >
+                          {lbl.day}
+                        </div>
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div
+                          style={{
+                            fontWeight: 600,
+                            fontSize: 14,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {n.event?.name ?? "—"}
+                        </div>
+                        <div
+                          className="w-type-meta"
+                          style={{ marginTop: 4 }}
+                        >
+                          DOORS {fmtTime(n.doors_at)}
+                          {n.is_frozen ? " · LOCKED" : ""}
+                        </div>
+                        {cap > 0 && (
+                          <div style={{ marginTop: 12 }}>
+                            <CapacityMeter
+                              current={s.scanned}
+                              total={cap}
+                              accent
+                              label="CHECKED IN"
+                            />
+                          </div>
+                        )}
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 6,
+                            marginTop: 10,
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <Chip tone="neutral">
+                            {s.approved} APPROVED
+                          </Chip>
+                          {s.pending > 0 && (
+                            <Chip tone="warn">
+                              {s.pending} PENDING
+                            </Chip>
+                          )}
+                        </div>
+                      </div>
+                      <span
+                        style={{
+                          color: "var(--w-fg-dim)",
+                          marginTop: 4,
+                        }}
+                      >
+                        <IconArrow />
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
+      </div>
 
       {!profile.tour_completed_at && !profile.tour_dismissed_at && (
         <OnboardingTour alreadySeeded={!!profile.demo_seeded_at} />
       )}
     </main>
+  );
+}
+
+function KPI({
+  eyebrow,
+  big,
+  sub,
+  delta,
+  pos,
+  accent,
+}: {
+  eyebrow: string;
+  big: string;
+  sub?: string;
+  delta?: string;
+  pos?: boolean;
+  accent?: boolean;
+}) {
+  return (
+    <div
+      className="w-card"
+      style={{
+        padding: 20,
+        borderColor: accent ? "var(--w-acc)" : "var(--w-line)",
+        background: accent ? "var(--w-acc-soft)" : "var(--w-surface-2)",
+      }}
+    >
+      <div className="w-type-meta">{eyebrow}</div>
+      <div
+        style={{
+          fontSize: 36,
+          fontWeight: 700,
+          letterSpacing: "-0.03em",
+          marginTop: 6,
+          fontFamily: "var(--w-display)",
+          lineHeight: 1,
+        }}
+      >
+        {big}
+      </div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+          marginTop: 10,
+          gap: 8,
+        }}
+      >
+        {sub && (
+          <span
+            className="w-type-body-sm"
+            style={{ color: "var(--w-fg-muted)" }}
+          >
+            {sub}
+          </span>
+        )}
+        {delta && (
+          <span
+            style={{
+              fontFamily: "var(--w-mono)",
+              fontSize: 11,
+              color: pos ? "var(--w-ok)" : "var(--w-acc)",
+            }}
+          >
+            {delta}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function BigStat({
+  n,
+  label,
+  muted,
+}: {
+  n: number;
+  label: string;
+  muted?: boolean;
+}) {
+  return (
+    <div>
+      <div
+        style={{
+          fontFamily: "var(--w-display)",
+          fontSize: 56,
+          fontWeight: 700,
+          letterSpacing: "-0.035em",
+          lineHeight: 0.94,
+          color: muted ? "rgba(255,255,255,0.7)" : "currentColor",
+        }}
+      >
+        {n}
+      </div>
+      <div
+        className="w-type-meta"
+        style={{
+          color: "rgba(255,255,255,0.7)",
+          marginTop: 4,
+        }}
+      >
+        {label}
+      </div>
+    </div>
   );
 }

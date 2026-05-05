@@ -2,6 +2,7 @@ import Link from "next/link";
 import QRCode from "qrcode";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fmtDate, fmtTime } from "@/lib/format";
+import { Chip, IconArrow, WFrame, Wordmark } from "@/components/wadl";
 
 export const dynamic = "force-dynamic";
 
@@ -18,24 +19,6 @@ interface TicketData {
   };
 }
 
-function StatusPill({ status }: { status: string }) {
-  const cls =
-    status === "approved"
-      ? "bg-mint/20 text-mint border-mint/40"
-      : status === "pending"
-      ? "bg-gold/20 text-gold border-gold/40"
-      : status === "rejected"
-      ? "bg-coral/20 text-coral border-coral/40"
-      : "bg-s3 text-muted border-line";
-  return (
-    <span
-      className={`inline-block border rounded-full px-3 py-1 label-mono ${cls}`}
-    >
-      {status}
-    </span>
-  );
-}
-
 export default async function TicketPage({
   params,
 }: {
@@ -46,24 +29,45 @@ export default async function TicketPage({
   const { data: guest } = await admin
     .from("guests")
     .select(
-      "id, full_name, plus_ones, status, check_in_token, night:event_nights!inner(night_date, doors_at, event:events!inner(id, name, flyer_url))"
+      "id, full_name, plus_ones, status, check_in_token, night:event_nights!inner(night_date, doors_at, event:events!inner(id, name, flyer_url))",
     )
     .eq("check_in_token", params.token)
     .maybeSingle<TicketData>();
 
   if (!guest) {
     return (
-      <main id="main-content" className="mobile-frame">
-        <div className="pt-12 text-center">
-          <p className="label-mono mb-3">WADL</p>
-          <h1 className="display-lg mb-3">Ticket not found.</h1>
-          <p className="text-muted text-sm">
-            The link may be wrong or the ticket may have been revoked.
-          </p>
-          <Link href="/mytickets" className="btn-primary mt-6 inline-block w-auto px-6">
-            My tickets
-          </Link>
-        </div>
+      <main id="main-content">
+        <WFrame style={{ paddingBottom: 48 }}>
+          <div style={{ padding: "20px 24px 0" }}>
+            <Wordmark variant="monogrid" size={18} />
+          </div>
+          <div style={{ padding: "96px 24px 0", textAlign: "center" }}>
+            <div className="w-type-meta">CREDENTIAL</div>
+            <div
+              className="w-type-display-md"
+              style={{ marginTop: 12 }}
+            >
+              Ticket not found.
+            </div>
+            <p
+              className="w-type-body-sm"
+              style={{ color: "var(--w-fg-muted)", marginTop: 12 }}
+            >
+              The link may be wrong or the ticket may have been revoked.
+            </p>
+            <Link
+              href="/mytickets"
+              className="w-btn w-btn--primary"
+              style={{
+                marginTop: 24,
+                display: "inline-flex",
+                textDecoration: "none",
+              }}
+            >
+              My tickets <IconArrow size={14} />
+            </Link>
+          </div>
+        </WFrame>
       </main>
     );
   }
@@ -72,15 +76,13 @@ export default async function TicketPage({
     type: "svg",
     errorCorrectionLevel: "M",
     margin: 1,
-    color: { dark: "#0a0a0a", light: "#F2EDE4" },
+    color: { dark: "#0a0a0b", light: "#f3f1ec" },
   });
 
   const active = guest.status === "approved";
-  // Past-event view: when doors_at is more than 6h in the past, switch to a
-  // post-event "you attended" UI instead of showing the (now-useless) QR.
   const isPast =
     new Date(guest.night.doors_at).getTime() < Date.now() - 6 * 60 * 60_000;
-  // Look for an approved scan to know if they actually came.
+
   const admin2 = createAdminClient();
   const { data: scan } = isPast
     ? await admin2
@@ -95,187 +97,330 @@ export default async function TicketPage({
 
   if (isPast) {
     return (
-      <main id="main-content" className="min-h-screen">
-        <header className="sticky top-0 z-30 backdrop-blur-md bg-bg/80 border-b border-line">
-          <div className="max-w-md mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
-            <Link href="/mytickets" className="label-mono hover:text-cream transition">
-              ← Tickets
+      <main id="main-content">
+        <WFrame style={{ paddingBottom: 32 }}>
+          <div
+            style={{
+              padding: "20px 24px 0",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <Link
+              href="/mytickets"
+              className="w-type-meta"
+              style={{ textDecoration: "none" }}
+            >
+              ← TICKETS
+            </Link>
+            <Wordmark variant="monogrid" size={16} />
+            <Chip tone="ghost">PAST</Chip>
+          </div>
+
+          <div style={{ padding: "24px 24px 0" }}>
+            <div className="w-type-meta">
+              {fmtDate(guest.night.night_date).toUpperCase()} · DOORS{" "}
+              {fmtTime(guest.night.doors_at).toUpperCase()}
+            </div>
+            <div
+              className="w-type-display-md"
+              style={{ marginTop: 6 }}
+            >
+              {guest.night.event.name}
+            </div>
+          </div>
+
+          {guest.night.event.flyer_url && (
+            <div style={{ padding: "20px 24px 0" }}>
+              <div
+                style={{
+                  width: "100%",
+                  aspectRatio: "4 / 5",
+                  border: "1px solid var(--w-line)",
+                  background: "var(--w-surface-2)",
+                  overflow: "hidden",
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={guest.night.event.flyer_url}
+                  alt={guest.night.event.name}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          <div style={{ padding: "20px 24px 0" }}>
+            <div className="w-card" style={{ padding: 16 }}>
+              {scan ? (
+                <>
+                  <Chip tone="ok">✓ ATTENDED</Chip>
+                  <p
+                    className="w-type-body-sm"
+                    style={{ marginTop: 10 }}
+                  >
+                    Scanned in at{" "}
+                    {new Date(scan.scanned_at).toLocaleString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <Chip tone="warn">NO-SHOW</Chip>
+                  <p
+                    className="w-type-body-sm"
+                    style={{
+                      color: "var(--w-fg-muted)",
+                      marginTop: 10,
+                    }}
+                  >
+                    We don&apos;t have a record of you scanning in. Talk to the
+                    host if that&apos;s a mistake.
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div
+            style={{
+              padding: "20px 24px 0",
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 8,
+            }}
+          >
+            <Link
+              href={`/e/${guest.night.event.id}/feedback?token=${guest.check_in_token}`}
+              className="w-btn w-btn--ghost"
+              style={{ textDecoration: "none" }}
+            >
+              Leave feedback
             </Link>
             <Link
-              href="/"
-              className="font-display text-xl text-coral tracking-wide"
+              href="/discover"
+              className="w-btn w-btn--primary"
+              style={{ textDecoration: "none" }}
             >
-              WADL
+              What&apos;s next →
             </Link>
-            <p className="label-mono">Past</p>
           </div>
-        </header>
-        <div className="max-w-md mx-auto px-4 md:px-6 pt-6 pb-12">
-        <h1 className="font-display text-3xl md:text-4xl text-cream uppercase tracking-wide leading-[0.95] mb-2">
-          {guest.night.event.name}
-        </h1>
-        <p className="label-mono mb-6">
-          {fmtDate(guest.night.night_date)} · Doors {fmtTime(guest.night.doors_at)}
-        </p>
 
-        {guest.night.event.flyer_url && (
           <div
-            className="w-full rounded-lg overflow-hidden border border-line mb-5"
-            style={{ aspectRatio: "4 / 5" }}
+            className="w-type-meta"
+            style={{
+              marginTop: "auto",
+              padding: "32px 24px 16px",
+              textAlign: "center",
+              color: "var(--w-fg-dim)",
+              wordBreak: "break-all",
+            }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={guest.night.event.flyer_url}
-              alt={guest.night.event.name}
-              className="w-full h-full object-cover"
-            />
+            TOKEN · {guest.check_in_token}
           </div>
-        )}
-
-        <div className="card mb-4">
-          {scan ? (
-            <>
-              <p className="label-mono text-mint mb-1">✓ You attended</p>
-              <p className="font-sans text-cream">
-                Scanned in at{" "}
-                {new Date(scan.scanned_at).toLocaleString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  hour: "numeric",
-                  minute: "2-digit",
-                })}
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="label-mono text-coral mb-1">No-show</p>
-              <p className="font-sans text-cream/80 text-sm">
-                We don&apos;t have a record of you scanning in. Talk to the
-                host if that&apos;s a mistake.
-              </p>
-            </>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 mb-2">
-          <Link
-            href={`/e/${guest.night.event.id}/feedback?token=${guest.check_in_token}`}
-            className="btn-ghost text-center"
-          >
-            Leave feedback
-          </Link>
-          <Link href="/discover" className="btn-primary text-center">
-            What&apos;s next →
-          </Link>
-        </div>
-
-        <p className="label-mono mt-8 text-center break-all">
-          <span className="text-muted">Token:</span> {guest.check_in_token}
-        </p>
-        </div>
+        </WFrame>
       </main>
     );
   }
 
   return (
-    <main id="main-content" className="min-h-screen">
-      <header className="sticky top-0 z-30 backdrop-blur-md bg-bg/80 border-b border-line">
-        <div className="max-w-md mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
-          <Link href="/mytickets" className="label-mono hover:text-cream transition">
-            ← Tickets
-          </Link>
+    <main id="main-content">
+      <WFrame style={{ paddingBottom: 32 }}>
+        <div
+          style={{
+            padding: "20px 24px 0",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
           <Link
-            href="/"
-            className="font-display text-xl text-coral tracking-wide"
+            href="/mytickets"
+            className="w-type-meta"
+            style={{ textDecoration: "none" }}
           >
-            WADL
+            ← TICKETS
           </Link>
-          <StatusPill status={guest.status} />
+          <Wordmark variant="monogrid" size={16} />
+          <Chip
+            tone={
+              guest.status === "approved"
+                ? "ok"
+                : guest.status === "pending"
+                  ? "warn"
+                  : guest.status === "rejected"
+                    ? "err"
+                    : "ghost"
+            }
+          >
+            {guest.status.toUpperCase()}
+          </Chip>
         </div>
-      </header>
 
-      <div className="max-w-md mx-auto px-4 md:px-6 pt-6 pb-12 flex flex-col">
-      <h1 className="font-display text-3xl md:text-4xl text-cream uppercase tracking-wide leading-[0.95] mb-2">
-        {guest.night.event.name}
-      </h1>
-      <p className="label-mono mb-6">
-        {fmtDate(guest.night.night_date)} · Doors {fmtTime(guest.night.doors_at)}
-      </p>
+        <div style={{ padding: "20px 24px 0" }}>
+          <div className="w-type-meta">
+            {fmtDate(guest.night.night_date).toUpperCase()} · DOORS{" "}
+            {fmtTime(guest.night.doors_at).toUpperCase()}
+          </div>
+          <div className="w-type-display-md" style={{ marginTop: 6 }}>
+            {guest.night.event.name}
+          </div>
+        </div>
 
-      <div
-        className={`rounded-2xl p-6 flex items-center justify-center ${
-          active ? "bg-cream" : "bg-s2 border border-line"
-        }`}
-        style={{ aspectRatio: "1 / 1" }}
-      >
-        {active ? (
+        {/* Big QR */}
+        <div style={{ padding: "24px 24px 0" }}>
           <div
-            className="w-full h-full [&>svg]:w-full [&>svg]:h-full"
-            dangerouslySetInnerHTML={{ __html: svg }}
-          />
-        ) : (
-          <div className="text-center px-4">
-            <p className="font-display text-4xl text-gold mb-3">PENDING</p>
-            <p className="text-muted text-sm">
-              Your QR activates once the host approves this RSVP.
-            </p>
+            style={{
+              aspectRatio: "1 / 1",
+              border: "1px solid var(--w-line)",
+              background: active ? "var(--w-fg)" : "var(--w-surface-2)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: active ? 24 : 32,
+            }}
+          >
+            {active ? (
+              <div
+                style={{ width: "100%", height: "100%" }}
+                dangerouslySetInnerHTML={{ __html: svg }}
+              />
+            ) : (
+              <div style={{ textAlign: "center" }}>
+                <div
+                  className="w-type-meta"
+                  style={{ color: "var(--w-warn)" }}
+                >
+                  PENDING
+                </div>
+                <div
+                  className="w-type-display-md"
+                  style={{ marginTop: 8 }}
+                >
+                  Hold tight.
+                </div>
+                <p
+                  className="w-type-body-sm"
+                  style={{
+                    color: "var(--w-fg-muted)",
+                    marginTop: 12,
+                    maxWidth: 240,
+                  }}
+                >
+                  Your QR activates once the host approves this RSVP.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div style={{ padding: "20px 24px 0" }}>
+          <div className="w-card" style={{ padding: 16 }}>
+            <div className="w-type-meta">GUEST</div>
+            <div
+              style={{
+                fontWeight: 600,
+                fontSize: 17,
+                marginTop: 4,
+              }}
+            >
+              {guest.full_name}
+              {guest.plus_ones > 0 && (
+                <span
+                  style={{
+                    color: "var(--w-fg-muted)",
+                    fontWeight: 400,
+                  }}
+                >
+                  {" "}+{guest.plus_ones}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {active && (
+          <div
+            style={{
+              padding: "20px 24px 0",
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 8,
+            }}
+          >
+            <a
+              href={`/api/wallet/apple/${guest.check_in_token}`}
+              className="w-btn w-btn--ghost"
+              style={{ fontSize: 12, textDecoration: "none" }}
+            >
+              Apple Wallet
+            </a>
+            <a
+              href={`/api/wallet/google/${guest.check_in_token}`}
+              className="w-btn w-btn--ghost"
+              style={{ fontSize: 12, textDecoration: "none" }}
+            >
+              Google Wallet
+            </a>
           </div>
         )}
-      </div>
 
-      <div className="card mt-5">
-        <p className="label-mono mb-1">Guest</p>
-        <p className="font-sans text-cream font-semibold">
-          {guest.full_name}
-          {guest.plus_ones > 0 && (
-            <span className="text-muted font-normal"> +{guest.plus_ones}</span>
-          )}
-        </p>
-      </div>
-
-      {active && (
-        <div className="grid grid-cols-2 gap-2 mt-5">
+        <div
+          style={{
+            padding: "24px 24px 0",
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+            textAlign: "center",
+          }}
+        >
           <a
-            href={`/api/wallet/apple/${guest.check_in_token}`}
-            className="btn-ghost text-center text-xs"
+            href={`/api/events/${guest.night.event.id}/calendar.ics`}
+            className="w-type-meta"
+            style={{ textDecoration: "none" }}
           >
-            Add to Apple Wallet
+            + ADD TO CALENDAR
           </a>
           <a
-            href={`/api/wallet/google/${guest.check_in_token}`}
-            className="btn-ghost text-center text-xs"
+            href={`/referral/${guest.id}`}
+            className="w-type-meta"
+            style={{ textDecoration: "none" }}
           >
-            Add to Google Wallet
+            BRING A FRIEND →
           </a>
         </div>
-      )}
 
-      <p className="label-mono mt-6 text-center break-all">
-        <span className="text-muted">Token:</span> {guest.check_in_token}
-      </p>
-
-      <p className="label-mono mt-3 text-center">
-        <a
-          href={`/api/events/${guest.night.event.id}/calendar.ics`}
-          className="hover:text-cream"
+        <div
+          style={{
+            marginTop: "auto",
+            padding: "32px 24px 16px",
+            textAlign: "center",
+          }}
         >
-          + Add to calendar
-        </a>
-      </p>
-
-      <p className="label-mono mt-3 text-center">
-        <a
-          href={`/referral/${guest.id}`}
-          className="hover:text-cream"
-        >
-          Bring a friend →
-        </a>
-      </p>
-
-      <p className="label-mono mt-8 text-center">
-        Show this screen at the door.
-      </p>
-      </div>
+          <div className="w-type-meta">SHOW THIS SCREEN AT THE DOOR</div>
+          <div
+            className="w-type-meta"
+            style={{
+              marginTop: 12,
+              color: "var(--w-fg-dim)",
+              wordBreak: "break-all",
+              fontSize: 9,
+            }}
+          >
+            {guest.check_in_token}
+          </div>
+        </div>
+      </WFrame>
     </main>
   );
 }

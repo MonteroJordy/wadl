@@ -165,7 +165,7 @@ export default function EmbedDocsPage() {
         .prose-wadl h2 {
           font-family: var(--font-bebas), sans-serif;
           font-size: 1.5rem;
-          color: #FF4A2B;
+          color: oklch(0.7 0.24 260);
           letter-spacing: 0.05em;
           text-transform: uppercase;
           margin-top: 2.5rem;
@@ -183,7 +183,7 @@ export default function EmbedDocsPage() {
           margin-bottom: 1rem;
         }
         .prose-wadl strong {
-          color: #F2EDE4;
+          color: #f3f1ec;
         }
         .prose-wadl code {
           font-family: var(--font-dm-mono), monospace;
@@ -191,7 +191,7 @@ export default function EmbedDocsPage() {
           padding: 1px 6px;
           border-radius: 4px;
           font-size: 0.85em;
-          color: #00D97E;
+          color: oklch(0.86 0.18 145);
         }
       `}</style>
     </>

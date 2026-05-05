@@ -213,14 +213,14 @@ export default function SetupPage() {
           className="absolute -top-32 -left-32 w-[420px] h-[420px] rounded-full"
           style={{
             background:
-              "radial-gradient(closest-side, rgba(255,74,43,0.45), transparent 70%)",
+              "radial-gradient(closest-side, oklch(0.7 0.24 260 / 0.45), transparent 70%)",
           }}
         />
         <div
           className="absolute -bottom-40 -right-32 w-[460px] h-[460px] rounded-full"
           style={{
             background:
-              "radial-gradient(closest-side, rgba(245,200,66,0.18), transparent 70%)",
+              "radial-gradient(closest-side, oklch(0.86 0.16 85 / 0.18), transparent 70%)",
           }}
         />
         <div className="relative">
@@ -425,7 +425,7 @@ export default function SetupPage() {
             </>
           )}
 
-          {error && <p className="text-coral text-sm">{error}</p>}
+          {error && <p className="text-err text-sm">{error}</p>}
 
           <button type="submit" className="btn-primary mt-2" disabled={loading}>
             {loading ? "Building…" : "Build account →"}

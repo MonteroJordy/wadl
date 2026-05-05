@@ -5,7 +5,7 @@ import EmbedRsvpForm from "./embed-form";
 
 export const dynamic = "force-dynamic";
 
-const DEFAULT_ACCENT = "#FF4A2B";
+const DEFAULT_ACCENT = "oklch(0.7 0.24 260)";
 
 function isHexColor(s: string): boolean {
   return /^#?[0-9a-fA-F]{6}$/.test(s);
@@ -50,7 +50,7 @@ export default async function EmbedPage({
         margin: "0 auto",
         maxWidth: 360,
         padding: 16,
-        color: "#F2EDE4",
+        color: "#f3f1ec",
         fontFamily: "system-ui, sans-serif",
       }}
     >
@@ -58,7 +58,7 @@ export default async function EmbedPage({
         style={{
           padding: 16,
           border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: 8,
+          borderRadius: 0,
           backgroundColor: "rgba(10,10,10,0.7)",
         }}
       >
@@ -73,7 +73,7 @@ export default async function EmbedPage({
         >
           RSVP
         </p>
-        <h2 style={{ fontSize: 22, margin: "4px 0 4px 0", color: "#F2EDE4" }}>
+        <h2 style={{ fontSize: 22, margin: "4px 0 4px 0", color: "#f3f1ec" }}>
           {ev.name}
         </h2>
         {upcoming && (

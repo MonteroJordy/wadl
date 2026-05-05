@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { Wordmark } from "@/components/wadl";
 
 interface Props {
   children: React.ReactNode;
@@ -20,15 +21,6 @@ const MAX_W: Record<NonNullable<Props["maxWidth"]>, string> = {
   "7xl": "max-w-7xl",
 };
 
-/**
- * Public / anonymous-or-light-auth shell. Every route that isn't behind the
- * AuthedShell uses this — discover, /e/[id], /t/[token], /mytickets, the
- * marketing pages. Pins the WADL wordmark + chrome at the top of every
- * surface so they all feel like the same product.
- *
- * Server component — reads Supabase session to flip Sign in → My tickets when
- * appropriate.
- */
 export default async function PublicShell({
   children,
   leftSlot,
@@ -45,51 +37,95 @@ export default async function PublicShell({
   return (
     <main
       id="main-content"
-      className={`min-h-screen relative ${
-        ambient ? "wadl-ambient" : ""
-      }`}
+      className={`w-app min-h-screen relative ${ambient ? "wadl-ambient" : ""}`}
     >
-      <header className="sticky top-0 z-30 backdrop-blur-md bg-bg/80 border-b border-line">
+      <header
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 30,
+          backdropFilter: "blur(12px)",
+          background: "rgba(15,15,16,0.78)",
+          borderBottom: "1px solid var(--w-line)",
+        }}
+      >
         <div
-          className={`${MAX_W[maxWidth]} mx-auto px-4 md:px-8 py-3 flex items-center justify-between gap-4`}
+          className={`${MAX_W[maxWidth]} mx-auto`}
+          style={{
+            padding: "12px 24px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 16,
+          }}
         >
-          <div className="flex items-center gap-3 min-w-0">
-            <Link
-              href="/"
-              className="font-display text-2xl text-coral tracking-wide shrink-0"
-              aria-label="WADL home"
-            >
-              WADL
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 14,
+              minWidth: 0,
+            }}
+          >
+            <Link href="/" aria-label="WADL home" style={{ textDecoration: "none", flexShrink: 0 }}>
+              <Wordmark variant="monogrid" size={20} />
             </Link>
             {leftSlot && (
-              <div className="hidden md:flex items-center gap-3 min-w-0">
-                <span className="text-line">·</span>
+              <div
+                style={{
+                  display: "none",
+                  alignItems: "center",
+                  gap: 12,
+                  minWidth: 0,
+                }}
+                className="md:flex"
+              >
+                <span style={{ color: "var(--w-line-2)" }}>·</span>
                 {leftSlot}
               </div>
             )}
           </div>
-          <nav className="flex items-center gap-3 md:gap-4">
+          <nav
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 14,
+            }}
+          >
             {rightSlot ? (
               rightSlot
             ) : (
               <>
                 <Link
                   href="/discover"
-                  className="label-mono hover:text-cream transition hidden sm:inline"
+                  className="w-type-meta hidden sm:inline"
+                  style={{ textDecoration: "none" }}
                 >
-                  Tonight
+                  TONIGHT
                 </Link>
                 {authed ? (
                   <Link
                     href="/mytickets"
-                    className="font-sans font-semibold text-xs uppercase tracking-[0.16em] px-4 py-2 rounded-full bg-s2 border border-line text-cream hover:border-coral transition"
+                    className="w-btn w-btn--ghost"
+                    style={{
+                      height: 36,
+                      padding: "0 14px",
+                      fontSize: 12,
+                      textDecoration: "none",
+                    }}
                   >
                     My tickets
                   </Link>
                 ) : (
                   <Link
                     href="/login"
-                    className="font-sans font-semibold text-xs uppercase tracking-[0.16em] px-4 py-2 rounded-full bg-s2 border border-line text-cream hover:border-coral transition"
+                    className="w-btn w-btn--ghost"
+                    style={{
+                      height: 36,
+                      padding: "0 14px",
+                      fontSize: 12,
+                      textDecoration: "none",
+                    }}
                   >
                     Sign in
                   </Link>
@@ -100,15 +136,18 @@ export default async function PublicShell({
         </div>
       </header>
 
-      <div className={`${MAX_W[maxWidth]} mx-auto px-4 md:px-8 pt-6 md:pt-10 pb-16`}>
+      <div
+        className={`${MAX_W[maxWidth]} mx-auto`}
+        style={{ padding: "24px 24px 64px" }}
+      >
         {children}
       </div>
 
       <style>{`
         .wadl-ambient {
           background-image:
-            radial-gradient(ellipse 800px 600px at 50% -200px, rgba(255, 74, 43, 0.06), transparent 70%),
-            radial-gradient(ellipse 600px 500px at 50% 110%, rgba(245, 200, 66, 0.03), transparent 70%);
+            radial-gradient(ellipse 800px 600px at 50% -200px, oklch(0.7 0.24 260 / 0.08), transparent 70%),
+            radial-gradient(ellipse 600px 500px at 50% 110%, oklch(0.7 0.24 260 / 0.04), transparent 70%);
           background-attachment: fixed;
         }
       `}</style>

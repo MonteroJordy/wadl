@@ -10,6 +10,15 @@ export interface HolderScorecard {
   trend: "up" | "down" | "flat" | null;
   events_played: number;
   tier_mix: { ga: number; vip: number; all_access: number };
+  // Day 50 wedge — per-tier conversion. The brief: "the data venues will
+  // pay for." When per-tier sub-links route guests into the right bucket
+  // and we score them separately, "Diplo's AAA at 100%, his GA at 40%"
+  // becomes the recommendation engine's input.
+  tier_rates: {
+    ga: { approved: number; scanned: number; rate: number } | null;
+    vip: { approved: number; scanned: number; rate: number } | null;
+    aaa: { approved: number; scanned: number; rate: number } | null;
+  };
 }
 
 interface AllocRow {
@@ -86,11 +95,14 @@ export async function computeScorecards(
     .in("allocation_id", allocIds);
   const guests = (guestsRaw ?? []) as unknown as GuestRow[];
 
-  // Per-allocation aggregates.
+  // Per-allocation aggregates. Day 50: also track scanned-by-tier so we
+  // can compute per-tier show rates downstream.
   interface AllocAgg {
     approved: number;
     scanned: number;
     tiers: { ga: number; vip: number; all_access: number };
+    tier_scanned: { ga: number; vip: number; aaa: number };
+    tier_approved: { ga: number; vip: number; aaa: number };
   }
   const allocAgg = new Map<string, AllocAgg>();
   for (const a of allocs) {
@@ -98,6 +110,8 @@ export async function computeScorecards(
       approved: 0,
       scanned: 0,
       tiers: { ga: 0, vip: 0, all_access: 0 },
+      tier_scanned: { ga: 0, vip: 0, aaa: 0 },
+      tier_approved: { ga: 0, vip: 0, aaa: 0 },
     });
   }
   for (const g of guests) {
@@ -106,11 +120,19 @@ export async function computeScorecards(
     const heads = 1 + (g.plus_ones ?? 0);
     const agg = allocAgg.get(g.allocation_id)!;
     agg.approved += heads;
-    if (g.check_ins.some((c) => c.state === "approved")) {
+    const wasScanned = g.check_ins.some((c) => c.state === "approved");
+    if (wasScanned) {
       agg.scanned += heads;
     }
     const tier = g.tier in agg.tiers ? (g.tier as keyof typeof agg.tiers) : "ga";
     agg.tiers[tier] += heads;
+
+    // Per-tier scanned/approved. Map legacy 'all_access' key to 'aaa'
+    // for the new wedge schema.
+    const tk: "ga" | "vip" | "aaa" =
+      tier === "vip" ? "vip" : tier === "all_access" ? "aaa" : "ga";
+    agg.tier_approved[tk] += heads;
+    if (wasScanned) agg.tier_scanned[tk] += heads;
   }
 
   // Group by holder (case-insensitive).
@@ -119,6 +141,8 @@ export async function computeScorecards(
     approved: number;
     scanned: number;
     tiers: { ga: number; vip: number; all_access: number };
+    tier_approved: { ga: number; vip: number; aaa: number };
+    tier_scanned: { ga: number; vip: number; aaa: number };
     perEvent: Map<string, { approved: number; scanned: number; doors_at: string }>;
   }
   const byKey = new Map<string, HolderAgg>();
@@ -131,6 +155,8 @@ export async function computeScorecards(
         approved: 0,
         scanned: 0,
         tiers: { ga: 0, vip: 0, all_access: 0 },
+        tier_approved: { ga: 0, vip: 0, aaa: 0 },
+        tier_scanned: { ga: 0, vip: 0, aaa: 0 },
         perEvent: new Map(),
       });
     }
@@ -143,6 +169,12 @@ export async function computeScorecards(
     ha.tiers.ga += agg.tiers.ga;
     ha.tiers.vip += agg.tiers.vip;
     ha.tiers.all_access += agg.tiers.all_access;
+    ha.tier_approved.ga += agg.tier_approved.ga;
+    ha.tier_approved.vip += agg.tier_approved.vip;
+    ha.tier_approved.aaa += agg.tier_approved.aaa;
+    ha.tier_scanned.ga += agg.tier_scanned.ga;
+    ha.tier_scanned.vip += agg.tier_scanned.vip;
+    ha.tier_scanned.aaa += agg.tier_scanned.aaa;
 
     const ev = ha.perEvent.get(a.event_id);
     if (ev) {
@@ -175,6 +207,12 @@ export async function computeScorecards(
         ? 0
         : events[1].scanned / events[1].approved
       : null;
+    const tierRate = (
+      app: number,
+      scn: number,
+    ): { approved: number; scanned: number; rate: number } | null =>
+      app === 0 ? null : { approved: app, scanned: scn, rate: scn / app };
+
     cards.push({
       key,
       display_name: ha.display_name,
@@ -185,6 +223,11 @@ export async function computeScorecards(
       trend: events.length >= 2 ? trendOf(latestRate, priorRate) : null,
       events_played: ha.perEvent.size,
       tier_mix: ha.tiers,
+      tier_rates: {
+        ga: tierRate(ha.tier_approved.ga, ha.tier_scanned.ga),
+        vip: tierRate(ha.tier_approved.vip, ha.tier_scanned.vip),
+        aaa: tierRate(ha.tier_approved.aaa, ha.tier_scanned.aaa),
+      },
     });
   }
 

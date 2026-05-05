@@ -1,67 +1,124 @@
 import Link from "next/link";
+import PublicShell from "@/components/public-shell";
 import MarketingFooter from "@/components/marketing-footer";
+import { IconArrow } from "@/components/wadl";
 
 export const metadata = {
   title: "Docs — WADL",
   description: "Integration docs for WADL.",
 };
 
+const ENTRIES = [
+  {
+    href: "/docs/embed",
+    t: "Embed widget",
+    d: "Drop an RSVP form into your venue site with one iframe.",
+    live: true,
+  },
+  {
+    t: "Webhooks",
+    href: "/owner/webhooks",
+    d: "HMAC-SHA256 signed payloads, exponential backoff, recent-deliveries log.",
+    live: true,
+  },
+  {
+    t: "Calendar (.ics)",
+    d: "Public per-event calendar feed at /api/events/[id]/ics. One VEVENT per night.",
+    live: true,
+  },
+  {
+    t: "Wallet passes",
+    d: "Apple + Google Wallet routes at /api/wallet/[apple|google]/[token]. Require provider env vars.",
+    live: true,
+  },
+];
+
 export default function DocsIndexPage() {
   return (
     <>
-      <main id="main-content" className="bg-bg text-cream min-h-screen">
-        <header className="px-6 md:px-12 pt-6 pb-4 flex items-center justify-between max-w-4xl mx-auto">
-          <Link href="/" className="font-display text-2xl text-coral tracking-wide">
-            WADL
-          </Link>
-          <Link href="/" className="label-mono hover:text-cream">
-            ← Home
-          </Link>
-        </header>
-
-        <section className="px-6 md:px-12 py-8 max-w-3xl mx-auto">
-          <p className="label-mono mb-2">Docs</p>
-          <h1 className="font-display text-4xl md:text-5xl uppercase tracking-wide mb-8">
+      <PublicShell maxWidth="4xl" ambient>
+        <header style={{ marginBottom: 32 }}>
+          <div className="w-type-meta">DOCS</div>
+          <h1
+            className="w-type-display-md"
+            style={{ marginTop: 10, lineHeight: 0.94 }}
+          >
             Integrations
           </h1>
+          <p
+            className="w-type-body"
+            style={{
+              color: "var(--w-fg-muted)",
+              marginTop: 14,
+              maxWidth: 560,
+            }}
+          >
+            Hooks, embeds, calendar feeds, wallet passes — every entry point
+            into a WADL door.
+          </p>
+        </header>
 
-          <ul className="flex flex-col gap-3">
-            <li className="card hover:border-coral/60 transition">
-              <Link href="/docs/embed">
-                <p className="font-sans font-semibold text-cream">
-                  Embed widget
-                </p>
-                <p className="label-mono mt-1">
-                  Drop an RSVP form into your venue site with one iframe.
-                </p>
-              </Link>
-            </li>
-            <li className="card">
-              <p className="font-sans font-semibold text-cream">Webhooks</p>
-              <p className="label-mono mt-1">
-                Manage from <code>/owner/webhooks</code>. HMAC-SHA256 signed
-                payloads, exponential backoff, recent-deliveries log.
-              </p>
-            </li>
-            <li className="card">
-              <p className="font-sans font-semibold text-cream">Calendar (.ics)</p>
-              <p className="label-mono mt-1">
-                Public per-event calendar feed at{" "}
-                <code>/api/events/[id]/ics</code>. One VEVENT per night.
-              </p>
-            </li>
-            <li className="card">
-              <p className="font-sans font-semibold text-cream">Wallet passes</p>
-              <p className="label-mono mt-1">
-                Apple + Google Wallet routes at{" "}
-                <code>/api/wallet/apple/[token]</code> and{" "}
-                <code>/api/wallet/google/[token]</code>. Require provider env
-                vars.
-              </p>
-            </li>
-          </ul>
-        </section>
-      </main>
+        <ul
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 10,
+            listStyle: "none",
+            padding: 0,
+            margin: 0,
+          }}
+        >
+          {ENTRIES.map((e) => {
+            const inner = (
+              <div
+                className="w-card"
+                style={{
+                  padding: 18,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 16,
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 15 }}>{e.t}</div>
+                  <div
+                    className="w-type-body-sm"
+                    style={{
+                      color: "var(--w-fg-muted)",
+                      marginTop: 4,
+                    }}
+                  >
+                    {e.d}
+                  </div>
+                </div>
+                {e.href && (
+                  <span
+                    style={{
+                      color: "var(--w-fg-dim)",
+                    }}
+                  >
+                    <IconArrow />
+                  </span>
+                )}
+              </div>
+            );
+            return (
+              <li key={e.t}>
+                {e.href ? (
+                  <Link
+                    href={e.href}
+                    style={{ textDecoration: "none", color: "inherit" }}
+                  >
+                    {inner}
+                  </Link>
+                ) : (
+                  inner
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </PublicShell>
       <MarketingFooter />
     </>
   );

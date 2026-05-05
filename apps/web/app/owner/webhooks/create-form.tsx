@@ -53,7 +53,7 @@ export default function CreateWebhookForm() {
           <code>broadcast.sent</code>, <code>event.created</code>
         </p>
       </div>
-      {err && <p className="text-coral text-sm">{err}</p>}
+      {err && <p className="text-err text-sm">{err}</p>}
       {secret && (
         <p className="text-mint text-sm">
           Created. Signing secret:{" "}

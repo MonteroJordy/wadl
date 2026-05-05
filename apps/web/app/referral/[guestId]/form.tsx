@@ -79,7 +79,7 @@ export default function ReferralForm({
           />
         </div>
       )}
-      {error && <p className="text-coral text-sm">{error}</p>}
+      {error && <p className="text-err text-sm">{error}</p>}
       {added && (
         <p className="text-mint text-sm">
           Added <span className="text-cream">{added}</span> to the list.

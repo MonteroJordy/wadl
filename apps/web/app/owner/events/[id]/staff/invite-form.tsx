@@ -116,7 +116,7 @@ export default function InviteForm({ eventId }: { eventId: string }) {
         </div>
       </div>
 
-      {error && <p className="text-coral text-sm">{error}</p>}
+      {error && <p className="text-err text-sm">{error}</p>}
 
       {result && (
         <div className="bg-s3 border border-line rounded-md p-3">

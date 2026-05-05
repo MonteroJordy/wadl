@@ -242,7 +242,7 @@ export default function ChatHubFlow({
           ))}
         </div>
 
-        {error && <p className="text-coral text-sm mb-3">{error}</p>}
+        {error && <p className="text-err text-sm mb-3">{error}</p>}
 
         <button
           type="button"
@@ -328,7 +328,7 @@ export default function ChatHubFlow({
           />
         </div>
 
-        {error && <p className="text-coral text-sm">{error}</p>}
+        {error && <p className="text-err text-sm">{error}</p>}
 
         <button type="submit" className="btn-primary" disabled={pending}>
           {pending ? "Parsing…" : "Parse"}

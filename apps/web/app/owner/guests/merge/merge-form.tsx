@@ -155,7 +155,7 @@ export default function MergeForm({
         allowConcat
       />
 
-      {err && <p className="text-coral text-sm mb-3">{err}</p>}
+      {err && <p className="text-err text-sm mb-3">{err}</p>}
 
       <button
         type="button"

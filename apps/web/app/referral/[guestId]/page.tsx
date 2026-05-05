@@ -1,5 +1,12 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fmtDate, fmtTime } from "@/lib/format";
+import {
+  Avatar,
+  CapacityMeter,
+  Chip,
+  WFrame,
+  Wordmark,
+} from "@/components/wadl";
 import ReferralForm from "./form";
 
 export const dynamic = "force-dynamic";
@@ -36,18 +43,25 @@ export default async function ReferralPage({
     .select(
       "id, full_name, status, allocation_id, " +
         "allocation:allocations(id, cap, list_open, plus_ones_allowed), " +
-        "night:event_nights!inner(id, night_date, doors_at, is_frozen, event:events!inner(id, name, flyer_url))"
+        "night:event_nights!inner(id, night_date, doors_at, is_frozen, event:events!inner(id, name, flyer_url))",
     )
     .eq("id", params.guestId)
     .maybeSingle<ReferrerData>();
 
   if (!ref) {
     return (
-      <main id="main-content" className="mobile-frame">
-        <div className="pt-12 text-center">
-          <p className="label-mono mb-3">WADL</p>
-          <h1 className="display-lg mb-3">Link not found.</h1>
-        </div>
+      <main id="main-content">
+        <WFrame style={{ paddingBottom: 48 }}>
+          <div style={{ padding: "20px 24px 0" }}>
+            <Wordmark variant="monogrid" size={18} />
+          </div>
+          <div style={{ padding: "96px 24px 0", textAlign: "center" }}>
+            <div className="w-type-meta">REFERRAL</div>
+            <div className="w-type-display-md" style={{ marginTop: 12 }}>
+              Link not found.
+            </div>
+          </div>
+        </WFrame>
       </main>
     );
   }
@@ -78,51 +92,119 @@ export default async function ReferralPage({
     ref.status !== "rejected";
 
   return (
-    <main id="main-content" className="mobile-frame">
-      <header className="pt-6 pb-4">
-        <p className="label-mono mb-2">Bring a friend</p>
-        <h1 className="display-lg">{ref.night.event.name}</h1>
-        <p className="label-mono mt-2">
-          {fmtDate(ref.night.night_date)} · Doors {fmtTime(ref.night.doors_at)}
-        </p>
-      </header>
-
-      {ref.night.event.flyer_url ? (
+    <main id="main-content">
+      <WFrame style={{ paddingBottom: 48 }}>
         <div
-          className="w-full rounded-lg overflow-hidden mb-4 border border-line"
-          style={{ aspectRatio: "4 / 5" }}
+          style={{
+            padding: "20px 24px 0",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={ref.night.event.flyer_url}
-            alt={ref.night.event.name}
-            className="w-full h-full object-cover"
+          <Wordmark variant="monogrid" size={18} />
+          <Chip tone="acc">BRING A FRIEND</Chip>
+        </div>
+
+        <div style={{ padding: "32px 24px 0" }}>
+          <div className="w-type-meta">
+            {fmtDate(ref.night.night_date).toUpperCase()} · DOORS{" "}
+            {fmtTime(ref.night.doors_at).toUpperCase()}
+          </div>
+          <div
+            className="w-type-display-md"
+            style={{ marginTop: 6, lineHeight: 1.0 }}
+          >
+            {ref.night.event.name}
+          </div>
+        </div>
+
+        {ref.night.event.flyer_url ? (
+          <div style={{ padding: "20px 24px 0" }}>
+            <div
+              style={{
+                width: "100%",
+                aspectRatio: "4 / 5",
+                border: "1px solid var(--w-line)",
+                background: "var(--w-surface-2)",
+                overflow: "hidden",
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={ref.night.event.flyer_url}
+                alt={ref.night.event.name}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
+              />
+            </div>
+          </div>
+        ) : null}
+
+        <div style={{ padding: "24px 24px 0" }}>
+          <div className="w-card" style={{ padding: 18 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                marginBottom: 12,
+              }}
+            >
+              <Avatar name={ref.full_name} size={36} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="w-type-meta">REFERRAL BY</div>
+                <div
+                  style={{
+                    fontWeight: 600,
+                    fontSize: 17,
+                    marginTop: 2,
+                  }}
+                >
+                  {ref.full_name}
+                </div>
+              </div>
+              {(brought ?? 0) > 0 && (
+                <Chip tone="ok">{brought} BROUGHT</Chip>
+              )}
+            </div>
+            {alloc && alloc.cap > 0 && (
+              <div style={{ marginTop: 8 }}>
+                <CapacityMeter
+                  current={used}
+                  total={alloc.cap}
+                  accent
+                  label={`${remaining} SPOTS LEFT`}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div style={{ padding: "24px 24px 0" }}>
+          <ReferralForm
+            guestId={ref.id}
+            plusOnesAllowed={alloc?.plus_ones_allowed ?? false}
+            active={active}
           />
         </div>
-      ) : null}
 
-      <section className="card mb-5">
-        <p className="label-mono mb-1">Referral by</p>
-        <p className="font-sans text-cream font-semibold">{ref.full_name}</p>
-        {(brought ?? 0) > 0 && (
-          <p className="label-mono mt-2">
-            <span className="text-mint">{brought}</span> brought so far
-          </p>
-        )}
-        {alloc && (
-          <p className="label-mono mt-2">
-            {used}/{alloc.cap} on list ({remaining} spots left)
-          </p>
-        )}
-      </section>
-
-      <ReferralForm
-        guestId={ref.id}
-        plusOnesAllowed={alloc?.plus_ones_allowed ?? false}
-        active={active}
-      />
-
-      <p className="label-mono mt-auto pt-8 text-center">Powered by WADL</p>
+        <div
+          className="w-type-meta"
+          style={{
+            marginTop: "auto",
+            paddingTop: 32,
+            paddingBottom: 16,
+            textAlign: "center",
+            color: "var(--w-fg-dim)",
+          }}
+        >
+          POWERED BY <Wordmark variant="slash" size={11} />
+        </div>
+      </WFrame>
     </main>
   );
 }

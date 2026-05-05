@@ -1,4 +1,4 @@
-import Link from "next/link";
+import PublicShell from "@/components/public-shell";
 import MarketingFooter from "@/components/marketing-footer";
 
 export const metadata = {
@@ -11,19 +11,15 @@ const LAST_UPDATED = "April 30, 2026";
 export default function TermsPage() {
   return (
     <>
-      <main id="main-content" className="bg-bg text-cream min-h-screen">
-        <header className="px-6 md:px-12 pt-6 pb-4 flex items-center justify-between max-w-4xl mx-auto">
-          <Link href="/" className="font-display text-2xl text-coral tracking-wide">
-            WADL
-          </Link>
-          <Link href="/" className="label-mono hover:text-cream">
-            ← Home
-          </Link>
-        </header>
-
-        <article className="px-6 md:px-12 py-8 max-w-3xl mx-auto prose-wadl">
-          <p className="label-mono mb-2">Last updated {LAST_UPDATED}</p>
-          <h1 className="font-display text-4xl md:text-5xl uppercase tracking-wide mb-6">
+      <PublicShell maxWidth="4xl" ambient>
+        <article className="prose-wadl">
+          <div className="w-type-meta" style={{ marginBottom: 12 }}>
+            LAST UPDATED · {LAST_UPDATED.toUpperCase()}
+          </div>
+          <h1
+            className="w-type-display-md"
+            style={{ marginBottom: 32, lineHeight: 0.94 }}
+          >
             Terms of service
           </h1>
 
@@ -129,25 +125,29 @@ export default function TermsPage() {
 
           <h2>12. Contact</h2>
           <p>
-            <a href="mailto:jmontero@mainframeagency.com" className="text-coral">
+            <a
+              href="mailto:jmontero@mainframeagency.com"
+              style={{ color: "var(--w-acc)" }}
+            >
               jmontero@mainframeagency.com
             </a>
           </p>
         </article>
-      </main>
+      </PublicShell>
       <MarketingFooter />
       <style>{`
         .prose-wadl h2 {
-          font-family: var(--font-bebas), sans-serif;
-          font-size: 1.5rem;
-          color: #FF4A2B;
-          letter-spacing: 0.05em;
-          text-transform: uppercase;
+          font-family: var(--w-display);
+          font-size: 1.25rem;
+          font-weight: 600;
+          color: var(--w-fg);
+          letter-spacing: -0.02em;
           margin-top: 2.5rem;
           margin-bottom: 0.75rem;
         }
-        .prose-wadl p, .prose-wadl li {
-          color: rgba(242, 237, 228, 0.8);
+        .prose-wadl p,
+        .prose-wadl li {
+          color: var(--w-fg-muted);
           line-height: 1.65;
           margin-bottom: 0.75rem;
           font-size: 0.95rem;
@@ -158,7 +158,7 @@ export default function TermsPage() {
           margin-bottom: 1rem;
         }
         .prose-wadl strong {
-          color: #F2EDE4;
+          color: var(--w-fg);
         }
       `}</style>
     </>

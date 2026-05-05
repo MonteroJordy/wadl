@@ -1,28 +1,26 @@
 import type { Metadata, Viewport } from "next";
-import { Bebas_Neue, Epilogue, DM_Mono } from "next/font/google";
+import { Inter_Tight, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import CookieConsent from "@/components/cookie-consent";
 import DemoModeBanner from "@/components/demo-mode-banner";
 import { ToastProvider } from "@/components/toast";
 
-const bebas = Bebas_Neue({
-  weight: "400",
+// New design system fonts — Inter Tight does display + body, JetBrains
+// Mono does codes/timestamps/metadata. The legacy --font-bebas /
+// --font-epilogue / --font-dm-mono CSS vars are aliased to these in
+// globals.css so existing utility classes (font-display, font-sans,
+// font-mono) keep working without touching 168 component files.
+const interTight = Inter_Tight({
+  weight: ["400", "500", "600", "700", "800"],
   subsets: ["latin"],
-  variable: "--font-bebas",
+  variable: "--font-inter-tight",
   display: "swap",
 });
 
-const epilogue = Epilogue({
-  weight: ["400", "500", "600", "700"],
+const jbMono = JetBrains_Mono({
+  weight: ["400", "500", "600"],
   subsets: ["latin"],
-  variable: "--font-epilogue",
-  display: "swap",
-});
-
-const dmMono = DM_Mono({
-  weight: ["400", "500"],
-  subsets: ["latin"],
-  variable: "--font-dm-mono",
+  variable: "--font-jb-mono",
   display: "swap",
 });
 
@@ -59,7 +57,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${bebas.variable} ${epilogue.variable} ${dmMono.variable}`}
+      className={`${interTight.variable} ${jbMono.variable}`}
     >
       <body className="bg-bg text-cream min-h-screen">
         <a href="#main-content" className="skip-link">

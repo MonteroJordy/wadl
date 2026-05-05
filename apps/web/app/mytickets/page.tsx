@@ -2,8 +2,16 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fmtDate, fmtTime } from "@/lib/format";
+import {
+  Avatar,
+  Chip,
+  CredPill,
+  CredentialCard,
+  WFrame,
+  Wordmark,
+} from "@/components/wadl";
+import type { Tier } from "@/components/wadl";
 import MyTicketsVerify from "./verify-form";
-import EmptyState from "@/components/empty-state";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +33,33 @@ interface TicketRow {
   };
 }
 
+function tierFromString(t: string): Tier {
+  const u = t.toUpperCase().replace(/_/g, "");
+  if (u.includes("VIP")) return "VIP";
+  if (u.includes("ALL") || u === "AAA") return "AAA";
+  return "GA";
+}
+
+function fmtCredDate(d: string): string {
+  const dt = new Date(d);
+  const dow = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][dt.getDay()];
+  const mon = [
+    "JAN",
+    "FEB",
+    "MAR",
+    "APR",
+    "MAY",
+    "JUN",
+    "JUL",
+    "AUG",
+    "SEP",
+    "OCT",
+    "NOV",
+    "DEC",
+  ][dt.getMonth()];
+  return `${dow} ${String(dt.getDate()).padStart(2, "0")} ${mon}`;
+}
+
 export default async function MyTicketsPage() {
   const supabase = createClient();
   const {
@@ -33,30 +68,58 @@ export default async function MyTicketsPage() {
 
   if (!user?.phone) {
     return (
-      <main id="main-content" className="mobile-frame">
-        <header className="flex items-center justify-between pt-6 pb-4">
-          <Link href="/discover" className="label-mono hover:text-cream">
-            ← Discover
-          </Link>
-        </header>
-
-        <h1 className="display-lg mb-3">My tickets.</h1>
-        <p className="text-muted text-sm">
-          Verify your phone to pull up everything you&apos;ve RSVP&apos;d for.
-        </p>
-
-        <MyTicketsVerify />
+      <main id="main-content">
+        <WFrame style={{ paddingBottom: 48 }}>
+          <div
+            style={{
+              padding: "20px 20px 0",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <Wordmark variant="monogrid" size={16} />
+            <Link
+              href="/discover"
+              className="w-type-meta"
+              style={{ textDecoration: "none" }}
+            >
+              ← DISCOVER
+            </Link>
+          </div>
+          <div style={{ padding: "32px 20px 0" }}>
+            <div className="w-type-meta">WALLET</div>
+            <div className="w-type-display-md" style={{ marginTop: 6 }}>
+              My tickets
+            </div>
+            <p
+              className="w-type-body-sm"
+              style={{
+                color: "var(--w-fg-muted)",
+                marginTop: 12,
+              }}
+            >
+              Verify your phone to pull up everything you&apos;ve RSVP&apos;d
+              for.
+            </p>
+          </div>
+          <div style={{ padding: "32px 20px 0" }}>
+            <MyTicketsVerify />
+          </div>
+        </WFrame>
       </main>
     );
   }
 
-  const phoneWithPlus = user.phone.startsWith("+") ? user.phone : `+${user.phone}`;
+  const phoneWithPlus = user.phone.startsWith("+")
+    ? user.phone
+    : `+${user.phone}`;
 
   const admin = createAdminClient();
   const { data: tickets } = await admin
     .from("guests")
     .select(
-      "id, full_name, plus_ones, status, tier, tier_upgraded_at, tier_upgrade_seen_at, check_in_token, created_at, night:event_nights!inner(id, night_date, doors_at, event:events!inner(id, name, flyer_url))"
+      "id, full_name, plus_ones, status, tier, tier_upgraded_at, tier_upgrade_seen_at, check_in_token, created_at, night:event_nights!inner(id, night_date, doors_at, event:events!inner(id, name, flyer_url))",
     )
     .eq("phone", phoneWithPlus)
     .not("check_in_token", "is", null)
@@ -64,11 +127,8 @@ export default async function MyTicketsPage() {
 
   const rows = (tickets ?? []) as unknown as TicketRow[];
 
-  // Tier-upgrade banner: show for any guest where tier_upgraded_at is set
-  // and tier_upgrade_seen_at is null. Mark them seen on this view so the
-  // banner doesn't fire again.
   const newUpgrades = rows.filter(
-    (t) => t.tier_upgraded_at && !t.tier_upgrade_seen_at
+    (t) => t.tier_upgraded_at && !t.tier_upgrade_seen_at,
   );
   if (newUpgrades.length > 0) {
     const ids = newUpgrades.map((t) => t.id);
@@ -78,7 +138,6 @@ export default async function MyTicketsPage() {
       .in("id", ids);
   }
 
-  // Split upcoming vs past by doors_at.
   const now = Date.now();
   const upcoming: TicketRow[] = [];
   const past: TicketRow[] = [];
@@ -90,135 +149,318 @@ export default async function MyTicketsPage() {
     }
   }
 
+  // The hero: the next-up credential, with up to two past credentials
+  // peeking out behind it as a stack. Matches handoff Wallet().
+  const hero = upcoming[0];
+  const stackBehind = [...past].slice(0, 2);
+  const initials = (user.user_metadata?.full_name as string | undefined)
+    ?.split(" ")
+    .map((s) => s[0] ?? "")
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
   return (
-    <main id="main-content" className="min-h-screen">
-      <header className="sticky top-0 z-30 backdrop-blur-md bg-bg/80 border-b border-line">
-        <div className="max-w-4xl mx-auto px-4 md:px-8 py-3 flex items-center justify-between">
-          <Link href="/discover" className="label-mono hover:text-cream transition">
-            ← Discover
-          </Link>
-          <Link
-            href="/"
-            className="font-display text-2xl text-coral tracking-wide"
-          >
-            WADL
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/mytickets/profile"
-              className="label-mono hover:text-cream"
-            >
-              Profile
-            </Link>
-            <form action="/api/auth/signout" method="post">
-              <button
-                type="submit"
-                className="label-mono hover:text-cream transition"
-              >
-                Sign out
-              </button>
-            </form>
+    <main id="main-content">
+      <WFrame style={{ paddingBottom: 96 }}>
+        <div
+          style={{
+            padding: "20px 20px 0",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Wordmark variant="monogrid" size={16} />
+          <Avatar name={initials || phoneWithPlus.slice(-2)} size={28} />
+        </div>
+
+        <div style={{ padding: "24px 20px 0" }}>
+          <div className="w-type-meta">
+            WALLET · {rows.length} CREDENTIAL{rows.length === 1 ? "" : "S"}
+          </div>
+          <div className="w-type-display-md" style={{ marginTop: 6 }}>
+            Wallet
           </div>
         </div>
-      </header>
 
-      <div className="max-w-4xl mx-auto px-4 md:px-8 pt-6 md:pt-10 pb-16">
-        <p className="label-mono mb-2">{phoneWithPlus}</p>
-        <h1 className="font-display text-5xl md:text-6xl text-cream uppercase tracking-wide leading-[0.95] mb-8">
-          My tickets<span className="text-coral">.</span>
-        </h1>
+        {newUpgrades.length > 0 && (
+          <div style={{ padding: "20px 20px 0" }}>
+            <div
+              className="w-card"
+              style={{
+                padding: 14,
+                borderColor: "var(--w-acc)",
+                background: "var(--w-acc-soft)",
+                display: "flex",
+                gap: 10,
+                alignItems: "flex-start",
+              }}
+            >
+              <Chip tone="acc">↑ TIER UPGRADE</Chip>
+              <div style={{ flex: 1 }}>
+                {newUpgrades.map((t) => (
+                  <p
+                    key={t.id}
+                    className="w-type-body-sm"
+                    style={{ marginTop: 0 }}
+                  >
+                    Bumped to{" "}
+                    <strong>
+                      {t.tier.replace(/_/g, " ").toUpperCase()}
+                    </strong>{" "}
+                    for <strong>{t.night.event.name}</strong>.
+                  </p>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
-      {newUpgrades.length > 0 && (
-        <section className="card border-coral mb-6">
-          <p className="label-mono text-coral mb-2">Tier upgrade!</p>
-          {newUpgrades.map((t) => (
-            <p key={t.id} className="text-cream text-sm mb-1">
-              You&apos;ve been bumped to{" "}
-              <span className="font-sans font-semibold">
-                {t.tier.replace("_", " ").toUpperCase()}
-              </span>{" "}
-              for{" "}
-              <span className="font-sans font-semibold">
-                {t.night.event.name}
-              </span>
-              .
+        {/* Stacked credential hero — handoff Wallet pattern */}
+        {hero ? (
+          <div style={{ padding: "32px 20px 0", position: "relative" }}>
+            <div style={{ position: "relative", height: 320 }}>
+              {stackBehind[1] && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 18,
+                    left: 12,
+                    right: 12,
+                    transform: "scale(.94)",
+                    opacity: 0.35,
+                    pointerEvents: "none",
+                  }}
+                >
+                  <CredentialCard
+                    variant="mono"
+                    tier={tierFromString(stackBehind[1].tier)}
+                    name={stackBehind[1].full_name}
+                    event={stackBehind[1].night.event.name}
+                    date={fmtCredDate(stackBehind[1].night.night_date)}
+                    code={stackBehind[1].check_in_token
+                      .slice(0, 11)
+                      .toUpperCase()}
+                  />
+                </div>
+              )}
+              {stackBehind[0] && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 8,
+                    left: 6,
+                    right: 6,
+                    transform: "scale(.97)",
+                    opacity: 0.6,
+                    pointerEvents: "none",
+                  }}
+                >
+                  <CredentialCard
+                    variant="mono"
+                    tier={tierFromString(stackBehind[0].tier)}
+                    name={stackBehind[0].full_name}
+                    event={stackBehind[0].night.event.name}
+                    date={fmtCredDate(stackBehind[0].night.night_date)}
+                    code={stackBehind[0].check_in_token
+                      .slice(0, 11)
+                      .toUpperCase()}
+                  />
+                </div>
+              )}
+              <Link
+                href={`/t/${hero.check_in_token}`}
+                style={{
+                  textDecoration: "none",
+                  color: "inherit",
+                  position: "relative",
+                  zIndex: 2,
+                  display: "block",
+                }}
+              >
+                <CredentialCard
+                  variant="mono"
+                  tier={tierFromString(hero.tier)}
+                  name={hero.full_name}
+                  event={hero.night.event.name}
+                  date={fmtCredDate(hero.night.night_date)}
+                  code={hero.check_in_token.slice(0, 11).toUpperCase()}
+                />
+              </Link>
+            </div>
+          </div>
+        ) : null}
+
+        {!hero && rows.length === 0 ? (
+          <div style={{ padding: "48px 20px 0", textAlign: "center" }}>
+            <div className="w-type-h2">Nothing here yet</div>
+            <p
+              className="w-type-body-sm"
+              style={{
+                color: "var(--w-fg-muted)",
+                marginTop: 8,
+              }}
+            >
+              RSVP to an event and your ticket will appear here.
             </p>
-          ))}
-        </section>
-      )}
-
-      {rows.length === 0 ? (
-        <EmptyState
-          title="Nothing here yet"
-          body="RSVP to an event and your ticket will appear here."
-          action={
-            <Link href="/discover" className="btn-primary inline-block">
+            <Link
+              href="/discover"
+              className="w-btn w-btn--primary"
+              style={{
+                marginTop: 24,
+                textDecoration: "none",
+                display: "inline-flex",
+              }}
+            >
               Browse events
             </Link>
-          }
-        />
-      ) : (
-        <>
-          {upcoming.length > 0 && (
-            <section className="mb-8">
-              <p className="label-mono mb-3">Upcoming · {upcoming.length}</p>
-              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
-                {upcoming.map((t) => (
-                  <TicketCard key={t.id} t={t} />
-                ))}
-              </div>
-            </section>
-          )}
+          </div>
+        ) : null}
 
-          {past.length > 0 && (
-            <section>
-              <p className="label-mono mb-3">Past · {past.length}</p>
-              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 opacity-70">
-                {past.map((t) => (
-                  <TicketCard key={t.id} t={t} />
-                ))}
-              </div>
-            </section>
-          )}
-        </>
-      )}
-      </div>
+        {upcoming.length > 1 && (
+          <>
+            <SectionLabel>UPCOMING · {upcoming.length - 1}</SectionLabel>
+            <div style={{ padding: "0 20px" }}>
+              {upcoming.slice(1).map((t, i, arr) => (
+                <PastRow key={t.id} t={t} last={i === arr.length - 1} />
+              ))}
+            </div>
+          </>
+        )}
+
+        {past.length > 0 && (
+          <>
+            <SectionLabel>PAST · {past.length}</SectionLabel>
+            <div style={{ padding: "0 20px" }}>
+              {past.map((t, i, arr) => (
+                <PastRow key={t.id} t={t} last={i === arr.length - 1} />
+              ))}
+            </div>
+          </>
+        )}
+
+        <div
+          className="w-type-meta"
+          style={{
+            marginTop: "auto",
+            paddingTop: 32,
+            paddingBottom: 16,
+            textAlign: "center",
+            color: "var(--w-fg-dim)",
+          }}
+        >
+          <Link
+            href="/mytickets/profile"
+            style={{ color: "inherit", textDecoration: "none" }}
+          >
+            PROFILE
+          </Link>
+          {" · "}
+          <form
+            action="/api/auth/signout"
+            method="post"
+            style={{ display: "inline" }}
+          >
+            <button
+              type="submit"
+              style={{
+                background: "transparent",
+                border: 0,
+                color: "inherit",
+                padding: 0,
+                cursor: "pointer",
+                font: "inherit",
+              }}
+            >
+              SIGN OUT
+            </button>
+          </form>
+        </div>
+      </WFrame>
     </main>
   );
 }
 
-function TicketCard({ t }: { t: TicketRow }) {
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ padding: "32px 20px 12px" }}>
+      <span className="w-type-meta">{children}</span>
+    </div>
+  );
+}
+
+function PastRow({ t, last }: { t: TicketRow; last: boolean }) {
+  const tier = tierFromString(t.tier);
+  const dt = new Date(t.night.night_date);
+  const dow = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][dt.getDay()];
   return (
     <Link
       href={`/t/${t.check_in_token}`}
-      className="card hover:border-coral transition"
+      style={{ textDecoration: "none", color: "inherit", display: "block" }}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="font-sans text-cream font-semibold truncate">
-            {t.night.event.name}
-          </p>
-          <p className="label-mono mt-1">
-            {fmtDate(t.night.night_date)} · Doors {fmtTime(t.night.doors_at)}
-          </p>
-          <p className="label-mono mt-1 truncate">
-            {t.full_name}
-            {t.plus_ones > 0 ? ` +${t.plus_ones}` : ""}
-          </p>
-        </div>
-        <span
-          className={`label-mono shrink-0 ${
-            t.status === "approved"
-              ? "text-mint"
-              : t.status === "pending"
-              ? "text-gold"
-              : t.status === "rejected"
-              ? "text-coral"
-              : "text-muted"
-          }`}
+      <div
+        style={{
+          padding: "14px 0",
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          borderBottom: last ? "none" : "1px solid var(--w-line)",
+        }}
+      >
+        <div
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 0,
+            background: "#ffffff08",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: "var(--w-mono)",
+            flexShrink: 0,
+          }}
         >
-          {t.status}
-        </span>
+          <span style={{ fontSize: 8, color: "var(--w-fg-muted)" }}>
+            {dow}
+          </span>
+          <span style={{ fontSize: 12, fontWeight: 700, marginTop: 1 }}>
+            {String(dt.getDate()).padStart(2, "0")}
+          </span>
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              fontSize: 14,
+              fontWeight: 500,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {t.night.event.name}
+          </div>
+          <div
+            className="w-type-meta"
+            style={{
+              marginTop: 2,
+              color:
+                t.status === "approved"
+                  ? "var(--w-fg-muted)"
+                  : t.status === "pending"
+                    ? "var(--w-warn)"
+                    : t.status === "rejected"
+                      ? "var(--w-err)"
+                      : "var(--w-fg-muted)",
+            }}
+          >
+            {t.status === "approved"
+              ? `DOORS ${fmtTime(t.night.doors_at)}`
+              : t.status.toUpperCase()}
+          </div>
+        </div>
+        <CredPill tier={tier} />
       </div>
     </Link>
   );
