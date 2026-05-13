@@ -44,7 +44,7 @@ export default function NotFound() {
           }}
         >
           That page either moved, never existed, or your link expired.
-          The door's still open.
+          The door&apos;s still open.
         </p>
         <div
           style={{

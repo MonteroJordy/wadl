@@ -85,8 +85,8 @@ export default function GlobalError({
               marginBottom: 24,
             }}
           >
-            The app couldn't recover on its own. Reload, or email support
-            with the ref below if it keeps happening.
+            The app couldn&apos;t recover on its own. Reload, or email
+            support with the ref below if it keeps happening.
           </p>
           {error.digest && (
             <p
