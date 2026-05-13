@@ -107,7 +107,7 @@ language sql stable as $$
       select sum(1 + g.plus_ones)
       from public.guests g
       where g.allocation_id = tc.allocation_id
-        and g.tier = tc.tier
+        and g.tier::text = tc.tier
         and g.status in ('approved', 'pending')
     ), 0)::integer as used
   from public.allocation_tier_caps tc

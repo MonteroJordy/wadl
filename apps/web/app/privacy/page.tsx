@@ -145,7 +145,7 @@ export default function PrivacyPage() {
             </li>
           </ul>
           <p>
-            Email <a href="mailto:jmontero@mainframeagency.com" className="text-coral">jmontero@mainframeagency.com</a> for any of these. We respond
+            Email <a href="mailto:jmontero@mainframeagency.com" style={{ color: "var(--w-acc)" }}>jmontero@mainframeagency.com</a> for any of these. We respond
             within 30 days.
           </p>
 
@@ -159,7 +159,7 @@ export default function PrivacyPage() {
 
           <h2 id="contact">8. Contact</h2>
           <p>
-            <a href="mailto:jmontero@mainframeagency.com" className="text-coral">
+            <a href="mailto:jmontero@mainframeagency.com" style={{ color: "var(--w-acc)" }}>
               jmontero@mainframeagency.com
             </a>{" "}
             — for any privacy question, takedown, or data request.

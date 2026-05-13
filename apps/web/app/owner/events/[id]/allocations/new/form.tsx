@@ -72,7 +72,7 @@ export default function NewAllocationForm({
 
   return (
     <main id="main-content">
-      <WFrame style={{ paddingBottom: 48 }}>
+      <WFrame wide maxWidth={760} style={{ paddingBottom: 48 }}>
         <div
           style={{
             display: "flex",

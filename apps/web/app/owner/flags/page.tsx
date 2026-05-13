@@ -1,6 +1,7 @@
-import { requireOwnerContext, fmtDate } from "@/lib/owner";
+import { requireOwnerContext } from "@/lib/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
-import EmptyState from "@/components/empty-state";
+import { fmtDate } from "@/lib/format";
+import { Chip } from "@/components/wadl";
 import BulkFlagForm from "./bulk-form";
 
 export const dynamic = "force-dynamic";
@@ -25,16 +26,15 @@ export default async function MasterFlagsPage({
   const sort = (searchParams.sort ?? "recent") as "recent" | "name" | "event";
   const admin = createAdminClient();
 
-  // Pull all flagged guests across this account's events.
   const { data } = await admin
     .from("guests")
     .select(
-      "id, full_name, flag_reason, phone, created_at, night:event_nights!inner(night_date, event:events!inner(id, name, account_id))"
+      "id, full_name, flag_reason, phone, created_at, night:event_nights!inner(night_date, event:events!inner(id, name, account_id))",
     )
     .eq("flag_dna", true);
-  const all = ((data ?? []) as unknown as Array<FlagRow & { created_at: string }>).filter(
-    (r) => r.night.event.account_id === account.id
-  );
+  const all = (
+    (data ?? []) as unknown as Array<FlagRow & { created_at: string }>
+  ).filter((r) => r.night.event.account_id === account.id);
 
   if (sort === "name") all.sort((a, b) => a.full_name.localeCompare(b.full_name));
   else if (sort === "event")
@@ -50,41 +50,95 @@ export default async function MasterFlagsPage({
     phone: r.phone,
   }));
 
-  return (
-    <main id="main-content" className="mx-auto max-w-frame md:max-w-3xl px-6 pt-12 pb-8 md:py-12">
-      <header className="mb-6">
-        <p className="label-mono mb-1">DNA registry</p>
-        <h1 className="display-lg">Flag list</h1>
-        <p className="label-mono mt-2">
-          {items.length} flagged guest{items.length === 1 ? "" : "s"} across this account
-        </p>
-      </header>
+  const sortLabels: Record<typeof sort, string> = {
+    recent: "MOST RECENT",
+    name: "BY NAME",
+    event: "BY EVENT",
+  };
 
-      {items.length === 0 ? (
-        <EmptyState
-          title="Clean sheet"
-          body="No DNA flags across any of your events. Flag a guest from their detail page when needed."
-        />
-      ) : (
-        <>
-          <div className="flex gap-1 overflow-x-auto pb-2 mb-4">
-            {(["recent", "name", "event"] as const).map((s) => (
-              <a
-                key={s}
-                href={s === "recent" ? "/owner/flags" : `/owner/flags?sort=${s}`}
-                className={`shrink-0 px-3 py-1 rounded-full border text-[10px] font-mono uppercase tracking-wider ${
-                  sort === s
-                    ? "border-coral bg-s2 text-cream"
-                    : "border-line bg-s1 text-muted hover:text-cream"
-                }`}
-              >
-                {s === "recent" ? "Most recent" : s === "name" ? "By name" : "By event"}
-              </a>
-            ))}
+  return (
+    <main
+      id="main-content"
+      className="w-app"
+      style={{
+        minHeight: "100vh",
+        background: "var(--w-bg)",
+        padding: "32px 24px 96px",
+      }}
+    >
+      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+        <div
+          style={{
+            borderBottom: "1px solid var(--w-line)",
+            paddingBottom: 24,
+            marginBottom: 24,
+          }}
+        >
+          <div className="w-type-meta">DO NOT ADMIT · DNA</div>
+          <div className="w-type-display-md" style={{ marginTop: 8 }}>
+            Blocked guests
           </div>
-          <BulkFlagForm items={items} />
-        </>
-      )}
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-fg-muted)", marginTop: 8 }}
+          >
+            {items.length} blocked guest{items.length === 1 ? "" : "s"} across
+            this account · the door scanner rejects these on sight.
+          </p>
+        </div>
+
+        {items.length === 0 ? (
+          <div
+            className="w-card"
+            style={{
+              padding: "64px 32px",
+              textAlign: "center",
+            }}
+          >
+            <div className="w-type-h1">Clean sheet</div>
+            <p
+              className="w-type-body-sm"
+              style={{
+                color: "var(--w-fg-muted)",
+                marginTop: 12,
+                maxWidth: 460,
+                marginInline: "auto",
+                lineHeight: 1.5,
+              }}
+            >
+              No DNA flags across any of your events. Flag a guest from their
+              detail page when needed.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div
+              style={{
+                display: "flex",
+                gap: 6,
+                overflowX: "auto",
+                paddingBottom: 4,
+                marginBottom: 16,
+              }}
+            >
+              {(["recent", "name", "event"] as const).map((s) => (
+                <a
+                  key={s}
+                  href={
+                    s === "recent" ? "/owner/flags" : `/owner/flags?sort=${s}`
+                  }
+                  style={{ textDecoration: "none", flexShrink: 0 }}
+                >
+                  <Chip tone={sort === s ? "acc" : "ghost"}>
+                    {sortLabels[s]}
+                  </Chip>
+                </a>
+              ))}
+            </div>
+            <BulkFlagForm items={items} />
+          </>
+        )}
+      </div>
     </main>
   );
 }

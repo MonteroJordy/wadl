@@ -4,6 +4,17 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { normalizePhone } from "@/lib/routing";
+import { Button } from "@/components/wadl";
+
+const INPUT_STYLE: React.CSSProperties = {
+  width: "100%",
+  background: "var(--w-surface-1)",
+  border: "1px solid var(--w-line)",
+  color: "var(--w-fg)",
+  padding: "10px 12px",
+  fontFamily: "var(--w-sans)",
+  fontSize: 14,
+};
 
 export default function MyTicketsVerify() {
   const router = useRouter();
@@ -54,9 +65,20 @@ export default function MyTicketsVerify() {
 
   if (step === "code") {
     return (
-      <form onSubmit={onVerify} className="flex flex-col gap-4 mt-6">
-        <p className="text-muted text-sm">
-          Sent to <span className="text-cream">{e164}</span>.
+      <form
+        onSubmit={onVerify}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 16,
+          marginTop: 24,
+        }}
+      >
+        <p
+          className="w-type-body-sm"
+          style={{ color: "var(--w-fg-muted)" }}
+        >
+          Sent to <span style={{ color: "var(--w-fg)" }}>{e164}</span>.
         </p>
         <input
           type="text"
@@ -66,30 +88,62 @@ export default function MyTicketsVerify() {
           maxLength={6}
           value={code}
           onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-          className="input-dark tracking-[0.5em] text-center text-2xl"
+          style={{
+            ...INPUT_STYLE,
+            letterSpacing: "0.5em",
+            textAlign: "center",
+            fontSize: 24,
+          }}
           placeholder="••••••"
           required
         />
-        {error && <p className="text-err text-sm">{error}</p>}
-        <button type="submit" className="btn-primary" disabled={pending}>
+        {error && (
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-err)" }}
+          >
+            {error}
+          </p>
+        )}
+        <Button variant="primary" type="submit" disabled={pending}>
           {pending ? "Verifying…" : "See my tickets"}
-        </button>
+        </Button>
         <button
           type="button"
           onClick={() => setStep("phone")}
-          className="label-mono text-center hover:text-cream transition"
+          className="w-type-meta"
+          style={{
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            color: "var(--w-fg-muted)",
+            textAlign: "center",
+            padding: 0,
+          }}
         >
-          ← Wrong number
+          ← WRONG NUMBER
         </button>
       </form>
     );
   }
 
   return (
-    <form onSubmit={onSendCode} className="flex flex-col gap-4 mt-6">
+    <form
+      onSubmit={onSendCode}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 16,
+        marginTop: 24,
+      }}
+    >
       <div>
-        <label htmlFor="phone" className="label-mono block mb-2">
-          Phone
+        <label
+          htmlFor="phone"
+          className="w-type-meta"
+          style={{ display: "block", marginBottom: 6 }}
+        >
+          PHONE
         </label>
         <input
           id="phone"
@@ -98,15 +152,22 @@ export default function MyTicketsVerify() {
           autoComplete="tel"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          className="input-dark"
+          style={INPUT_STYLE}
           placeholder="(305) 555 1234"
           required
         />
       </div>
-      {error && <p className="text-err text-sm">{error}</p>}
-      <button type="submit" className="btn-primary" disabled={pending}>
+      {error && (
+        <p
+          className="w-type-body-sm"
+          style={{ color: "var(--w-err)" }}
+        >
+          {error}
+        </p>
+      )}
+      <Button variant="primary" type="submit" disabled={pending}>
         {pending ? "Sending…" : "Send code"}
-      </button>
+      </Button>
     </form>
   );
 }

@@ -5,6 +5,7 @@ import { getAppUrl } from "@/lib/app-url";
 import { getVapidPublicKey } from "@/lib/push";
 import PushSubscribeButton from "@/components/push-subscribe";
 import { Avatar, Button, Chip, IconPlus } from "@/components/wadl";
+import FormSubmit from "@/components/form-submit";
 import AccountMetaForm from "./account-meta-form";
 import ShareLinkInput from "./share-link";
 
@@ -449,9 +450,9 @@ export default async function ProfilePage() {
 
         {/* Sign out */}
         <form action="/api/auth/signout" method="post" style={{ marginTop: 24 }}>
-          <Button type="submit" variant="ghost" block>
+          <FormSubmit variant="ghost" block pendingLabel="Signing out…">
             Sign out
-          </Button>
+          </FormSubmit>
         </form>
 
         {!profile.full_name && (

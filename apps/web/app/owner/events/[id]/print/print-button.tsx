@@ -1,13 +1,16 @@
 "use client";
 
+import { Button } from "@/components/wadl";
+
 export default function PrintButton() {
   return (
-    <button
+    <Button
+      variant="primary"
       type="button"
       onClick={() => window.print()}
-      className="btn-primary print:hidden"
+      className="print-hide"
     >
       Print now
-    </button>
+    </Button>
   );
 }

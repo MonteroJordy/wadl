@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Button, Chip } from "@/components/wadl";
 import { ownerOverrideAdmitAction } from "./actions";
 import { useToast } from "@/components/toast";
 
@@ -13,6 +14,16 @@ interface NightOpt {
 
 const TIERS = ["ga", "vip", "all_access"] as const;
 type TierVal = (typeof TIERS)[number];
+
+const INPUT_STYLE: React.CSSProperties = {
+  width: "100%",
+  background: "var(--w-surface-1)",
+  border: "1px solid var(--w-line)",
+  color: "var(--w-fg)",
+  padding: "10px 12px",
+  fontFamily: "var(--w-sans)",
+  fontSize: 14,
+};
 
 export default function OverrideForm({
   eventId,
@@ -55,11 +66,28 @@ export default function OverrideForm({
   const currentNight = nights.find((n) => n.id === nightId);
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-4">
+    <form
+      onSubmit={submit}
+      style={{ display: "flex", flexDirection: "column", gap: 16 }}
+    >
       {currentNight?.is_frozen && (
-        <div className="card border-coral">
-          <p className="label-mono text-coral mb-1">⚠ Lockdown active</p>
-          <p className="text-cream text-sm">
+        <div
+          className="w-card"
+          style={{ padding: 16, borderColor: "var(--w-err)" }}
+        >
+          <div
+            className="w-type-meta"
+            style={{ color: "var(--w-err)", marginBottom: 4 }}
+          >
+            ⚠ LOCKDOWN ACTIVE
+          </div>
+          <p
+            style={{
+              color: "var(--w-fg)",
+              fontSize: 14,
+              lineHeight: 1.5,
+            }}
+          >
             This night is at capacity threshold. The override will admit them
             anyway and the audit log records the bypass.
           </p>
@@ -67,14 +95,18 @@ export default function OverrideForm({
       )}
 
       <div>
-        <label className="label-mono block mb-2" htmlFor="ov-night">
-          Night
+        <label
+          htmlFor="ov-night"
+          className="w-type-meta"
+          style={{ display: "block", marginBottom: 6 }}
+        >
+          NIGHT
         </label>
         <select
           id="ov-night"
           value={nightId}
           onChange={(e) => setNightId(e.target.value)}
-          className="input-dark"
+          style={INPUT_STYLE}
         >
           {nights.map((n) => (
             <option key={n.id} value={n.id}>
@@ -86,21 +118,29 @@ export default function OverrideForm({
       </div>
 
       <div>
-        <label className="label-mono block mb-2" htmlFor="ov-name">
-          Full name
+        <label
+          htmlFor="ov-name"
+          className="w-type-meta"
+          style={{ display: "block", marginBottom: 6 }}
+        >
+          FULL NAME
         </label>
         <input
           id="ov-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="input-dark"
+          style={INPUT_STYLE}
           required
         />
       </div>
 
       <div>
-        <label className="label-mono block mb-2" htmlFor="ov-phone">
-          Phone (optional)
+        <label
+          htmlFor="ov-phone"
+          className="w-type-meta"
+          style={{ display: "block", marginBottom: 6 }}
+        >
+          PHONE (OPTIONAL)
         </label>
         <input
           id="ov-phone"
@@ -108,24 +148,39 @@ export default function OverrideForm({
           inputMode="tel"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          className="input-dark"
+          style={INPUT_STYLE}
           placeholder="(305) 555 1234"
         />
       </div>
 
       <div>
-        <p className="label-mono mb-2">Tier</p>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="w-type-meta" style={{ marginBottom: 8 }}>
+          TIER
+        </div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: 6,
+          }}
+        >
           {TIERS.map((t) => (
             <button
               key={t}
               type="button"
               onClick={() => setTier(t)}
-              className={`p-3 rounded border ${
-                tier === t
-                  ? "border-coral bg-s2 text-cream"
-                  : "border-line text-muted hover:text-cream"
-              }`}
+              style={{
+                padding: 12,
+                border: `1px solid ${tier === t ? "var(--w-acc)" : "var(--w-line)"}`,
+                background:
+                  tier === t ? "var(--w-acc-soft)" : "var(--w-surface-1)",
+                color:
+                  tier === t ? "var(--w-acc-ink)" : "var(--w-fg-muted)",
+                fontFamily: "var(--w-mono)",
+                fontSize: 12,
+                letterSpacing: "0.08em",
+                cursor: "pointer",
+              }}
             >
               {t === "all_access" ? "AA" : t.toUpperCase()}
             </button>
@@ -134,8 +189,12 @@ export default function OverrideForm({
       </div>
 
       <div>
-        <label className="label-mono block mb-2" htmlFor="ov-plus">
-          +1s
+        <label
+          htmlFor="ov-plus"
+          className="w-type-meta"
+          style={{ display: "block", marginBottom: 6 }}
+        >
+          +1S
         </label>
         <input
           id="ov-plus"
@@ -144,15 +203,26 @@ export default function OverrideForm({
           max={10}
           value={plus}
           onChange={(e) => setPlus(e.target.value.replace(/[^\d]/g, ""))}
-          className="input-dark"
+          style={INPUT_STYLE}
         />
       </div>
 
       <div>
-        <label className="label-mono block mb-2" htmlFor="ov-reason">
-          Reason (required for audit)
+        <label
+          htmlFor="ov-reason"
+          className="w-type-meta"
+          style={{ display: "block", marginBottom: 6 }}
+        >
+          REASON (REQUIRED FOR AUDIT)
         </label>
-        <div className="flex flex-wrap gap-1 mb-2">
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 6,
+            marginBottom: 8,
+          }}
+        >
           {[
             "VIP arrival",
             "Staff comp",
@@ -165,17 +235,18 @@ export default function OverrideForm({
               key={preset}
               type="button"
               onClick={() =>
-                setReason((cur) =>
-                  cur.trim() === preset ? "" : preset
-                )
+                setReason((cur) => (cur.trim() === preset ? "" : preset))
               }
-              className={`px-2 py-1 rounded-full border text-[10px] font-mono uppercase tracking-wider ${
-                reason.trim() === preset
-                  ? "border-coral bg-s2 text-cream"
-                  : "border-line bg-s1 text-muted hover:text-cream"
-              }`}
+              style={{
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                padding: 0,
+              }}
             >
-              {preset}
+              <Chip tone={reason.trim() === preset ? "acc" : "ghost"}>
+                {preset.toUpperCase()}
+              </Chip>
             </button>
           ))}
         </div>
@@ -183,19 +254,19 @@ export default function OverrideForm({
           id="ov-reason"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          className="input-dark min-h-[72px]"
+          style={{ ...INPUT_STYLE, minHeight: 72 }}
           placeholder="VIP guest of the headliner — venue OK"
           required
         />
       </div>
 
-      <button type="submit" className="btn-primary" disabled={pending}>
+      <Button variant="primary" type="submit" disabled={pending}>
         {pending ? "Admitting…" : "Override + admit"}
-      </button>
+      </Button>
 
-      <p className="label-mono">
-        This bypasses capacity caps + frozen lists. Every override is logged.
-      </p>
+      <div className="w-type-meta">
+        THIS BYPASSES CAPACITY CAPS + FROZEN LISTS. EVERY OVERRIDE IS LOGGED.
+      </div>
     </form>
   );
 }

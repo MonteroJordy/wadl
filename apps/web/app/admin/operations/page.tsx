@@ -7,7 +7,14 @@ interface LiveNight {
   id: string;
   doors_at: string;
   capacity_cap: number | null;
-  event: { id: string; name: string; account: { display_name: string; venues: { city: string | null }[] | null } | null };
+  event: {
+    id: string;
+    name: string;
+    account: {
+      display_name: string;
+      venues: { city: string | null }[] | null;
+    } | null;
+  };
 }
 
 export default async function AdminOperationsPage() {
@@ -20,7 +27,7 @@ export default async function AdminOperationsPage() {
     admin
       .from("event_nights")
       .select(
-        "id, doors_at, capacity_cap, event:events!inner(id, name, account:accounts!inner(display_name, venues(city)))"
+        "id, doors_at, capacity_cap, event:events!inner(id, name, account:accounts!inner(display_name, venues(city)))",
       )
       .gte("doors_at", lo)
       .lte("doors_at", hi),
@@ -41,9 +48,11 @@ export default async function AdminOperationsPage() {
 
   const liveRows = (live.data ?? []) as unknown as LiveNight[];
 
-  // Per-night counts.
   const nightIds = liveRows.map((r) => r.id);
-  const liveStats = new Map<string, { in: number; pending: number; rsvp: number }>();
+  const liveStats = new Map<
+    string,
+    { in: number; pending: number; rsvp: number }
+  >();
   if (nightIds.length > 0) {
     const [scansRes, guestsRes] = await Promise.all([
       admin
@@ -55,7 +64,8 @@ export default async function AdminOperationsPage() {
         .select("event_night_id, status, plus_ones")
         .in("event_night_id", nightIds),
     ]);
-    for (const id of nightIds) liveStats.set(id, { in: 0, pending: 0, rsvp: 0 });
+    for (const id of nightIds)
+      liveStats.set(id, { in: 0, pending: 0, rsvp: 0 });
     for (const s of (scansRes.data ?? []) as Array<{
       event_night_id: string;
       state: string;
@@ -75,92 +85,235 @@ export default async function AdminOperationsPage() {
   }
 
   return (
-    <main id="main-content" className="mx-auto max-w-5xl px-6 pt-6 pb-12">
-      <h1 className="display-lg mb-2">Operations</h1>
-      <p className="label-mono mb-6">Platform-wide health + live state.</p>
-
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <div className="card border-mint/40">
-          <p className="label-mono">System health</p>
-          <p className="font-display text-2xl text-mint leading-none mt-1">OK</p>
-        </div>
-        <div className="card">
-          <p className="label-mono">Live events</p>
-          <p className="font-display text-3xl text-cream leading-none mt-1">
-            {liveRows.length}
-          </p>
-        </div>
-        <div className="card">
-          <p className="label-mono">Check-ins / 24h</p>
-          <p className="font-display text-3xl text-cream leading-none mt-1">
-            {scansLast24h.count ?? 0}
-          </p>
-        </div>
-        <div className="card">
-          <p className="label-mono">Broadcasts / 7d</p>
-          <p className="font-display text-3xl text-cream leading-none mt-1">
-            {broadcasts7d.count ?? 0}
-          </p>
-        </div>
-      </section>
-
-      <section className="card mb-4 border-coral/30">
-        <p className="label-mono mb-1">Open support</p>
-        <p className="font-display text-3xl text-coral leading-none">
-          {ticketsOpen.count ?? 0}
-        </p>
-        <Link
-          href="/admin/support"
-          className="label-mono hover:text-cream block mt-2"
+    <main id="main-content" style={{ padding: "32px 24px 96px" }}>
+      <div style={{ maxWidth: 1080, margin: "0 auto" }}>
+        <div
+          style={{
+            borderBottom: "1px solid var(--w-line)",
+            paddingBottom: 24,
+            marginBottom: 24,
+          }}
         >
-          Open queue →
-        </Link>
-      </section>
-
-      <section>
-        <p className="label-mono mb-2">Tonight live across the platform</p>
-        {liveRows.length === 0 ? (
-          <p className="text-muted text-sm">Nothing live right now.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="label-mono text-left">
-                <tr>
-                  <th className="pb-2">Event</th>
-                  <th>Account</th>
-                  <th>City</th>
-                  <th className="text-right">RSVPs</th>
-                  <th className="text-right">In</th>
-                  <th className="text-right">Pending</th>
-                  <th className="text-right">Cap</th>
-                </tr>
-              </thead>
-              <tbody>
-                {liveRows.map((r) => {
-                  const s = liveStats.get(r.id) ?? { in: 0, pending: 0, rsvp: 0 };
-                  return (
-                    <tr key={r.id} className="border-t border-line">
-                      <td className="py-2 text-cream truncate">{r.event.name}</td>
-                      <td className="py-2 text-muted">
-                        {r.event.account?.display_name ?? "—"}
-                      </td>
-                      <td className="py-2 label-mono">
-                        {r.event.account?.venues?.[0]?.city ?? "—"}
-                      </td>
-                      <td className="py-2 text-right">{s.rsvp}</td>
-                      <td className="py-2 text-right text-mint">{s.in}</td>
-                      <td className="py-2 text-right text-gold">{s.pending}</td>
-                      <td className="py-2 text-right">
-                        {r.capacity_cap ?? "—"}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="w-type-meta">PLATFORM</div>
+          <div className="w-type-display-md" style={{ marginTop: 8 }}>
+            Operations
           </div>
-        )}
-      </section>
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-fg-muted)", marginTop: 8 }}
+          >
+            Platform-wide health + live state.
+          </p>
+        </div>
+
+        <section
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+            gap: 12,
+            marginBottom: 16,
+          }}
+        >
+          <KPI label="SYSTEM HEALTH" value="OK" tone="ok" border="ok" />
+          <KPI label="LIVE EVENTS" value={liveRows.length} />
+          <KPI label="CHECK-INS / 24H" value={scansLast24h.count ?? 0} />
+          <KPI label="BROADCASTS / 7D" value={broadcasts7d.count ?? 0} />
+        </section>
+
+        <section
+          className="w-card"
+          style={{
+            padding: 18,
+            marginBottom: 16,
+            borderColor: "var(--w-err)",
+          }}
+        >
+          <div className="w-type-meta">OPEN SUPPORT</div>
+          <div
+            style={{
+              fontFamily: "var(--w-display)",
+              fontWeight: 700,
+              fontSize: 32,
+              letterSpacing: "-0.025em",
+              lineHeight: 1,
+              marginTop: 8,
+              color: "var(--w-err)",
+            }}
+          >
+            {ticketsOpen.count ?? 0}
+          </div>
+          <Link
+            href="/admin/support"
+            className="w-type-meta"
+            style={{
+              display: "block",
+              marginTop: 10,
+              color: "var(--w-acc)",
+              textDecoration: "none",
+            }}
+          >
+            OPEN QUEUE →
+          </Link>
+        </section>
+
+        <section>
+          <div className="w-type-meta" style={{ marginBottom: 8 }}>
+            TONIGHT LIVE ACROSS THE PLATFORM
+          </div>
+          {liveRows.length === 0 ? (
+            <p
+              className="w-type-body-sm"
+              style={{ color: "var(--w-fg-muted)" }}
+            >
+              Nothing live right now.
+            </p>
+          ) : (
+            <div
+              className="w-card"
+              style={{ padding: 20, overflowX: "auto" }}
+            >
+              <table
+                style={{
+                  width: "100%",
+                  fontSize: 14,
+                  borderCollapse: "collapse",
+                }}
+              >
+                <thead>
+                  <tr>
+                    {[
+                      ["EVENT", "left"],
+                      ["ACCOUNT", "left"],
+                      ["CITY", "left"],
+                      ["RSVPS", "right"],
+                      ["IN", "right"],
+                      ["PENDING", "right"],
+                      ["CAP", "right"],
+                    ].map(([h, align]) => (
+                      <th
+                        key={h}
+                        className="w-type-meta"
+                        style={{
+                          textAlign: align as "left" | "right",
+                          paddingBottom: 8,
+                        }}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {liveRows.map((r) => {
+                    const s =
+                      liveStats.get(r.id) ?? { in: 0, pending: 0, rsvp: 0 };
+                    return (
+                      <tr
+                        key={r.id}
+                        style={{ borderTop: "1px solid var(--w-line)" }}
+                      >
+                        <td
+                          style={{
+                            padding: "10px 0",
+                            color: "var(--w-fg)",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            maxWidth: 240,
+                          }}
+                        >
+                          {r.event.name}
+                        </td>
+                        <td
+                          style={{
+                            padding: "10px 0",
+                            color: "var(--w-fg-muted)",
+                          }}
+                        >
+                          {r.event.account?.display_name ?? "—"}
+                        </td>
+                        <td
+                          className="w-type-meta"
+                          style={{ padding: "10px 0" }}
+                        >
+                          {(
+                            r.event.account?.venues?.[0]?.city ?? "—"
+                          ).toUpperCase()}
+                        </td>
+                        <td
+                          style={{ padding: "10px 0", textAlign: "right" }}
+                        >
+                          {s.rsvp}
+                        </td>
+                        <td
+                          style={{
+                            padding: "10px 0",
+                            textAlign: "right",
+                            color: "var(--w-ok)",
+                          }}
+                        >
+                          {s.in}
+                        </td>
+                        <td
+                          style={{
+                            padding: "10px 0",
+                            textAlign: "right",
+                            color: "var(--w-warn)",
+                          }}
+                        >
+                          {s.pending}
+                        </td>
+                        <td
+                          style={{ padding: "10px 0", textAlign: "right" }}
+                        >
+                          {r.capacity_cap ?? "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      </div>
     </main>
+  );
+}
+
+function KPI({
+  label,
+  value,
+  tone,
+  border,
+}: {
+  label: string;
+  value: string | number;
+  tone?: "ok";
+  border?: "ok";
+}) {
+  return (
+    <div
+      className="w-card"
+      style={{
+        padding: 18,
+        borderColor: border === "ok" ? "var(--w-ok)" : "var(--w-line)",
+      }}
+    >
+      <div className="w-type-meta">{label}</div>
+      <div
+        style={{
+          fontFamily: "var(--w-display)",
+          fontWeight: 700,
+          fontSize: 30,
+          letterSpacing: "-0.025em",
+          lineHeight: 1,
+          marginTop: 8,
+          color: tone === "ok" ? "var(--w-ok)" : "var(--w-fg)",
+        }}
+      >
+        {value}
+      </div>
+    </div>
   );
 }

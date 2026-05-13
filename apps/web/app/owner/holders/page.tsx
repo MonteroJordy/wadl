@@ -129,9 +129,9 @@ export default async function HoldersPage({
           }}
         >
           <div>
-            <div className="w-type-meta">HOLDERS · ALL ACCOUNT</div>
+            <div className="w-type-meta">PEOPLE WHO BRING NIGHTS</div>
             <div className="w-type-display-md" style={{ marginTop: 8 }}>
-              Promoters &amp; partners
+              Promoters
             </div>
             <p
               className="w-type-body-sm"
@@ -140,8 +140,9 @@ export default async function HoldersPage({
                 marginTop: 8,
               }}
             >
-              {holders.length} unique holder
-              {holders.length === 1 ? "" : "s"} · ranked by show rate
+              {holders.length} unique promoter
+              {holders.length === 1 ? "" : "s"} across this account · ranked
+              by show rate
             </p>
           </div>
           <Link href="/owner" style={{ textDecoration: "none" }}>
@@ -204,7 +205,7 @@ export default async function HoldersPage({
               marginTop: 28,
             }}
           >
-            <div className="w-type-h1">No holders yet</div>
+            <div className="w-type-h1">No promoters yet</div>
             <p
               className="w-type-body-sm"
               style={{
@@ -214,8 +215,9 @@ export default async function HoldersPage({
                 marginInline: "auto",
               }}
             >
-              Drop a promoter, artist, or brand a magic link. Their show rate
-              ranks here after the first night.
+              Open an event, hand a promoter a list, send them their magic
+              link. Their show rate (how many of their RSVPs actually
+              scanned in) starts ranking here after their first night.
             </p>
             <Link
               href="/owner"

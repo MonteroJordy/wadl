@@ -3,7 +3,10 @@
 import { useTransition } from "react";
 import { setTicketStatusAction } from "./actions";
 
-const NEXT_STATUS: Record<string, "open" | "pending" | "resolved" | "closed"> = {
+const NEXT_STATUS: Record<
+  string,
+  "open" | "pending" | "resolved" | "closed"
+> = {
   open: "pending",
   pending: "resolved",
   resolved: "closed",
@@ -36,7 +39,21 @@ export default function StatusButton({
         });
       }}
       disabled={pending}
-      className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-line bg-s2 text-cream text-[10px] font-mono uppercase tracking-wider hover:border-coral transition disabled:opacity-50"
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        padding: "4px 12px",
+        border: "1px solid var(--w-line)",
+        background: "var(--w-surface-2)",
+        color: "var(--w-fg)",
+        fontFamily: "var(--w-mono)",
+        fontSize: 11,
+        letterSpacing: "0.08em",
+        textTransform: "uppercase",
+        cursor: "pointer",
+        opacity: pending ? 0.5 : 1,
+      }}
     >
       {pending ? "…" : label}
     </button>

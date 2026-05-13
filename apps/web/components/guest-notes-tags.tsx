@@ -1,11 +1,22 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Button } from "@/components/wadl";
 import {
   updateGuestNotesAction,
   updateGuestTagsAction,
   PRESET_TAGS,
 } from "@/lib/guest-extras";
+
+const INPUT_STYLE: React.CSSProperties = {
+  width: "100%",
+  background: "var(--w-surface-1)",
+  border: "1px solid var(--w-line)",
+  color: "var(--w-fg)",
+  padding: "10px 12px",
+  fontFamily: "var(--w-sans)",
+  fontSize: 14,
+};
 
 export default function GuestNotesTags({
   guestId,
@@ -22,19 +33,6 @@ export default function GuestNotesTags({
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-
-  function toggleTag(tag: string) {
-    setTags((ts) =>
-      ts.includes(tag) ? ts.filter((t) => t !== tag) : [...ts, tag]
-    );
-  }
-
-  function addCustomTag() {
-    const t = customTag.trim();
-    if (!t || tags.includes(t)) return;
-    setTags((ts) => [...ts, t]);
-    setCustomTag("");
-  }
 
   function saveNotes() {
     setError(null);
@@ -57,7 +55,9 @@ export default function GuestNotesTags({
   }
 
   function commitToggle(tag: string) {
-    const next = tags.includes(tag) ? tags.filter((t) => t !== tag) : [...tags, tag];
+    const next = tags.includes(tag)
+      ? tags.filter((t) => t !== tag)
+      : [...tags, tag];
     setTags(next);
     saveTags(next);
   }
@@ -75,9 +75,18 @@ export default function GuestNotesTags({
   }
 
   return (
-    <section className="card">
-      <p className="label-mono mb-2">Tags</p>
-      <div className="flex flex-wrap gap-2 mb-3">
+    <section className="w-card" style={{ padding: 16 }}>
+      <div className="w-type-meta" style={{ marginBottom: 8 }}>
+        TAGS
+      </div>
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 8,
+          marginBottom: 12,
+        }}
+      >
         {[...new Set([...PRESET_TAGS, ...tags])].map((tag) => {
           const active = tags.includes(tag);
           const isPreset = (PRESET_TAGS as readonly string[]).includes(tag);
@@ -87,18 +96,28 @@ export default function GuestNotesTags({
               type="button"
               onClick={() => commitToggle(tag)}
               disabled={pending}
-              className={`px-3 py-1 rounded-full border text-[10px] font-mono uppercase tracking-wider transition ${
-                active
-                  ? "border-coral bg-coral/10 text-cream"
-                  : "border-line bg-s1 text-muted hover:text-cream"
-              } ${isPreset ? "" : "italic"}`}
+              style={{
+                padding: "4px 12px",
+                border: `1px solid ${active ? "var(--w-acc)" : "var(--w-line)"}`,
+                background: active
+                  ? "var(--w-acc-soft)"
+                  : "var(--w-surface-1)",
+                color: active ? "var(--w-acc-ink)" : "var(--w-fg-muted)",
+                fontFamily: "var(--w-mono)",
+                fontSize: 11,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                fontStyle: isPreset ? "normal" : "italic",
+                cursor: pending ? "default" : "pointer",
+                opacity: pending ? 0.5 : 1,
+              }}
             >
               {tag}
             </button>
           );
         })}
       </div>
-      <div className="flex gap-2 mb-4">
+      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
         <input
           type="text"
           value={customTag}
@@ -110,29 +129,46 @@ export default function GuestNotesTags({
             }
           }}
           placeholder="Add custom tag…"
-          className="input-dark text-sm"
+          style={{ ...INPUT_STYLE, fontSize: 14 }}
         />
-        <button
+        <Button
+          variant="ghost"
           type="button"
           onClick={commitAddCustom}
           disabled={pending || !customTag.trim()}
-          className="btn-ghost w-auto px-4 disabled:opacity-50"
+          style={{ padding: "0 18px" }}
         >
           Add
-        </button>
+        </Button>
       </div>
 
-      <p className="label-mono mb-2">Notes</p>
+      <div className="w-type-meta" style={{ marginBottom: 6 }}>
+        NOTES
+      </div>
       <textarea
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
         onBlur={saveNotes}
-        className="input-dark min-h-[80px] text-sm"
+        style={{ ...INPUT_STYLE, minHeight: 80, fontSize: 14 }}
         placeholder="Private notes — only your team sees these."
       />
 
-      {error && <p className="text-err text-sm mt-2">{error}</p>}
-      {saved && <p className="text-mint text-sm mt-2">{saved}</p>}
+      {error && (
+        <p
+          className="w-type-body-sm"
+          style={{ color: "var(--w-err)", marginTop: 8 }}
+        >
+          {error}
+        </p>
+      )}
+      {saved && (
+        <p
+          className="w-type-body-sm"
+          style={{ color: "var(--w-ok)", marginTop: 8 }}
+        >
+          {saved}
+        </p>
+      )}
     </section>
   );
 }

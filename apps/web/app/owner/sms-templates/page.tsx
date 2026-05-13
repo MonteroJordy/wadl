@@ -17,16 +17,54 @@ export default async function SmsTemplatesPage() {
   }>;
 
   return (
-    <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 py-12">
-      <p className="label-mono mb-1">Settings</p>
-      <h1 className="display-lg leading-[0.95] mb-2">SMS templates</h1>
-      <p className="text-muted text-sm mb-6">
-        Pre-defined messages your team can send. Use{" "}
-        <code className="text-cream font-mono text-xs">{`{{vars}}`}</code> to
-        interpolate guest, event, and venue fields.
-      </p>
+    <main
+      id="main-content"
+      className="w-app"
+      style={{
+        minHeight: "100vh",
+        background: "var(--w-bg)",
+        padding: "32px 24px 96px",
+      }}
+    >
+      <div style={{ maxWidth: 720, margin: "0 auto" }}>
+        <div
+          style={{
+            borderBottom: "1px solid var(--w-line)",
+            paddingBottom: 24,
+            marginBottom: 24,
+          }}
+        >
+          <div className="w-type-meta">SETTINGS</div>
+          <div className="w-type-display-md" style={{ marginTop: 8 }}>
+            SMS templates
+          </div>
+          <p
+            className="w-type-body-sm"
+            style={{
+              color: "var(--w-fg-muted)",
+              marginTop: 8,
+              lineHeight: 1.5,
+            }}
+          >
+            Pre-defined messages your team can send. Use{" "}
+            <code
+              style={{
+                color: "var(--w-fg)",
+                fontFamily: "var(--w-mono)",
+                fontSize: 12,
+                background: "var(--w-surface-2)",
+                padding: "2px 6px",
+                border: "1px solid var(--w-line)",
+              }}
+            >
+              {`{{vars}}`}
+            </code>{" "}
+            to interpolate guest, event, and venue fields.
+          </p>
+        </div>
 
-      <TemplateManager initial={templates} />
+        <TemplateManager initial={templates} />
+      </div>
     </main>
   );
 }

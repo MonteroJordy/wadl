@@ -3,20 +3,29 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-// Inline icon set — Lucide-style without the dep. 16x16 default.
-function Icon({ d, className, strokeWidth = 1.75 }: { d: string; className?: string; strokeWidth?: number }) {
+function Icon({
+  d,
+  size = 16,
+  strokeWidth = 1.75,
+  color,
+}: {
+  d: string;
+  size?: number;
+  strokeWidth?: number;
+  color?: string;
+}) {
   return (
     <svg
       aria-hidden="true"
-      className={className}
-      width="16"
-      height="16"
+      width={size}
+      height={size}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth={strokeWidth}
       strokeLinecap="round"
       strokeLinejoin="round"
+      style={{ flexShrink: 0, color }}
     >
       <path d={d} />
     </svg>
@@ -25,10 +34,13 @@ function Icon({ d, className, strokeWidth = 1.75 }: { d: string; className?: str
 
 const ICON_PATHS = {
   search: "M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16zM21 21l-4.35-4.35",
-  calendar: "M8 2v4 M16 2v4 M3 10h18 M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z",
+  calendar:
+    "M8 2v4 M16 2v4 M3 10h18 M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z",
   user: "M20 21a8 8 0 0 0-16 0 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
-  users: "M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M22 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75",
-  scroll: "M19 17V5a2 2 0 0 0-2-2H4 M15 8H9 M15 12H9 M15 16h-3 M19 17a2 2 0 0 0 2 2H7a2 2 0 0 0-2-2v-2",
+  users:
+    "M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M22 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75",
+  scroll:
+    "M19 17V5a2 2 0 0 0-2-2H4 M15 8H9 M15 12H9 M15 16h-3 M19 17a2 2 0 0 0 2 2H7a2 2 0 0 0-2-2v-2",
   arrow: "M5 12h14 M12 5l7 7-7 7",
   message: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z",
 };
@@ -58,6 +70,29 @@ const KIND_ICON_PATH: Record<Hit["kind"], string> = {
   sms: ICON_PATHS.message,
 };
 
+const KBD: React.CSSProperties = {
+  fontFamily: "var(--w-mono)",
+  fontSize: 10,
+  padding: "2px 6px",
+  background: "var(--w-surface-2)",
+  border: "1px solid var(--w-line)",
+  color: "var(--w-fg-muted)",
+};
+
+/**
+ * Quick destinations shown when the palette is open but no query has
+ * been typed yet. Each one is a Hit shape so it renders through the
+ * same row component as search results — no extra UI to maintain.
+ */
+const QUICK_HITS: Hit[] = [
+  { kind: "nav", href: "/owner/events/new", title: "New event", subtitle: "Book a night" },
+  { kind: "nav", href: "/owner", title: "This week", subtitle: "Dashboard" },
+  { kind: "nav", href: "/owner/calendar", title: "Calendar", subtitle: "Month view" },
+  { kind: "nav", href: "/owner/holders", title: "Promoters", subtitle: "Everyone who's repped a list" },
+  { kind: "nav", href: "/owner/analytics", title: "Analytics", subtitle: "Show rate, capacity, scores" },
+  { kind: "nav", href: "/owner/profile", title: "Profile + venues", subtitle: "Account settings" },
+];
+
 export default function CommandPalette() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -68,7 +103,6 @@ export default function CommandPalette() {
   const inputRef = useRef<HTMLInputElement>(null);
   const reqIdRef = useRef(0);
 
-  // Global Cmd+K / Ctrl+K toggle.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -81,7 +115,6 @@ export default function CommandPalette() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // Focus input when opened, clear when closed.
   useEffect(() => {
     if (open) {
       setActiveIdx(0);
@@ -92,7 +125,6 @@ export default function CommandPalette() {
     }
   }, [open]);
 
-  // Debounced search.
   useEffect(() => {
     if (!open) return;
     const trimmed = q.trim();
@@ -106,7 +138,7 @@ export default function CommandPalette() {
       try {
         const res = await fetch(
           `/api/search?q=${encodeURIComponent(trimmed)}`,
-          { cache: "no-store" }
+          { cache: "no-store" },
         );
         const j = (await res.json()) as { ok: boolean; hits?: Hit[] };
         if (id !== reqIdRef.current) return;
@@ -124,16 +156,25 @@ export default function CommandPalette() {
     router.push(href);
   }
 
+  // The list rendered on screen — search results when the user is
+  // searching, otherwise the QUICK_HITS shortcut list. Arrow keys +
+  // Enter both index into this single source so navigation works in
+  // either state.
+  const visibleHits: Hit[] =
+    q.trim().length < 2 && !loading ? QUICK_HITS : hits;
+
   function onKey(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setActiveIdx((i) => Math.min(i + 1, Math.max(0, hits.length - 1)));
+      setActiveIdx((i) =>
+        Math.min(i + 1, Math.max(0, visibleHits.length - 1)),
+      );
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setActiveIdx((i) => Math.max(0, i - 1));
-    } else if (e.key === "Enter" && hits[activeIdx]) {
+    } else if (e.key === "Enter" && visibleHits[activeIdx]) {
       e.preventDefault();
-      go(hits[activeIdx].href);
+      go(visibleHits[activeIdx].href);
     }
   }
 
@@ -143,12 +184,37 @@ export default function CommandPalette() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Open search"
-        className="hidden md:inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-line text-muted hover:text-cream hover:border-cream/30 transition text-xs"
+        title="Search events, guests, holders (⌘K)"
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 8,
+          height: 36,
+          padding: "0 12px",
+          border: "1px solid var(--w-line)",
+          background: "var(--w-surface-2)",
+          color: "var(--w-fg-muted)",
+          fontSize: 13,
+          cursor: "pointer",
+          minWidth: 180,
+          transition: "background 0.12s, border-color 0.12s, color 0.12s",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "var(--w-surface-3)";
+          e.currentTarget.style.borderColor = "var(--w-line-2)";
+          e.currentTarget.style.color = "var(--w-fg)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "var(--w-surface-2)";
+          e.currentTarget.style.borderColor = "var(--w-line)";
+          e.currentTarget.style.color = "var(--w-fg-muted)";
+        }}
       >
-        <span className="font-sans">Search</span>
-        <kbd className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-s2 border border-line">
-          ⌘K
-        </kbd>
+        <Icon d={ICON_PATHS.search} size={14} />
+        <span style={{ fontFamily: "var(--w-sans)", flex: 1, textAlign: "left" }}>
+          Search…
+        </span>
+        <kbd style={KBD}>⌘K</kbd>
       </button>
     );
   }
@@ -158,16 +224,51 @@ export default function CommandPalette() {
       role="dialog"
       aria-modal="true"
       aria-label="Search"
-      className="fixed inset-0 z-[100] flex items-start justify-center pt-20 px-4 animate-fade-in"
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 100,
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "center",
+        paddingTop: 80,
+        padding: 16,
+      }}
     >
       <div
-        className="absolute inset-0 bg-bg/80 backdrop-blur-sm"
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "rgba(0,0,0,0.7)",
+          backdropFilter: "blur(4px)",
+        }}
         onClick={() => setOpen(false)}
         aria-hidden="true"
       />
-      <div className="relative w-full max-w-xl bg-s1 border border-line rounded-lg shadow-2xl shadow-black/50 overflow-hidden animate-scale-in">
-        <div className="flex items-center px-4 py-3 border-b border-line">
-          <Icon d={ICON_PATHS.search} className="w-4 h-4 text-coral mr-3" strokeWidth={2} />
+      <div
+        style={{
+          position: "relative",
+          width: "100%",
+          maxWidth: 580,
+          background: "var(--w-surface-1)",
+          border: "1px solid var(--w-line)",
+          boxShadow: "0 24px 64px rgba(0,0,0,0.5)",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            padding: "12px 16px",
+            borderBottom: "1px solid var(--w-line)",
+          }}
+        >
+          <Icon
+            d={ICON_PATHS.search}
+            color="var(--w-acc)"
+            strokeWidth={2}
+          />
           <input
             ref={inputRef}
             type="text"
@@ -175,57 +276,129 @@ export default function CommandPalette() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={onKey}
-            className="flex-1 bg-transparent border-0 outline-none text-cream font-sans text-base placeholder:text-muted"
+            style={{
+              flex: 1,
+              background: "transparent",
+              border: 0,
+              outline: "none",
+              color: "var(--w-fg)",
+              fontFamily: "var(--w-sans)",
+              fontSize: 16,
+              marginLeft: 12,
+            }}
           />
-          <kbd className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-s2 border border-line text-muted">
-            esc
-          </kbd>
+          <kbd style={KBD}>esc</kbd>
         </div>
-        <div className="max-h-96 overflow-y-auto">
+        <div style={{ maxHeight: 400, overflowY: "auto" }}>
           {loading && (
-            <p className="label-mono px-4 py-3 text-muted">Searching…</p>
+            <div
+              className="w-type-meta"
+              style={{
+                padding: "12px 16px",
+                color: "var(--w-fg-muted)",
+              }}
+            >
+              SEARCHING…
+            </div>
           )}
           {!loading && q.trim().length >= 2 && hits.length === 0 && (
-            <p className="label-mono px-4 py-3 text-muted">No matches.</p>
+            <div
+              className="w-type-meta"
+              style={{
+                padding: "12px 16px",
+                color: "var(--w-fg-muted)",
+              }}
+            >
+              NO MATCHES.
+            </div>
           )}
           {!loading && q.trim().length < 2 && (
-            <p className="label-mono px-4 py-3 text-muted">
-              Type 2+ chars. ↑↓ navigate, ↵ open.
-            </p>
+            <div
+              className="w-type-meta"
+              style={{
+                padding: "12px 16px 8px",
+                color: "var(--w-fg-dim)",
+              }}
+            >
+              QUICK ACTIONS
+            </div>
           )}
-          <ul>
-            {hits.map((h, i) => (
-              <li key={`${h.kind}-${h.href}-${i}`}>
-                <button
-                  type="button"
-                  onClick={() => go(h.href)}
-                  onMouseEnter={() => setActiveIdx(i)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 text-left transition border-l-2 ${
-                    i === activeIdx
-                      ? "border-coral bg-s2"
-                      : "border-transparent hover:bg-s2"
-                  }`}
-                >
-                  <Icon
-                    d={KIND_ICON_PATH[h.kind]}
-                    className={`w-4 h-4 shrink-0 ${
-                      h.kind === "nav" ? "text-coral" : "text-muted"
-                    }`}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="font-sans text-cream truncate">{h.title}</p>
-                    {h.subtitle && (
-                      <p className="label-mono mt-0.5 truncate">
-                        {h.subtitle}
+          <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+            {visibleHits.map((h, i) => {
+              const active = i === activeIdx;
+              return (
+                <li key={`${h.kind}-${h.href}-${i}`}>
+                  <button
+                    type="button"
+                    onClick={() => go(h.href)}
+                    onMouseEnter={() => setActiveIdx(i)}
+                    style={{
+                      width: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: "12px 16px",
+                      textAlign: "left",
+                      borderLeft: `2px solid ${active ? "var(--w-acc)" : "transparent"}`,
+                      background: active
+                        ? "var(--w-surface-2)"
+                        : "transparent",
+                      cursor: "pointer",
+                      border: "none",
+                      borderLeftStyle: "solid",
+                      borderLeftWidth: 2,
+                      borderLeftColor: active
+                        ? "var(--w-acc)"
+                        : "transparent",
+                      color: "inherit",
+                    }}
+                  >
+                    <Icon
+                      d={KIND_ICON_PATH[h.kind]}
+                      color={
+                        h.kind === "nav"
+                          ? "var(--w-acc)"
+                          : "var(--w-fg-muted)"
+                      }
+                    />
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <p
+                        style={{
+                          color: "var(--w-fg)",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {h.title}
                       </p>
-                    )}
-                  </div>
-                  <span className="label-mono shrink-0 text-muted">
-                    {KIND_LABEL[h.kind]}
-                  </span>
-                </button>
-              </li>
-            ))}
+                      {h.subtitle && (
+                        <div
+                          className="w-type-meta"
+                          style={{
+                            marginTop: 2,
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          {h.subtitle}
+                        </div>
+                      )}
+                    </div>
+                    <span
+                      className="w-type-meta"
+                      style={{
+                        flexShrink: 0,
+                        color: "var(--w-fg-muted)",
+                      }}
+                    >
+                      {KIND_LABEL[h.kind].toUpperCase()}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </div>
       </div>

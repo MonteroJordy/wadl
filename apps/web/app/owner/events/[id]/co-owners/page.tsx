@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOwnerContext } from "@/lib/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
-import EmptyState from "@/components/empty-state";
+import { Avatar, Chip } from "@/components/wadl";
 import CoOwnerInviteForm from "./invite-form";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +19,20 @@ interface InviteRow {
   permission: string;
   token: string;
   created_at: string;
+}
+
+function permissionTone(p: string): "ok" | "warn" | "acc" | "ghost" {
+  if (p === "admin") return "warn";
+  if (p === "edit") return "acc";
+  if (p === "read_only") return "ok";
+  return "ghost";
+}
+
+function permissionLabel(p: string) {
+  if (p === "admin") return "ADMIN";
+  if (p === "edit") return "EDIT";
+  if (p === "read_only") return "VIEW-ONLY";
+  return p.toUpperCase();
 }
 
 export default async function CoOwnersPage({
@@ -41,12 +55,14 @@ export default async function CoOwnersPage({
     admin
       .from("event_co_owners")
       .select(
-        "account_id, permission, account:accounts!inner(display_name, account_type)"
+        "account_id, permission, account:accounts!inner(display_name, account_type)",
       )
       .eq("event_id", event.id),
     admin
       .from("co_owner_invites")
-      .select("id, invitee_phone, invitee_email, permission, token, created_at")
+      .select(
+        "id, invitee_phone, invitee_email, permission, token, created_at",
+      )
       .eq("event_id", event.id)
       .is("used_at", null)
       .order("created_at", { ascending: false }),
@@ -56,74 +72,189 @@ export default async function CoOwnersPage({
   const invites = (invitesRes.data ?? []) as InviteRow[];
 
   return (
-    <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 py-12">
-      <header className="flex items-center justify-between pb-4">
+    <main
+      id="main-content"
+      className="w-app"
+      style={{
+        minHeight: "100vh",
+        background: "var(--w-bg)",
+        padding: "32px 24px 96px",
+      }}
+    >
+      <div style={{ maxWidth: 800, margin: "0 auto" }}>
         <Link
           href={`/owner/events/${event.id}`}
-          className="label-mono hover:text-cream transition"
+          className="w-type-meta"
+          style={{ textDecoration: "none" }}
         >
-          ← Back
+          ← {event.name.toUpperCase()}
         </Link>
-        <p className="label-mono">Co-owners</p>
-      </header>
 
-      <h1 className="display-lg leading-[0.95] mb-2">{event.name}</h1>
-      <p className="label-mono mb-6">
-        {coOwners.length} on · {invites.length} pending
-      </p>
-
-      <CoOwnerInviteForm eventId={event.id} />
-
-      <section className="mt-8">
-        <p className="label-mono mb-2">Active co-owners</p>
-        {coOwners.length === 0 ? (
-          <EmptyState
-            title="None yet"
-            body="Invite another account above. They'll see this event in their dashboard once they accept."
-          />
-        ) : (
-          <div className="flex flex-col gap-2">
-            {coOwners.map((c) => (
-              <div key={c.account_id} className="card flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-sans text-cream font-semibold truncate">
-                    {c.account.display_name}
-                  </p>
-                  <p className="label-mono mt-1">
-                    {c.account.account_type} ·{" "}
-                    <span className="text-coral">view-only</span>
-                  </p>
-                </div>
-              </div>
-            ))}
+        <div
+          style={{
+            borderBottom: "1px solid var(--w-line)",
+            paddingBottom: 24,
+            marginTop: 16,
+          }}
+        >
+          <div className="w-type-meta">CO-OWNERS · BRAND × VENUE</div>
+          <div className="w-type-display-md" style={{ marginTop: 8 }}>
+            Share the keys
           </div>
-        )}
-      </section>
+          <p
+            className="w-type-body-sm"
+            style={{
+              color: "var(--w-fg-muted)",
+              marginTop: 8,
+            }}
+          >
+            {coOwners.length} on · {invites.length} pending
+          </p>
+        </div>
 
-      {invites.length > 0 && (
-        <section className="mt-8">
-          <p className="label-mono mb-2">Pending invites</p>
-          <div className="flex flex-col gap-2">
-            {invites.map((i) => (
-              <div key={i.id} className="card">
-                <p className="font-sans text-cream font-semibold truncate">
-                  {i.invitee_phone || i.invitee_email}
-                </p>
-                <p className="label-mono mt-1">
-                  <span className="text-coral">view-only</span>{" "}
-                  · sent{" "}
-                  {new Date(i.created_at).toLocaleString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
-                </p>
-              </div>
-            ))}
+        <div style={{ marginTop: 24 }}>
+          <CoOwnerInviteForm eventId={event.id} />
+        </div>
+
+        <section style={{ marginTop: 32 }}>
+          <div className="w-type-meta" style={{ marginBottom: 12 }}>
+            ACTIVE CO-OWNERS · {coOwners.length}
           </div>
+          {coOwners.length === 0 ? (
+            <div
+              className="w-card"
+              style={{
+                padding: "48px 32px",
+                textAlign: "center",
+              }}
+            >
+              <div className="w-type-h2">None yet</div>
+              <p
+                className="w-type-body-sm"
+                style={{
+                  color: "var(--w-fg-muted)",
+                  marginTop: 12,
+                  maxWidth: 420,
+                  marginInline: "auto",
+                }}
+              >
+                Invite another account above. They&apos;ll see this event in
+                their dashboard once they accept.
+              </p>
+            </div>
+          ) : (
+            <ul
+              style={{
+                listStyle: "none",
+                padding: 0,
+                margin: 0,
+                display: "flex",
+                flexDirection: "column",
+                gap: 6,
+              }}
+            >
+              {coOwners.map((c) => (
+                <li key={c.account_id}>
+                  <div
+                    className="w-card"
+                    style={{
+                      padding: 14,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                    }}
+                  >
+                    <Avatar name={c.account.display_name} size={36} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontWeight: 600,
+                          fontSize: 14,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {c.account.display_name}
+                      </div>
+                      <div className="w-type-meta" style={{ marginTop: 2 }}>
+                        {c.account.account_type.toUpperCase()}
+                      </div>
+                    </div>
+                    <Chip tone={permissionTone(c.permission)}>
+                      {permissionLabel(c.permission)}
+                    </Chip>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
-      )}
+
+        {invites.length > 0 && (
+          <section style={{ marginTop: 32 }}>
+            <div className="w-type-meta" style={{ marginBottom: 12 }}>
+              PENDING INVITES · {invites.length}
+            </div>
+            <ul
+              style={{
+                listStyle: "none",
+                padding: 0,
+                margin: 0,
+                display: "flex",
+                flexDirection: "column",
+                gap: 6,
+              }}
+            >
+              {invites.map((i) => (
+                <li key={i.id}>
+                  <div
+                    className="w-card"
+                    style={{
+                      padding: 14,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      borderColor: "var(--w-warn)",
+                      background: "oklch(0.86 0.16 85 / 0.06)",
+                    }}
+                  >
+                    <Chip tone="warn">PENDING</Chip>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontFamily: "var(--w-mono)",
+                          fontSize: 14,
+                          fontWeight: 500,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {i.invitee_phone || i.invitee_email}
+                      </div>
+                      <div className="w-type-meta" style={{ marginTop: 2 }}>
+                        SENT{" "}
+                        {new Date(i.created_at)
+                          .toLocaleString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })
+                          .toUpperCase()}
+                      </div>
+                    </div>
+                    <Chip tone={permissionTone(i.permission)}>
+                      {permissionLabel(i.permission)}
+                    </Chip>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </div>
     </main>
   );
 }

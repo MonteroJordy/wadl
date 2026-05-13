@@ -2,6 +2,8 @@ import AuthedShell, { type NavSection } from "@/components/authed-shell";
 import { requireOwnerContext } from "@/lib/owner";
 import CommandPalette from "@/components/command-palette";
 import NotificationBell from "@/components/notification-bell";
+import MobileTabBar from "@/components/mobile-tab-bar";
+import ShortcutHelp from "@/components/shortcut-help";
 import { hiddenNavHrefs } from "@wadl/shared/account-type";
 
 export const dynamic = "force-dynamic";
@@ -25,18 +27,25 @@ export default async function OwnerLayout({
 
   const sections: NavSection[] = [
     {
-      label: "Run the door",
+      // Anchor section: everything an operator touches on event day.
+      label: "Events",
       items: [
         { href: "/owner", label: "This week", matchPrefix: "/owner/events" },
         { href: "/owner/calendar", label: "Calendar" },
         { href: "/owner/events/new", label: "+ New event" },
-        { href: "/owner/holders", label: "Holders" },
+      ],
+    },
+    {
+      // People + analytics — second-tier daily use.
+      label: "People",
+      items: [
+        { href: "/owner/holders", label: "Promoters" },
         ...(account.account_type !== "venue"
-          ? [{ href: "/owner/partners", label: "Venue partners" }]
+          ? [{ href: "/owner/partners", label: "Venues you collab with" }]
           : []),
-        { href: "/owner/scorecards", label: "Scorecards" },
+        { href: "/owner/scorecards", label: "Promoter ranks" },
         { href: "/owner/analytics", label: "Analytics" },
-        { href: "/owner/flags", label: "Flag list" },
+        { href: "/owner/flags", label: "Do not admit" },
       ],
     },
     {
@@ -61,12 +70,14 @@ export default async function OwnerLayout({
       ],
     },
     {
-      label: "View as",
+      // Role-switch shortcuts so an operator can preview what their team
+      // / guests see without signing out.
+      label: "Preview as",
       items: [
-        { href: "/door", label: "Door view" },
-        { href: "/manager", label: "Manager view" },
-        { href: "/discover", label: "Guest discovery" },
-        { href: "/mytickets", label: "My tickets" },
+        { href: "/door", label: "Door staff" },
+        { href: "/manager", label: "Floor manager" },
+        { href: "/discover", label: "Public event feed" },
+        { href: "/mytickets", label: "Guest wallet" },
       ],
     },
     ...(isPlatformAdmin
@@ -111,6 +122,8 @@ export default async function OwnerLayout({
       }
     >
       {children}
+      <MobileTabBar unread={unread ?? 0} />
+      <ShortcutHelp />
     </AuthedShell>
   );
 }

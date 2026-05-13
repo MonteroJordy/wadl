@@ -16,51 +16,112 @@ export default async function AdminAccountsPage() {
   const { data } = await admin
     .from("accounts")
     .select(
-      "id, display_name, account_type, created_at, owner:profiles!owner_user_id(full_name, email)"
+      "id, display_name, account_type, created_at, owner:profiles!owner_user_id(full_name, email)",
     )
     .order("created_at", { ascending: false });
   const rows = (data ?? []) as unknown as Row[];
 
   return (
-    <main id="main-content" className="mx-auto max-w-5xl px-6 pt-8 pb-12">
-      <h1 className="display-lg mb-2">Accounts</h1>
-      <p className="label-mono mb-6">{rows.length} total</p>
+    <main id="main-content" style={{ padding: "32px 24px 96px" }}>
+      <div style={{ maxWidth: 1080, margin: "0 auto" }}>
+        <div
+          style={{
+            borderBottom: "1px solid var(--w-line)",
+            paddingBottom: 24,
+            marginBottom: 24,
+          }}
+        >
+          <div className="w-type-meta">PLATFORM</div>
+          <div className="w-type-display-md" style={{ marginTop: 8 }}>
+            Accounts
+          </div>
+          <p
+            className="w-type-meta"
+            style={{ marginTop: 8, color: "var(--w-fg-muted)" }}
+          >
+            {rows.length} TOTAL
+          </p>
+        </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="label-mono text-left">
-            <tr>
-              <th className="pb-2">Name</th>
-              <th>Type</th>
-              <th>Owner</th>
-              <th>Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id} className="border-t border-line">
-                <td className="py-2 text-cream">{r.display_name}</td>
-                <td className="py-2 label-mono">{r.account_type}</td>
-                <td className="py-2 text-cream">
-                  {r.owner?.full_name ?? "—"}
-                  {r.owner?.email && (
-                    <span className="text-muted text-xs ml-2">{r.owner.email}</span>
-                  )}
-                </td>
-                <td className="py-2 label-mono">
-                  {new Date(r.created_at).toLocaleDateString()}
-                </td>
+        <section
+          className="w-card"
+          style={{ padding: 20, overflowX: "auto" }}
+        >
+          <table
+            style={{
+              width: "100%",
+              fontSize: 14,
+              borderCollapse: "collapse",
+            }}
+          >
+            <thead>
+              <tr>
+                {["NAME", "TYPE", "OWNER", "CREATED"].map((h) => (
+                  <th
+                    key={h}
+                    className="w-type-meta"
+                    style={{ textAlign: "left", paddingBottom: 8 }}
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr
+                  key={r.id}
+                  style={{ borderTop: "1px solid var(--w-line)" }}
+                >
+                  <td style={{ padding: "10px 0", color: "var(--w-fg)" }}>
+                    {r.display_name}
+                  </td>
+                  <td
+                    className="w-type-meta"
+                    style={{ padding: "10px 0" }}
+                  >
+                    {r.account_type.toUpperCase()}
+                  </td>
+                  <td style={{ padding: "10px 0", color: "var(--w-fg)" }}>
+                    {r.owner?.full_name ?? "—"}
+                    {r.owner?.email && (
+                      <span
+                        style={{
+                          color: "var(--w-fg-muted)",
+                          fontSize: 12,
+                          marginLeft: 8,
+                        }}
+                      >
+                        {r.owner.email}
+                      </span>
+                    )}
+                  </td>
+                  <td
+                    className="w-type-meta"
+                    style={{ padding: "10px 0" }}
+                  >
+                    {new Date(r.created_at)
+                      .toLocaleDateString()
+                      .toUpperCase()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
 
-      <p className="label-mono mt-8">
-        <Link href="/admin" className="hover:text-cream">
-          ← Back to stats
-        </Link>
-      </p>
+        <p
+          className="w-type-meta"
+          style={{ marginTop: 24 }}
+        >
+          <Link
+            href="/admin"
+            style={{ color: "var(--w-acc)", textDecoration: "none" }}
+          >
+            ← BACK TO STATS
+          </Link>
+        </p>
+      </div>
     </main>
   );
 }

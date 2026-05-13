@@ -1,7 +1,18 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Button } from "@/components/wadl";
 import { addPartnerAction } from "./actions";
+
+const INPUT_STYLE: React.CSSProperties = {
+  width: "100%",
+  background: "var(--w-surface-1)",
+  border: "1px solid var(--w-line)",
+  color: "var(--w-fg)",
+  padding: "10px 12px",
+  fontFamily: "var(--w-sans)",
+  fontSize: 14,
+};
 
 export default function AddPartnerForm() {
   const [open, setOpen] = useState(false);
@@ -36,52 +47,85 @@ export default function AddPartnerForm() {
 
   if (!open) {
     return (
-      <button
+      <Button
+        variant="primary"
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 bg-coral text-bg font-sans font-semibold text-xs uppercase tracking-[0.16em] px-5 py-3 rounded-full hover:brightness-110 transition"
       >
         + New partner
-      </button>
+      </Button>
     );
   }
 
   return (
-    <form onSubmit={submit} className="card border-coral/40">
-      <p className="label-mono mb-3">New venue partner</p>
-      <div className="grid md:grid-cols-2 gap-3 mb-3">
+    <form
+      onSubmit={submit}
+      className="w-card"
+      style={{ padding: 18, borderColor: "var(--w-acc)" }}
+    >
+      <div className="w-type-meta" style={{ marginBottom: 12 }}>
+        NEW VENUE PARTNER
+      </div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gap: 12,
+          marginBottom: 12,
+        }}
+      >
         <div>
-          <label htmlFor="np-name" className="label-mono block mb-1">
-            Venue name
+          <label
+            htmlFor="np-name"
+            className="w-type-meta"
+            style={{ display: "block", marginBottom: 4 }}
+          >
+            VENUE NAME
           </label>
           <input
             id="np-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Wynwood Studios"
-            className="input-dark"
+            style={INPUT_STYLE}
             autoFocus
             required
           />
         </div>
         <div>
-          <label htmlFor="np-city" className="label-mono block mb-1">
-            City
+          <label
+            htmlFor="np-city"
+            className="w-type-meta"
+            style={{ display: "block", marginBottom: 4 }}
+          >
+            CITY
           </label>
           <input
             id="np-city"
             value={city}
             onChange={(e) => setCity(e.target.value)}
             placeholder="Miami"
-            className="input-dark"
+            style={INPUT_STYLE}
           />
         </div>
         <div>
-          <label htmlFor="np-handle" className="label-mono block mb-1">
-            Handle <span className="text-muted">(optional)</span>
+          <label
+            htmlFor="np-handle"
+            className="w-type-meta"
+            style={{ display: "block", marginBottom: 4 }}
+          >
+            HANDLE{" "}
+            <span style={{ color: "var(--w-fg-muted)" }}>(OPTIONAL)</span>
           </label>
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-coral">@</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span
+              style={{
+                fontFamily: "var(--w-mono)",
+                color: "var(--w-acc)",
+              }}
+            >
+              @
+            </span>
             <input
               id="np-handle"
               value={handle}
@@ -89,32 +133,40 @@ export default function AddPartnerForm() {
                 setHandle(e.target.value.replace(/^@/, "").replace(/\s/g, ""))
               }
               placeholder="wynwoodstudios"
-              className="input-dark flex-1"
+              style={{ ...INPUT_STYLE, flex: 1 }}
             />
           </div>
         </div>
         <div>
-          <label htmlFor="np-notes" className="label-mono block mb-1">
-            Notes <span className="text-muted">(optional)</span>
+          <label
+            htmlFor="np-notes"
+            className="w-type-meta"
+            style={{ display: "block", marginBottom: 4 }}
+          >
+            NOTES{" "}
+            <span style={{ color: "var(--w-fg-muted)" }}>(OPTIONAL)</span>
           </label>
           <input
             id="np-notes"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Cap 350, doors 11pm, GM Sara"
-            className="input-dark"
+            style={INPUT_STYLE}
           />
         </div>
       </div>
-      {err && <p className="label-mono text-coral mb-2">{err}</p>}
-      <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={pending}
-          className="bg-coral text-bg font-sans font-semibold text-xs uppercase tracking-[0.16em] px-5 py-2.5 rounded-full hover:brightness-110 transition disabled:opacity-50"
+      {err && (
+        <div
+          className="w-type-meta"
+          style={{ color: "var(--w-err)", marginBottom: 8 }}
         >
+          {err}
+        </div>
+      )}
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <Button variant="primary" type="submit" disabled={pending}>
           {pending ? "Saving…" : "Save partner"}
-        </button>
+        </Button>
         <button
           type="button"
           onClick={() => {
@@ -122,9 +174,16 @@ export default function AddPartnerForm() {
             reset();
           }}
           disabled={pending}
-          className="label-mono px-3 hover:text-cream"
+          className="w-type-meta"
+          style={{
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            color: "var(--w-fg-muted)",
+            padding: "0 12px",
+          }}
         >
-          Cancel
+          CANCEL
         </button>
       </div>
     </form>

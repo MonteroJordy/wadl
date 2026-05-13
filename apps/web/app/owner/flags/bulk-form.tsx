@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Button } from "@/components/wadl";
+import ConfirmDialog from "@/components/confirm-dialog";
 import { bulkUnflagAction } from "./actions";
 
 interface FlagItem {
@@ -12,10 +14,23 @@ interface FlagItem {
   phone: string | null;
 }
 
+const INLINE_BTN: React.CSSProperties = {
+  background: "transparent",
+  border: "none",
+  cursor: "pointer",
+  padding: 0,
+  fontFamily: "var(--w-mono)",
+  fontSize: 11,
+  letterSpacing: "0.08em",
+  textTransform: "uppercase",
+  color: "var(--w-fg-muted)",
+};
+
 export default function BulkFlagForm({ items }: { items: FlagItem[] }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [pending, startTransition] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
 
   function toggle(id: string) {
     const next = new Set(selected);
@@ -31,76 +46,131 @@ export default function BulkFlagForm({ items }: { items: FlagItem[] }) {
 
   function unflag() {
     if (selected.size === 0) return;
-    if (
-      !confirm(
-        `Remove DNA flag from ${selected.size} guest${selected.size === 1 ? "" : "s"}?`
-      )
-    )
-      return;
+    setOpen(true);
+  }
+
+  function doUnflag() {
     startTransition(async () => {
       const res = await bulkUnflagAction([...selected]);
       if (res.ok) {
         setMsg(`Unflagged ${res.count}.`);
         setSelected(new Set());
       } else setMsg(res.error);
+      setOpen(false);
     });
   }
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
-        <button
-          type="button"
-          className="label-mono hover:text-cream"
-          onClick={selectAll}
-        >
-          {selected.size === items.length ? "Clear" : "Select all"}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 12,
+        }}
+      >
+        <button type="button" onClick={selectAll} style={INLINE_BTN}>
+          {selected.size === items.length ? "CLEAR" : "SELECT ALL"}
         </button>
-        <button
+        <Button
+          variant="ghost"
           type="button"
           disabled={selected.size === 0 || pending}
           onClick={unflag}
-          className="btn-ghost w-auto px-4 disabled:opacity-40"
+          style={{ padding: "0 18px" }}
         >
           {pending ? "Working…" : `Unflag ${selected.size || ""}`}
-        </button>
+        </Button>
       </div>
 
-      {msg && <p className="text-mint text-sm mb-3">{msg}</p>}
+      {msg && (
+        <p
+          className="w-type-body-sm"
+          style={{ color: "var(--w-ok)", marginBottom: 12 }}
+        >
+          {msg}
+        </p>
+      )}
 
-      <ul className="flex flex-col gap-2">
+      <ul
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+          listStyle: "none",
+          padding: 0,
+          margin: 0,
+        }}
+      >
         {items.map((it) => (
           <li
             key={it.id}
-            className={`card flex items-start gap-3 ${
-              selected.has(it.id) ? "border-coral" : ""
-            }`}
+            className="w-card"
+            style={{
+              padding: 14,
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 12,
+              borderColor: selected.has(it.id) ? "var(--w-acc)" : undefined,
+            }}
           >
             <input
               type="checkbox"
               checked={selected.has(it.id)}
               onChange={() => toggle(it.id)}
-              className="mt-1 accent-coral"
+              style={{
+                marginTop: 4,
+                accentColor: "var(--w-acc)",
+                width: 18,
+                height: 18,
+              }}
             />
-            <div className="min-w-0 flex-1">
-              <p className="font-sans font-semibold text-cream">
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <p
+                style={{ color: "var(--w-fg)", fontWeight: 600 }}
+              >
                 {it.full_name}
                 {it.phone && (
-                  <span className="text-muted ml-2 text-xs font-mono">
+                  <span
+                    style={{
+                      color: "var(--w-fg-muted)",
+                      marginLeft: 8,
+                      fontSize: 12,
+                      fontFamily: "var(--w-mono)",
+                    }}
+                  >
                     {it.phone}
                   </span>
                 )}
               </p>
-              <p className="label-mono mt-0.5">
-                {it.event_name} · {it.night_date}
-              </p>
+              <div className="w-type-meta" style={{ marginTop: 2 }}>
+                {it.event_name.toUpperCase()} · {it.night_date.toUpperCase()}
+              </div>
               {it.reason && (
-                <p className="text-err text-sm mt-1">{it.reason}</p>
+                <p
+                  style={{
+                    color: "var(--w-err)",
+                    fontSize: 14,
+                    marginTop: 4,
+                  }}
+                >
+                  {it.reason}
+                </p>
               )}
             </div>
           </li>
         ))}
       </ul>
+      <ConfirmDialog
+        open={open}
+        title={`Remove DNA flag from ${selected.size} guest${selected.size === 1 ? "" : "s"}?`}
+        body="They'll be able to scan in normally at the door again. The original flag stays in the audit log."
+        confirmLabel="Remove flag"
+        pending={pending}
+        onConfirm={doUnflag}
+        onCancel={() => setOpen(false)}
+      />
     </div>
   );
 }

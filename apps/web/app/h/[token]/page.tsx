@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fmtDate, fmtTime } from "@/lib/owner";
 import {
   Avatar,
+  Button,
   CapacityMeter,
   Chip,
   CredPill,
@@ -46,6 +48,42 @@ function ErrorFrame({ title, body }: { title: string; body: string }) {
             style={{ color: "var(--w-fg-muted)", marginTop: 16 }}
           >
             {body}
+          </p>
+          <div
+            style={{
+              marginTop: 32,
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
+              maxWidth: 280,
+              marginInline: "auto",
+            }}
+          >
+            <Link href="/discover" style={{ textDecoration: "none" }}>
+              <Button variant="primary" block>
+                Browse public events
+              </Button>
+            </Link>
+            <Link href="/" style={{ textDecoration: "none" }}>
+              <Button variant="ghost" block>
+                Back to home
+              </Button>
+            </Link>
+          </div>
+          <p
+            className="w-type-meta"
+            style={{
+              marginTop: 24,
+              color: "var(--w-fg-dim)",
+            }}
+          >
+            NEED HELP?{" "}
+            <a
+              href="mailto:support@wadlwadl.com"
+              style={{ color: "var(--w-acc)", textDecoration: "none" }}
+            >
+              EMAIL SUPPORT
+            </a>
           </p>
         </div>
       </WFrame>

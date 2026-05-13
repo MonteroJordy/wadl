@@ -16,7 +16,7 @@ export default async function AdminBillingPage() {
   const { data } = await admin
     .from("accounts")
     .select(
-      "id, display_name, account_type, stripe_customer_id, subscription_status, created_at"
+      "id, display_name, account_type, stripe_customer_id, subscription_status, created_at",
     )
     .order("created_at", { ascending: false })
     .limit(200);
@@ -24,85 +24,186 @@ export default async function AdminBillingPage() {
   const rows = (data ?? []) as AccountRow[];
   const paying = rows.filter((r) => !!r.stripe_customer_id);
   const active = rows.filter((r) => r.subscription_status === "active");
-  // Conservative MRR estimate: $199/mo Pro × active.
   const mrr = active.length * 199;
   const arr = mrr * 12;
 
   return (
-    <main id="main-content" className="mx-auto max-w-5xl px-6 pt-6 pb-12">
-      <h1 className="display-lg mb-2">Billing</h1>
-      <p className="label-mono mb-6">Revenue + plan state across all accounts.</p>
+    <main id="main-content" style={{ padding: "32px 24px 96px" }}>
+      <div style={{ maxWidth: 1080, margin: "0 auto" }}>
+        <div
+          style={{
+            borderBottom: "1px solid var(--w-line)",
+            paddingBottom: 24,
+            marginBottom: 24,
+          }}
+        >
+          <div className="w-type-meta">PLATFORM</div>
+          <div className="w-type-display-md" style={{ marginTop: 8 }}>
+            Billing
+          </div>
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-fg-muted)", marginTop: 8 }}
+          >
+            Revenue + plan state across all accounts.
+          </p>
+        </div>
 
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <div className="card">
-          <p className="label-mono">MRR</p>
-          <p className="font-display text-3xl text-cream leading-none mt-1">
-            ${mrr.toLocaleString()}
-          </p>
-        </div>
-        <div className="card">
-          <p className="label-mono">ARR run rate</p>
-          <p className="font-display text-3xl text-mint leading-none mt-1">
-            ${arr.toLocaleString()}
-          </p>
-        </div>
-        <div className="card">
-          <p className="label-mono">Active plans</p>
-          <p className="font-display text-3xl text-cream leading-none mt-1">
-            {active.length}
-          </p>
-        </div>
-        <div className="card">
-          <p className="label-mono">With customer</p>
-          <p className="font-display text-3xl text-cream leading-none mt-1">
-            {paying.length}
-          </p>
-        </div>
-      </section>
+        <section
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+            gap: 12,
+            marginBottom: 24,
+          }}
+        >
+          <KPI label="MRR" value={`$${mrr.toLocaleString()}`} accent />
+          <KPI
+            label="ARR RUN RATE"
+            value={`$${arr.toLocaleString()}`}
+            tone="ok"
+          />
+          <KPI label="ACTIVE PLANS" value={active.length} />
+          <KPI label="WITH CUSTOMER" value={paying.length} />
+        </section>
 
-      <section>
-        <p className="label-mono mb-2">Accounts (most-recent 200)</p>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="label-mono text-left">
-              <tr>
-                <th className="pb-2">Account</th>
-                <th>Type</th>
-                <th>Stripe customer</th>
-                <th>Subscription</th>
-                <th>Created</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.id} className="border-t border-line">
-                  <td className="py-2 text-cream truncate max-w-xs">
-                    {r.display_name}
-                  </td>
-                  <td className="py-2 label-mono">{r.account_type}</td>
-                  <td className="py-2 font-mono text-xs">
-                    {r.stripe_customer_id ? (
-                      <span className="text-mint">
-                        {r.stripe_customer_id.slice(0, 16)}…
-                      </span>
-                    ) : (
-                      <span className="text-muted">—</span>
-                    )}
-                  </td>
-                  <td className="py-2 label-mono">
-                    {r.subscription_status ?? (
-                      <span className="text-muted">—</span>
-                    )}
-                  </td>
-                  <td className="py-2 label-mono">
-                    {new Date(r.created_at).toLocaleDateString()}
-                  </td>
+        <section>
+          <div className="w-type-meta" style={{ marginBottom: 8 }}>
+            ACCOUNTS (MOST-RECENT 200)
+          </div>
+          <div
+            className="w-card"
+            style={{ padding: 20, overflowX: "auto" }}
+          >
+            <table
+              style={{
+                width: "100%",
+                fontSize: 14,
+                borderCollapse: "collapse",
+              }}
+            >
+              <thead>
+                <tr>
+                  {[
+                    "ACCOUNT",
+                    "TYPE",
+                    "STRIPE CUSTOMER",
+                    "SUBSCRIPTION",
+                    "CREATED",
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="w-type-meta"
+                      style={{ textAlign: "left", paddingBottom: 8 }}
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr
+                    key={r.id}
+                    style={{ borderTop: "1px solid var(--w-line)" }}
+                  >
+                    <td
+                      style={{
+                        padding: "10px 0",
+                        color: "var(--w-fg)",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        maxWidth: 280,
+                      }}
+                    >
+                      {r.display_name}
+                    </td>
+                    <td
+                      className="w-type-meta"
+                      style={{ padding: "10px 0" }}
+                    >
+                      {r.account_type.toUpperCase()}
+                    </td>
+                    <td
+                      style={{
+                        padding: "10px 0",
+                        fontFamily: "var(--w-mono)",
+                        fontSize: 12,
+                      }}
+                    >
+                      {r.stripe_customer_id ? (
+                        <span style={{ color: "var(--w-ok)" }}>
+                          {r.stripe_customer_id.slice(0, 16)}…
+                        </span>
+                      ) : (
+                        <span style={{ color: "var(--w-fg-muted)" }}>—</span>
+                      )}
+                    </td>
+                    <td
+                      className="w-type-meta"
+                      style={{ padding: "10px 0" }}
+                    >
+                      {r.subscription_status ? (
+                        r.subscription_status.toUpperCase()
+                      ) : (
+                        <span style={{ color: "var(--w-fg-muted)" }}>—</span>
+                      )}
+                    </td>
+                    <td
+                      className="w-type-meta"
+                      style={{ padding: "10px 0" }}
+                    >
+                      {new Date(r.created_at)
+                        .toLocaleDateString()
+                        .toUpperCase()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
     </main>
+  );
+}
+
+function KPI({
+  label,
+  value,
+  tone,
+  accent,
+}: {
+  label: string;
+  value: string | number;
+  tone?: "ok";
+  accent?: boolean;
+}) {
+  const valueColor = tone === "ok" ? "var(--w-ok)" : "var(--w-fg)";
+  return (
+    <div
+      className="w-card"
+      style={{
+        padding: 18,
+        borderColor: accent ? "var(--w-acc)" : "var(--w-line)",
+        background: accent ? "var(--w-acc-soft)" : "var(--w-surface-2)",
+      }}
+    >
+      <div className="w-type-meta">{label}</div>
+      <div
+        style={{
+          fontFamily: "var(--w-display)",
+          fontWeight: 700,
+          fontSize: 30,
+          letterSpacing: "-0.025em",
+          lineHeight: 1,
+          marginTop: 8,
+          color: accent ? "var(--w-acc-ink)" : valueColor,
+        }}
+      >
+        {value}
+      </div>
+    </div>
   );
 }

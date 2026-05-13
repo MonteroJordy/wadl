@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireOwnerContext, fmtDate } from "@/lib/owner";
+import { requireOwnerContext } from "@/lib/owner";
+import { fmtDate } from "@/lib/format";
 import BroadcastForm from "./broadcast-form";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ export default async function BroadcastPage({
   const { data: event } = await supabase
     .from("events")
     .select(
-      "id, name, event_nights(id, night_date, doors_at, allocations(id, holder_name))"
+      "id, name, event_nights(id, night_date, doors_at, allocations(id, holder_name))",
     )
     .eq("id", params.id)
     .eq("account_id", account.id)
@@ -34,7 +35,8 @@ export default async function BroadcastPage({
     .sort((a, b) => (a.doors_at < b.doors_at ? -1 : 1))
     .map((n) => ({ id: n.id, label: fmtDate(n.night_date) }));
 
-  const allocations: Array<{ id: string; night_id: string; label: string }> = [];
+  const allocations: Array<{ id: string; night_id: string; label: string }> =
+    [];
   for (const n of event.event_nights)
     for (const a of n.allocations ?? [])
       allocations.push({
@@ -43,7 +45,6 @@ export default async function BroadcastPage({
         label: `${a.holder_name} (${fmtDate(n.night_date)})`,
       });
 
-  // Day 34 — pull SMS templates so broadcast can pre-fill from saved copy.
   const { data: templatesData } = await supabase
     .from("sms_templates")
     .select("id, key, label, body")
@@ -57,24 +58,55 @@ export default async function BroadcastPage({
   }>;
 
   return (
-    <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 pt-12 pb-8 md:py-12">
-      <Link
-        href={`/owner/events/${event.id}`}
-        className="label-mono hover:text-cream"
-      >
-        ← Back
-      </Link>
-      <h1 className="display-lg mt-3 mb-2">Broadcast SMS</h1>
-      <p className="label-mono mb-6">
-        Send to a filtered slice of {event.name}. Dry-run first to see the count.
-      </p>
+    <main
+      id="main-content"
+      className="w-app"
+      style={{
+        minHeight: "100vh",
+        background: "var(--w-bg)",
+        padding: "32px 24px 96px",
+      }}
+    >
+      <div style={{ maxWidth: 720, margin: "0 auto" }}>
+        <Link
+          href={`/owner/events/${event.id}`}
+          className="w-type-meta"
+          style={{
+            color: "var(--w-fg-muted)",
+            textDecoration: "none",
+            display: "inline-block",
+            marginBottom: 12,
+          }}
+        >
+          ← BACK
+        </Link>
+        <div
+          style={{
+            borderBottom: "1px solid var(--w-line)",
+            paddingBottom: 24,
+            marginBottom: 24,
+          }}
+        >
+          <div className="w-type-meta">BROADCAST</div>
+          <div className="w-type-display-md" style={{ marginTop: 8 }}>
+            Broadcast SMS
+          </div>
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-fg-muted)", marginTop: 8 }}
+          >
+            Send to a filtered slice of {event.name}. Dry-run first to see the
+            count.
+          </p>
+        </div>
 
-      <BroadcastForm
-        eventId={event.id}
-        nights={nights}
-        allocations={allocations}
-        templates={templates}
-      />
+        <BroadcastForm
+          eventId={event.id}
+          nights={nights}
+          allocations={allocations}
+          templates={templates}
+        />
+      </div>
     </main>
   );
 }

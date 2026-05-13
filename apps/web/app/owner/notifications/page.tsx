@@ -7,6 +7,8 @@ import {
 } from "@/lib/notifications";
 import { markAllReadAction } from "./actions";
 import { Button, Chip } from "@/components/wadl";
+import FormSubmit from "@/components/form-submit";
+import { fmtRelative } from "@wadl/shared/format";
 
 export const dynamic = "force-dynamic";
 
@@ -18,15 +20,9 @@ interface Row {
   created_at: string;
 }
 
-function ago(iso: string) {
-  const ms = Date.now() - new Date(iso).getTime();
-  const min = Math.round(ms / 60_000);
-  if (min < 1) return "just now";
-  if (min < 60) return `${min}m ago`;
-  const hr = Math.round(min / 60);
-  if (hr < 24) return `${hr}h ago`;
-  return `${Math.round(hr / 24)}d ago`;
-}
+// Local alias for the shared formatter — kept so existing `ago(...)`
+// call sites in this file continue to read naturally.
+const ago = (iso: string) => fmtRelative(iso) ?? "—";
 
 export default async function NotificationsPage() {
   const { supabase, account } = await requireOwnerContext();
@@ -81,9 +77,9 @@ export default async function NotificationsPage() {
           </div>
           {unread > 0 && (
             <form action={markAllReadAction}>
-              <Button type="submit" variant="ghost">
+              <FormSubmit variant="ghost" pendingLabel="Marking…">
                 Mark all read
-              </Button>
+              </FormSubmit>
             </form>
           )}
         </div>

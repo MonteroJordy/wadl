@@ -18,22 +18,59 @@ export default async function ManagerHome() {
   if (active) redirect(`/manager/events/${active.event_id}`);
 
   return (
-    <main id="main-content" className="mobile-frame">
-      <header className="pt-6 pb-4">
-        <p className="label-mono text-gold mb-1">Manager</p>
-        <h1 className="display-lg">Pick an event.</h1>
-      </header>
-      <div className="flex flex-col gap-2 mt-4">
-        {managerEvents.map((s) => (
-          <Link
-            key={s.event_id}
-            href={`/manager/events/${s.event_id}`}
-            className="card hover:border-gold transition"
+    <main
+      id="main-content"
+      className="w-app"
+      style={{
+        minHeight: "100vh",
+        background: "var(--w-bg)",
+        padding: "32px 24px 96px",
+      }}
+    >
+      <div style={{ maxWidth: 720, margin: "0 auto" }}>
+        <div
+          style={{
+            borderBottom: "1px solid var(--w-line)",
+            paddingBottom: 24,
+            marginBottom: 24,
+          }}
+        >
+          <div
+            className="w-type-meta"
+            style={{ color: "var(--w-acc)" }}
           >
-            <p className="font-sans font-semibold text-cream">{s.event.name}</p>
-            <p className="label-mono mt-1 text-gold">Door manager</p>
-          </Link>
-        ))}
+            MANAGER
+          </div>
+          <div className="w-type-display-md" style={{ marginTop: 8 }}>
+            Pick an event.
+          </div>
+        </div>
+        <div
+          style={{ display: "flex", flexDirection: "column", gap: 8 }}
+        >
+          {managerEvents.map((s) => (
+            <Link
+              key={s.event_id}
+              href={`/manager/events/${s.event_id}`}
+              className="w-card"
+              style={{
+                padding: 16,
+                textDecoration: "none",
+                color: "inherit",
+              }}
+            >
+              <p style={{ fontWeight: 600, color: "var(--w-fg)" }}>
+                {s.event.name}
+              </p>
+              <div
+                className="w-type-meta"
+                style={{ marginTop: 6, color: "var(--w-acc)" }}
+              >
+                DOOR MANAGER
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
     </main>
   );

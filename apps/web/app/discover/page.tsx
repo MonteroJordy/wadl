@@ -94,7 +94,7 @@ export default async function DiscoverPage() {
 
   return (
     <main id="main-content">
-      <WFrame style={{ paddingBottom: 48 }}>
+      <WFrame wide maxWidth={1200} style={{ paddingBottom: 48 }}>
         {/* Top meta + search */}
         <div
           style={{
@@ -114,36 +114,67 @@ export default async function DiscoverPage() {
           </Link>
         </div>
 
-        {/* Display headline */}
+        {/* Display headline — bigger on desktop for Shotgun-style impact */}
         <div style={{ padding: "16px 20px 0" }}>
           <div
-            className="w-type-display-md"
-            style={{ lineHeight: 1.0 }}
+            className="w-type-display-lg"
+            style={{
+              lineHeight: 1.0,
+              letterSpacing: "-0.03em",
+              fontWeight: 800,
+            }}
           >
             This week,
             <br />
             at the door.
           </div>
+          <p
+            className="w-type-body-sm"
+            style={{
+              color: "var(--w-fg-muted)",
+              marginTop: 12,
+              maxWidth: 480,
+            }}
+          >
+            Every guest list in town in one feed. Tap to RSVP. No login
+            wall, no third-party tracking.
+          </p>
         </div>
 
-        {/* Horizontal chip scroller */}
+        {/* Horizontal chip scroller — taller pill buttons for tap targets */}
         <div
           style={{
-            padding: "20px 20px 0",
+            padding: "24px 20px 0",
             display: "flex",
-            gap: 6,
+            gap: 8,
             overflowX: "auto",
           }}
           className="w-noscroll"
         >
           {FILTERS.map((c, i) => (
-            <Chip
+            <button
               key={c}
-              tone={i === 0 ? "acc" : "neutral"}
-              style={{ flexShrink: 0 }}
+              type="button"
+              style={{
+                flexShrink: 0,
+                height: 36,
+                padding: "0 14px",
+                background:
+                  i === 0 ? "var(--w-acc)" : "var(--w-surface-2)",
+                color: i === 0 ? "var(--w-acc-ink)" : "var(--w-fg)",
+                border: `1px solid ${
+                  i === 0 ? "var(--w-acc)" : "var(--w-line)"
+                }`,
+                fontFamily: "var(--w-sans)",
+                fontSize: 13,
+                fontWeight: i === 0 ? 600 : 500,
+                cursor: "pointer",
+                transition:
+                  "background 0.12s, border-color 0.12s, color 0.12s",
+              }}
             >
-              {c.toUpperCase()}
-            </Chip>
+              {c}
+            </button>
           ))}
         </div>
 
@@ -177,11 +208,13 @@ export default async function DiscoverPage() {
               <>
                 <SectionLabel>HAPPENING TONIGHT</SectionLabel>
                 <div
+                  className="w-discover-grid"
                   style={{
                     padding: "0 20px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 12,
+                    display: "grid",
+                    gap: 14,
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(260px, 1fr))",
                   }}
                 >
                   {tonightEvents.map((e) => (
@@ -195,11 +228,13 @@ export default async function DiscoverPage() {
               <>
                 <SectionLabel>COMING UP</SectionLabel>
                 <div
+                  className="w-discover-grid"
                   style={{
                     padding: "0 20px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 12,
+                    display: "grid",
+                    gap: 14,
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(260px, 1fr))",
                   }}
                 >
                   {upcomingEvents.map((e) => (
@@ -284,26 +319,40 @@ function DiscoverCard({
   const venueLine = [event.venue?.name, event.venue?.city]
     .filter(Boolean)
     .join(" · ");
-  const tierStatus = "GA · open";
   const grad = vibeGradient(event.id);
+  const date = new Date(first.doors_at);
+  const dow = date
+    .toLocaleDateString("en-US", { weekday: "short" })
+    .toUpperCase();
+  const day = date.getDate();
+  const monthShort = date
+    .toLocaleDateString("en-US", { month: "short" })
+    .toUpperCase();
 
   return (
     <Link
       href={`/e/${event.id}`}
+      className="w-discover-card"
       style={{ textDecoration: "none", color: "inherit" }}
     >
       <div
         className="w-card"
-        style={{ padding: 0, overflow: "hidden" }}
+        style={{
+          padding: 0,
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+          transition: "transform 0.18s ease, border-color 0.18s ease",
+        }}
       >
+        {/* COVER — tall, image-first */}
         <div
           style={{
-            height: 110,
+            aspectRatio: "4 / 5",
             background: `linear-gradient(135deg, ${grad} 0%, #0a0a0b 100%)`,
             position: "relative",
-            display: "flex",
-            alignItems: "flex-end",
-            padding: 14,
+            overflow: "hidden",
           }}
         >
           {event.flyer_url ? (
@@ -312,13 +361,13 @@ function DiscoverCard({
               <img
                 src={event.flyer_url}
                 alt=""
+                loading="lazy"
                 style={{
                   position: "absolute",
                   inset: 0,
                   width: "100%",
                   height: "100%",
                   objectFit: "cover",
-                  opacity: 0.55,
                 }}
               />
               <div
@@ -326,26 +375,51 @@ function DiscoverCard({
                   position: "absolute",
                   inset: 0,
                   background:
-                    "linear-gradient(135deg, rgba(15,15,16,0.2) 0%, rgba(15,15,16,0.9) 100%)",
+                    "linear-gradient(180deg, rgba(0,0,0,0.0) 50%, rgba(0,0,0,0.85) 100%)",
                 }}
               />
             </>
           ) : null}
+
+          {/* Date stub, top-left */}
           <div
-            className="w-type-meta"
             style={{
-              color: "rgba(255,255,255,0.85)",
-              position: "relative",
-              zIndex: 1,
+              position: "absolute",
+              top: 12,
+              left: 12,
+              padding: "6px 10px",
+              background: "rgba(0,0,0,0.55)",
+              backdropFilter: "blur(8px)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              fontFamily: "var(--w-mono)",
+              color: "#fff",
+              display: "flex",
+              alignItems: "baseline",
+              gap: 4,
+              lineHeight: 1,
             }}
           >
-            DOORS {fmtTime(first.doors_at)}
-            {cap ? ` · ${cap} CAP` : ""}
+            <span style={{ fontSize: 10, letterSpacing: "0.08em" }}>
+              {dow}
+            </span>
+            <span style={{ fontSize: 18, fontWeight: 700 }}>{day}</span>
+            <span
+              style={{ fontSize: 10, letterSpacing: "0.08em", opacity: 0.7 }}
+            >
+              {monthShort}
+            </span>
           </div>
+
+          {/* LIVE chip, top-right */}
           {live && (
             <span
               className="w-chip w-chip--acc"
-              style={{ position: "absolute", top: 12, right: 12 }}
+              style={{
+                position: "absolute",
+                top: 12,
+                right: 12,
+                fontWeight: 600,
+              }}
             >
               <span
                 className="w-pulse"
@@ -359,46 +433,80 @@ function DiscoverCard({
               LIVE TONIGHT
             </span>
           )}
-        </div>
-        <div style={{ padding: 14 }}>
+
+          {/* Event name overlay at bottom */}
           <div
             style={{
-              fontSize: 15,
-              fontWeight: 600,
-              letterSpacing: "-0.012em",
+              position: "absolute",
+              left: 14,
+              right: 14,
+              bottom: 14,
+              color: "#fff",
             }}
           >
-            {event.name}
-          </div>
-          {venueLine && (
             <div
-              className="w-type-body-sm"
               style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 2,
+                fontSize: 22,
+                fontWeight: 700,
+                letterSpacing: "-0.02em",
+                lineHeight: 1.1,
+                textShadow: "0 2px 8px rgba(0,0,0,0.6)",
               }}
             >
-              {venueLine}
+              {event.name}
             </div>
-          )}
+            {venueLine && (
+              <div
+                className="w-type-meta"
+                style={{
+                  color: "rgba(255,255,255,0.85)",
+                  marginTop: 6,
+                  textShadow: "0 1px 4px rgba(0,0,0,0.6)",
+                }}
+              >
+                {venueLine.toUpperCase()}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* META + CTA strip */}
+        <div
+          style={{
+            padding: "12px 14px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 10,
+            background: "var(--w-surface-2)",
+          }}
+        >
           <div
+            className="w-type-meta"
             style={{
+              color: "var(--w-fg-muted)",
               display: "flex",
-              justifyContent: "space-between",
+              gap: 8,
               alignItems: "center",
-              marginTop: 12,
             }}
           >
-            <span
-              className="w-type-meta"
-              style={{ color: "var(--w-ok)" }}
-            >
-              {tierStatus.toUpperCase()}
-            </span>
-            <Button variant="primary" style={{ height: 32, fontSize: 12 }}>
-              RSVP
-            </Button>
+            <span>DOORS {fmtTime(first.doors_at).toUpperCase()}</span>
+            {cap ? (
+              <>
+                <span style={{ opacity: 0.4 }}>·</span>
+                <span>{cap} CAP</span>
+              </>
+            ) : null}
           </div>
+          <span
+            className="w-type-meta"
+            style={{
+              color: "var(--w-acc)",
+              fontWeight: 600,
+            }}
+          >
+            RSVP →
+          </span>
         </div>
       </div>
     </Link>

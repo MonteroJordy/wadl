@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireOwnerContext, fmtDate } from "@/lib/owner";
+import { requireOwnerContext } from "@/lib/owner";
+import { fmtDate } from "@/lib/format";
 import OverrideForm from "./override-form";
 
 export const dynamic = "force-dynamic";
@@ -15,9 +16,7 @@ export default async function OwnerOverridePage({
 
   const { data: event } = await supabase
     .from("events")
-    .select(
-      "id, name, event_nights(id, night_date, doors_at, is_frozen)"
-    )
+    .select("id, name, event_nights(id, night_date, doors_at, is_frozen)")
     .eq("id", params.id)
     .eq("account_id", account.id)
     .maybeSingle<{
@@ -43,26 +42,56 @@ export default async function OwnerOverridePage({
   return (
     <main
       id="main-content"
-      className="mx-auto max-w-frame md:max-w-2xl px-6 pt-12 pb-8 md:py-12"
+      className="w-app"
+      style={{
+        minHeight: "100vh",
+        background: "var(--w-bg)",
+        padding: "32px 24px 96px",
+      }}
     >
-      <header className="mb-6">
+      <div style={{ maxWidth: 720, margin: "0 auto" }}>
         <Link
           href={`/owner/events/${event.id}`}
-          className="label-mono hover:text-cream"
+          className="w-type-meta"
+          style={{
+            color: "var(--w-fg-muted)",
+            textDecoration: "none",
+            display: "inline-block",
+            marginBottom: 12,
+          }}
         >
-          ← {event.name}
+          ← {event.name.toUpperCase()}
         </Link>
-        <h1 className="display-lg mt-3 mb-2">Owner override</h1>
-        <p className="label-mono">
-          Manually admit a guest. Bypasses caps + lockdown. Audit-logged.
-        </p>
-      </header>
+        <div
+          style={{
+            borderBottom: "1px solid var(--w-line)",
+            paddingBottom: 24,
+            marginBottom: 24,
+          }}
+        >
+          <div className="w-type-meta">OVERRIDE</div>
+          <div className="w-type-display-md" style={{ marginTop: 8 }}>
+            Owner override
+          </div>
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-fg-muted)", marginTop: 8 }}
+          >
+            Manually admit a guest. Bypasses caps + lockdown. Audit-logged.
+          </p>
+        </div>
 
-      {nights.length === 0 ? (
-        <p className="text-muted">Add a night first.</p>
-      ) : (
-        <OverrideForm eventId={event.id} nights={nights} />
-      )}
+        {nights.length === 0 ? (
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-fg-muted)" }}
+          >
+            Add a night first.
+          </p>
+        ) : (
+          <OverrideForm eventId={event.id} nights={nights} />
+        )}
+      </div>
     </main>
   );
 }

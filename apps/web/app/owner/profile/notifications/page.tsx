@@ -27,26 +27,54 @@ const DEFAULT_PREFS: NotifPrefs = {
 export default async function NotifPrefsPage() {
   const { profile } = await requireOwnerContext();
   const prefs =
-    ((profile as unknown as { notif_prefs: NotifPrefs | null }).notif_prefs) ??
+    (profile as unknown as { notif_prefs: NotifPrefs | null }).notif_prefs ??
     DEFAULT_PREFS;
 
   return (
     <main
       id="main-content"
-      className="mx-auto max-w-frame md:max-w-2xl px-6 pt-12 pb-8 md:py-12"
+      className="w-app"
+      style={{
+        minHeight: "100vh",
+        background: "var(--w-bg)",
+        padding: "32px 24px 96px",
+      }}
     >
-      <header className="mb-6">
-        <Link href="/owner/profile" className="label-mono hover:text-cream">
-          ← Profile
+      <div style={{ maxWidth: 720, margin: "0 auto" }}>
+        <Link
+          href="/owner/profile"
+          className="w-type-meta"
+          style={{
+            color: "var(--w-fg-muted)",
+            textDecoration: "none",
+            display: "inline-block",
+            marginBottom: 12,
+          }}
+        >
+          ← PROFILE
         </Link>
-        <h1 className="display-lg mt-3 mb-2">Notification preferences</h1>
-        <p className="label-mono">
-          Channel + per-kind controls. Quiet hours pause push + SMS while
-          keeping the inbox up to date.
-        </p>
-      </header>
+        <div
+          style={{
+            borderBottom: "1px solid var(--w-line)",
+            paddingBottom: 24,
+            marginBottom: 24,
+          }}
+        >
+          <div className="w-type-meta">NOTIFICATIONS</div>
+          <div className="w-type-display-md" style={{ marginTop: 8 }}>
+            Notification preferences
+          </div>
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-fg-muted)", marginTop: 8 }}
+          >
+            Channel + per-kind controls. Quiet hours pause push + SMS while
+            keeping the inbox up to date.
+          </p>
+        </div>
 
-      <NotifPrefsForm initial={prefs} />
+        <NotifPrefsForm initial={prefs} />
+      </div>
     </main>
   );
 }

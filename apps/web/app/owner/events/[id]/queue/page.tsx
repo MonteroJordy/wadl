@@ -88,7 +88,7 @@ export default async function QueuePage({
         padding: "32px 24px 96px",
       }}
     >
-      <div style={{ maxWidth: 900, margin: "0 auto" }}>
+      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
         <Link
           href={`/owner/events/${event.id}`}
           className="w-type-meta"

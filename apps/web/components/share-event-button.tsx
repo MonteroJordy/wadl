@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/wadl";
 
 export default function ShareEventButton({
   url,
@@ -32,13 +33,13 @@ export default function ShareEventButton({
   }
 
   return (
-    <button
+    <Button
+      variant="ghost"
       type="button"
       onClick={share}
-      className="btn-ghost text-center"
       aria-label="Share this event"
     >
       {copied ? "Link copied" : "Share event"}
-    </button>
+    </Button>
   );
 }

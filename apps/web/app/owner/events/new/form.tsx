@@ -13,6 +13,7 @@ import {
   WFrame,
   Wordmark,
 } from "@/components/wadl";
+import { useFormSaveShortcut } from "@/components/use-form-save-shortcut";
 
 interface NightRow {
   key: string;
@@ -59,6 +60,7 @@ export default function NewEventForm({
   const [nights, setNights] = useState<NightRow[]>([newNight()]);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const formRef = useFormSaveShortcut();
 
   const isMultiNight = nights.length > 1;
 
@@ -138,31 +140,26 @@ export default function NewEventForm({
 
   return (
     <main id="main-content">
-      <WFrame style={{ paddingBottom: 96 }}>
-        {/* Top bar */}
+      {/* .new-event-cols layout rules live in globals.css. */}
+      <WFrame wide maxWidth={1080} style={{ paddingBottom: 96 }}>
+        {/* Top bar — minimal: just the back link. We're already inside the
+            sidebar shell so brand + step indicator are redundant chrome. */}
         <div
           style={{
             padding: "20px 24px 0",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
           }}
         >
           <Link
             href="/owner"
             className="w-type-meta"
-            style={{ textDecoration: "none" }}
+            style={{ textDecoration: "none", color: "var(--w-fg-muted)" }}
           >
             ← BACK
           </Link>
-          <Wordmark variant="monogrid" size={16} />
-          <span className="w-type-meta">
-            NEW EVENT · STEP 1 OF 1
-          </span>
         </div>
 
-        <div style={{ padding: "32px 24px 0" }}>
-          <div className="w-type-meta">FOR YOUR ACCOUNT</div>
+        <div style={{ padding: "20px 24px 0" }}>
+          <div className="w-type-meta">NEW EVENT</div>
           <div
             className="w-type-display-md"
             style={{ marginTop: 6, lineHeight: 1.0 }}
@@ -172,7 +169,9 @@ export default function NewEventForm({
         </div>
 
         <form
+          ref={formRef}
           onSubmit={onSubmit}
+          className="new-event-cols"
           style={{
             padding: "32px 24px 0",
             display: "flex",
@@ -180,17 +179,20 @@ export default function NewEventForm({
             gap: 20,
           }}
         >
-          {/* Cover */}
-          <div>
+          {/* COVER COLUMN (desktop left rail / mobile top section) */}
+          <div className="new-event-cover">
             <span className="w-label">COVER · 4:5</span>
             {flyerPreview ? (
               <div
+                className="new-event-cover-preview"
                 style={{
-                  width: 200,
+                  width: "100%",
+                  maxWidth: 320,
                   aspectRatio: "4 / 5",
                   border: "1px solid var(--w-line)",
                   background: "var(--w-surface-2)",
                   overflow: "hidden",
+                  marginTop: 6,
                   marginBottom: 8,
                 }}
               >
@@ -206,7 +208,15 @@ export default function NewEventForm({
                 />
               </div>
             ) : (
-              <div style={{ width: 200, marginBottom: 8 }}>
+              <div
+                className="new-event-cover-preview"
+                style={{
+                  width: "100%",
+                  maxWidth: 320,
+                  marginTop: 6,
+                  marginBottom: 8,
+                }}
+              >
                 <CoverPlaceholder />
               </div>
             )}
@@ -232,6 +242,15 @@ export default function NewEventForm({
             />
           </div>
 
+          {/* FIELDS COLUMN (desktop right / mobile rest of stack) */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 20,
+            }}
+          >
+
           {/* Title */}
           <div>
             <label htmlFor="name" className="w-label">
@@ -249,14 +268,15 @@ export default function NewEventForm({
             />
           </div>
 
-          {/* Event type */}
+          {/* Event type — compact pills, wrap to fit. */}
           <div>
             <span className="w-label">EVENT TYPE</span>
             <div
               style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
+                display: "flex",
+                flexWrap: "wrap",
                 gap: 6,
+                marginTop: 6,
               }}
             >
               {EVENT_TYPES.map((t) => {
@@ -267,7 +287,7 @@ export default function NewEventForm({
                     type="button"
                     onClick={() => setEventType(t.id)}
                     style={{
-                      height: 44,
+                      height: 36,
                       padding: "0 14px",
                       background: active
                         ? "var(--w-acc-soft)"
@@ -283,7 +303,6 @@ export default function NewEventForm({
                       fontWeight: active ? 600 : 500,
                       fontSize: 13,
                       cursor: "pointer",
-                      textAlign: "left",
                     }}
                   >
                     {t.label}
@@ -538,6 +557,8 @@ export default function NewEventForm({
           >
             {pending ? "Creating…" : "Create event"} <IconArrow size={14} />
           </Button>
+          </div>
+          {/* end fields column */}
         </form>
       </WFrame>
     </main>

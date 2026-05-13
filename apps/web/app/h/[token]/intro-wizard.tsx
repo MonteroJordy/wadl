@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Button } from "@/components/wadl";
 
 interface Props {
   holderName: string;
@@ -57,7 +58,6 @@ export default function HolderIntroWizard({
       const seen = window.localStorage.getItem(storageKey);
       if (!seen) setOpen(true);
     } catch {
-      // Privacy mode / cookies blocked → just show once.
       setOpen(true);
     }
   }, [force, storageKey]);
@@ -77,7 +77,6 @@ export default function HolderIntroWizard({
   const isLast = step === CARDS.length - 1;
   const card = CARDS[step];
 
-  // Replace placeholder copy on first card with allocation specifics.
   const firstBody = `Welcome${holderName ? `, ${holderName}` : ""}. Your cap is ${cap} ${plusOnesAllowed ? "(plus-ones allowed)" : "(no plus-ones)"} · ${autoApprove ? "auto-approve on" : "host approves"}.`;
 
   return (
@@ -85,69 +84,129 @@ export default function HolderIntroWizard({
       role="dialog"
       aria-modal="true"
       aria-labelledby="hwiz-title"
-      className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm flex items-end md:items-center justify-center p-4"
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 40,
+        background: "rgba(0,0,0,0.7)",
+        backdropFilter: "blur(4px)",
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "center",
+        padding: 16,
+      }}
     >
-      <div className="bg-s1 border border-line rounded-t-3xl md:rounded-3xl w-full max-w-md p-6 pb-7">
-        <div className="flex items-center justify-between mb-3">
-          <p className="label-mono">
-            {step + 1} of {CARDS.length}
-          </p>
+      <div
+        style={{
+          background: "var(--w-surface-1)",
+          border: "1px solid var(--w-line)",
+          width: "100%",
+          maxWidth: 440,
+          padding: "24px 24px 28px",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 12,
+          }}
+        >
+          <div className="w-type-meta">
+            {step + 1} OF {CARDS.length}
+          </div>
           <button
             onClick={dismiss}
-            className="label-mono hover:text-cream"
             type="button"
+            className="w-type-meta"
+            style={{
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--w-fg-muted)",
+              padding: 0,
+            }}
           >
-            Skip
+            SKIP
           </button>
         </div>
 
-        <div className="flex gap-1 mb-5">
+        <div
+          style={{
+            display: "flex",
+            gap: 4,
+            marginBottom: 20,
+          }}
+        >
           {CARDS.map((_, i) => (
             <div
               key={i}
-              className={`flex-1 h-1 rounded-full ${
-                i <= step ? "bg-coral" : "bg-s3"
-              }`}
+              style={{
+                flex: 1,
+                height: 4,
+                background:
+                  i <= step ? "var(--w-acc)" : "var(--w-surface-3)",
+              }}
             />
           ))}
         </div>
 
         <h2
           id="hwiz-title"
-          className="font-display text-3xl text-cream uppercase tracking-wide leading-[0.95] mb-3"
+          style={{
+            fontFamily: "var(--w-display)",
+            fontWeight: 700,
+            fontSize: 30,
+            color: "var(--w-fg)",
+            letterSpacing: "-0.02em",
+            lineHeight: 0.95,
+            marginBottom: 12,
+          }}
         >
           {card.title}
         </h2>
-        <p className="text-cream/80 text-sm leading-relaxed mb-6">
+        <p
+          style={{
+            color: "var(--w-fg)",
+            opacity: 0.85,
+            fontSize: 14,
+            lineHeight: 1.5,
+            marginBottom: 24,
+          }}
+        >
           {isFirst ? firstBody : card.body}
         </p>
 
-        <div className="flex gap-2">
+        <div style={{ display: "flex", gap: 8 }}>
           {step > 0 && (
-            <button
-              onClick={() => setStep(step - 1)}
-              className="btn-ghost flex-1"
+            <Button
+              variant="ghost"
               type="button"
+              onClick={() => setStep(step - 1)}
+              style={{ flex: 1 }}
             >
               Back
-            </button>
+            </Button>
           )}
           {!isLast ? (
-            <button
-              onClick={() => setStep(step + 1)}
-              className="btn-primary flex-1"
+            <Button
+              variant="primary"
               type="button"
+              onClick={() => setStep(step + 1)}
+              style={{ flex: 1 }}
             >
               Next
-            </button>
+            </Button>
           ) : (
-            <button
-              onClick={dismiss}
-              className="btn-primary flex-1"
+            <Button
+              variant="primary"
               type="button"
+              onClick={dismiss}
+              style={{ flex: 1 }}
             >
               Start adding names
-            </button>
+            </Button>
           )}
         </div>
       </div>

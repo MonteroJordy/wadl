@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Button } from "@/components/wadl";
 import { updateEventAction, updateNightsAction } from "./actions";
 import { fmtDate } from "@/lib/format";
 
@@ -12,6 +13,16 @@ interface NightRow {
   capacity_cap: number | null;
   lockdown_threshold_pct: number;
 }
+
+const INPUT_STYLE: React.CSSProperties = {
+  width: "100%",
+  background: "var(--w-surface-1)",
+  border: "1px solid var(--w-line)",
+  color: "var(--w-fg)",
+  padding: "10px 12px",
+  fontFamily: "var(--w-sans)",
+  fontSize: 14,
+};
 
 function toLocalDateTimeInputValue(iso: string | null) {
   if (!iso) return "";
@@ -33,7 +44,9 @@ export default function SettingsForm({
   const [description, setDescription] = useState(initial.description);
   const [flyerUrl, setFlyerUrl] = useState(initial.flyer_url);
   const [flyerFile, setFlyerFile] = useState<File | null>(null);
-  const [flyerPreview, setFlyerPreview] = useState<string | null>(initial.flyer_url || null);
+  const [flyerPreview, setFlyerPreview] = useState<string | null>(
+    initial.flyer_url || null,
+  );
   const [nights, setNights] = useState<NightRow[]>(initialNights);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
@@ -46,9 +59,7 @@ export default function SettingsForm({
   }
 
   function updateNight(id: string, patch: Partial<NightRow>) {
-    setNights((rows) =>
-      rows.map((r) => (r.id === id ? { ...r, ...patch } : r))
-    );
+    setNights((rows) => rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
   }
 
   function onSaveEvent(e: React.FormEvent) {
@@ -82,8 +93,12 @@ export default function SettingsForm({
     setSaved(null);
 
     const patches = nights.map((n) => {
-      const doorsLocal = (document.getElementById(`doors-${n.id}`) as HTMLInputElement)?.value;
-      const cutoffLocal = (document.getElementById(`cutoff-${n.id}`) as HTMLInputElement)?.value;
+      const doorsLocal = (
+        document.getElementById(`doors-${n.id}`) as HTMLInputElement
+      )?.value;
+      const cutoffLocal = (
+        document.getElementById(`cutoff-${n.id}`) as HTMLInputElement
+      )?.value;
       return {
         id: n.id,
         doors_at: doorsLocal ? new Date(doorsLocal).toISOString() : n.doors_at,
@@ -102,31 +117,51 @@ export default function SettingsForm({
 
   return (
     <>
-      <form onSubmit={onSaveEvent} className="flex flex-col gap-5">
+      <form
+        onSubmit={onSaveEvent}
+        style={{ display: "flex", flexDirection: "column", gap: 20 }}
+      >
         <div>
-          <label htmlFor="name" className="label-mono block mb-2">Event name</label>
+          <label
+            htmlFor="name"
+            className="w-type-meta"
+            style={{ display: "block", marginBottom: 6 }}
+          >
+            EVENT NAME
+          </label>
           <input
             id="name"
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="input-dark"
+            style={INPUT_STYLE}
             required
           />
         </div>
 
         <div>
-          <p className="label-mono mb-2">Flyer (4:5 image)</p>
+          <div className="w-type-meta" style={{ marginBottom: 6 }}>
+            FLYER (4:5 IMAGE)
+          </div>
           {flyerPreview && (
             <div
-              className="rounded-md overflow-hidden border border-line mb-2"
-              style={{ aspectRatio: "4 / 5", maxWidth: 200 }}
+              style={{
+                overflow: "hidden",
+                border: "1px solid var(--w-line)",
+                marginBottom: 8,
+                aspectRatio: "4 / 5",
+                maxWidth: 200,
+              }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={flyerPreview}
                 alt="Flyer preview"
-                className="w-full h-full object-cover"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
               />
             </div>
           )}
@@ -134,74 +169,122 @@ export default function SettingsForm({
             type="file"
             accept="image/jpeg,image/png,image/webp"
             onChange={onPickFile}
-            className="input-dark file:mr-3 file:bg-s3 file:text-cream file:border-0 file:rounded file:px-3 file:py-1 file:text-xs"
+            style={INPUT_STYLE}
           />
-          <p className="label-mono mt-2">Or paste a URL:</p>
+          <div
+            className="w-type-meta"
+            style={{ marginTop: 8, marginBottom: 4 }}
+          >
+            OR PASTE A URL:
+          </div>
           <input
             type="url"
             value={flyerUrl}
             onChange={(e) => setFlyerUrl(e.target.value)}
-            className="input-dark mt-1"
+            style={INPUT_STYLE}
           />
         </div>
 
         <div>
-          <label htmlFor="description" className="label-mono block mb-2">Description</label>
+          <label
+            htmlFor="description"
+            className="w-type-meta"
+            style={{ display: "block", marginBottom: 6 }}
+          >
+            DESCRIPTION
+          </label>
           <textarea
             id="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="input-dark min-h-[80px]"
+            style={{ ...INPUT_STYLE, minHeight: 80 }}
           />
         </div>
 
-        <button type="submit" className="btn-primary" disabled={pending}>
+        <Button variant="primary" type="submit" disabled={pending}>
           {pending ? "Saving…" : "Save event"}
-        </button>
+        </Button>
       </form>
 
-      <div className="my-8 h-px bg-line" />
+      <div
+        style={{
+          margin: "32px 0",
+          height: 1,
+          background: "var(--w-line)",
+        }}
+      />
 
-      <form onSubmit={onSaveNights} className="flex flex-col gap-4">
-        <p className="label-mono">Nights</p>
+      <form
+        onSubmit={onSaveNights}
+        style={{ display: "flex", flexDirection: "column", gap: 16 }}
+      >
+        <div className="w-type-meta">NIGHTS</div>
         {nights.map((n) => (
-          <div key={n.id} className="card">
-            <p className="label-mono mb-2">{fmtDate(n.night_date)}</p>
-            <div className="flex flex-col gap-2">
+          <div key={n.id} className="w-card" style={{ padding: 14 }}>
+            <div className="w-type-meta" style={{ marginBottom: 8 }}>
+              {fmtDate(n.night_date).toUpperCase()}
+            </div>
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: 8 }}
+            >
               <div>
-                <label htmlFor={`doors-${n.id}`} className="label-mono block mb-1">Doors</label>
+                <label
+                  htmlFor={`doors-${n.id}`}
+                  className="w-type-meta"
+                  style={{ display: "block", marginBottom: 4 }}
+                >
+                  DOORS
+                </label>
                 <input
                   id={`doors-${n.id}`}
                   type="datetime-local"
                   defaultValue={toLocalDateTimeInputValue(n.doors_at)}
-                  className="input-dark"
+                  style={INPUT_STYLE}
                 />
               </div>
               <div>
-                <label htmlFor={`cutoff-${n.id}`} className="label-mono block mb-1">RSVP cutoff</label>
+                <label
+                  htmlFor={`cutoff-${n.id}`}
+                  className="w-type-meta"
+                  style={{ display: "block", marginBottom: 4 }}
+                >
+                  RSVP CUTOFF
+                </label>
                 <input
                   id={`cutoff-${n.id}`}
                   type="datetime-local"
                   defaultValue={toLocalDateTimeInputValue(n.cutoff_at)}
-                  className="input-dark"
+                  style={INPUT_STYLE}
                 />
               </div>
               <div>
-                <label className="label-mono block mb-1">Capacity cap</label>
+                <div
+                  className="w-type-meta"
+                  style={{ marginBottom: 4 }}
+                >
+                  CAPACITY CAP
+                </div>
                 <input
                   type="number"
                   min={0}
                   value={n.capacity_cap ?? ""}
                   onChange={(e) =>
                     updateNight(n.id, {
-                      capacity_cap: e.target.value ? parseInt(e.target.value, 10) : null,
+                      capacity_cap: e.target.value
+                        ? parseInt(e.target.value, 10)
+                        : null,
                     })
                   }
-                  className="input-dark"
+                  style={INPUT_STYLE}
                 />
               </div>
               <div>
-                <label className="label-mono block mb-1">Lockdown %</label>
+                <div
+                  className="w-type-meta"
+                  style={{ marginBottom: 4 }}
+                >
+                  LOCKDOWN %
+                </div>
                 <input
                   type="number"
                   min={1}
@@ -209,23 +292,38 @@ export default function SettingsForm({
                   value={n.lockdown_threshold_pct}
                   onChange={(e) =>
                     updateNight(n.id, {
-                      lockdown_threshold_pct: parseInt(e.target.value, 10) || 100,
+                      lockdown_threshold_pct:
+                        parseInt(e.target.value, 10) || 100,
                     })
                   }
-                  className="input-dark"
+                  style={INPUT_STYLE}
                 />
               </div>
             </div>
           </div>
         ))}
 
-        <button type="submit" className="btn-primary" disabled={pending}>
+        <Button variant="primary" type="submit" disabled={pending}>
           {pending ? "Saving…" : "Save nights"}
-        </button>
+        </Button>
       </form>
 
-      {error && <p className="text-err text-sm mt-4">{error}</p>}
-      {saved && <p className="text-mint text-sm mt-4">{saved}</p>}
+      {error && (
+        <p
+          className="w-type-body-sm"
+          style={{ color: "var(--w-err)", marginTop: 16 }}
+        >
+          {error}
+        </p>
+      )}
+      {saved && (
+        <p
+          className="w-type-body-sm"
+          style={{ color: "var(--w-ok)", marginTop: 16 }}
+        >
+          {saved}
+        </p>
+      )}
     </>
   );
 }

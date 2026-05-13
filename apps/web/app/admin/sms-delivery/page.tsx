@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireOwnerContext } from "@/lib/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
-import EmptyState from "@/components/empty-state";
+import { Chip } from "@/components/wadl";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "SMS delivery — WADL" };
@@ -29,16 +29,16 @@ interface Row {
   guest: { full_name: string | null } | null;
 }
 
-const STATUS_TONE: Record<string, string> = {
-  delivered: "text-mint",
-  sent: "text-mint",
-  queued: "text-muted",
-  sending: "text-muted",
-  accepted: "text-muted",
-  failed: "text-coral",
-  undelivered: "text-coral",
-  opted_out: "text-coral",
-  config_error: "text-coral",
+const STATUS_COLOR: Record<string, string> = {
+  delivered: "var(--w-ok)",
+  sent: "var(--w-ok)",
+  queued: "var(--w-fg-muted)",
+  sending: "var(--w-fg-muted)",
+  accepted: "var(--w-fg-muted)",
+  failed: "var(--w-err)",
+  undelivered: "var(--w-err)",
+  opted_out: "var(--w-err)",
+  config_error: "var(--w-err)",
 };
 
 function effective(r: Row): string {
@@ -60,7 +60,7 @@ export default async function AdminSmsDeliveryPage({
   let query = admin
     .from("sms_log")
     .select(
-      "id, to_phone, body, template_key, provider, provider_sid, status, twilio_status, twilio_error_code, status_updated_at, error, segments, cost_estimate_usd, created_at, account:accounts(display_name), event:events(name), guest:guests(full_name)"
+      "id, to_phone, body, template_key, provider, provider_sid, status, twilio_status, twilio_error_code, status_updated_at, error, segments, cost_estimate_usd, created_at, account:accounts(display_name), event:events(name), guest:guests(full_name)",
     )
     .order("created_at", { ascending: false })
     .limit(200);
@@ -81,130 +81,238 @@ export default async function AdminSmsDeliveryPage({
     all: rows.length,
     delivered: rows.filter((r) => effective(r) === "delivered").length,
     failed: rows.filter((r) =>
-      ["failed", "undelivered"].includes(effective(r))
+      ["failed", "undelivered"].includes(effective(r)),
     ).length,
     cost: rows.reduce((s, r) => s + (r.cost_estimate_usd ?? 0), 0),
   };
 
   return (
-    <main
-      id="main-content"
-      className="mx-auto w-full max-w-6xl px-4 md:px-8 pt-6 pb-16"
-    >
-      <header className="mb-6">
+    <main id="main-content" style={{ padding: "32px 24px 96px" }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         <Link
           href="/admin"
-          className="label-mono hover:text-cream transition mb-2 inline-block"
+          className="w-type-meta"
+          style={{
+            color: "var(--w-fg-muted)",
+            textDecoration: "none",
+            display: "inline-block",
+            marginBottom: 12,
+          }}
         >
-          ← Admin
+          ← ADMIN
         </Link>
-        <h1 className="font-display text-4xl md:text-5xl text-cream uppercase tracking-wide leading-[0.9]">
-          SMS delivery
-        </h1>
-        <p className="label-mono mt-2">
-          Last 200 outbound messages across the platform · {totals.delivered} delivered ·{" "}
-          {totals.failed} failed · ${totals.cost.toFixed(2)} estimated cost
-        </p>
-      </header>
+        <div
+          style={{
+            borderBottom: "1px solid var(--w-line)",
+            paddingBottom: 24,
+            marginBottom: 24,
+          }}
+        >
+          <div className="w-type-meta">PLATFORM</div>
+          <div className="w-type-display-md" style={{ marginTop: 8 }}>
+            SMS delivery
+          </div>
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-fg-muted)", marginTop: 8 }}
+          >
+            Last 200 outbound messages across the platform · {totals.delivered}{" "}
+            delivered · {totals.failed} failed · $
+            {totals.cost.toFixed(2)} estimated cost
+          </p>
+        </div>
 
-      <form action="/admin/sms-delivery" method="get" className="mb-3">
-        <input
-          type="text"
-          name="q"
-          defaultValue={q}
-          placeholder="Filter by phone…"
-          className="w-full bg-s2 border border-line text-cream px-4 py-2.5 rounded-md font-sans text-sm placeholder:text-muted focus:border-coral focus:outline-none transition-colors"
-        />
-        {status && <input type="hidden" name="status" value={status} />}
-      </form>
+        <form
+          action="/admin/sms-delivery"
+          method="get"
+          style={{ marginBottom: 12 }}
+        >
+          <input
+            type="text"
+            name="q"
+            defaultValue={q}
+            placeholder="Filter by phone…"
+            style={{
+              width: "100%",
+              maxWidth: 420,
+              background: "var(--w-surface-1)",
+              border: "1px solid var(--w-line)",
+              color: "var(--w-fg)",
+              padding: "10px 12px",
+              fontFamily: "var(--w-sans)",
+              fontSize: 14,
+            }}
+          />
+          {status && <input type="hidden" name="status" value={status} />}
+        </form>
 
-      <div className="flex flex-wrap gap-1 mb-6">
-        {[
-          "",
-          "delivered",
-          "sent",
-          "queued",
-          "failed",
-          "undelivered",
-          "opted_out",
-        ].map((s) => {
-          const active = status === s;
-          const sp = new URLSearchParams();
-          if (s) sp.set("status", s);
-          if (q) sp.set("q", q);
-          const href = `/admin/sms-delivery${sp.toString() ? `?${sp}` : ""}`;
-          return (
-            <Link
-              key={s || "all"}
-              href={href}
-              className={`shrink-0 px-3 py-1.5 rounded-full border text-[10px] font-mono uppercase tracking-wider transition ${
-                active
-                  ? "border-coral bg-coral/10 text-cream"
-                  : "border-line bg-s1 text-muted hover:text-cream"
-              }`}
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 6,
+            marginBottom: 24,
+          }}
+        >
+          {[
+            "",
+            "delivered",
+            "sent",
+            "queued",
+            "failed",
+            "undelivered",
+            "opted_out",
+          ].map((s) => {
+            const active = status === s;
+            const sp = new URLSearchParams();
+            if (s) sp.set("status", s);
+            if (q) sp.set("q", q);
+            const href = `/admin/sms-delivery${sp.toString() ? `?${sp}` : ""}`;
+            return (
+              <Link
+                key={s || "all"}
+                href={href}
+                style={{ textDecoration: "none", flexShrink: 0 }}
+              >
+                <Chip tone={active ? "acc" : "ghost"}>
+                  {(s.replace("_", " ") || "ALL").toUpperCase()}
+                </Chip>
+              </Link>
+            );
+          })}
+        </div>
+
+        {rows.length === 0 ? (
+          <div
+            className="w-card"
+            style={{
+              padding: "64px 32px",
+              textAlign: "center",
+            }}
+          >
+            <div className="w-type-h1">No outbound SMS</div>
+            <p
+              className="w-type-body-sm"
+              style={{
+                color: "var(--w-fg-muted)",
+                marginTop: 12,
+                maxWidth: 540,
+                marginInline: "auto",
+                lineHeight: 1.5,
+              }}
             >
-              {s.replace("_", " ") || "all"}
-            </Link>
-          );
-        })}
-      </div>
-
-      {rows.length === 0 ? (
-        <EmptyState
-          title="No outbound SMS"
-          body="When OTPs, RSVP confirmations, broadcasts, escalations, and tier upgrades go out, every send lands here with delivery status."
-        />
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {rows.map((r) => (
-            <li key={r.id} className="card">
-              <div className="flex items-baseline justify-between gap-3 mb-1">
-                <p className="font-mono text-cream">{r.to_phone}</p>
-                <span
-                  className={`label-mono ${
-                    STATUS_TONE[effective(r)] ?? "text-muted"
-                  }`}
-                  title={
-                    r.status_updated_at
-                      ? `Updated ${new Date(r.status_updated_at).toLocaleString()}`
-                      : undefined
-                  }
+              When OTPs, RSVP confirmations, broadcasts, escalations, and tier
+              upgrades go out, every send lands here with delivery status.
+            </p>
+          </div>
+        ) : (
+          <ul
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+              listStyle: "none",
+              padding: 0,
+              margin: 0,
+            }}
+          >
+            {rows.map((r) => (
+              <li key={r.id} className="w-card" style={{ padding: 16 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "baseline",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    marginBottom: 6,
+                  }}
                 >
-                  {effective(r).replace("_", " ")}
-                  {r.twilio_error_code && ` · ${r.twilio_error_code}`}
-                </span>
-              </div>
-              <p className="text-cream/80 text-sm leading-relaxed mb-2 line-clamp-2">
-                {r.body}
-              </p>
-              <p className="label-mono">
-                {new Date(r.created_at).toLocaleString()} · {r.provider}
-                {r.template_key ? ` · ${r.template_key}` : ""} ·{" "}
-                {r.segments ?? 1} seg · ${(r.cost_estimate_usd ?? 0).toFixed(4)}
-              </p>
-              <p className="label-mono mt-1 truncate">
-                {r.account?.display_name ?? "—"}
-                {r.event?.name && (
-                  <>
-                    {" · "}
-                    <span className="text-cream">{r.event.name}</span>
-                  </>
+                  <p
+                    style={{
+                      fontFamily: "var(--w-mono)",
+                      color: "var(--w-fg)",
+                    }}
+                  >
+                    {r.to_phone}
+                  </p>
+                  <div
+                    className="w-type-meta"
+                    style={{
+                      color: STATUS_COLOR[effective(r)] ?? "var(--w-fg-muted)",
+                    }}
+                    title={
+                      r.status_updated_at
+                        ? `Updated ${new Date(r.status_updated_at).toLocaleString()}`
+                        : undefined
+                    }
+                  >
+                    {effective(r).replace("_", " ").toUpperCase()}
+                    {r.twilio_error_code && ` · ${r.twilio_error_code}`}
+                  </div>
+                </div>
+                <p
+                  style={{
+                    color: "var(--w-fg)",
+                    opacity: 0.85,
+                    fontSize: 14,
+                    lineHeight: 1.5,
+                    marginBottom: 8,
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                  }}
+                >
+                  {r.body}
+                </p>
+                <div className="w-type-meta">
+                  {new Date(r.created_at).toLocaleString().toUpperCase()} ·{" "}
+                  {r.provider.toUpperCase()}
+                  {r.template_key ? ` · ${r.template_key.toUpperCase()}` : ""}{" "}
+                  · {r.segments ?? 1} SEG · $
+                  {(r.cost_estimate_usd ?? 0).toFixed(4)}
+                </div>
+                <div
+                  className="w-type-meta"
+                  style={{
+                    marginTop: 4,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {(r.account?.display_name ?? "—").toUpperCase()}
+                  {r.event?.name && (
+                    <>
+                      {" · "}
+                      <span style={{ color: "var(--w-fg)" }}>
+                        {r.event.name}
+                      </span>
+                    </>
+                  )}
+                  {r.guest?.full_name && (
+                    <>
+                      {" · "}
+                      <span style={{ color: "var(--w-fg)" }}>
+                        {r.guest.full_name}
+                      </span>
+                    </>
+                  )}
+                  {r.provider_sid && <> · {r.provider_sid}</>}
+                </div>
+                {r.error && (
+                  <div
+                    className="w-type-meta"
+                    style={{ marginTop: 4, color: "var(--w-err)" }}
+                  >
+                    {r.error}
+                  </div>
                 )}
-                {r.guest?.full_name && (
-                  <>
-                    {" · "}
-                    <span className="text-cream">{r.guest.full_name}</span>
-                  </>
-                )}
-                {r.provider_sid && <> · {r.provider_sid}</>}
-              </p>
-              {r.error && (
-                <p className="label-mono mt-1 text-coral">{r.error}</p>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </main>
   );
 }

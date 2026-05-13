@@ -1,7 +1,8 @@
+import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { fmtDate, fmtTime } from "@/lib/format";
-import { Chip, IconCheck, WFrame, Wordmark } from "@/components/wadl";
+import { Button, Chip, IconCheck, WFrame, Wordmark } from "@/components/wadl";
 import ClaimForm from "./claim-form";
 
 export const dynamic = "force-dynamic";
@@ -41,6 +42,27 @@ function ErrorFrame({ title, body }: { title: string; body: string }) {
           >
             {body}
           </p>
+          <div
+            style={{
+              marginTop: 32,
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
+              maxWidth: 280,
+              marginInline: "auto",
+            }}
+          >
+            <Link href="/holder" style={{ textDecoration: "none" }}>
+              <Button variant="primary" block>
+                Your allocations
+              </Button>
+            </Link>
+            <Link href="/discover" style={{ textDecoration: "none" }}>
+              <Button variant="ghost" block>
+                Browse events
+              </Button>
+            </Link>
+          </div>
         </div>
       </WFrame>
     </main>

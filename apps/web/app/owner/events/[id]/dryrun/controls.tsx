@@ -1,7 +1,19 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Button } from "@/components/wadl";
+import ConfirmDialog from "@/components/confirm-dialog";
 import { seedDryRunAction, clearDryRunAction } from "./actions";
+
+const INPUT_STYLE: React.CSSProperties = {
+  width: "100%",
+  background: "var(--w-surface-1)",
+  border: "1px solid var(--w-line)",
+  color: "var(--w-fg)",
+  padding: "10px 12px",
+  fontFamily: "var(--w-sans)",
+  fontSize: 14,
+};
 
 export default function DryRunControls({
   eventId,
@@ -13,6 +25,7 @@ export default function DryRunControls({
   const [count, setCount] = useState("40");
   const [simulateScans, setSimulateScans] = useState(true);
   const [pending, startTransition] = useTransition();
+  const [clearOpen, setClearOpen] = useState(false);
   const [msg, setMsg] = useState<{
     kind: "ok" | "err";
     text: string;
@@ -40,12 +53,10 @@ export default function DryRunControls({
   }
 
   function clear() {
-    if (
-      !confirm(
-        `Delete all ${existingCount} DRYRUN guests on this event? Real guests stay.`
-      )
-    )
-      return;
+    setClearOpen(true);
+  }
+
+  function doClear() {
     setMsg(null);
     startTransition(async () => {
       const res = await clearDryRunAction(eventId);
@@ -54,16 +65,30 @@ export default function DryRunControls({
       } else {
         setMsg({ kind: "err", text: res.error });
       }
+      setClearOpen(false);
     });
   }
 
   return (
-    <section className="card">
-      <p className="label-mono mb-3">Generate</p>
-      <div className="grid grid-cols-2 gap-3 mb-4">
+    <section className="w-card" style={{ padding: 20 }}>
+      <div className="w-type-meta" style={{ marginBottom: 12 }}>
+        GENERATE
+      </div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 12,
+          marginBottom: 16,
+        }}
+      >
         <div>
-          <label className="label-mono block mb-1" htmlFor="count">
-            Count (1–200)
+          <label
+            htmlFor="count"
+            className="w-type-meta"
+            style={{ display: "block", marginBottom: 4 }}
+          >
+            COUNT (1–200)
           </label>
           <input
             id="count"
@@ -74,50 +99,84 @@ export default function DryRunControls({
             onChange={(e) =>
               setCount(e.target.value.replace(/[^\d]/g, "").slice(0, 3))
             }
-            className="input-dark"
+            style={INPUT_STYLE}
           />
         </div>
-        <label className="flex items-center gap-2 cursor-pointer mt-6">
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            cursor: "pointer",
+            marginTop: 24,
+          }}
+        >
           <input
             type="checkbox"
             checked={simulateScans}
             onChange={(e) => setSimulateScans(e.target.checked)}
-            className="w-4 h-4 accent-coral"
+            style={{ width: 16, height: 16, accentColor: "var(--w-acc)" }}
           />
-          <span className="text-cream font-sans text-sm">
+          <span
+            style={{ color: "var(--w-fg)", fontSize: 14 }}
+          >
             Simulate ~80% scans
           </span>
         </label>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        <button
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 8,
+        }}
+      >
+        <Button
+          variant="primary"
           type="button"
           onClick={seed}
           disabled={pending}
-          className="bg-coral text-bg font-sans font-semibold text-xs uppercase tracking-[0.16em] py-3 rounded-md hover:brightness-110 transition disabled:opacity-50"
         >
           {pending ? "Working…" : "Seed dry run"}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
           type="button"
           onClick={clear}
           disabled={pending || existingCount === 0}
-          className="bg-transparent border border-coral/40 text-coral font-sans font-semibold text-xs uppercase tracking-[0.16em] py-3 rounded-md hover:bg-coral/10 transition disabled:opacity-30 disabled:cursor-not-allowed"
+          style={{
+            borderColor: "var(--w-err)",
+            color: "var(--w-err)",
+          }}
         >
-          {pending ? "…" : `Clear ${existingCount > 0 ? `(${existingCount})` : ""}`}
-        </button>
+          {pending
+            ? "…"
+            : `Clear ${existingCount > 0 ? `(${existingCount})` : ""}`}
+        </Button>
       </div>
 
       {msg && (
-        <p
-          className={`label-mono mt-3 ${
-            msg.kind === "ok" ? "text-mint" : "text-coral"
-          }`}
+        <div
+          className="w-type-meta"
+          style={{
+            marginTop: 12,
+            color: msg.kind === "ok" ? "var(--w-ok)" : "var(--w-err)",
+          }}
         >
           {msg.text}
-        </p>
+        </div>
       )}
+      <ConfirmDialog
+        open={clearOpen}
+        title={`Delete all ${existingCount} DRYRUN guests?`}
+        body="Real guests stay untouched. Only the seeded test guests get cleared. Cannot be undone."
+        confirmLabel="Clear DRYRUN guests"
+        danger
+        pending={pending}
+        onConfirm={doClear}
+        onCancel={() => setClearOpen(false)}
+      />
     </section>
   );
 }

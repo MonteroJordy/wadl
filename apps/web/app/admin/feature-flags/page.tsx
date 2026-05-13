@@ -1,5 +1,4 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import EmptyState from "@/components/empty-state";
 import ToggleButton from "./toggle-button";
 
 export const dynamic = "force-dynamic";
@@ -22,51 +21,146 @@ export default async function AdminFeatureFlagsPage() {
   const flags = (data ?? []) as FlagRow[];
 
   return (
-    <main id="main-content" className="mx-auto max-w-5xl px-6 pt-6 pb-12">
-      <h1 className="display-lg mb-2">Feature flags</h1>
-      <p className="label-mono mb-6">
-        Toggle on/off live. Rollout % + target stay editable via SQL for now.
-      </p>
-
-      {flags.length === 0 ? (
-        <EmptyState
-          title="No flags seeded"
-          body="Run the migration to populate the starter flag set."
-        />
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="label-mono text-left">
-              <tr>
-                <th className="pb-2">Key</th>
-                <th>Description</th>
-                <th>Status</th>
-                <th className="text-right">Rollout</th>
-                <th>Target</th>
-                <th>Updated</th>
-              </tr>
-            </thead>
-            <tbody>
-              {flags.map((f) => (
-                <tr key={f.key} className="border-t border-line">
-                  <td className="py-2 font-mono text-cream">{f.key}</td>
-                  <td className="py-2 text-muted text-xs max-w-md">
-                    {f.description ?? ""}
-                  </td>
-                  <td className="py-2">
-                    <ToggleButton flagKey={f.key} enabled={f.enabled} />
-                  </td>
-                  <td className="py-2 text-right">{f.rollout_pct}%</td>
-                  <td className="py-2 label-mono">{f.rollout_target ?? "—"}</td>
-                  <td className="py-2 label-mono text-muted">
-                    {new Date(f.updated_at).toLocaleDateString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+    <main id="main-content" style={{ padding: "32px 24px 96px" }}>
+      <div style={{ maxWidth: 1080, margin: "0 auto" }}>
+        <div
+          style={{
+            borderBottom: "1px solid var(--w-line)",
+            paddingBottom: 24,
+            marginBottom: 24,
+          }}
+        >
+          <div className="w-type-meta">PLATFORM</div>
+          <div className="w-type-display-md" style={{ marginTop: 8 }}>
+            Feature flags
+          </div>
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-fg-muted)", marginTop: 8 }}
+          >
+            Toggle on/off live. Rollout % + target stay editable via SQL for
+            now.
+          </p>
         </div>
-      )}
+
+        {flags.length === 0 ? (
+          <div
+            className="w-card"
+            style={{
+              padding: "64px 32px",
+              textAlign: "center",
+            }}
+          >
+            <div className="w-type-h1">No flags seeded</div>
+            <p
+              className="w-type-body-sm"
+              style={{
+                color: "var(--w-fg-muted)",
+                marginTop: 12,
+                maxWidth: 460,
+                marginInline: "auto",
+                lineHeight: 1.5,
+              }}
+            >
+              Run the migration to populate the starter flag set.
+            </p>
+          </div>
+        ) : (
+          <section
+            className="w-card"
+            style={{ padding: 20, overflowX: "auto" }}
+          >
+            <table
+              style={{
+                width: "100%",
+                fontSize: 14,
+                borderCollapse: "collapse",
+              }}
+            >
+              <thead>
+                <tr>
+                  {[
+                    ["KEY", "left"],
+                    ["DESCRIPTION", "left"],
+                    ["STATUS", "left"],
+                    ["ROLLOUT", "right"],
+                    ["TARGET", "left"],
+                    ["UPDATED", "left"],
+                  ].map(([h, align]) => (
+                    <th
+                      key={h}
+                      className="w-type-meta"
+                      style={{
+                        textAlign: align as "left" | "right",
+                        paddingBottom: 8,
+                      }}
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {flags.map((f) => (
+                  <tr
+                    key={f.key}
+                    style={{ borderTop: "1px solid var(--w-line)" }}
+                  >
+                    <td
+                      style={{
+                        padding: "10px 0",
+                        fontFamily: "var(--w-mono)",
+                        color: "var(--w-fg)",
+                      }}
+                    >
+                      {f.key}
+                    </td>
+                    <td
+                      style={{
+                        padding: "10px 0",
+                        color: "var(--w-fg-muted)",
+                        fontSize: 12,
+                        maxWidth: 360,
+                      }}
+                    >
+                      {f.description ?? ""}
+                    </td>
+                    <td style={{ padding: "10px 0" }}>
+                      <ToggleButton flagKey={f.key} enabled={f.enabled} />
+                    </td>
+                    <td
+                      style={{
+                        padding: "10px 0",
+                        textAlign: "right",
+                        fontFamily: "var(--w-mono)",
+                      }}
+                    >
+                      {f.rollout_pct}%
+                    </td>
+                    <td
+                      className="w-type-meta"
+                      style={{ padding: "10px 0" }}
+                    >
+                      {(f.rollout_target ?? "—").toUpperCase()}
+                    </td>
+                    <td
+                      className="w-type-meta"
+                      style={{
+                        padding: "10px 0",
+                        color: "var(--w-fg-muted)",
+                      }}
+                    >
+                      {new Date(f.updated_at)
+                        .toLocaleDateString()
+                        .toUpperCase()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        )}
+      </div>
     </main>
   );
 }

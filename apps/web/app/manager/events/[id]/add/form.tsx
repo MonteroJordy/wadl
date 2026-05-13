@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
+import { Button } from "@/components/wadl";
 import { managerAddGuestAction } from "./actions";
 
 type Tier = "ga" | "vip" | "all_access";
@@ -12,6 +13,16 @@ interface AllocationOption {
   cap: number;
   used: number;
 }
+
+const INPUT_STYLE: React.CSSProperties = {
+  width: "100%",
+  background: "var(--w-surface-1)",
+  border: "1px solid var(--w-line)",
+  color: "var(--w-fg)",
+  padding: "10px 12px",
+  fontFamily: "var(--w-sans)",
+  fontSize: 14,
+};
 
 export default function ManagerAddForm({
   eventId,
@@ -58,120 +69,203 @@ export default function ManagerAddForm({
   }
 
   return (
-    <main id="main-content" className="mobile-frame">
-      <header className="flex items-center justify-between pt-6 pb-4">
-        <Link href={backHref} className="label-mono hover:text-cream">
-          ← Back
-        </Link>
-        <p className="label-mono text-gold">Add at door</p>
-      </header>
-
-      <h1 className="display-lg leading-[0.95] mb-1">{eventName}</h1>
-      <p className="label-mono mb-6">Walk-up manual add. Auto-checks in.</p>
-
-      <form onSubmit={onSubmit} className="flex flex-col gap-5">
-        <div>
-          <label htmlFor="fullName" className="label-mono block mb-2">
-            Full name
-          </label>
-          <input
-            id="fullName"
-            type="text"
-            autoFocus
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            className="input-dark"
-            required
-          />
-        </div>
-
-        <div>
-          <label htmlFor="phone" className="label-mono block mb-2">
-            Phone (optional)
-          </label>
-          <input
-            id="phone"
-            type="tel"
-            inputMode="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="input-dark"
-            placeholder="(305) 555 1234"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="allocation" className="label-mono block mb-2">
-            Charge to
-          </label>
-          <select
-            id="allocation"
-            value={allocationId}
-            onChange={(e) => setAllocationId(e.target.value)}
-            className="input-dark"
-            required
+    <main
+      id="main-content"
+      className="w-app"
+      style={{
+        minHeight: "100vh",
+        background: "var(--w-bg)",
+        padding: "32px 24px 96px",
+      }}
+    >
+      <div style={{ maxWidth: 540, margin: "0 auto" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 16,
+          }}
+        >
+          <Link
+            href={backHref}
+            className="w-type-meta"
+            style={{ color: "var(--w-fg-muted)", textDecoration: "none" }}
           >
-            {allocations.length === 0 && <option value="">No allocations yet</option>}
-            {allocations.map((a) => (
-              <option key={a.id} value={a.id} disabled={a.used >= a.cap}>
-                {a.holder_name} · {a.used}/{a.cap}
-                {a.used >= a.cap ? " (full)" : ""}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <p className="label-mono mb-2">Tier</p>
-          <div className="grid grid-cols-3 gap-2">
-            {(["ga", "vip", "all_access"] as const).map((t) => {
-              const active = tier === t;
-              return (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setTier(t)}
-                  className={`border rounded-md px-3 py-3 font-mono text-xs uppercase tracking-wider transition ${
-                    active
-                      ? "border-gold bg-s2 text-cream"
-                      : "border-line bg-s1 text-muted hover:text-cream"
-                  }`}
-                >
-                  {t.replace("_", " ")}
-                </button>
-              );
-            })}
+            ← BACK
+          </Link>
+          <div className="w-type-meta" style={{ color: "var(--w-acc)" }}>
+            ADD AT DOOR
           </div>
         </div>
 
-        <div>
-          <label htmlFor="plusOnes" className="label-mono block mb-2">
-            +1s
-          </label>
-          <select
-            id="plusOnes"
-            value={plusOnes}
-            onChange={(e) => setPlusOnes(parseInt(e.target.value, 10))}
-            className="input-dark"
+        <div
+          style={{
+            borderBottom: "1px solid var(--w-line)",
+            paddingBottom: 24,
+            marginBottom: 24,
+          }}
+        >
+          <div className="w-type-display-md">{eventName}</div>
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-fg-muted)", marginTop: 8 }}
           >
-            {[0, 1, 2, 3, 4].map((n) => (
-              <option key={n} value={n}>
-                {n === 0 ? "Just them" : `+${n}`}
-              </option>
-            ))}
-          </select>
+            Walk-up manual add. Auto-checks in.
+          </p>
         </div>
 
-        {error && <p className="text-err text-sm">{error}</p>}
-
-        <button
-          type="submit"
-          className="w-full bg-gold text-bg font-sans font-semibold text-sm uppercase tracking-[0.14em] py-4 rounded-md disabled:opacity-40 hover:brightness-110 transition"
-          disabled={pending || allocations.length === 0}
+        <form
+          onSubmit={onSubmit}
+          style={{ display: "flex", flexDirection: "column", gap: 20 }}
         >
-          {pending ? "Adding…" : "Add & check in"}
-        </button>
-      </form>
+          <div>
+            <label
+              htmlFor="fullName"
+              className="w-type-meta"
+              style={{ display: "block", marginBottom: 6 }}
+            >
+              FULL NAME
+            </label>
+            <input
+              id="fullName"
+              type="text"
+              autoFocus
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              style={INPUT_STYLE}
+              required
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="phone"
+              className="w-type-meta"
+              style={{ display: "block", marginBottom: 6 }}
+            >
+              PHONE (OPTIONAL)
+            </label>
+            <input
+              id="phone"
+              type="tel"
+              inputMode="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              style={INPUT_STYLE}
+              placeholder="(305) 555 1234"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="allocation"
+              className="w-type-meta"
+              style={{ display: "block", marginBottom: 6 }}
+            >
+              CHARGE TO
+            </label>
+            <select
+              id="allocation"
+              value={allocationId}
+              onChange={(e) => setAllocationId(e.target.value)}
+              style={INPUT_STYLE}
+              required
+            >
+              {allocations.length === 0 && (
+                <option value="">No allocations yet</option>
+              )}
+              {allocations.map((a) => (
+                <option key={a.id} value={a.id} disabled={a.used >= a.cap}>
+                  {a.holder_name} · {a.used}/{a.cap}
+                  {a.used >= a.cap ? " (full)" : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <div className="w-type-meta" style={{ marginBottom: 8 }}>
+              TIER
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, 1fr)",
+                gap: 6,
+              }}
+            >
+              {(["ga", "vip", "all_access"] as const).map((t) => {
+                const active = tier === t;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setTier(t)}
+                    style={{
+                      border: `1px solid ${active ? "var(--w-acc)" : "var(--w-line)"}`,
+                      background: active
+                        ? "var(--w-acc-soft)"
+                        : "var(--w-surface-1)",
+                      color: active
+                        ? "var(--w-acc-ink)"
+                        : "var(--w-fg-muted)",
+                      padding: "12px 10px",
+                      fontFamily: "var(--w-mono)",
+                      fontSize: 12,
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {t.replace("_", " ")}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor="plusOnes"
+              className="w-type-meta"
+              style={{ display: "block", marginBottom: 6 }}
+            >
+              +1S
+            </label>
+            <select
+              id="plusOnes"
+              value={plusOnes}
+              onChange={(e) => setPlusOnes(parseInt(e.target.value, 10))}
+              style={INPUT_STYLE}
+            >
+              {[0, 1, 2, 3, 4].map((n) => (
+                <option key={n} value={n}>
+                  {n === 0 ? "Just them" : `+${n}`}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {error && (
+            <p
+              className="w-type-body-sm"
+              style={{ color: "var(--w-err)" }}
+            >
+              {error}
+            </p>
+          )}
+
+          <Button
+            variant="primary"
+            type="submit"
+            disabled={pending || allocations.length === 0}
+            style={{ width: "100%", padding: "16px 0" }}
+          >
+            {pending ? "Adding…" : "Add & check in"}
+          </Button>
+        </form>
+      </div>
     </main>
   );
 }

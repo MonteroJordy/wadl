@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { Button } from "@/components/wadl";
 import { approveGuestAction, rejectGuestAction } from "./actions";
 
 export default function QueueRow({
@@ -32,37 +33,75 @@ export default function QueueRow({
   }
 
   return (
-    <div className="card">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="font-sans text-cream font-semibold truncate">
+    <div className="w-card" style={{ padding: 14 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: 12,
+        }}
+      >
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <p
+            style={{
+              color: "var(--w-fg)",
+              fontWeight: 600,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
             {fullName}
             {plusOnes > 0 && (
-              <span className="text-muted font-normal"> +{plusOnes}</span>
+              <span
+                style={{
+                  color: "var(--w-fg-muted)",
+                  fontWeight: 400,
+                }}
+              >
+                {" "}
+                +{plusOnes}
+              </span>
             )}
           </p>
-          <p className="label-mono mt-1 truncate">
+          <div
+            className="w-type-meta"
+            style={{
+              marginTop: 4,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
             {holderLabel} · {addedAgo}
-          </p>
+          </div>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-2 mt-3">
-        <button
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 8,
+          marginTop: 12,
+        }}
+      >
+        <Button
+          variant="ghost"
           type="button"
           onClick={reject}
           disabled={pending}
-          className="bg-s3 text-cream font-sans text-sm uppercase tracking-[0.14em] py-2 rounded-md border border-line hover:border-coral disabled:opacity-40"
         >
           Deny
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="primary"
           type="button"
           onClick={approve}
           disabled={pending}
-          className="bg-coral text-bg font-sans text-sm font-semibold uppercase tracking-[0.14em] py-2 rounded-md disabled:opacity-40"
         >
           Approve
-        </button>
+        </Button>
       </div>
     </div>
   );

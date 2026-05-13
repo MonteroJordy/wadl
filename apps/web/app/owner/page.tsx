@@ -92,13 +92,9 @@ export default async function OwnerWeekViewPage({
   const { start, end } = rangeWindow(range);
   const venueFilter = (searchParams.venue ?? "").trim();
 
-  const { data: venuesData } = await supabase
-    .from("venues")
-    .select("id, name")
-    .eq("account_id", account.id)
-    .order("name");
-  const venues = (venuesData ?? []) as Array<{ id: string; name: string }>;
-
+  // Venues + events run in parallel — neither depends on the other. The
+  // venues query feeds the venue-filter dropdown UI; events applies the
+  // venueFilter from searchParams independently.
   let eventsQ = supabase
     .from("events")
     .select(
@@ -108,7 +104,16 @@ export default async function OwnerWeekViewPage({
   if (q) eventsQ = eventsQ.ilike("name", `%${q}%`);
   if (venueFilter) eventsQ = eventsQ.eq("venue_id", venueFilter);
 
-  const { data: eventsData } = await eventsQ;
+  const [venuesRes, eventsRes] = await Promise.all([
+    supabase
+      .from("venues")
+      .select("id, name")
+      .eq("account_id", account.id)
+      .order("name"),
+    eventsQ,
+  ]);
+  const venues = (venuesRes.data ?? []) as Array<{ id: string; name: string }>;
+  const eventsData = eventsRes.data;
 
   const nights: NightWithEvent[] = [];
   for (const e of eventsData ?? []) {
@@ -238,7 +243,7 @@ export default async function OwnerWeekViewPage({
         padding: "32px 24px 96px",
       }}
     >
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+      <div style={{ maxWidth: 1600, margin: "0 auto" }}>
         {/* Header — BizHome style */}
         <div
           style={{
@@ -279,12 +284,26 @@ export default async function OwnerWeekViewPage({
             marginTop: 28,
           }}
         >
-          <KPI
-            eyebrow="DOORS"
-            big={tonight ? fmtTime(tonight.doors_at) : "—"}
-            sub={tonight ? "tonight" : "no event today"}
-            accent={Boolean(tonight)}
-          />
+          {tonight ? (
+            <Link
+              href={`/owner/events/${tonight.event_id}?night=${tonight.id}`}
+              style={{ textDecoration: "none", color: "inherit" }}
+              aria-label="Open tonight's daydash"
+            >
+              <KPI
+                eyebrow="DOORS"
+                big={fmtTime(tonight.doors_at)}
+                sub={`tonight · ${tonightStats?.approved ?? 0} on list`}
+                accent
+              />
+            </Link>
+          ) : (
+            <KPI
+              eyebrow="DOORS"
+              big="—"
+              sub="no event today"
+            />
+          )}
           <KPI
             eyebrow="RSVP'D"
             big={String(totalRsvpd)}
@@ -662,16 +681,20 @@ export default async function OwnerWeekViewPage({
                           DOORS {fmtTime(n.doors_at)}
                           {n.is_frozen ? " · LOCKED" : ""}
                         </div>
-                        {cap > 0 && (
+                        {cap > 0 ? (
                           <div style={{ marginTop: 12 }}>
                             <CapacityMeter
-                              current={s.scanned}
+                              current={
+                                s.scanned > 0 ? s.scanned : s.approved
+                              }
                               total={cap}
                               accent
-                              label="CHECKED IN"
+                              label={
+                                s.scanned > 0 ? "CHECKED IN" : "ON LIST"
+                              }
                             />
                           </div>
-                        )}
+                        ) : null}
                         <div
                           style={{
                             display: "flex",
@@ -680,12 +703,25 @@ export default async function OwnerWeekViewPage({
                             flexWrap: "wrap",
                           }}
                         >
-                          <Chip tone="neutral">
-                            {s.approved} APPROVED
-                          </Chip>
+                          {s.approved > 0 ? (
+                            <Chip tone="neutral">
+                              {s.approved} APPROVED
+                            </Chip>
+                          ) : (
+                            <Chip tone="ghost">EMPTY LIST</Chip>
+                          )}
                           {s.pending > 0 && (
                             <Chip tone="warn">
                               {s.pending} PENDING
+                            </Chip>
+                          )}
+                          {s.scanned > 0 && (
+                            <Chip tone="ok">{s.scanned} SCANNED</Chip>
+                          )}
+                          {s.approved > 0 && s.rsvps > s.approved && (
+                            <Chip tone="ghost">
+                              {Math.round((s.approved / s.rsvps) * 100)}%
+                              CONVERT
                             </Chip>
                           )}
                         </div>

@@ -2,7 +2,18 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/wadl";
 import { createFromTemplateAction } from "./actions";
+
+const INPUT_STYLE: React.CSSProperties = {
+  width: "100%",
+  background: "var(--w-surface-1)",
+  border: "1px solid var(--w-line)",
+  color: "var(--w-fg)",
+  padding: "10px 12px",
+  fontFamily: "var(--w-sans)",
+  fontSize: 14,
+};
 
 export default function CreateFromTemplateButton({
   templateId,
@@ -28,40 +39,62 @@ export default function CreateFromTemplateButton({
 
   if (!open) {
     return (
-      <button
+      <Button
+        variant="ghost"
         type="button"
         onClick={() => setOpen(true)}
-        className="btn-ghost text-xs w-auto px-3"
+        style={{ fontSize: 12 }}
       >
         Create from template
-      </button>
+      </Button>
     );
   }
   return (
-    <div className="mt-2 flex flex-col gap-2">
+    <div
+      style={{
+        marginTop: 8,
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+      }}
+    >
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="input-dark"
+        style={INPUT_STYLE}
         placeholder="New event name"
       />
-      {err && <p className="text-coral text-xs">{err}</p>}
-      <div className="grid grid-cols-2 gap-2">
-        <button
+      {err && (
+        <p
+          style={{ color: "var(--w-err)", fontSize: 12 }}
+        >
+          {err}
+        </p>
+      )}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 8,
+        }}
+      >
+        <Button
+          variant="ghost"
           type="button"
           onClick={() => setOpen(false)}
-          className="btn-ghost text-xs"
+          style={{ fontSize: 12 }}
         >
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="primary"
           type="button"
           onClick={go}
           disabled={pending}
-          className="btn-primary text-xs"
+          style={{ fontSize: 12 }}
         >
           {pending ? "Creating…" : "Create"}
-        </button>
+        </Button>
       </div>
     </div>
   );

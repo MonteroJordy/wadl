@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { Button } from "@/components/wadl";
 import { toggleFreezeAction } from "./actions";
 
 export default function FreezeButton({
@@ -21,21 +22,26 @@ export default function FreezeButton({
   }
 
   return (
-    <button
+    <Button
+      variant="ghost"
       type="button"
       onClick={onClick}
       disabled={pending}
-      className={`w-full border rounded-md py-3 font-sans text-sm uppercase tracking-[0.14em] transition ${
-        frozen
-          ? "bg-coral text-bg border-coral"
-          : "bg-transparent text-cream border-line hover:border-coral"
-      }`}
+      style={{
+        width: "100%",
+        ...(frozen
+          ? {
+              borderColor: "var(--w-err)",
+              color: "var(--w-err)",
+            }
+          : {}),
+      }}
     >
       {pending
         ? "Updating…"
         : frozen
-        ? "Frozen — tap to unfreeze"
-        : "Freeze this night"}
-    </button>
+          ? "Frozen — tap to unfreeze"
+          : "Freeze this night"}
+    </Button>
   );
 }

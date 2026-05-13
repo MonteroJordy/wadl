@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Button } from "@/components/wadl";
+import ConfirmDialog from "@/components/confirm-dialog";
 import {
   updateAllocationAction,
   regenerateTokenAction,
@@ -18,6 +20,53 @@ interface Props {
   holderUrl: string;
 }
 
+const INPUT_STYLE: React.CSSProperties = {
+  width: "100%",
+  background: "var(--w-surface-1)",
+  border: "1px solid var(--w-line)",
+  color: "var(--w-fg)",
+  padding: "10px 12px",
+  fontFamily: "var(--w-sans)",
+  fontSize: 14,
+};
+
+function CheckboxRow({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <label
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        cursor: "pointer",
+      }}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        style={{ width: 20, height: 20, accentColor: "var(--w-acc)" }}
+      />
+      <span
+        style={{
+          color: "var(--w-fg)",
+          fontWeight: 600,
+          fontSize: 14,
+        }}
+      >
+        {label}
+      </span>
+    </label>
+  );
+}
+
 export default function AllocationControls({
   eventId,
   allocId,
@@ -31,6 +80,7 @@ export default function AllocationControls({
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
+  const [regenerateOpen, setRegenerateOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
   function onSave(e: React.FormEvent) {
@@ -54,11 +104,15 @@ export default function AllocationControls({
   }
 
   function onRegenerate() {
-    if (!confirm("Revoke current link and create a new one?")) return;
+    setRegenerateOpen(true);
+  }
+
+  function doRegenerate() {
     startTransition(async () => {
       const res = await regenerateTokenAction(eventId, allocId);
       if (res?.error) setError(res.error);
       else setSaved("Link rotated.");
+      setRegenerateOpen(false);
     });
   }
 
@@ -70,78 +124,119 @@ export default function AllocationControls({
 
   return (
     <>
-      <section className="card mb-5">
-        <p className="label-mono mb-2">Magic link</p>
-        <div className="flex items-center gap-2">
+      <section
+        className="w-card"
+        style={{ padding: 16, marginBottom: 20 }}
+      >
+        <div className="w-type-meta" style={{ marginBottom: 8 }}>
+          MAGIC LINK
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <input
             value={holderUrl}
             readOnly
-            className="input-dark text-xs font-mono truncate"
+            style={{
+              ...INPUT_STYLE,
+              fontSize: 12,
+              fontFamily: "var(--w-mono)",
+            }}
             onFocus={(e) => e.currentTarget.select()}
           />
-          <button type="button" onClick={onCopy} className="btn-ghost w-auto px-4">
+          <Button
+            variant="ghost"
+            type="button"
+            onClick={onCopy}
+            style={{ padding: "0 18px" }}
+          >
             {copied ? "Copied" : "Copy"}
-          </button>
+          </Button>
         </div>
         <button
           type="button"
           onClick={onRegenerate}
-          className="label-mono mt-3 text-coral hover:brightness-125"
+          className="w-type-meta"
+          style={{
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            color: "var(--w-acc)",
+            padding: 0,
+            marginTop: 12,
+          }}
         >
-          Rotate link →
+          ROTATE LINK →
         </button>
       </section>
 
-      <form onSubmit={onSave} className="flex flex-col gap-5">
+      <form
+        onSubmit={onSave}
+        style={{ display: "flex", flexDirection: "column", gap: 20 }}
+      >
         <div>
-          <label htmlFor="cap" className="label-mono block mb-2">Cap</label>
+          <label
+            htmlFor="cap"
+            className="w-type-meta"
+            style={{ display: "block", marginBottom: 6 }}
+          >
+            CAP
+          </label>
           <input
             id="cap"
             type="number"
             min={1}
             value={cap}
             onChange={(e) => setCap(e.target.value)}
-            className="input-dark"
+            style={INPUT_STYLE}
           />
         </div>
 
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={autoApprove}
-            onChange={(e) => setAutoApprove(e.target.checked)}
-            className="w-5 h-5 accent-coral"
-          />
-          <span className="font-sans text-cream text-sm font-semibold">Auto-approve</span>
-        </label>
+        <CheckboxRow
+          label="Auto-approve"
+          checked={autoApprove}
+          onChange={setAutoApprove}
+        />
+        <CheckboxRow
+          label="List open"
+          checked={listOpen}
+          onChange={setListOpen}
+        />
+        <CheckboxRow
+          label="Allow +1s"
+          checked={plusOnes}
+          onChange={setPlusOnes}
+        />
 
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={listOpen}
-            onChange={(e) => setListOpen(e.target.checked)}
-            className="w-5 h-5 accent-coral"
-          />
-          <span className="font-sans text-cream text-sm font-semibold">List open</span>
-        </label>
+        {error && (
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-err)" }}
+          >
+            {error}
+          </p>
+        )}
+        {saved && (
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-ok)" }}
+          >
+            {saved}
+          </p>
+        )}
 
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={plusOnes}
-            onChange={(e) => setPlusOnes(e.target.checked)}
-            className="w-5 h-5 accent-coral"
-          />
-          <span className="font-sans text-cream text-sm font-semibold">Allow +1s</span>
-        </label>
-
-        {error && <p className="text-err text-sm">{error}</p>}
-        {saved && <p className="text-mint text-sm">{saved}</p>}
-
-        <button type="submit" className="btn-primary" disabled={pending}>
+        <Button variant="primary" type="submit" disabled={pending}>
           {pending ? "Saving…" : "Save"}
-        </button>
+        </Button>
       </form>
+      <ConfirmDialog
+        open={regenerateOpen}
+        title="Rotate the magic link?"
+        body="The current link stops working immediately. Anyone who already opened it stays signed in, but new visitors will get a 404 until you send the new link."
+        confirmLabel="Rotate link"
+        danger
+        pending={pending}
+        onConfirm={doRegenerate}
+        onCancel={() => setRegenerateOpen(false)}
+      />
     </>
   );
 }

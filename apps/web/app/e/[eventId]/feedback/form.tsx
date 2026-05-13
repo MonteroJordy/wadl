@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/wadl";
 import { submitFeedbackAction } from "./actions";
 
 const TAGS = [
@@ -32,7 +33,7 @@ export default function FeedbackForm({
 
   function toggleTag(key: string) {
     setTags((cur) =>
-      cur.includes(key) ? cur.filter((t) => t !== key) : [...cur, key]
+      cur.includes(key) ? cur.filter((t) => t !== key) : [...cur, key],
     );
   }
 
@@ -60,10 +61,15 @@ export default function FeedbackForm({
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
-      <section className="card">
-        <p className="label-mono mb-3">Overall rating</p>
-        <div className="flex justify-between gap-2">
+    <form
+      onSubmit={onSubmit}
+      style={{ display: "flex", flexDirection: "column", gap: 16 }}
+    >
+      <section className="w-card" style={{ padding: 18 }}>
+        <div className="w-type-meta" style={{ marginBottom: 12 }}>
+          OVERALL RATING
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
           {[1, 2, 3, 4, 5].map((n) => {
             const active = rating >= n;
             return (
@@ -71,11 +77,17 @@ export default function FeedbackForm({
                 key={n}
                 type="button"
                 onClick={() => setRating(n)}
-                className={`flex-1 aspect-square rounded-2xl border text-3xl ${
-                  active
-                    ? "border-coral bg-coral/10 text-coral"
-                    : "border-line bg-s1 text-muted hover:text-cream"
-                }`}
+                style={{
+                  flex: 1,
+                  aspectRatio: "1 / 1",
+                  border: `1px solid ${active ? "var(--w-acc)" : "var(--w-line)"}`,
+                  background: active
+                    ? "var(--w-acc-soft)"
+                    : "var(--w-surface-1)",
+                  color: active ? "var(--w-acc)" : "var(--w-fg-muted)",
+                  fontSize: 30,
+                  cursor: "pointer",
+                }}
                 aria-label={`${n} of 5 stars`}
               >
                 ★
@@ -85,9 +97,11 @@ export default function FeedbackForm({
         </div>
       </section>
 
-      <section className="card">
-        <p className="label-mono mb-3">What stood out? (optional)</p>
-        <div className="flex flex-wrap gap-2">
+      <section className="w-card" style={{ padding: 18 }}>
+        <div className="w-type-meta" style={{ marginBottom: 12 }}>
+          WHAT STOOD OUT? (OPTIONAL)
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {TAGS.map((t) => {
             const on = tags.includes(t.key);
             return (
@@ -95,11 +109,19 @@ export default function FeedbackForm({
                 key={t.key}
                 type="button"
                 onClick={() => toggleTag(t.key)}
-                className={`px-3 py-1 rounded-full border text-xs font-mono uppercase tracking-wider ${
-                  on
-                    ? "border-coral bg-s2 text-cream"
-                    : "border-line bg-s1 text-muted hover:text-cream"
-                }`}
+                style={{
+                  padding: "4px 12px",
+                  border: `1px solid ${on ? "var(--w-acc)" : "var(--w-line)"}`,
+                  background: on
+                    ? "var(--w-acc-soft)"
+                    : "var(--w-surface-1)",
+                  color: on ? "var(--w-acc-ink)" : "var(--w-fg-muted)",
+                  fontFamily: "var(--w-mono)",
+                  fontSize: 12,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  cursor: "pointer",
+                }}
               >
                 {t.label}
               </button>
@@ -108,9 +130,13 @@ export default function FeedbackForm({
         </div>
       </section>
 
-      <section className="card">
-        <label className="label-mono block mb-2" htmlFor="fb-comment">
-          Anything else? (optional)
+      <section className="w-card" style={{ padding: 18 }}>
+        <label
+          htmlFor="fb-comment"
+          className="w-type-meta"
+          style={{ display: "block", marginBottom: 6 }}
+        >
+          ANYTHING ELSE? (OPTIONAL)
         </label>
         <textarea
           id="fb-comment"
@@ -119,24 +145,45 @@ export default function FeedbackForm({
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           placeholder="Stays between you and the venue."
-          className="w-full bg-s1 border border-line rounded-lg p-3 text-cream text-sm font-sans focus:border-coral focus:outline-none"
+          style={{
+            width: "100%",
+            background: "var(--w-surface-1)",
+            border: "1px solid var(--w-line)",
+            color: "var(--w-fg)",
+            padding: 12,
+            fontSize: 14,
+            fontFamily: "var(--w-sans)",
+          }}
         />
-        <p className="label-mono mt-1 text-right">{comment.length}/1000</p>
+        <div
+          className="w-type-meta"
+          style={{ marginTop: 4, textAlign: "right" }}
+        >
+          {comment.length}/1000
+        </div>
       </section>
 
-      {error && <p className="label-mono text-coral">{error}</p>}
+      {error && (
+        <div
+          className="w-type-meta"
+          style={{ color: "var(--w-err)" }}
+        >
+          {error}
+        </div>
+      )}
 
-      <button
+      <Button
+        variant="primary"
         type="submit"
         disabled={pending || rating < 1}
-        className="btn-primary w-full disabled:opacity-50"
+        style={{ width: "100%" }}
       >
         {pending ? "Sending…" : "Submit feedback"}
-      </button>
+      </Button>
       {guestId && (
-        <p className="label-mono text-center">
-          Linked to your ticket · counts once
-        </p>
+        <div className="w-type-meta" style={{ textAlign: "center" }}>
+          LINKED TO YOUR TICKET · COUNTS ONCE
+        </div>
       )}
     </form>
   );

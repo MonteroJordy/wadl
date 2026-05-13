@@ -1,7 +1,19 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Button } from "@/components/wadl";
+import SaveIndicator, { type SaveState } from "@/components/save-indicator";
 import { saveAccountMetaAction } from "./actions";
+
+const INPUT_STYLE: React.CSSProperties = {
+  width: "100%",
+  background: "var(--w-surface-1)",
+  border: "1px solid var(--w-line)",
+  color: "var(--w-fg)",
+  padding: "10px 12px",
+  fontFamily: "var(--w-sans)",
+  fontSize: 14,
+};
 
 export default function AccountMetaForm({
   initialHandle,
@@ -13,76 +25,109 @@ export default function AccountMetaForm({
   const [handle, setHandle] = useState(initialHandle ?? "");
   const [city, setCity] = useState(initialCity ?? "");
   const [pending, startTransition] = useTransition();
-  const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(
-    null
-  );
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [errorMsg, setErrorMsg] = useState<string>("");
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    setMsg(null);
+    setSaveState("saving");
+    setErrorMsg("");
     startTransition(async () => {
       const res = await saveAccountMetaAction({
         handle: handle.trim().replace(/^@/, "") || null,
         city: city.trim() || null,
       });
       if (res.ok) {
-        setMsg({ kind: "ok", text: "Saved." });
+        setSaveState("saved");
       } else {
-        setMsg({ kind: "err", text: res.error ?? "Save failed." });
+        setErrorMsg(res.error ?? "Save failed.");
+        setSaveState("error");
       }
     });
   }
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-3">
+    <form
+      onSubmit={submit}
+      style={{ display: "flex", flexDirection: "column", gap: 12 }}
+    >
       <div>
-        <label htmlFor="handle" className="label-mono block mb-2">
-          Handle <span className="text-muted">(without @)</span>
+        <label
+          htmlFor="handle"
+          className="w-type-meta"
+          style={{ display: "block", marginBottom: 6 }}
+        >
+          HANDLE{" "}
+          <span style={{ color: "var(--w-fg-muted)" }}>(WITHOUT @)</span>
         </label>
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-coral text-lg">@</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span
+            style={{
+              fontFamily: "var(--w-mono)",
+              color: "var(--w-acc)",
+              fontSize: 18,
+            }}
+          >
+            @
+          </span>
           <input
             id="handle"
             type="text"
             value={handle}
-            onChange={(e) =>
-              setHandle(e.target.value.replace(/^@/, "").replace(/\s/g, ""))
-            }
+            onChange={(e) => {
+              setHandle(
+                e.target.value.replace(/^@/, "").replace(/\s/g, ""),
+              );
+              if (saveState !== "idle") setSaveState("idle");
+            }}
             placeholder="mainframe"
-            className="input-dark flex-1"
+            autoComplete="off"
+            style={{ ...INPUT_STYLE, flex: 1 }}
           />
         </div>
       </div>
       <div>
-        <label htmlFor="city" className="label-mono block mb-2">
-          City
+        <label
+          htmlFor="city"
+          className="w-type-meta"
+          style={{ display: "block", marginBottom: 6 }}
+        >
+          CITY
         </label>
         <input
           id="city"
           type="text"
           value={city}
-          onChange={(e) => setCity(e.target.value)}
+          onChange={(e) => {
+            setCity(e.target.value);
+            if (saveState !== "idle") setSaveState("idle");
+          }}
           placeholder="Miami"
-          className="input-dark"
+          autoComplete="address-level2"
+          style={INPUT_STYLE}
         />
       </div>
-      <div className="flex items-center gap-3 mt-2">
-        <button
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          marginTop: 4,
+        }}
+      >
+        <Button
+          variant="primary"
           type="submit"
-          className="bg-coral text-bg font-sans font-semibold text-xs uppercase tracking-[0.16em] px-5 py-3 rounded-full hover:brightness-110 transition disabled:opacity-50"
           disabled={pending}
+          aria-busy={pending || undefined}
         >
           {pending ? "Saving…" : "Save"}
-        </button>
-        {msg && (
-          <p
-            className={`label-mono ${
-              msg.kind === "ok" ? "text-mint" : "text-coral"
-            }`}
-          >
-            {msg.text}
-          </p>
-        )}
+        </Button>
+        <SaveIndicator
+          state={saveState}
+          errorMessage={errorMsg}
+          onAutoHide={() => setSaveState("idle")}
+        />
       </div>
     </form>
   );

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useTransition } from "react";
+import { Button } from "@/components/wadl";
 import {
   managerApproveGuestAction,
   managerRejectGuestAction,
@@ -21,6 +22,12 @@ interface Props {
     checked_in_at: string | null;
   };
 }
+
+const STATUS_COLOR: Record<string, string> = {
+  approved: "var(--w-ok)",
+  pending: "var(--w-warn)",
+  rejected: "var(--w-err)",
+};
 
 export default function GuestRow({ eventId, guest }: Props) {
   const [pending, startTransition] = useTransition();
@@ -42,85 +49,133 @@ export default function GuestRow({ eventId, guest }: Props) {
     });
   }
 
-  const statusColor =
-    guest.status === "approved"
-      ? "text-mint"
-      : guest.status === "pending"
-      ? "text-gold"
-      : guest.status === "rejected"
-      ? "text-coral"
-      : "text-muted";
-
   return (
     <div
-      className={`card ${
-        guest.flag_dna ? "border-coral" : checkedIn ? "opacity-60" : ""
-      }`}
+      className="w-card"
+      style={{
+        padding: 14,
+        borderColor: guest.flag_dna ? "var(--w-err)" : undefined,
+        opacity: checkedIn ? 0.6 : 1,
+      }}
     >
       <Link
         href={`/manager/events/${eventId}/guests/${guest.id}`}
-        className="block hover:opacity-90 transition"
+        style={{
+          display: "block",
+          textDecoration: "none",
+          color: "inherit",
+        }}
       >
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <p className="font-sans text-cream font-semibold truncate">
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: 12,
+          }}
+        >
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <p
+              style={{
+                color: "var(--w-fg)",
+                fontWeight: 600,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
               {guest.full_name}
               {guest.plus_ones > 0 && (
-                <span className="text-muted font-normal"> +{guest.plus_ones}</span>
+                <span
+                  style={{
+                    color: "var(--w-fg-muted)",
+                    fontWeight: 400,
+                  }}
+                >
+                  {" "}
+                  +{guest.plus_ones}
+                </span>
               )}
               {guest.flag_dna && (
-                <span className="ml-2 label-mono text-coral">⚠ DNA</span>
+                <span
+                  className="w-type-meta"
+                  style={{ marginLeft: 8, color: "var(--w-err)" }}
+                >
+                  ⚠ DNA
+                </span>
               )}
             </p>
-            <p className="label-mono mt-1 truncate">
-              <span className={statusColor}>{guest.status}</span>
+            <div
+              className="w-type-meta"
+              style={{
+                marginTop: 4,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              <span
+                style={{
+                  color:
+                    STATUS_COLOR[guest.status] ?? "var(--w-fg-muted)",
+                }}
+              >
+                {guest.status.toUpperCase()}
+              </span>
               {" · "}
               {guest.tier.toUpperCase()}
               {guest.allocation_name && <> · {guest.allocation_name}</>}
               {checkedIn && (
                 <>
-                  {" "}
-                  ·{" "}
-                  <span className="text-mint">
+                  {" · "}
+                  <span style={{ color: "var(--w-ok)" }}>
                     IN {new Date(guest.checked_in_at!).toLocaleTimeString()}
                   </span>
                 </>
               )}
-            </p>
+            </div>
           </div>
         </div>
       </Link>
 
       {!checkedIn && (
-        <div className="grid grid-cols-2 gap-2 mt-3">
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 8,
+            marginTop: 12,
+          }}
+        >
           {guest.status === "pending" ? (
             <>
-              <button
+              <Button
+                variant="ghost"
                 type="button"
                 onClick={reject}
                 disabled={pending}
-                className="bg-s3 border border-line text-cream font-sans text-xs uppercase tracking-[0.14em] py-2 rounded-md hover:border-coral disabled:opacity-40"
               >
                 Deny
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="primary"
                 type="button"
                 onClick={approve}
                 disabled={pending}
-                className="bg-gold text-bg font-sans font-semibold text-xs uppercase tracking-[0.14em] py-2 rounded-md disabled:opacity-40"
               >
                 Approve
-              </button>
+              </Button>
             </>
           ) : guest.status === "approved" ? (
-            <button
+            <Button
+              variant="primary"
               type="button"
               onClick={checkIn}
               disabled={pending || guest.flag_dna}
-              className="col-span-2 bg-mint text-bg font-sans font-semibold text-xs uppercase tracking-[0.14em] py-2 rounded-md disabled:opacity-40"
+              style={{ gridColumn: "1 / -1" }}
             >
               Check in
-            </button>
+            </Button>
           ) : null}
         </div>
       )}

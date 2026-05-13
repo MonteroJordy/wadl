@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Button } from "@/components/wadl";
 import { upgradeTierAction, type Tier } from "@/lib/guest-extras";
 
 const TIERS: Tier[] = ["ga", "vip", "all_access"];
@@ -34,22 +35,34 @@ export default function TierUpgradeButton({
   if (!open) {
     return (
       <div>
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="btn-ghost"
-        >
+        <Button variant="ghost" type="button" onClick={() => setOpen(true)}>
           Change tier
-        </button>
-        {saved && <p className="text-mint text-sm mt-2">{saved}</p>}
+        </Button>
+        {saved && (
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-ok)", marginTop: 8 }}
+          >
+            {saved}
+          </p>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="card">
-      <p className="label-mono mb-3">Pick a new tier</p>
-      <div className="grid grid-cols-3 gap-2 mb-3">
+    <div className="w-card" style={{ padding: 14 }}>
+      <div className="w-type-meta" style={{ marginBottom: 12 }}>
+        PICK A NEW TIER
+      </div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gap: 6,
+          marginBottom: 12,
+        }}
+      >
         {TIERS.map((t) => {
           const active = t === currentTier;
           return (
@@ -58,11 +71,20 @@ export default function TierUpgradeButton({
               type="button"
               onClick={() => tryUpgrade(t)}
               disabled={pending || active}
-              className={`border rounded-md px-2 py-2 font-mono text-xs uppercase tracking-wider transition disabled:opacity-50 ${
-                active
-                  ? "border-coral bg-coral/10 text-cream"
-                  : "border-line bg-s1 text-muted hover:text-cream"
-              }`}
+              style={{
+                padding: 10,
+                border: `1px solid ${active ? "var(--w-acc)" : "var(--w-line)"}`,
+                background: active
+                  ? "var(--w-acc-soft)"
+                  : "var(--w-surface-1)",
+                color: active ? "var(--w-acc-ink)" : "var(--w-fg-muted)",
+                fontFamily: "var(--w-mono)",
+                fontSize: 12,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                cursor: pending || active ? "default" : "pointer",
+                opacity: pending && !active ? 0.5 : 1,
+              }}
             >
               {t.replace("_", " ")}
             </button>
@@ -72,11 +94,25 @@ export default function TierUpgradeButton({
       <button
         type="button"
         onClick={() => setOpen(false)}
-        className="label-mono text-muted hover:text-cream transition"
+        className="w-type-meta"
+        style={{
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
+          color: "var(--w-fg-muted)",
+          padding: 0,
+        }}
       >
-        Cancel
+        CANCEL
       </button>
-      {error && <p className="text-err text-sm mt-2">{error}</p>}
+      {error && (
+        <p
+          className="w-type-body-sm"
+          style={{ color: "var(--w-err)", marginTop: 8 }}
+        >
+          {error}
+        </p>
+      )}
     </div>
   );
 }

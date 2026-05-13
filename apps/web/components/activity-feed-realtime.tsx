@@ -47,8 +47,12 @@ export default function ActivityFeedRealtime({
   useEffect(() => {
     if (!eventId) return;
     const supabase = createClient();
+    // Unique per-mount suffix prevents Supabase from de-duping the
+    // channel with a leftover instance from StrictMode's double-mount
+    // (or a previous navigation), which would otherwise throw
+    // "cannot add postgres_changes callbacks ... after subscribe()".
     const channel = supabase
-      .channel(`activity:${eventId}`)
+      .channel(`activity:${eventId}:${Math.random().toString(36).slice(2, 10)}`)
       .on(
         "postgres_changes",
         {

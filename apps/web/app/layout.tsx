@@ -3,7 +3,9 @@ import { Inter_Tight, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import CookieConsent from "@/components/cookie-consent";
 import DemoModeBanner from "@/components/demo-mode-banner";
+import NavProgress from "@/components/nav-progress";
 import { ToastProvider } from "@/components/toast";
+import { Suspense } from "react";
 
 // New design system fonts — Inter Tight does display + body, JetBrains
 // Mono does codes/timestamps/metadata. The legacy --font-bebas /
@@ -59,11 +61,20 @@ export default function RootLayout({
       lang="en"
       className={`${interTight.variable} ${jbMono.variable}`}
     >
-      <body className="bg-bg text-cream min-h-screen">
+      <body
+        style={{
+          background: "var(--w-bg)",
+          color: "var(--w-fg)",
+          minHeight: "100vh",
+        }}
+      >
         <a href="#main-content" className="skip-link">
           Skip to content
         </a>
         <ToastProvider>
+          <Suspense fallback={null}>
+            <NavProgress />
+          </Suspense>
           <DemoModeBanner />
           {children}
           <CookieConsent />

@@ -187,14 +187,23 @@ function SignupWizard() {
       return;
     }
 
-    // 1. Update profile.
+    // 1. Upsert profile. Trigger normally creates the row on auth.users
+    // insert, but we upsert here as a safety net for cases where the
+    // auth.users row predates the trigger (existing accounts that were
+    // created before the schema was applied) — the upsert fills the gap
+    // without breaking the next step (accounts insert FK references this).
     const { error: profileErr } = await supabase
       .from("profiles")
-      .update({
-        full_name: fullName.trim(),
-        role: accountType === "individual" ? "owner" : "owner",
-      })
-      .eq("id", user.id);
+      .upsert(
+        {
+          id: user.id,
+          phone: e164Phone,
+          email: user.email ?? null,
+          full_name: fullName.trim(),
+          role: "owner",
+        },
+        { onConflict: "id" },
+      );
     if (profileErr) {
       setPending(false);
       setError(profileErr.message);

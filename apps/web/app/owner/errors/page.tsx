@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireOwnerContext } from "@/lib/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { Chip } from "@/components/wadl";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,13 @@ interface ErrorRow {
   stack: string | null;
   context: Record<string, unknown> | null;
 }
+
+const SEV_COLOR: Record<string, string> = {
+  fatal: "var(--w-err)",
+  error: "var(--w-err)",
+  warn: "var(--w-warn)",
+  info: "var(--w-ok)",
+};
 
 export default async function ErrorsPage({
   searchParams,
@@ -37,92 +45,180 @@ export default async function ErrorsPage({
   const rows = (data ?? []) as ErrorRow[];
 
   return (
-    <main id="main-content" className="mx-auto max-w-5xl px-6 pt-12 pb-12">
-      <header className="mb-6">
-        <p className="label-mono mb-1">Platform owner only</p>
-        <h1 className="display-lg">Error log</h1>
-        <p className="label-mono mt-2">
-          {rows.length} most recent · captureException() writes here automatically.
-        </p>
-      </header>
-
-      <div className="flex gap-1 mb-4">
-        {(["all", "fatal", "error", "warn", "info"] as const).map((s) => (
-          <a
-            key={s}
-            href={s === "all" ? "/owner/errors" : `/owner/errors?severity=${s}`}
-            className={`px-3 py-1 rounded-full border text-[10px] font-mono uppercase tracking-wider ${
-              (searchParams.severity ?? "all") === s
-                ? "border-coral bg-s2 text-cream"
-                : "border-line bg-s1 text-muted hover:text-cream"
-            }`}
+    <main
+      id="main-content"
+      className="w-app"
+      style={{
+        minHeight: "100vh",
+        background: "var(--w-bg)",
+        padding: "32px 24px 96px",
+      }}
+    >
+      <div style={{ maxWidth: 1080, margin: "0 auto" }}>
+        <div
+          style={{
+            borderBottom: "1px solid var(--w-line)",
+            paddingBottom: 24,
+            marginBottom: 24,
+          }}
+        >
+          <div className="w-type-meta">PLATFORM OWNER ONLY</div>
+          <div className="w-type-display-md" style={{ marginTop: 8 }}>
+            Error log
+          </div>
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-fg-muted)", marginTop: 8 }}
           >
-            {s}
-          </a>
-        ))}
-      </div>
+            {rows.length} most recent · captureException() writes here
+            automatically.
+          </p>
+        </div>
 
-      {rows.length === 0 ? (
-        <p className="text-muted">No errors. Or none captured.</p>
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {rows.map((r) => (
-            <li
-              key={r.id}
-              className={`card border-line ${
+        <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
+          {(["all", "fatal", "error", "warn", "info"] as const).map((s) => {
+            const active = (searchParams.severity ?? "all") === s;
+            return (
+              <a
+                key={s}
+                href={
+                  s === "all" ? "/owner/errors" : `/owner/errors?severity=${s}`
+                }
+                style={{ textDecoration: "none" }}
+              >
+                <Chip tone={active ? "acc" : "ghost"}>{s.toUpperCase()}</Chip>
+              </a>
+            );
+          })}
+        </div>
+
+        {rows.length === 0 ? (
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-fg-muted)" }}
+          >
+            No errors. Or none captured.
+          </p>
+        ) : (
+          <ul
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+              listStyle: "none",
+              padding: 0,
+              margin: 0,
+            }}
+          >
+            {rows.map((r) => {
+              const accentBorder =
                 r.severity === "fatal"
-                  ? "border-coral"
+                  ? "var(--w-err)"
                   : r.severity === "error"
-                  ? "border-coral/40"
-                  : r.severity === "warn"
-                  ? "border-gold/40"
-                  : ""
-              }`}
-            >
-              <div className="flex items-baseline justify-between gap-2 mb-1">
-                <p className="font-sans text-cream font-semibold truncate">
-                  {r.message}
-                </p>
-                <p className="label-mono shrink-0">
-                  {new Date(r.occurred_at).toLocaleString()}
-                </p>
-              </div>
-              <p className="label-mono mb-2">
-                <span
-                  className={
-                    r.severity === "fatal" || r.severity === "error"
-                      ? "text-coral"
-                      : r.severity === "warn"
-                      ? "text-gold"
-                      : "text-mint"
-                  }
+                    ? "var(--w-err)"
+                    : r.severity === "warn"
+                      ? "var(--w-warn)"
+                      : "var(--w-line)";
+              return (
+                <li
+                  key={r.id}
+                  className="w-card"
+                  style={{
+                    padding: 16,
+                    borderColor: accentBorder,
+                  }}
                 >
-                  {r.severity}
-                </span>
-                {r.route && <span className="ml-2">{r.route}</span>}
-                {r.user_id && (
-                  <span className="ml-2 text-muted">
-                    user={r.user_id.slice(0, 8)}
-                  </span>
-                )}
-              </p>
-              {r.stack && (
-                <pre className="text-xs text-muted overflow-x-auto whitespace-pre-wrap font-mono">
-                  {r.stack.split("\n").slice(0, 6).join("\n")}
-                </pre>
-              )}
-              {r.context && (
-                <details className="mt-2">
-                  <summary className="label-mono cursor-pointer">context</summary>
-                  <pre className="text-xs text-muted mt-1 overflow-x-auto font-mono">
-                    {JSON.stringify(r.context, null, 2)}
-                  </pre>
-                </details>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "baseline",
+                      justifyContent: "space-between",
+                      gap: 8,
+                      marginBottom: 6,
+                    }}
+                  >
+                    <p
+                      style={{
+                        color: "var(--w-fg)",
+                        fontWeight: 600,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        flex: 1,
+                        minWidth: 0,
+                      }}
+                    >
+                      {r.message}
+                    </p>
+                    <div
+                      className="w-type-meta"
+                      style={{ flexShrink: 0 }}
+                    >
+                      {new Date(r.occurred_at).toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="w-type-meta" style={{ marginBottom: 8 }}>
+                    <span
+                      style={{ color: SEV_COLOR[r.severity] ?? "var(--w-fg)" }}
+                    >
+                      {r.severity.toUpperCase()}
+                    </span>
+                    {r.route && (
+                      <span style={{ marginLeft: 8 }}>{r.route}</span>
+                    )}
+                    {r.user_id && (
+                      <span
+                        style={{
+                          marginLeft: 8,
+                          color: "var(--w-fg-muted)",
+                        }}
+                      >
+                        USER={r.user_id.slice(0, 8)}
+                      </span>
+                    )}
+                  </div>
+                  {r.stack && (
+                    <pre
+                      style={{
+                        fontSize: 11,
+                        color: "var(--w-fg-muted)",
+                        overflowX: "auto",
+                        whiteSpace: "pre-wrap",
+                        fontFamily: "var(--w-mono)",
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {r.stack.split("\n").slice(0, 6).join("\n")}
+                    </pre>
+                  )}
+                  {r.context && (
+                    <details style={{ marginTop: 8 }}>
+                      <summary
+                        className="w-type-meta"
+                        style={{ cursor: "pointer" }}
+                      >
+                        CONTEXT
+                      </summary>
+                      <pre
+                        style={{
+                          fontSize: 11,
+                          color: "var(--w-fg-muted)",
+                          marginTop: 4,
+                          overflowX: "auto",
+                          fontFamily: "var(--w-mono)",
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        {JSON.stringify(r.context, null, 2)}
+                      </pre>
+                    </details>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
     </main>
   );
 }

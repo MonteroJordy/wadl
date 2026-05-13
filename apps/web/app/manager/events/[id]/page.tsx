@@ -1,12 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  requireDoorContext,
-  resolveActiveNight,
-} from "@/lib/door";
+import { requireDoorContext, resolveActiveNight } from "@/lib/door";
 import { fmtDate, fmtTime } from "@/lib/format";
+import { Chip } from "@/components/wadl";
 import GuestRow from "./guest-row";
-import EmptyState from "@/components/empty-state";
 
 export const dynamic = "force-dynamic";
 
@@ -42,16 +39,16 @@ export default async function ManagerEventPage({
   const { nights, active } = await resolveActiveNight(
     admin,
     params.id,
-    searchParams.night
+    searchParams.night,
   );
 
   const statusFilter: StatusFilter = STATUS_FILTERS.includes(
-    (searchParams.status ?? "all") as StatusFilter
+    (searchParams.status ?? "all") as StatusFilter,
   )
     ? (searchParams.status as StatusFilter)
     : "all";
   const tierFilter: TierFilter = TIER_FILTERS.includes(
-    (searchParams.tier ?? "all") as TierFilter
+    (searchParams.tier ?? "all") as TierFilter,
   )
     ? (searchParams.tier as TierFilter)
     : "all";
@@ -63,7 +60,7 @@ export default async function ManagerEventPage({
       admin
         .from("guests")
         .select(
-          "id, full_name, plus_ones, tier, status, flag_dna, allocation:allocations(holder_name), check_ins(scanned_at, state)"
+          "id, full_name, plus_ones, tier, status, flag_dna, allocation:allocations(holder_name), check_ins(scanned_at, state)",
         )
         .eq("event_night_id", active.id)
         .order("created_at", { ascending: false }),
@@ -77,7 +74,6 @@ export default async function ManagerEventPage({
     inCount = checkInsRes.count ?? 0;
   }
 
-  // Apply filters.
   const filtered = rows.filter((g) => {
     if (tierFilter !== "all" && g.tier !== tierFilter) return false;
     if (statusFilter === "all") return true;
@@ -98,167 +94,344 @@ export default async function ManagerEventPage({
   }
 
   return (
-    <main id="main-content" className="mobile-frame">
-      <header className="flex items-start justify-between pt-6 pb-4">
-        <div>
-          <p className="label-mono text-gold mb-1">Manager</p>
-          <h1 className="display-lg leading-[0.95]">{resolved.event.name}</h1>
-        </div>
-        <form action="/api/auth/signout" method="post">
-          <button type="submit" className="label-mono hover:text-cream transition">
-            Sign out
-          </button>
-        </form>
-      </header>
-
-      {active ? (
-        <>
-          <p className="label-mono mb-4">
-            {fmtDate(active.night_date)} · Doors {fmtTime(active.doors_at)}
-            {active.is_frozen ? " · FROZEN" : ""}
-          </p>
-
-          {nights.length > 1 && (
-            <div className="flex gap-2 mb-4 overflow-x-auto">
-              {nights.map((n) => {
-                const isActive = n.id === active.id;
-                return (
-                  <Link
-                    key={n.id}
-                    href={`/manager/events/${params.id}?night=${n.id}`}
-                    className={`shrink-0 px-3 py-2 rounded-md border text-xs font-mono uppercase tracking-wider ${
-                      isActive
-                        ? "border-gold bg-s2 text-cream"
-                        : "border-line bg-s1 text-muted hover:text-cream"
-                    }`}
-                  >
-                    {fmtDate(n.night_date)}
-                  </Link>
-                );
-              })}
+    <main
+      id="main-content"
+      className="w-app"
+      style={{
+        minHeight: "100vh",
+        background: "var(--w-bg)",
+        padding: "32px 24px 96px",
+      }}
+    >
+      <div style={{ maxWidth: 720, margin: "0 auto" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            paddingBottom: 16,
+            marginBottom: 16,
+          }}
+        >
+          <div>
+            <div className="w-type-meta" style={{ color: "var(--w-acc)" }}>
+              MANAGER
             </div>
-          )}
-
-          <section className="card border-gold/40 mb-4">
-            <p className="label-mono text-gold mb-1">In</p>
-            <p className="font-display text-5xl leading-none text-gold">
-              {inCount}
-              <span className="text-muted text-3xl">/{capacity || "—"}</span>
-            </p>
-          </section>
-
-          <section className="grid grid-cols-3 gap-2 mb-4">
-            <Link
-              href={`/door/events/${params.id}/scan?night=${active.id}`}
-              className="card text-center border-mint/40 hover:border-mint transition"
-            >
-              <p className="font-display text-2xl text-mint">SCAN</p>
-            </Link>
-            <Link
-              href={`/door/events/${params.id}/search?night=${active.id}`}
-              className="card text-center hover:border-cream transition"
-            >
-              <p className="font-display text-2xl text-cream">SEARCH</p>
-            </Link>
-            <Link
-              href={`/manager/events/${params.id}/add?night=${active.id}`}
-              className="card text-center border-gold/40 hover:border-gold transition"
-            >
-              <p className="font-display text-2xl text-gold">+ ADD</p>
-            </Link>
-          </section>
-
-          <section className="mb-3">
-            <p className="label-mono mb-2">Status</p>
-            <div className="flex gap-1 overflow-x-auto pb-1">
-              {STATUS_FILTERS.map((s) => {
-                const isActive = s === statusFilter;
-                return (
-                  <Link
-                    key={s}
-                    href={filterLink("status", s)}
-                    className={`shrink-0 px-3 py-1 rounded-full border text-[10px] font-mono uppercase tracking-wider ${
-                      isActive
-                        ? "border-gold bg-s2 text-cream"
-                        : "border-line bg-s1 text-muted hover:text-cream"
-                    }`}
-                  >
-                    {s === "in" ? "Checked in" : s}
-                  </Link>
-                );
-              })}
+            <div className="w-type-display-md" style={{ marginTop: 8 }}>
+              {resolved.event.name}
             </div>
-          </section>
-
-          <section className="mb-4">
-            <p className="label-mono mb-2">Tier</p>
-            <div className="flex gap-1 overflow-x-auto pb-1">
-              {TIER_FILTERS.map((t) => {
-                const isActive = t === tierFilter;
-                return (
-                  <Link
-                    key={t}
-                    href={filterLink("tier", t)}
-                    className={`shrink-0 px-3 py-1 rounded-full border text-[10px] font-mono uppercase tracking-wider ${
-                      isActive
-                        ? "border-gold bg-s2 text-cream"
-                        : "border-line bg-s1 text-muted hover:text-cream"
-                    }`}
-                  >
-                    {t.replace("_", " ")}
-                  </Link>
-                );
-              })}
-            </div>
-          </section>
-
-          <p className="label-mono mb-2">
-            {filtered.length} / {rows.length} showing
-          </p>
-
-          <div className="flex flex-col gap-2">
-            {filtered.map((g) => {
-              const approvedScan = g.check_ins.find((c) => c.state === "approved");
-              return (
-                <GuestRow
-                  key={g.id}
-                  eventId={params.id}
-                  guest={{
-                    id: g.id,
-                    full_name: g.full_name,
-                    plus_ones: g.plus_ones,
-                    tier: g.tier,
-                    status: g.status,
-                    flag_dna: g.flag_dna,
-                    allocation_name: g.allocation?.holder_name ?? null,
-                    checked_in_at: approvedScan?.scanned_at ?? null,
-                  }}
-                />
-              );
-            })}
           </div>
+          <form action="/api/auth/signout" method="post">
+            <button
+              type="submit"
+              className="w-type-meta"
+              style={{
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                color: "var(--w-fg-muted)",
+                padding: 0,
+              }}
+            >
+              SIGN OUT
+            </button>
+          </form>
+        </div>
 
-          {filtered.length === 0 && (
-            <EmptyState
-              title="Nothing matches"
-              body={
-                rows.length === 0
-                  ? "No guests yet — wait for RSVPs or add a walk-up."
-                  : "Clear your filters to see everyone."
-              }
-            />
-          )}
-        </>
-      ) : (
-        <EmptyState
-          title="No nights yet"
-          body="The event has no nights defined. Ask the owner to add one."
-        />
-      )}
+        {active ? (
+          <>
+            <div className="w-type-meta" style={{ marginBottom: 16 }}>
+              {fmtDate(active.night_date).toUpperCase()} · DOORS{" "}
+              {fmtTime(active.doors_at).toUpperCase()}
+              {active.is_frozen ? " · FROZEN" : ""}
+            </div>
 
-      <p className="label-mono mt-auto pt-8 text-center text-gold">
-        Manager — approve, check in, and add walk-ups
-      </p>
+            {nights.length > 1 && (
+              <div
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  overflowX: "auto",
+                  marginBottom: 16,
+                }}
+              >
+                {nights.map((n) => {
+                  const isActive = n.id === active.id;
+                  return (
+                    <Link
+                      key={n.id}
+                      href={`/manager/events/${params.id}?night=${n.id}`}
+                      style={{ textDecoration: "none", flexShrink: 0 }}
+                    >
+                      <Chip tone={isActive ? "acc" : "ghost"}>
+                        {fmtDate(n.night_date).toUpperCase()}
+                      </Chip>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+
+            <section
+              className="w-card"
+              style={{
+                padding: 18,
+                borderColor: "var(--w-acc)",
+                background: "var(--w-acc-soft)",
+                marginBottom: 16,
+              }}
+            >
+              <div
+                className="w-type-meta"
+                style={{ color: "var(--w-acc-ink)" }}
+              >
+                IN
+              </div>
+              <div
+                style={{
+                  fontFamily: "var(--w-display)",
+                  fontWeight: 700,
+                  fontSize: 56,
+                  lineHeight: 1,
+                  letterSpacing: "-0.04em",
+                  marginTop: 8,
+                  color: "var(--w-acc-ink)",
+                }}
+              >
+                {inCount}
+                <span
+                  style={{
+                    color: "var(--w-fg-muted)",
+                    fontSize: 32,
+                  }}
+                >
+                  /{capacity || "—"}
+                </span>
+              </div>
+            </section>
+
+            <section
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, 1fr)",
+                gap: 8,
+                marginBottom: 20,
+              }}
+            >
+              <Link
+                href={`/door/events/${params.id}/scan?night=${active.id}`}
+                className="w-card"
+                style={{
+                  textAlign: "center",
+                  textDecoration: "none",
+                  padding: 16,
+                  borderColor: "var(--w-ok)",
+                }}
+              >
+                <div
+                  style={{
+                    fontFamily: "var(--w-display)",
+                    fontWeight: 700,
+                    fontSize: 22,
+                    color: "var(--w-ok)",
+                  }}
+                >
+                  SCAN
+                </div>
+              </Link>
+              <Link
+                href={`/door/events/${params.id}/search?night=${active.id}`}
+                className="w-card"
+                style={{
+                  textAlign: "center",
+                  textDecoration: "none",
+                  padding: 16,
+                }}
+              >
+                <div
+                  style={{
+                    fontFamily: "var(--w-display)",
+                    fontWeight: 700,
+                    fontSize: 22,
+                    color: "var(--w-fg)",
+                  }}
+                >
+                  SEARCH
+                </div>
+              </Link>
+              <Link
+                href={`/manager/events/${params.id}/add?night=${active.id}`}
+                className="w-card"
+                style={{
+                  textAlign: "center",
+                  textDecoration: "none",
+                  padding: 16,
+                  borderColor: "var(--w-acc)",
+                }}
+              >
+                <div
+                  style={{
+                    fontFamily: "var(--w-display)",
+                    fontWeight: 700,
+                    fontSize: 22,
+                    color: "var(--w-acc)",
+                  }}
+                >
+                  + ADD
+                </div>
+              </Link>
+            </section>
+
+            <section style={{ marginBottom: 12 }}>
+              <div className="w-type-meta" style={{ marginBottom: 6 }}>
+                STATUS
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 6,
+                  overflowX: "auto",
+                  paddingBottom: 4,
+                }}
+              >
+                {STATUS_FILTERS.map((s) => {
+                  const isActive = s === statusFilter;
+                  return (
+                    <Link
+                      key={s}
+                      href={filterLink("status", s)}
+                      style={{ textDecoration: "none", flexShrink: 0 }}
+                    >
+                      <Chip tone={isActive ? "acc" : "ghost"}>
+                        {(s === "in" ? "CHECKED IN" : s).toUpperCase()}
+                      </Chip>
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section style={{ marginBottom: 16 }}>
+              <div className="w-type-meta" style={{ marginBottom: 6 }}>
+                TIER
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 6,
+                  overflowX: "auto",
+                  paddingBottom: 4,
+                }}
+              >
+                {TIER_FILTERS.map((t) => {
+                  const isActive = t === tierFilter;
+                  return (
+                    <Link
+                      key={t}
+                      href={filterLink("tier", t)}
+                      style={{ textDecoration: "none", flexShrink: 0 }}
+                    >
+                      <Chip tone={isActive ? "acc" : "ghost"}>
+                        {t.replace("_", " ").toUpperCase()}
+                      </Chip>
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
+
+            <div className="w-type-meta" style={{ marginBottom: 8 }}>
+              {filtered.length} / {rows.length} SHOWING
+            </div>
+
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: 8 }}
+            >
+              {filtered.map((g) => {
+                const approvedScan = g.check_ins.find(
+                  (c) => c.state === "approved",
+                );
+                return (
+                  <GuestRow
+                    key={g.id}
+                    eventId={params.id}
+                    guest={{
+                      id: g.id,
+                      full_name: g.full_name,
+                      plus_ones: g.plus_ones,
+                      tier: g.tier,
+                      status: g.status,
+                      flag_dna: g.flag_dna,
+                      allocation_name: g.allocation?.holder_name ?? null,
+                      checked_in_at: approvedScan?.scanned_at ?? null,
+                    }}
+                  />
+                );
+              })}
+            </div>
+
+            {filtered.length === 0 && (
+              <div
+                className="w-card"
+                style={{
+                  padding: "48px 32px",
+                  textAlign: "center",
+                  marginTop: 12,
+                }}
+              >
+                <div className="w-type-h1">Nothing matches</div>
+                <p
+                  className="w-type-body-sm"
+                  style={{
+                    color: "var(--w-fg-muted)",
+                    marginTop: 12,
+                    maxWidth: 400,
+                    marginInline: "auto",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {rows.length === 0
+                    ? "No guests yet — wait for RSVPs or add a walk-up."
+                    : "Clear your filters to see everyone."}
+                </p>
+              </div>
+            )}
+          </>
+        ) : (
+          <div
+            className="w-card"
+            style={{
+              padding: "48px 32px",
+              textAlign: "center",
+            }}
+          >
+            <div className="w-type-h1">No nights yet</div>
+            <p
+              className="w-type-body-sm"
+              style={{
+                color: "var(--w-fg-muted)",
+                marginTop: 12,
+                maxWidth: 400,
+                marginInline: "auto",
+                lineHeight: 1.5,
+              }}
+            >
+              The event has no nights defined. Ask the owner to add one.
+            </p>
+          </div>
+        )}
+
+        <div
+          className="w-type-meta"
+          style={{
+            marginTop: 32,
+            textAlign: "center",
+            color: "var(--w-acc)",
+          }}
+        >
+          MANAGER — APPROVE, CHECK IN, AND ADD WALK-UPS
+        </div>
+      </div>
     </main>
   );
 }

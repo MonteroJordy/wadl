@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Avatar, Wordmark } from "@/components/wadl";
+import { openShortcutHelp } from "@/components/shortcut-help";
 
 export interface NavSection {
   label: string;
@@ -50,6 +51,28 @@ export default function AuthedShell({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const pathname = usePathname() ?? "";
 
+  // ESC closes the mobile drawer. Lock body scroll while it's open so
+  // the page behind doesn't scroll on iOS overscroll.
+  useEffect(() => {
+    if (!drawerOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setDrawerOpen(false);
+    }
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [drawerOpen]);
+
+  // Close drawer when route changes (Link clicks already wire this up,
+  // but this catches programmatic navigations too).
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [pathname]);
+
   function isActive(item: NavItem): boolean {
     if (pathname === item.href) return true;
     if (item.matchPrefix && pathname.startsWith(item.matchPrefix)) return true;
@@ -58,15 +81,18 @@ export default function AuthedShell({
 
   return (
     <div
-      className="w-app md:flex"
+      className="w-app w-shell"
       style={{ minHeight: "100vh", background: "var(--w-bg)" }}
     >
-      {/* Mobile hamburger */}
+      {/* .w-mobile-chrome / .w-aside-tablet / .w-content / .w-topbar
+          rules live in globals.css to keep SSR/client byte-identical. */}
       <button
         type="button"
         onClick={() => setDrawerOpen(true)}
-        className="md:hidden"
+        className="w-mobile-chrome"
         aria-label="Open navigation"
+        aria-expanded={drawerOpen}
+        aria-controls="w-sidebar"
         style={{
           position: "fixed",
           top: 12,
@@ -89,24 +115,28 @@ export default function AuthedShell({
         ≡
       </button>
 
-      {/* Mobile backdrop */}
-      {drawerOpen && (
-        <div
-          onClick={() => setDrawerOpen(false)}
-          className="md:hidden"
-          aria-hidden="true"
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(15,15,16,0.78)",
-            backdropFilter: "blur(6px)",
-            zIndex: 30,
-          }}
-        />
-      )}
+      {/* Mobile backdrop — fades in/out smoothly with the drawer. */}
+      <div
+        onClick={() => setDrawerOpen(false)}
+        className="w-mobile-chrome"
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(15,15,16,0.78)",
+          backdropFilter: drawerOpen ? "blur(6px)" : "blur(0)",
+          zIndex: 30,
+          opacity: drawerOpen ? 1 : 0,
+          pointerEvents: drawerOpen ? "auto" : "none",
+          transition:
+            "opacity 280ms cubic-bezier(0.32, 0.72, 0, 1), backdrop-filter 280ms",
+        }}
+      />
 
       <aside
-        className="md:sticky md:top-0"
+        id="w-sidebar"
+        className="w-aside-tablet"
+        aria-label="Primary navigation"
         style={{
           width: 256,
           background: "var(--w-surface-2)",
@@ -120,21 +150,14 @@ export default function AuthedShell({
           top: 0,
           bottom: 0,
           transform: drawerOpen ? "translateX(0)" : "translateX(-100%)",
-          transition: "transform 0.2s ease",
+          transition: "transform 280ms cubic-bezier(0.32, 0.72, 0, 1)",
+          willChange: "transform",
+          boxShadow: drawerOpen
+            ? "8px 0 32px rgba(0,0,0,0.45)"
+            : "none",
         }}
       >
-        {/* Tablet+ override via CSS */}
-        <style>{`
-          @media (min-width: 768px) {
-            aside.w-aside-tablet {
-              position: sticky !important;
-              transform: translateX(0) !important;
-              height: 100vh !important;
-            }
-          }
-        `}</style>
         <div
-          className="w-aside-tablet"
           style={{
             padding: "20px 16px",
             borderBottom: "1px solid var(--w-line)",
@@ -201,6 +224,7 @@ export default function AuthedShell({
                       <Link
                         href={item.href}
                         onClick={() => setDrawerOpen(false)}
+                        aria-current={active ? "page" : undefined}
                         style={{
                           display: "flex",
                           alignItems: "center",
@@ -301,45 +325,55 @@ export default function AuthedShell({
               )}
             </div>
           </Link>
-          <form
-            action="/api/auth/signout"
-            method="post"
-            style={{ marginTop: 4 }}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginTop: 4,
+            }}
           >
+            <form action="/api/auth/signout" method="post">
+              <button
+                type="submit"
+                className="w-type-meta"
+                style={{
+                  textAlign: "left",
+                  padding: "8px",
+                  background: "transparent",
+                  border: 0,
+                  color: "var(--w-fg-dim)",
+                  cursor: "pointer",
+                }}
+              >
+                SIGN OUT
+              </button>
+            </form>
             <button
-              type="submit"
+              type="button"
+              onClick={() => openShortcutHelp()}
+              aria-label="Keyboard shortcuts"
+              title="Keyboard shortcuts (press ?)"
               className="w-type-meta"
               style={{
-                width: "100%",
-                textAlign: "left",
-                padding: "8px",
+                padding: "8px 10px",
                 background: "transparent",
                 border: 0,
                 color: "var(--w-fg-dim)",
                 cursor: "pointer",
+                fontFamily: "var(--w-mono)",
               }}
             >
-              SIGN OUT
+              ?
             </button>
-          </form>
+          </div>
         </div>
       </aside>
 
       <div
-        style={{
-          flex: 1,
-          minWidth: 0,
-          marginLeft: 0,
-        }}
+        style={{ minWidth: 0, flex: "1 1 auto" }}
         className="w-content"
       >
-        <style>{`
-          @media (min-width: 768px) {
-            .w-content {
-              margin-left: 256px !important;
-            }
-          }
-        `}</style>
         {topBarRight && (
           <div
             style={{
@@ -357,11 +391,6 @@ export default function AuthedShell({
             }}
             className="w-topbar"
           >
-            <style>{`
-              @media (min-width: 768px) {
-                .w-topbar { padding-left: 24px !important; }
-              }
-            `}</style>
             {topBarRight}
           </div>
         )}

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { requireOwnerContext, fmtTime } from "@/lib/owner";
+import { requireOwnerContext } from "@/lib/owner";
+import { Button, Chip } from "@/components/wadl";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Calendar — WADL" };
@@ -14,8 +15,18 @@ interface NightRow {
 }
 
 const MONTH_NAMES = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
 
 function ymd(d: Date) {
@@ -29,7 +40,6 @@ export default async function CalendarPage({
 }) {
   const { supabase, account } = await requireOwnerContext();
 
-  // Month navigation: ?m=YYYY-MM (default = current).
   const now = new Date();
   let viewYear = now.getFullYear();
   let viewMonth = now.getMonth();
@@ -41,23 +51,27 @@ export default async function CalendarPage({
 
   const monthStart = new Date(viewYear, viewMonth, 1);
   const monthEnd = new Date(viewYear, viewMonth + 1, 0);
-  const startDow = monthStart.getDay(); // 0 Sun..6 Sat
+  const startDow = monthStart.getDay();
   const daysInMonth = monthEnd.getDate();
 
   const { data: nightsRaw } = await supabase
     .from("event_nights")
     .select(
-      "id, event_id, night_date, doors_at, capacity_cap, event:events!inner(id, name, account_id)"
+      "id, event_id, night_date, doors_at, capacity_cap, event:events!inner(id, name, account_id)",
     )
     .gte("night_date", ymd(monthStart))
     .lte("night_date", ymd(monthEnd));
   const nights = (
-    (nightsRaw ?? []) as unknown as Array<NightRow & { event: { account_id: string } }>
+    (nightsRaw ?? []) as unknown as Array<
+      NightRow & { event: { account_id: string } }
+    >
   ).filter((n) => n.event.account_id === account.id);
 
-  // For each night, count approved heads + scanned to compute capacity %.
   const nightIds = nights.map((n) => n.id);
-  const totalsMap = new Map<string, { approved: number; scanned: number }>();
+  const totalsMap = new Map<
+    string,
+    { approved: number; scanned: number }
+  >();
   if (nightIds.length > 0) {
     const [guestRes, scanRes] = await Promise.all([
       supabase
@@ -91,7 +105,6 @@ export default async function CalendarPage({
     }
   }
 
-  // Group nights by night_date for the grid.
   const byDay = new Map<string, NightRow[]>();
   for (const n of nights) {
     const k = n.night_date;
@@ -99,14 +112,14 @@ export default async function CalendarPage({
     byDay.get(k)!.push(n);
   }
 
-  // Prev / next month hrefs.
   const prev = new Date(viewYear, viewMonth - 1, 1);
   const next = new Date(viewYear, viewMonth + 1, 1);
   const prevHref = `/owner/calendar?m=${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, "0")}`;
   const nextHref = `/owner/calendar?m=${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`;
 
-  // Build the day cells (with leading blanks for the first row).
-  const cells: Array<{ day: number; date: string; night: NightRow[] } | null> = [];
+  const cells: Array<
+    { day: number; date: string; night: NightRow[] } | null
+  > = [];
   for (let i = 0; i < startDow; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) {
     const date = ymd(new Date(viewYear, viewMonth, d));
@@ -116,124 +129,257 @@ export default async function CalendarPage({
       night: byDay.get(date) ?? [],
     });
   }
-  // pad to multiple of 7
   while (cells.length % 7 !== 0) cells.push(null);
 
+  const eventCount = nights.length;
+
   return (
-    <main id="main-content" className="mx-auto max-w-frame md:max-w-3xl px-6 pt-12 pb-8 md:py-12">
-      <header className="flex items-end justify-between mb-6">
-        <div>
-          <p className="label-mono mb-1">Calendar</p>
-          <h1 className="display-lg">
-            {MONTH_NAMES[viewMonth]} {viewYear}
-          </h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href={prevHref}
-            className="px-3 py-2 rounded-md border border-line text-cream hover:border-cream/30 transition label-mono"
-            aria-label="Previous month"
-          >
-            ←
-          </Link>
-          <Link
-            href="/owner/calendar"
-            className="px-3 py-2 rounded-md border border-line text-cream hover:border-cream/30 transition label-mono"
-          >
-            Today
-          </Link>
-          <Link
-            href={nextHref}
-            className="px-3 py-2 rounded-md border border-line text-cream hover:border-cream/30 transition label-mono"
-            aria-label="Next month"
-          >
-            →
-          </Link>
-        </div>
-      </header>
-
-      <div className="grid grid-cols-7 gap-1 mb-2">
-        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-          <p key={d} className="label-mono text-center">
-            {d}
-          </p>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-7 gap-1">
-        {cells.map((c, i) => {
-          if (!c) {
-            return (
-              <div
-                key={`blank-${i}`}
-                className="aspect-square bg-s1/40 rounded-md"
-              />
-            );
-          }
-          const isToday = c.date === ymd(now);
-          const has = c.night.length > 0;
-          const totals = c.night.reduce(
-            (acc, n) => {
-              const t = totalsMap.get(n.id) ?? { approved: 0, scanned: 0 };
-              acc.cap += n.capacity_cap ?? 0;
-              acc.approved += t.approved;
-              acc.scanned += t.scanned;
-              return acc;
-            },
-            { cap: 0, approved: 0, scanned: 0 }
-          );
-          const pct = totals.cap > 0 ? Math.round((totals.approved / totals.cap) * 100) : 0;
-          return (
-            <Link
-              key={c.date}
-              href={
-                has && c.night[0]
-                  ? `/owner/events/${c.night[0].event_id}?night=${c.night[0].id}`
-                  : `/owner?range=upcoming`
-              }
-              className={`aspect-square rounded-md p-1 md:p-2 flex flex-col text-left transition border ${
-                isToday
-                  ? "border-coral bg-s2"
-                  : has
-                  ? "border-mint/30 bg-s1 hover:border-mint/60"
-                  : "border-line bg-s1/60 hover:border-cream/20"
-              }`}
+    <main
+      id="main-content"
+      className="w-app"
+      style={{
+        minHeight: "100vh",
+        background: "var(--w-bg)",
+        padding: "32px 24px 96px",
+      }}
+    >
+      <div style={{ maxWidth: 1600, margin: "0 auto" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "space-between",
+            borderBottom: "1px solid var(--w-line)",
+            paddingBottom: 24,
+            gap: 16,
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <div className="w-type-meta">CALENDAR</div>
+            <div className="w-type-display-md" style={{ marginTop: 8 }}>
+              {MONTH_NAMES[viewMonth]} {viewYear}
+            </div>
+            <p
+              className="w-type-body-sm"
+              style={{
+                color: "var(--w-fg-muted)",
+                marginTop: 8,
+              }}
             >
-              <p
-                className={`font-display text-base md:text-lg leading-none ${
-                  isToday ? "text-coral" : "text-cream"
-                }`}
+              {eventCount} event{eventCount === 1 ? "" : "s"} this month
+            </p>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            <Link href={prevHref} style={{ textDecoration: "none" }}>
+              <Button
+                variant="ghost"
+                style={{ height: 36, padding: "0 14px" }}
+                aria-label="Previous month"
               >
-                {c.day}
-              </p>
-              {has && (
-                <div className="mt-auto">
-                  <p className="label-mono text-[9px] truncate">
-                    {c.night.length} ev
-                  </p>
-                  {totals.cap > 0 && (
-                    <p
-                      className={`label-mono text-[9px] ${
-                        pct >= 90
-                          ? "text-coral"
-                          : pct >= 60
-                          ? "text-gold"
-                          : "text-mint"
-                      }`}
-                    >
-                      {pct}%
-                    </p>
+                ←
+              </Button>
+            </Link>
+            <Link href="/owner/calendar" style={{ textDecoration: "none" }}>
+              <Button
+                variant="ghost"
+                style={{ height: 36, padding: "0 14px" }}
+              >
+                Today
+              </Button>
+            </Link>
+            <Link href={nextHref} style={{ textDecoration: "none" }}>
+              <Button
+                variant="ghost"
+                style={{ height: 36, padding: "0 14px" }}
+                aria-label="Next month"
+              >
+                →
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Day-of-week headers */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(7, 1fr)",
+            gap: 4,
+            marginTop: 24,
+            marginBottom: 6,
+          }}
+        >
+          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+            <div
+              key={d}
+              className="w-type-meta"
+              style={{ textAlign: "center" }}
+            >
+              {d.toUpperCase()}
+            </div>
+          ))}
+        </div>
+
+        {/* Calendar grid */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(7, 1fr)",
+            gap: 4,
+          }}
+        >
+          {cells.map((c, i) => {
+            if (!c) {
+              return (
+                <div
+                  key={`blank-${i}`}
+                  style={{
+                    aspectRatio: "1 / 1",
+                    background: "rgba(255,255,255,0.02)",
+                  }}
+                />
+              );
+            }
+            const isToday = c.date === ymd(now);
+            const has = c.night.length > 0;
+            const totals = c.night.reduce(
+              (acc, n) => {
+                const t = totalsMap.get(n.id) ?? {
+                  approved: 0,
+                  scanned: 0,
+                };
+                acc.cap += n.capacity_cap ?? 0;
+                acc.approved += t.approved;
+                acc.scanned += t.scanned;
+                return acc;
+              },
+              { cap: 0, approved: 0, scanned: 0 },
+            );
+            const pct =
+              totals.cap > 0
+                ? Math.round((totals.approved / totals.cap) * 100)
+                : 0;
+            const pctTone =
+              pct >= 90
+                ? "var(--w-err)"
+                : pct >= 60
+                  ? "var(--w-warn)"
+                  : "var(--w-ok)";
+            return (
+              <Link
+                key={c.date}
+                href={
+                  has && c.night[0]
+                    ? `/owner/events/${c.night[0].event_id}?night=${c.night[0].id}`
+                    : `/owner?range=upcoming`
+                }
+                style={{ textDecoration: "none", color: "inherit" }}
+              >
+                <div
+                  style={{
+                    aspectRatio: "1 / 1",
+                    padding: 6,
+                    display: "flex",
+                    flexDirection: "column",
+                    border: "1px solid",
+                    borderColor: isToday
+                      ? "var(--w-acc)"
+                      : has
+                        ? "oklch(0.86 0.18 145 / 0.4)"
+                        : "var(--w-line)",
+                    background: isToday
+                      ? "var(--w-acc-soft)"
+                      : has
+                        ? "var(--w-surface-2)"
+                        : "rgba(255,255,255,0.02)",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontFamily: "var(--w-display)",
+                      fontWeight: 700,
+                      fontSize: 18,
+                      letterSpacing: "-0.025em",
+                      lineHeight: 1,
+                      color: isToday ? "var(--w-acc-ink)" : "var(--w-fg)",
+                    }}
+                  >
+                    {c.day}
+                  </div>
+                  {has && (
+                    <div style={{ marginTop: "auto" }}>
+                      <div
+                        className="w-type-meta"
+                        style={{
+                          fontSize: 9,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {c.night.length} EV
+                      </div>
+                      {totals.cap > 0 && (
+                        <div
+                          className="w-type-meta"
+                          style={{
+                            fontSize: 9,
+                            color: pctTone,
+                          }}
+                        >
+                          {pct}%
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
-              )}
-            </Link>
-          );
-        })}
-      </div>
+              </Link>
+            );
+          })}
+        </div>
 
-      <p className="label-mono mt-6 text-center">
-        Tap a day to jump into its event. <Link href="/owner" className="text-coral hover:text-cream">Switch to list view →</Link>
-      </p>
+        {/* Legend */}
+        <div
+          style={{
+            marginTop: 24,
+            display: "flex",
+            gap: 12,
+            justifyContent: "center",
+            flexWrap: "wrap",
+          }}
+        >
+          <Chip tone="acc">TODAY</Chip>
+          <Chip tone="ok">EVENT</Chip>
+          <Chip tone="ghost">EMPTY</Chip>
+        </div>
+
+        <div
+          className="w-type-meta"
+          style={{
+            marginTop: 24,
+            textAlign: "center",
+            color: "var(--w-fg-dim)",
+          }}
+        >
+          TAP A DAY TO JUMP INTO ITS EVENT ·{" "}
+          <Link
+            href="/owner"
+            style={{
+              color: "var(--w-acc)",
+              textDecoration: "none",
+            }}
+          >
+            LIST VIEW →
+          </Link>
+        </div>
+      </div>
     </main>
   );
 }

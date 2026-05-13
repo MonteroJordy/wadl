@@ -3,7 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fmtDate, fmtTime } from "@/lib/format";
-import EmptyState from "@/components/empty-state";
+import { Button } from "@/components/wadl";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Holder dashboard — WADL" };
@@ -46,12 +46,11 @@ export default async function HolderDashboardPage() {
   const { data: ownerRowsRaw } = await admin
     .from("allocation_owners")
     .select(
-      "allocation_id, allocation:allocations!inner(id, holder_name, cap, plus_ones_allowed, list_open, event_night_id, event_night:event_nights!inner(id, night_date, doors_at, is_frozen, event:events!inner(id, name)))"
+      "allocation_id, allocation:allocations!inner(id, holder_name, cap, plus_ones_allowed, list_open, event_night_id, event_night:event_nights!inner(id, night_date, doors_at, is_frozen, event:events!inner(id, name)))",
     )
     .eq("user_id", user.id);
   const owned = (ownerRowsRaw ?? []) as unknown as OwnerRow[];
 
-  // Latest token per allocation for quick-share.
   const allocIds = owned.map((o) => o.allocation_id);
   const tokenMap = new Map<string, string>();
   if (allocIds.length > 0) {
@@ -69,7 +68,6 @@ export default async function HolderDashboardPage() {
     }
   }
 
-  // Guest aggregates per allocation for show-rate + capacity.
   let agg: GuestAggRow[] = [];
   if (allocIds.length > 0) {
     const { data: rows } = await admin
@@ -97,7 +95,6 @@ export default async function HolderDashboardPage() {
     return { approved, scanned, used };
   }
 
-  // Lifetime show rate across all owned allocations.
   const totals = owned.reduce(
     (acc, o) => {
       const s = statsFor(o.allocation_id);
@@ -106,11 +103,11 @@ export default async function HolderDashboardPage() {
       acc.events.add(o.allocation.event_night.event.id);
       return acc;
     },
-    { approved: 0, scanned: 0, events: new Set<string>() }
+    { approved: 0, scanned: 0, events: new Set<string>() },
   );
-  const showRate = totals.approved === 0 ? 0 : totals.scanned / totals.approved;
+  const showRate =
+    totals.approved === 0 ? 0 : totals.scanned / totals.approved;
 
-  // Sort upcoming first, then by date desc.
   const now = Date.now();
   owned.sort((a, b) => {
     const ad = new Date(a.allocation.event_night.doors_at).getTime();
@@ -122,108 +119,257 @@ export default async function HolderDashboardPage() {
   });
 
   return (
-    <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 py-10">
-      <header className="mb-6">
-        <p className="label-mono mb-1">Holder dashboard</p>
-        <h1 className="display-lg">Your allocations</h1>
-      </header>
-
-      <section className="card mb-4">
-        <div className="grid grid-cols-3 gap-3">
-          <div>
-            <p className="label-mono">Show rate</p>
-            <p className="font-display text-3xl text-cream leading-none">
-              {Math.round(showRate * 100)}%
-            </p>
-          </div>
-          <div>
-            <p className="label-mono">Lifetime</p>
-            <p className="font-display text-3xl text-mint leading-none">
-              {totals.scanned}
-            </p>
-            <p className="label-mono mt-1">scanned</p>
-          </div>
-          <div>
-            <p className="label-mono">Events</p>
-            <p className="font-display text-3xl text-cream leading-none">
-              {totals.events.size}
-            </p>
+    <main
+      id="main-content"
+      className="w-app"
+      style={{
+        minHeight: "100vh",
+        background: "var(--w-bg)",
+        padding: "32px 24px 96px",
+      }}
+    >
+      <div style={{ maxWidth: 720, margin: "0 auto" }}>
+        <div
+          style={{
+            borderBottom: "1px solid var(--w-line)",
+            paddingBottom: 24,
+            marginBottom: 24,
+          }}
+        >
+          <div className="w-type-meta">HOLDER DASHBOARD</div>
+          <div className="w-type-display-md" style={{ marginTop: 8 }}>
+            Your allocations
           </div>
         </div>
-      </section>
 
-      {owned.length === 0 ? (
-        <EmptyState
-          title="No allocations claimed"
-          body="When a host shares a magic link, open it and tap 'Claim this allocation' to track it here."
-        />
-      ) : (
-        <ul className="flex flex-col gap-3">
-          {owned.map((o) => {
-            const s = statsFor(o.allocation_id);
-            const remaining = Math.max(0, o.allocation.cap - s.used);
-            const token = tokenMap.get(o.allocation_id);
-            const eventDate = new Date(o.allocation.event_night.doors_at);
-            const isPast = eventDate.getTime() < now;
-            return (
-              <li
-                key={o.allocation_id}
-                className="card hover:border-coral/60 transition"
-              >
-                <div className="flex items-start justify-between gap-3 mb-2">
-                  <div className="min-w-0">
-                    <p className="font-sans text-cream font-semibold truncate">
-                      {o.allocation.event_night.event.name}
-                    </p>
-                    <p className="label-mono mt-1">
-                      {fmtDate(o.allocation.event_night.night_date)} · Doors{" "}
-                      {fmtTime(o.allocation.event_night.doors_at)}
-                      {isPast ? " · past" : ""}
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="font-display text-2xl text-cream leading-none">
-                      {s.used}
-                      <span className="text-muted">/{o.allocation.cap}</span>
-                    </p>
-                    <p className="label-mono mt-1">on list</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-2 mt-3 label-mono">
-                  <div>
-                    <span className="text-cream">{remaining}</span> left
-                  </div>
-                  <div>
-                    <span className="text-mint">{s.scanned}</span> scanned
-                  </div>
-                  <div>
-                    {o.allocation.list_open && !o.allocation.event_night.is_frozen ? (
-                      <span className="text-mint">open</span>
-                    ) : (
-                      <span className="text-coral">closed</span>
-                    )}
-                  </div>
-                </div>
-                {token && !isPast && (
-                  <Link
-                    href={`/h/${token}`}
-                    target="_blank"
-                    className="btn-ghost text-center mt-3 block text-xs"
+        <section
+          className="w-card"
+          style={{ padding: 18, marginBottom: 16 }}
+        >
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: 12,
+            }}
+          >
+            <Stat label="SHOW RATE" value={`${Math.round(showRate * 100)}%`} />
+            <Stat
+              label="LIFETIME"
+              value={totals.scanned}
+              tone="ok"
+              sub="SCANNED"
+            />
+            <Stat label="EVENTS" value={totals.events.size} />
+          </div>
+        </section>
+
+        {owned.length === 0 ? (
+          <div
+            className="w-card"
+            style={{
+              padding: "48px 32px",
+              textAlign: "center",
+            }}
+          >
+            <div className="w-type-h1">No allocations claimed</div>
+            <p
+              className="w-type-body-sm"
+              style={{
+                color: "var(--w-fg-muted)",
+                marginTop: 12,
+                maxWidth: 460,
+                marginInline: "auto",
+                lineHeight: 1.5,
+              }}
+            >
+              When a host shares a magic link, open it and tap &quot;Claim
+              this allocation&quot; to track it here.
+            </p>
+          </div>
+        ) : (
+          <ul
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 12,
+              listStyle: "none",
+              padding: 0,
+              margin: 0,
+            }}
+          >
+            {owned.map((o) => {
+              const s = statsFor(o.allocation_id);
+              const remaining = Math.max(0, o.allocation.cap - s.used);
+              const token = tokenMap.get(o.allocation_id);
+              const eventDate = new Date(o.allocation.event_night.doors_at);
+              const isPast = eventDate.getTime() < now;
+              return (
+                <li
+                  key={o.allocation_id}
+                  className="w-card"
+                  style={{ padding: 16 }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      justifyContent: "space-between",
+                      gap: 12,
+                      marginBottom: 8,
+                    }}
                   >
-                    Open list →
-                  </Link>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <p
+                        style={{
+                          color: "var(--w-fg)",
+                          fontWeight: 600,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {o.allocation.event_night.event.name}
+                      </p>
+                      <div className="w-type-meta" style={{ marginTop: 4 }}>
+                        {fmtDate(
+                          o.allocation.event_night.night_date,
+                        ).toUpperCase()}{" "}
+                        · DOORS{" "}
+                        {fmtTime(
+                          o.allocation.event_night.doors_at,
+                        ).toUpperCase()}
+                        {isPast ? " · PAST" : ""}
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        textAlign: "right",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontFamily: "var(--w-display)",
+                          fontWeight: 700,
+                          fontSize: 22,
+                          lineHeight: 1,
+                          color: "var(--w-fg)",
+                        }}
+                      >
+                        {s.used}
+                        <span style={{ color: "var(--w-fg-muted)" }}>
+                          /{o.allocation.cap}
+                        </span>
+                      </div>
+                      <div className="w-type-meta" style={{ marginTop: 4 }}>
+                        ON LIST
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(3, 1fr)",
+                      gap: 8,
+                      marginTop: 12,
+                    }}
+                    className="w-type-meta"
+                  >
+                    <div>
+                      <span style={{ color: "var(--w-fg)" }}>
+                        {remaining}
+                      </span>{" "}
+                      LEFT
+                    </div>
+                    <div>
+                      <span style={{ color: "var(--w-ok)" }}>
+                        {s.scanned}
+                      </span>{" "}
+                      SCANNED
+                    </div>
+                    <div>
+                      {o.allocation.list_open &&
+                      !o.allocation.event_night.is_frozen ? (
+                        <span style={{ color: "var(--w-ok)" }}>OPEN</span>
+                      ) : (
+                        <span style={{ color: "var(--w-err)" }}>CLOSED</span>
+                      )}
+                    </div>
+                  </div>
+                  {token && !isPast && (
+                    <Link
+                      href={`/h/${token}`}
+                      target="_blank"
+                      style={{
+                        textDecoration: "none",
+                        display: "block",
+                        marginTop: 12,
+                      }}
+                    >
+                      <Button
+                        variant="ghost"
+                        style={{ width: "100%", fontSize: 12 }}
+                      >
+                        Open list →
+                      </Button>
+                    </Link>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
 
-      <p className="label-mono mt-8 text-center">
-        <a href="/api/auth/signout" className="hover:text-cream">
-          Sign out
-        </a>
-      </p>
+        <div
+          className="w-type-meta"
+          style={{ marginTop: 32, textAlign: "center" }}
+        >
+          <a
+            href="/api/auth/signout"
+            style={{ color: "var(--w-fg-muted)", textDecoration: "none" }}
+          >
+            SIGN OUT
+          </a>
+        </div>
+      </div>
     </main>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  tone,
+  sub,
+}: {
+  label: string;
+  value: number | string;
+  tone?: "ok";
+  sub?: string;
+}) {
+  const color = tone === "ok" ? "var(--w-ok)" : "var(--w-fg)";
+  return (
+    <div>
+      <div className="w-type-meta">{label}</div>
+      <div
+        style={{
+          fontFamily: "var(--w-display)",
+          fontWeight: 700,
+          fontSize: 28,
+          letterSpacing: "-0.025em",
+          lineHeight: 1,
+          marginTop: 6,
+          color,
+        }}
+      >
+        {value}
+      </div>
+      {sub && (
+        <div className="w-type-meta" style={{ marginTop: 4 }}>
+          {sub}
+        </div>
+      )}
+    </div>
   );
 }

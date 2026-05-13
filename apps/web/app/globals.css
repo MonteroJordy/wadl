@@ -66,6 +66,67 @@
   --w-r-lg: 0px;
 
   --w-shadow-card: 0 1px 0 0 #ffffff08 inset, 0 0 0 1px var(--w-line);
+
+  /* === Responsive scale tokens — these flip at the desktop breakpoint
+     so individual components don't have to write media queries. Mobile
+     defaults below; desktop overrides at the bottom of this file. === */
+
+  /* Page padding: mobile breathes more, desktop is denser. */
+  --w-page-pad-x: 16px;
+  --w-page-pad-y: 24px;
+  --w-page-pad-bottom: 96px; /* room for fixed bottom tab bar */
+
+  /* Card padding rhythm. */
+  --w-card-pad: 14px;
+  --w-card-pad-lg: 18px;
+
+  /* Stack gap (between vertical sections). */
+  --w-stack-gap: 12px;
+  --w-stack-gap-lg: 20px;
+
+  /* Display sizes — bigger on desktop where there's room. */
+  --w-display-sm: 22px;
+  --w-display-md: 30px;
+  --w-display-lg: 44px;
+  --w-display-xl: 64px;
+
+  /* Body / meta sizes — slightly bigger on mobile for readability. */
+  --w-body: 15px;
+  --w-meta: 11px;
+
+  /* Touch target floor — 44px iOS HIG on mobile, tighter on desktop. */
+  --w-touch: 44px;
+
+  /* Container widths for content. Default = roomy desktop. */
+  --w-content-narrow: 720px;
+  --w-content-medium: 960px;
+  --w-content-wide: 1200px;
+  --w-content-xwide: 1440px;
+}
+
+/* Desktop overrides (≥768px = tablet+, where we have a sticky sidebar). */
+@media (min-width: 768px) {
+  :root {
+    --w-page-pad-x: 32px;
+    --w-page-pad-y: 32px;
+    --w-page-pad-bottom: 32px; /* no bottom tab bar */
+
+    --w-card-pad: 16px;
+    --w-card-pad-lg: 24px;
+
+    --w-stack-gap: 16px;
+    --w-stack-gap-lg: 24px;
+
+    --w-display-sm: 24px;
+    --w-display-md: 36px;
+    --w-display-lg: 56px;
+    --w-display-xl: 88px;
+
+    --w-body: 14px;
+    --w-meta: 11px;
+
+    --w-touch: 36px;
+  }
 }
 
 html,
@@ -106,7 +167,9 @@ body {
   outline-offset: 2px;
 }
 
-/* a11y: keyboard focus ring uses the new accent. */
+/* a11y: keyboard focus ring uses the new accent. Mouse clicks don't
+   trigger this (because :focus-visible), so the ring only appears for
+   keyboard users, exactly when it helps and never as visual noise. */
 *:focus-visible {
   outline: 2px solid var(--w-acc);
   outline-offset: 2px;
@@ -117,6 +180,26 @@ body {
   outline-offset: 1px;
 }
 
+/* Buttons in the new system: contrast the accent ring against the
+   button's own accent fill by stacking a dark inner ring + accent outer
+   ring. Works on every variant (primary, ghost, solid). */
+.w-btn:focus-visible {
+  outline: 2px solid var(--w-acc) !important;
+  outline-offset: 3px;
+  box-shadow: inset 0 0 0 2px var(--w-ink);
+}
+.w-btn--ghost:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--w-acc);
+}
+
+/* Inputs in the new system already have a border; reinforce the ring
+   on focus so it doesn't look like a hover-stuck state. */
+.w-input:focus-visible {
+  outline: 2px solid var(--w-acc);
+  outline-offset: 1px;
+  border-color: var(--w-acc);
+}
+
 /* Honor user's reduced-motion preference everywhere. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -125,6 +208,327 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Subtle fade-in on every <main id="main-content"> when a new route
+   mounts. Removes the "hard cut" feeling between page navigations
+   without slowing perceived load. Reduced-motion users get it disabled
+   via the media query above (animation-duration → 0.01ms). */
+@keyframes wadlPageFadeIn {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+main#main-content {
+  animation: wadlPageFadeIn 220ms ease-out;
+}
+
+/* Print styles — strip chrome, force black-on-white so guest lists and
+   audit logs print legibly. Pages that should hide entirely when
+   printing (sidebars, tab bars, top bars, modals, action buttons) get
+   `.no-print`. Conversely, anything print-only (a header logo for the
+   printed page) gets `.print-only`. */
+@media print {
+  *, *::before, *::after {
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    border-color: #ddd !important;
+  }
+  /* Hide app chrome — sidebar, hamburger, mobile tab bar, toolbars. */
+  .w-aside-tablet,
+  .w-mobile-chrome,
+  .w-tab-bar,
+  .w-tab-bar-spacer,
+  .w-topbar,
+  .w-toast-stack,
+  .w-sticky-footer,
+  .no-print,
+  nav,
+  button[type="button"],
+  a[role="button"],
+  form[action="/api/auth/signout"] {
+    display: none !important;
+  }
+  /* Content area: full width, no left margin. */
+  .w-content,
+  .w-shell {
+    display: block !important;
+    margin-left: 0 !important;
+    flex: 1 1 100% !important;
+  }
+  main#main-content {
+    animation: none !important;
+    padding: 0 !important;
+  }
+  /* Break-inside on tables/cards so a row doesn't split across pages. */
+  tr, .w-card, li {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  /* Print-only elements hidden on screen. */
+  .print-only { display: block !important; }
+  /* Keep links readable: show the URL after the link text. */
+  a[href]:not(.no-print-url)::after {
+    content: " (" attr(href) ")";
+    font-size: 9px;
+    color: #666 !important;
+  }
+}
+.print-only { display: none; }
+
+/* Touch target floor on coarse-pointer devices (mobile / tablet).
+   Most CTAs already meet 44x44 via `.w-btn` (height 44px). The mobile
+   tab bar items also hit 44px. For one-off compact icon buttons that
+   need the thumb-friendly floor, add `.w-tap` to opt in. */
+.w-tap {
+  min-width: 44px;
+  min-height: 44px;
+}
+@media (pointer: coarse) {
+  /* Make sure the standard sidebar nav links are easy to tap. They use
+     padding rather than explicit height, so this enforces the floor
+     without disturbing desktop density. */
+  .w-aside-tablet a {
+    min-height: 44px;
+    display: flex !important;
+    align-items: center;
+  }
+}
+
+/* === RESPONSIVE LAYOUT RULES — moved out of inline <style> in components
+   to prevent SSR-vs-client whitespace hydration mismatches. === */
+
+/* Mobile bottom tab bar: visible <768px, hidden ≥768px. */
+@media (min-width: 768px) {
+  .w-tab-bar { display: none !important; }
+}
+@media (max-width: 767px) {
+  .w-tab-bar-spacer { height: 64px; }
+  /* Sticky form footer needs to sit above the mobile bottom tab bar. */
+  .w-sticky-footer {
+    bottom: calc(64px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* Discover-page card hover lift — shotgun-style affordance.
+   Only on hover-capable devices so touch doesn't get stuck "lifted". */
+@media (hover: hover) {
+  .w-discover-card > .w-card {
+    will-change: transform;
+  }
+  .w-discover-card:hover > .w-card {
+    transform: translateY(-2px);
+    border-color: var(--w-line-2) !important;
+  }
+}
+
+/* Inline prose anchors: undecorated text links inside body copy get
+   the accent color and an underline-on-hover so users can spot them.
+   Scoped to <p> + .w-type-body* so we don't disturb nav/card/CTA links
+   that have their own styling. */
+p > a:not([class]),
+.w-type-body a:not([class]),
+.w-type-body-sm a:not([class]) {
+  color: var(--w-acc);
+  text-decoration: none;
+}
+p > a:not([class]):hover,
+.w-type-body a:not([class]):hover,
+.w-type-body-sm a:not([class]):hover,
+p > a:not([class]):focus-visible,
+.w-type-body a:not([class]):focus-visible,
+.w-type-body-sm a:not([class]):focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Hover affordance for clickable cards. Any <a> that directly wraps a
+   `.w-card` (the standard owner pattern) lifts the border + brightens
+   subtly on hover so users can see what's clickable. KPI cards (not
+   inside <a>) stay flat. */
+a:hover > .w-card,
+a:hover > * > .w-card,
+a:focus-visible > .w-card {
+  border-color: var(--w-line-2);
+  background: var(--w-surface-3);
+}
+@media (prefers-reduced-motion: no-preference) {
+  a > .w-card {
+    transition: border-color 120ms ease, background 120ms ease;
+  }
+}
+
+/* Sidebar nav links: subtle hover for visible click affordance. The
+   active item already has its own border-left accent — hover only
+   applies to non-active items. */
+.w-shell aside a:hover:not([aria-current="page"]) {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--w-fg);
+}
+
+/* Cap form input widths inside owner content on desktop. Text inputs span
+   100% of their container by default; on a 1600px-wide owner page that
+   produces hostile 1000px input fields. The cap stays under any explicit
+   parent max-width (e.g. the new-event-cols 600px column) so columnar
+   forms remain unaffected. */
+@media (min-width: 768px) {
+  .w-content input[type="text"],
+  .w-content input[type="email"],
+  .w-content input[type="tel"],
+  .w-content input[type="url"],
+  .w-content input[type="password"],
+  .w-content select,
+  .w-content textarea { max-width: 520px; }
+  .w-content input[type="date"],
+  .w-content input[type="time"],
+  .w-content input[type="number"] { max-width: 200px; }
+  .w-content input[type="search"] { max-width: 480px; }
+  /* Tables / cards / explicit-wide containers opt out via .w-input-wide. */
+  .w-content .w-input-wide input,
+  .w-content .w-input-wide select,
+  .w-content .w-input-wide textarea { max-width: none; }
+}
+
+/* AuthedShell: sticky sidebar + flex content on desktop, drawer on mobile.
+   On desktop the shell becomes a flex container so the sticky sidebar
+   takes its natural 256px slot and content flexes to fill the rest. We
+   do NOT add margin-left on .w-content — sidebar's flex slot already
+   reserves the space. Earlier code did both, causing a 256px gap. */
+@media (min-width: 768px) {
+  .w-shell { display: flex !important; }
+  aside.w-aside-tablet {
+    position: sticky !important;
+    top: 0 !important;
+    transform: translateX(0) !important;
+    height: 100vh !important;
+    flex: 0 0 256px !important;
+  }
+  .w-mobile-chrome { display: none !important; }
+  .w-topbar { padding-left: 24px !important; }
+}
+
+/* Toast stack — move to bottom-center on mobile so it doesn't overlap
+   the hamburger or top-bar buttons. Reserve space for the mobile tab
+   bar (64px) plus iOS safe-area inset. */
+@media (max-width: 767px) {
+  .w-toast-stack {
+    top: auto !important;
+    right: 16px !important;
+    left: 16px !important;
+    bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+    max-width: none !important;
+  }
+}
+
+/* Daydash desktop / mobile structural swap. */
+@media (min-width: 1024px) {
+  .dd-mobile { display: none !important; }
+}
+@media (max-width: 1023px) {
+  .dd-desktop { display: none !important; }
+}
+.dd-desk-frame {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 24px 32px 48px;
+}
+.dd-desk-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--w-line);
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.dd-desk-grid {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr) 360px;
+  gap: 20px;
+  align-items: start;
+}
+.dd-desk-rail {
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+.dd-desk-rail::-webkit-scrollbar { width: 6px; }
+.dd-desk-rail::-webkit-scrollbar-thumb { background: var(--w-line); }
+
+.dd-mob-frame { padding: 0 0 96px; }
+.dd-mob-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: rgba(15, 15, 16, 0.92);
+  backdrop-filter: blur(8px);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--w-line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.dd-mob-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.dd-mob-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.dd-mob-action {
+  min-height: 88px;
+  padding: 16px;
+  background: var(--w-surface-2);
+  border: 1px solid var(--w-line);
+  color: var(--w-fg);
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* New event form: 2-column on desktop. The fields column is intentionally
+   capped at 600px because letting it stretch to 1fr leaves half the column
+   empty — text inputs feel awful past ~600px wide. */
+@media (min-width: 1024px) {
+  .new-event-cols {
+    display: grid !important;
+    grid-template-columns: 320px 600px !important;
+    gap: 48px !important;
+    align-items: start !important;
+    justify-content: start !important;
+  }
+  .new-event-cover { position: sticky !important; top: 24px !important; }
+  .new-event-cover-preview {
+    width: 100% !important;
+    max-width: 320px !important;
+  }
+}
+
+/* Animations referenced by various components. */
+@keyframes wadlSkeleton {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@keyframes wadlToastIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes wadlBellPing {
+  0% { box-shadow: 0 0 0 0 var(--w-acc); opacity: 0.7; }
+  100% { box-shadow: 0 0 0 12px transparent; opacity: 0; }
+}
+@keyframes wadlLivePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
 @layer components {
@@ -465,6 +869,19 @@ body {
   font-size: 16px;
   outline: none;
   transition: border-color 0.12s, background 0.12s;
+}
+/* On desktop, cap inputs at a comfortable max so they don't span 1000px
+   on wide displays. The parent container can override with its own width.
+   Date / time / number / color pickers are intentionally narrower since
+   they hold tiny values; selects opt out so dropdowns stay searchable. */
+@media (min-width: 768px) {
+  .w-input { max-width: 520px; }
+  .w-input[type="date"],
+  .w-input[type="time"],
+  .w-input[type="number"],
+  .w-input[type="color"] { max-width: 200px; }
+  .w-input[type="search"] { max-width: 480px; }
+  textarea.w-input { max-width: 720px; }
 }
 .w-input:focus {
   border-color: var(--w-acc);

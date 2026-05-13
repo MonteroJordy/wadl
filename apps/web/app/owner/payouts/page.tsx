@@ -1,6 +1,6 @@
 import { requireOwnerContext } from "@/lib/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
-import EmptyState from "@/components/empty-state";
+import { Button } from "@/components/wadl";
 
 export const dynamic = "force-dynamic";
 
@@ -25,119 +25,302 @@ export default async function PayoutsPage({
 
   if (!enabled) {
     return (
-      <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 pt-12 pb-8 md:py-12">
-        <p className="label-mono mb-1">Promoter payouts</p>
-        <h1 className="display-lg leading-[0.95] mb-6">Coming soon</h1>
-        <EmptyState
-          title="Pay your promoters"
-          body="Stripe Connect is wired but not turned on yet. Each holder onboards via Express; commission per scanned head pays out weekly. Email when you want it live."
-          action={
+      <main
+        id="main-content"
+        className="w-app"
+        style={{
+          minHeight: "100vh",
+          background: "var(--w-bg)",
+          padding: "32px 24px 96px",
+        }}
+      >
+        <div style={{ maxWidth: 720, margin: "0 auto" }}>
+          <div className="w-type-meta">PROMOTER PAYOUTS</div>
+          <div
+            className="w-type-display-md"
+            style={{ marginTop: 8, marginBottom: 24 }}
+          >
+            Coming soon
+          </div>
+          <section
+            className="w-card"
+            style={{
+              padding: "64px 32px",
+              textAlign: "center",
+            }}
+          >
+            <div className="w-type-h1">Pay your promoters</div>
+            <p
+              className="w-type-body-sm"
+              style={{
+                color: "var(--w-fg-muted)",
+                marginTop: 12,
+                maxWidth: 480,
+                marginInline: "auto",
+                lineHeight: 1.5,
+              }}
+            >
+              Stripe Connect is wired but not turned on yet. Each holder
+              onboards via Express; commission per scanned head pays out
+              weekly. Email when you want it live.
+            </p>
             <a
               href="mailto:jmontero@mainframeagency.com?subject=Turn%20on%20Stripe%20Connect"
-              className="btn-ghost inline-block"
+              style={{ textDecoration: "none" }}
             >
-              Email the founder
+              <Button
+                variant="ghost"
+                style={{ marginTop: 20 }}
+              >
+                Email the founder
+              </Button>
             </a>
-          }
-        />
+          </section>
+        </div>
       </main>
     );
   }
 
-  // Read connect_accounts row (if any) so the page reflects real state.
   const admin = createAdminClient();
   const { data: connect } = await admin
     .from("connect_accounts")
     .select(
-      "stripe_account_id, charges_enabled, payouts_enabled, details_submitted, default_currency, email, country, updated_at"
+      "stripe_account_id, charges_enabled, payouts_enabled, details_submitted, default_currency, email, country, updated_at",
     )
     .eq("account_id", account.id)
     .maybeSingle<ConnectRow>();
 
-  const ready = !!connect && connect.charges_enabled && connect.payouts_enabled;
+  const ready =
+    !!connect && connect.charges_enabled && connect.payouts_enabled;
   const inProgress =
     !!connect &&
     !ready &&
-    (connect.details_submitted || connect.charges_enabled || connect.payouts_enabled);
+    (connect.details_submitted ||
+      connect.charges_enabled ||
+      connect.payouts_enabled);
 
-  const oauthUrl = `https://connect.stripe.com/oauth/authorize?response_type=code&client_id=${process.env.STRIPE_CONNECT_CLIENT_ID}&scope=read_write&stripe_user[email]=${encodeURIComponent(
-    "" /* prefilled by Stripe from current session if available */
-  )}`;
+  const oauthUrl = `https://connect.stripe.com/oauth/authorize?response_type=code&client_id=${process.env.STRIPE_CONNECT_CLIENT_ID}&scope=read_write&stripe_user[email]=${encodeURIComponent("")}`;
 
   return (
-    <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 pt-12 pb-8 md:py-12">
-      <p className="label-mono mb-1">Promoter payouts</p>
-      <h1 className="display-lg leading-[0.95] mb-2">Payouts</h1>
-      <p className="text-muted text-sm mb-6">{account.display_name}</p>
-
-      {searchParams.connect === "ok" && (
-        <div className="card border-mint mb-4 bg-s2">
-          <p className="label-mono text-mint mb-1">Connected</p>
-          <p className="text-cream text-sm">
-            Stripe account linked. Status will update once onboarding finishes.
+    <main
+      id="main-content"
+      className="w-app"
+      style={{
+        minHeight: "100vh",
+        background: "var(--w-bg)",
+        padding: "32px 24px 96px",
+      }}
+    >
+      <div style={{ maxWidth: 720, margin: "0 auto" }}>
+        <div
+          style={{
+            borderBottom: "1px solid var(--w-line)",
+            paddingBottom: 24,
+            marginBottom: 24,
+          }}
+        >
+          <div className="w-type-meta">PROMOTER PAYOUTS</div>
+          <div className="w-type-display-md" style={{ marginTop: 8 }}>
+            Payouts
+          </div>
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-fg-muted)", marginTop: 8 }}
+          >
+            {account.display_name}
           </p>
         </div>
-      )}
-      {searchParams.connect_error && (
-        <div className="card border-coral mb-4 bg-s2">
-          <p className="label-mono text-coral mb-1">Connect error</p>
-          <p className="text-cream text-sm break-words">
-            {searchParams.connect_error.replace(/_/g, " ")}
-          </p>
-        </div>
-      )}
 
-      <section className="card mb-4">
-        <p className="label-mono mb-2">Status</p>
-        {ready ? (
-          <>
-            <p className="font-sans text-cream font-semibold mb-1">Ready to receive payouts</p>
-            <p className="text-muted text-xs mb-3 font-mono">
-              {connect?.stripe_account_id} · {(connect?.country ?? "").toUpperCase()} ·{" "}
-              {(connect?.default_currency ?? "").toUpperCase()}
+        {searchParams.connect === "ok" && (
+          <div
+            className="w-card"
+            style={{
+              padding: 16,
+              borderColor: "var(--w-ok)",
+              background: "var(--w-surface-2)",
+              marginBottom: 12,
+            }}
+          >
+            <div
+              className="w-type-meta"
+              style={{ color: "var(--w-ok)", marginBottom: 4 }}
+            >
+              CONNECTED
+            </div>
+            <p style={{ color: "var(--w-fg)", fontSize: 14 }}>
+              Stripe account linked. Status will update once onboarding
+              finishes.
             </p>
-            <p className="text-muted text-sm">
-              Promoter payouts will fire weekly based on scanned-in heads × commission rate.
-            </p>
-          </>
-        ) : inProgress ? (
-          <>
-            <p className="font-sans text-cream font-semibold mb-1">Onboarding in progress</p>
-            <ul className="text-xs text-muted mb-3 space-y-1">
-              <li>Details submitted: {connect?.details_submitted ? "yes" : "no"}</li>
-              <li>Charges enabled: {connect?.charges_enabled ? "yes" : "no"}</li>
-              <li>Payouts enabled: {connect?.payouts_enabled ? "yes" : "no"}</li>
-            </ul>
-            <p className="text-muted text-sm mb-4">
-              Stripe is still verifying your business. We&apos;ll auto-update this card the
-              moment your dashboard flips green.
-            </p>
-            <a href={oauthUrl} className="btn-ghost inline-block">
-              Resume onboarding
-            </a>
-          </>
-        ) : (
-          <>
-            <p className="font-sans text-cream font-semibold mb-1">Connect onboarding pending</p>
-            <p className="text-muted text-sm mb-4">
-              Complete Stripe&apos;s Express onboarding to start receiving promoter commissions.
-            </p>
-            <a href={oauthUrl} className="btn-primary inline-block">
-              Connect Stripe account
-            </a>
-          </>
+          </div>
         )}
-      </section>
+        {searchParams.connect_error && (
+          <div
+            className="w-card"
+            style={{
+              padding: 16,
+              borderColor: "var(--w-err)",
+              background: "var(--w-surface-2)",
+              marginBottom: 12,
+            }}
+          >
+            <div
+              className="w-type-meta"
+              style={{ color: "var(--w-err)", marginBottom: 4 }}
+            >
+              CONNECT ERROR
+            </div>
+            <p
+              style={{
+                color: "var(--w-fg)",
+                fontSize: 14,
+                wordBreak: "break-word",
+              }}
+            >
+              {searchParams.connect_error.replace(/_/g, " ")}
+            </p>
+          </div>
+        )}
 
-      <section className="card">
-        <p className="label-mono mb-2">How it works</p>
-        <ul className="text-muted text-sm space-y-1 list-disc list-inside">
-          <li>Each promoter onboards via Stripe Connect Express</li>
-          <li>WADL tracks scanned-in heads per promoter (scorecards)</li>
-          <li>Commission rate per allocation set on the allocation page</li>
-          <li>Payouts triggered weekly</li>
-        </ul>
-      </section>
+        <section
+          className="w-card"
+          style={{ padding: 20, marginBottom: 12 }}
+        >
+          <div className="w-type-meta" style={{ marginBottom: 12 }}>
+            STATUS
+          </div>
+          {ready ? (
+            <>
+              <p
+                style={{
+                  color: "var(--w-fg)",
+                  fontWeight: 600,
+                  marginBottom: 6,
+                }}
+              >
+                Ready to receive payouts
+              </p>
+              <p
+                className="w-type-meta"
+                style={{
+                  color: "var(--w-fg-muted)",
+                  fontFamily: "var(--w-mono)",
+                  marginBottom: 12,
+                }}
+              >
+                {connect?.stripe_account_id} ·{" "}
+                {(connect?.country ?? "").toUpperCase()} ·{" "}
+                {(connect?.default_currency ?? "").toUpperCase()}
+              </p>
+              <p
+                style={{
+                  color: "var(--w-fg-muted)",
+                  fontSize: 14,
+                  lineHeight: 1.5,
+                }}
+              >
+                Promoter payouts will fire weekly based on scanned-in heads ×
+                commission rate.
+              </p>
+            </>
+          ) : inProgress ? (
+            <>
+              <p
+                style={{
+                  color: "var(--w-fg)",
+                  fontWeight: 600,
+                  marginBottom: 8,
+                }}
+              >
+                Onboarding in progress
+              </p>
+              <ul
+                style={{
+                  fontSize: 12,
+                  color: "var(--w-fg-muted)",
+                  marginBottom: 12,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 4,
+                  fontFamily: "var(--w-mono)",
+                }}
+              >
+                <li>
+                  DETAILS SUBMITTED:{" "}
+                  {connect?.details_submitted ? "YES" : "NO"}
+                </li>
+                <li>
+                  CHARGES ENABLED:{" "}
+                  {connect?.charges_enabled ? "YES" : "NO"}
+                </li>
+                <li>
+                  PAYOUTS ENABLED:{" "}
+                  {connect?.payouts_enabled ? "YES" : "NO"}
+                </li>
+              </ul>
+              <p
+                style={{
+                  color: "var(--w-fg-muted)",
+                  fontSize: 14,
+                  lineHeight: 1.5,
+                  marginBottom: 16,
+                }}
+              >
+                Stripe is still verifying your business. We&apos;ll auto-update
+                this card the moment your dashboard flips green.
+              </p>
+              <a href={oauthUrl} style={{ textDecoration: "none" }}>
+                <Button variant="ghost">Resume onboarding</Button>
+              </a>
+            </>
+          ) : (
+            <>
+              <p
+                style={{
+                  color: "var(--w-fg)",
+                  fontWeight: 600,
+                  marginBottom: 6,
+                }}
+              >
+                Connect onboarding pending
+              </p>
+              <p
+                style={{
+                  color: "var(--w-fg-muted)",
+                  fontSize: 14,
+                  lineHeight: 1.5,
+                  marginBottom: 16,
+                }}
+              >
+                Complete Stripe&apos;s Express onboarding to start receiving
+                promoter commissions.
+              </p>
+              <a href={oauthUrl} style={{ textDecoration: "none" }}>
+                <Button variant="primary">Connect Stripe account</Button>
+              </a>
+            </>
+          )}
+        </section>
+
+        <section className="w-card" style={{ padding: 20 }}>
+          <div className="w-type-meta" style={{ marginBottom: 12 }}>
+            HOW IT WORKS
+          </div>
+          <ul
+            style={{
+              color: "var(--w-fg-muted)",
+              fontSize: 14,
+              lineHeight: 1.7,
+              listStyle: "disc",
+              paddingLeft: 18,
+            }}
+          >
+            <li>Each promoter onboards via Stripe Connect Express</li>
+            <li>WADL tracks scanned-in heads per promoter (scorecards)</li>
+            <li>Commission rate per allocation set on the allocation page</li>
+            <li>Payouts triggered weekly</li>
+          </ul>
+        </section>
+      </div>
     </main>
   );
 }

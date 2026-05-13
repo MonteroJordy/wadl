@@ -27,9 +27,26 @@ export default async function NewAllocationPage({
 
   if (nights.length === 0) {
     return (
-      <main id="main-content" className="mobile-frame">
-        <h1 className="display-lg mt-6 mb-4">No nights yet</h1>
-        <p className="text-muted text-sm">Add a night before creating an allocation.</p>
+      <main
+        id="main-content"
+        className="w-app"
+        style={{
+          minHeight: "100vh",
+          background: "var(--w-bg)",
+          padding: "32px 24px 96px",
+        }}
+      >
+        <div style={{ maxWidth: 720, margin: "0 auto" }}>
+          <div className="w-type-display-md" style={{ marginBottom: 12 }}>
+            No nights yet
+          </div>
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-fg-muted)" }}
+          >
+            Add a night before creating an allocation.
+          </p>
+        </div>
       </main>
     );
   }

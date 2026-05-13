@@ -121,79 +121,165 @@ export default async function DualCtxPage({
   const isOwner = profile.role === "owner" || !!profile.account_id;
   const primaryShift = shifts[0];
 
+  const cardLink: React.CSSProperties = {
+    textDecoration: "none",
+    color: "inherit",
+    display: "block",
+  };
+
   return (
-    <main id="main-content" className="mobile-frame">
-      <header className="pt-12 pb-8">
-        <p className="label-mono mb-2">Tonight</p>
-        <h1 className="display-lg leading-[0.95]">
-          Where are you working?
-        </h1>
-        <p className="text-muted text-sm mt-3">
-          You&apos;re booked as both an owner and door staff. Pick the surface
-          you want now — you can switch any time.
-        </p>
-      </header>
-
-      <div className="flex flex-col gap-3">
-        {isOwner && (
-          <Link
-            href="/owner"
-            className="card hover:border-coral/60 transition group"
+    <main
+      id="main-content"
+      className="w-app"
+      style={{
+        minHeight: "100vh",
+        background: "var(--w-bg)",
+        padding: "32px 24px 96px",
+      }}
+    >
+      <div style={{ maxWidth: 540, margin: "0 auto" }}>
+        <header style={{ paddingTop: 48, paddingBottom: 32 }}>
+          <div className="w-type-meta" style={{ marginBottom: 8 }}>
+            TONIGHT
+          </div>
+          <div className="w-type-display-md">Where are you working?</div>
+          <p
+            className="w-type-body-sm"
+            style={{
+              color: "var(--w-fg-muted)",
+              marginTop: 12,
+              lineHeight: 1.5,
+            }}
           >
-            <p className="label-mono mb-1 text-coral">Owner</p>
-            <p className="font-display text-2xl text-cream uppercase tracking-wide leading-tight">
-              Run the show
-            </p>
-            <p className="text-muted text-sm mt-2">
-              Approvals, allocations, capacity, analytics. Full access.
-            </p>
-          </Link>
-        )}
+            You&apos;re booked as both an owner and door staff. Pick the
+            surface you want now — you can switch any time.
+          </p>
+        </header>
 
-        {primaryShift && (
-          <Link
-            href={
-              primaryShift.role === "door_manager" ? "/manager" : "/door"
-            }
-            className="card hover:border-mint/60 transition"
-          >
-            <p className="label-mono mb-1 text-mint">
-              {primaryShift.role === "door_manager"
-                ? "Door manager"
-                : "Door staff"}
-            </p>
-            <p className="font-display text-2xl text-cream uppercase tracking-wide leading-tight">
-              Work the door
-            </p>
-            <p className="text-muted text-sm mt-2">
-              {primaryShift.event_name} · {fmtDate(primaryShift.night_date)} ·
-              doors {fmtTime(primaryShift.doors_at)}
-            </p>
-            {shifts.length > 1 && (
-              <p className="label-mono mt-2 text-mint">
-                + {shifts.length - 1} more shift{shifts.length === 2 ? "" : "s"} tonight
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {isOwner && (
+            <Link
+              href="/owner"
+              className="w-card"
+              style={{ ...cardLink, padding: 16 }}
+            >
+              <div
+                className="w-type-meta"
+                style={{ marginBottom: 4, color: "var(--w-acc)" }}
+              >
+                OWNER
+              </div>
+              <div
+                style={{
+                  fontFamily: "var(--w-display)",
+                  fontWeight: 700,
+                  fontSize: 22,
+                  color: "var(--w-fg)",
+                  letterSpacing: "0.02em",
+                  textTransform: "uppercase",
+                  lineHeight: 1.1,
+                }}
+              >
+                Run the show
+              </div>
+              <p
+                className="w-type-body-sm"
+                style={{ color: "var(--w-fg-muted)", marginTop: 8 }}
+              >
+                Approvals, allocations, capacity, analytics. Full access.
               </p>
-            )}
+            </Link>
+          )}
+
+          {primaryShift && (
+            <Link
+              href={
+                primaryShift.role === "door_manager" ? "/manager" : "/door"
+              }
+              className="w-card"
+              style={{ ...cardLink, padding: 16 }}
+            >
+              <div
+                className="w-type-meta"
+                style={{ marginBottom: 4, color: "var(--w-ok)" }}
+              >
+                {primaryShift.role === "door_manager"
+                  ? "DOOR MANAGER"
+                  : "DOOR STAFF"}
+              </div>
+              <div
+                style={{
+                  fontFamily: "var(--w-display)",
+                  fontWeight: 700,
+                  fontSize: 22,
+                  color: "var(--w-fg)",
+                  letterSpacing: "0.02em",
+                  textTransform: "uppercase",
+                  lineHeight: 1.1,
+                }}
+              >
+                Work the door
+              </div>
+              <p
+                className="w-type-body-sm"
+                style={{ color: "var(--w-fg-muted)", marginTop: 8 }}
+              >
+                {primaryShift.event_name} ·{" "}
+                {fmtDate(primaryShift.night_date)} · doors{" "}
+                {fmtTime(primaryShift.doors_at)}
+              </p>
+              {shifts.length > 1 && (
+                <div
+                  className="w-type-meta"
+                  style={{ marginTop: 8, color: "var(--w-ok)" }}
+                >
+                  + {shifts.length - 1} MORE SHIFT
+                  {shifts.length === 2 ? "" : "S"} TONIGHT
+                </div>
+              )}
+            </Link>
+          )}
+
+          <Link
+            href="/mytickets"
+            className="w-card"
+            style={{ ...cardLink, padding: 16 }}
+          >
+            <div
+              className="w-type-meta"
+              style={{ marginBottom: 4, color: "var(--w-fg-muted)" }}
+            >
+              GUEST
+            </div>
+            <div
+              style={{
+                fontFamily: "var(--w-display)",
+                fontWeight: 700,
+                fontSize: 22,
+                color: "var(--w-fg)",
+                letterSpacing: "0.02em",
+                textTransform: "uppercase",
+                lineHeight: 1.1,
+              }}
+            >
+              My tickets
+            </div>
+            <p
+              className="w-type-body-sm"
+              style={{ color: "var(--w-fg-muted)", marginTop: 8 }}
+            >
+              View your own RSVPs and QRs.
+            </p>
           </Link>
-        )}
+        </div>
 
-        <Link
-          href="/mytickets"
-          className="card hover:border-lav/60 transition"
+        <div
+          className="w-type-meta"
+          style={{ marginTop: 32, textAlign: "center" }}
         >
-          <p className="label-mono mb-1 text-lav">Guest</p>
-          <p className="font-display text-2xl text-cream uppercase tracking-wide leading-tight">
-            My tickets
-          </p>
-          <p className="text-muted text-sm mt-2">
-            View your own RSVPs and QRs.
-          </p>
-        </Link>
+          PICK ONCE · SWITCH VIA THE SIDEBAR LATER
+        </div>
       </div>
-
-      <p className="label-mono mt-8 text-center">
-        Pick once · switch via the sidebar later
-      </p>
     </main>
   );
 }

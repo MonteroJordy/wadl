@@ -1,7 +1,19 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import ConfirmDialog from "@/components/confirm-dialog";
 import { revokeInviteAction, removeStaffAction } from "./actions";
+
+const INLINE_BTN: React.CSSProperties = {
+  background: "transparent",
+  border: "none",
+  cursor: "pointer",
+  padding: 0,
+  fontFamily: "var(--w-mono)",
+  fontSize: 11,
+  letterSpacing: "0.08em",
+  textTransform: "uppercase",
+};
 
 export function RevokeInviteButton({
   eventId,
@@ -11,20 +23,37 @@ export function RevokeInviteButton({
   inviteId: string;
 }) {
   const [pending, startTransition] = useTransition();
+  const [open, setOpen] = useState(false);
   return (
-    <button
-      type="button"
-      disabled={pending}
-      onClick={() => {
-        if (!confirm("Revoke this invite?")) return;
-        startTransition(async () => {
-          await revokeInviteAction(eventId, inviteId);
-        });
-      }}
-      className="label-mono text-coral hover:brightness-125 disabled:opacity-40"
-    >
-      Revoke
-    </button>
+    <>
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() => setOpen(true)}
+        style={{
+          ...INLINE_BTN,
+          color: "var(--w-err)",
+          opacity: pending ? 0.4 : 1,
+        }}
+      >
+        Revoke
+      </button>
+      <ConfirmDialog
+        open={open}
+        title="Revoke this invite?"
+        body="The link they got will stop working. You can re-invite them later."
+        confirmLabel="Revoke"
+        danger
+        pending={pending}
+        onCancel={() => setOpen(false)}
+        onConfirm={() =>
+          startTransition(async () => {
+            await revokeInviteAction(eventId, inviteId);
+            setOpen(false);
+          })
+        }
+      />
+    </>
   );
 }
 
@@ -36,20 +65,37 @@ export function RemoveStaffButton({
   userId: string;
 }) {
   const [pending, startTransition] = useTransition();
+  const [open, setOpen] = useState(false);
   return (
-    <button
-      type="button"
-      disabled={pending}
-      onClick={() => {
-        if (!confirm("Remove this staff member from the event?")) return;
-        startTransition(async () => {
-          await removeStaffAction(eventId, userId);
-        });
-      }}
-      className="label-mono text-coral hover:brightness-125 disabled:opacity-40"
-    >
-      Remove
-    </button>
+    <>
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() => setOpen(true)}
+        style={{
+          ...INLINE_BTN,
+          color: "var(--w-err)",
+          opacity: pending ? 0.4 : 1,
+        }}
+      >
+        Remove
+      </button>
+      <ConfirmDialog
+        open={open}
+        title="Remove this staff member?"
+        body="They lose access to this event's door scanner and queue. Their scan history stays in the audit log."
+        confirmLabel="Remove"
+        danger
+        pending={pending}
+        onCancel={() => setOpen(false)}
+        onConfirm={() =>
+          startTransition(async () => {
+            await removeStaffAction(eventId, userId);
+            setOpen(false);
+          })
+        }
+      />
+    </>
   );
 }
 
@@ -63,7 +109,10 @@ export function CopyLinkButton({ url }: { url: string }) {
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
       }}
-      className="label-mono hover:text-cream transition"
+      style={{
+        ...INLINE_BTN,
+        color: copied ? "var(--w-ok)" : "var(--w-fg-muted)",
+      }}
     >
       {copied ? "Copied" : "Copy link"}
     </button>

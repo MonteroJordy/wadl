@@ -8,6 +8,16 @@ import {
   type SearchHit,
 } from "./actions";
 
+const INPUT_STYLE: React.CSSProperties = {
+  width: "100%",
+  background: "var(--w-surface-1)",
+  border: "1px solid var(--w-line)",
+  color: "var(--w-fg)",
+  padding: "10px 12px",
+  fontFamily: "var(--w-sans)",
+  fontSize: 14,
+};
+
 export default function SearchForm({
   eventId,
   eventName,
@@ -51,9 +61,8 @@ export default function SearchForm({
     const res = await manualCheckInAction(eventId, id);
     if (res.ok) {
       setMessage({ id, kind: "ok", text: "Checked in." });
-      // Optimistically update the row.
       setResults((rs) =>
-        rs.map((r) => (r.id === id ? { ...r, checked_in_at: res.scannedAt } : r))
+        rs.map((r) => (r.id === id ? { ...r, checked_in_at: res.scannedAt } : r)),
       );
     } else {
       setMessage({ id, kind: "err", text: res.error });
@@ -62,94 +71,205 @@ export default function SearchForm({
   }
 
   return (
-    <main id="main-content" className="mobile-frame">
-      <header className="flex items-center justify-between pt-6 pb-4">
-        <Link href={backHref} className="label-mono hover:text-cream">
-          ← Back
-        </Link>
-        <p className="label-mono text-mint">Search</p>
-      </header>
+    <main
+      id="main-content"
+      className="w-app"
+      style={{
+        minHeight: "100vh",
+        background: "var(--w-bg)",
+        padding: "32px 24px 96px",
+      }}
+    >
+      <div style={{ maxWidth: 540, margin: "0 auto" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 16,
+          }}
+        >
+          <Link
+            href={backHref}
+            className="w-type-meta"
+            style={{ color: "var(--w-fg-muted)", textDecoration: "none" }}
+          >
+            ← BACK
+          </Link>
+          <div className="w-type-meta" style={{ color: "var(--w-ok)" }}>
+            SEARCH
+          </div>
+        </div>
 
-      <h1 className="display-lg leading-[0.95] mb-4">{eventName}</h1>
+        <div className="w-type-display-md" style={{ marginBottom: 16 }}>
+          {eventName}
+        </div>
 
-      <input
-        type="text"
-        placeholder="Search by name"
-        autoFocus
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        className="input-dark mb-4"
-      />
+        <input
+          type="text"
+          placeholder="Search by name"
+          autoFocus
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          style={{ ...INPUT_STYLE, marginBottom: 16 }}
+        />
 
-      {pending && <p className="label-mono">Searching…</p>}
+        {pending && (
+          <div className="w-type-meta" style={{ marginBottom: 8 }}>
+            SEARCHING…
+          </div>
+        )}
 
-      {query && !pending && results.length === 0 && (
-        <p className="label-mono text-center text-mint mt-4">
-          No match — try a different spelling or scan the QR.
-        </p>
-      )}
+        {query && !pending && results.length === 0 && (
+          <div
+            className="w-type-meta"
+            style={{
+              textAlign: "center",
+              color: "var(--w-ok)",
+              marginTop: 16,
+            }}
+          >
+            NO MATCH — TRY A DIFFERENT SPELLING OR SCAN THE QR.
+          </div>
+        )}
 
-      <div className="flex flex-col gap-2">
-        {results.map((r) => {
-          const checkedIn = Boolean(r.checked_in_at);
-          const isSelected = selectedId === r.id;
-          const rowMsg = message?.id === r.id ? message : null;
-          return (
-            <div
-              key={r.id}
-              className={`card ${r.flag_dna ? "border-coral" : checkedIn ? "opacity-60" : ""}`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-sans text-cream font-semibold truncate">
-                    {r.full_name}
-                    {r.plus_ones > 0 && (
-                      <span className="text-muted font-normal"> +{r.plus_ones}</span>
-                    )}
-                    {r.flag_dna && (
-                      <span className="ml-2 label-mono text-coral">⚠ DNA</span>
-                    )}
-                  </p>
-                  <p className="label-mono mt-1 truncate">
-                    {r.tier.toUpperCase()}
-                    {r.allocation_name && <> · {r.allocation_name}</>}
-                    {checkedIn && (
-                      <>
-                        {" "}
-                        ·{" "}
-                        <span className="text-mint">
-                          IN{" "}
-                          {new Date(r.checked_in_at!).toLocaleTimeString()}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {results.map((r) => {
+            const checkedIn = Boolean(r.checked_in_at);
+            const isSelected = selectedId === r.id;
+            const rowMsg = message?.id === r.id ? message : null;
+            return (
+              <div
+                key={r.id}
+                className="w-card"
+                style={{
+                  padding: 14,
+                  borderColor: r.flag_dna ? "var(--w-err)" : undefined,
+                  opacity: checkedIn ? 0.6 : 1,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    justifyContent: "space-between",
+                    gap: 12,
+                  }}
+                >
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <p
+                      style={{
+                        color: "var(--w-fg)",
+                        fontWeight: 600,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {r.full_name}
+                      {r.plus_ones > 0 && (
+                        <span
+                          style={{
+                            color: "var(--w-fg-muted)",
+                            fontWeight: 400,
+                          }}
+                        >
+                          {" "}
+                          +{r.plus_ones}
                         </span>
-                      </>
-                    )}
-                  </p>
+                      )}
+                      {r.flag_dna && (
+                        <span
+                          className="w-type-meta"
+                          style={{
+                            marginLeft: 8,
+                            color: "var(--w-err)",
+                          }}
+                        >
+                          ⚠ DNA
+                        </span>
+                      )}
+                    </p>
+                    <div
+                      className="w-type-meta"
+                      style={{
+                        marginTop: 4,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {r.tier.toUpperCase()}
+                      {r.allocation_name && <> · {r.allocation_name}</>}
+                      {checkedIn && (
+                        <>
+                          {" · "}
+                          <span style={{ color: "var(--w-ok)" }}>
+                            IN{" "}
+                            {new Date(
+                              r.checked_in_at!,
+                            ).toLocaleTimeString()}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  {checkedIn ? (
+                    <div
+                      className="w-type-meta"
+                      style={{ color: "var(--w-ok)", flexShrink: 0 }}
+                    >
+                      IN
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => checkIn(r.id)}
+                      disabled={
+                        isSelected || r.flag_dna || r.status !== "approved"
+                      }
+                      style={{
+                        background: "var(--w-ok)",
+                        color: "var(--w-bg)",
+                        border: "1px solid var(--w-ok)",
+                        fontFamily: "var(--w-sans)",
+                        fontWeight: 600,
+                        fontSize: 12,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.14em",
+                        padding: "12px 16px",
+                        cursor: "pointer",
+                        flexShrink: 0,
+                        opacity:
+                          isSelected ||
+                          r.flag_dna ||
+                          r.status !== "approved"
+                            ? 0.4
+                            : 1,
+                      }}
+                    >
+                      {isSelected ? "…" : "Check in"}
+                    </button>
+                  )}
                 </div>
-                {checkedIn ? (
-                  <span className="label-mono text-mint shrink-0">In</span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => checkIn(r.id)}
-                    disabled={isSelected || r.flag_dna || r.status !== "approved"}
-                    className="bg-mint text-bg font-sans font-semibold text-xs uppercase tracking-[0.14em] px-4 py-3 rounded-md disabled:opacity-40 hover:brightness-110 transition shrink-0"
+                {rowMsg && (
+                  <div
+                    className="w-type-meta"
+                    style={{
+                      marginTop: 8,
+                      color:
+                        rowMsg.kind === "ok"
+                          ? "var(--w-ok)"
+                          : "var(--w-err)",
+                    }}
                   >
-                    {isSelected ? "…" : "Check in"}
-                  </button>
+                    {rowMsg.text}
+                  </div>
                 )}
               </div>
-              {rowMsg && (
-                <p
-                  className={`label-mono mt-2 ${
-                    rowMsg.kind === "ok" ? "text-mint" : "text-coral"
-                  }`}
-                >
-                  {rowMsg.text}
-                </p>
-              )}
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </main>
   );

@@ -2,17 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Chip } from "@/components/wadl";
 
 const TABS = [
-  { href: "/admin", label: "Stats", exact: true },
-  { href: "/admin/accounts", label: "Accounts" },
-  { href: "/admin/events", label: "Events" },
-  { href: "/admin/guests", label: "Guests" },
-  { href: "/admin/billing", label: "Billing" },
-  { href: "/admin/operations", label: "Operations" },
-  { href: "/admin/support", label: "Support" },
-  { href: "/admin/feature-flags", label: "Flags" },
-  { href: "/admin/activity", label: "Activity" },
+  { href: "/admin", label: "STATS", exact: true },
+  { href: "/admin/accounts", label: "ACCOUNTS" },
+  { href: "/admin/events", label: "EVENTS" },
+  { href: "/admin/guests", label: "GUESTS" },
+  { href: "/admin/billing", label: "BILLING" },
+  { href: "/admin/operations", label: "OPS" },
+  { href: "/admin/support", label: "SUPPORT" },
+  { href: "/admin/feature-flags", label: "FLAGS" },
+  { href: "/admin/activity", label: "ACTIVITY" },
 ];
 
 export default function AdminTabs() {
@@ -20,7 +21,12 @@ export default function AdminTabs() {
   return (
     <nav
       aria-label="Admin sections"
-      className="flex gap-1 overflow-x-auto px-4 md:px-8 pb-2"
+      style={{
+        display: "flex",
+        gap: 6,
+        overflowX: "auto",
+        padding: "0 24px 12px",
+      }}
     >
       {TABS.map((t) => {
         const active = t.exact ? path === t.href : path.startsWith(t.href);
@@ -28,13 +34,9 @@ export default function AdminTabs() {
           <Link
             key={t.href}
             href={t.href}
-            className={`shrink-0 px-3 py-1.5 rounded-full border text-[10px] font-mono uppercase tracking-wider ${
-              active
-                ? "border-coral bg-s2 text-cream"
-                : "border-line bg-s1 text-muted hover:text-cream"
-            }`}
+            style={{ textDecoration: "none", flexShrink: 0 }}
           >
-            {t.label}
+            <Chip tone={active ? "acc" : "ghost"}>{t.label}</Chip>
           </Link>
         );
       })}

@@ -1,7 +1,18 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Button } from "@/components/wadl";
 import { createInviteAction } from "./actions";
+
+const INPUT_STYLE: React.CSSProperties = {
+  width: "100%",
+  background: "var(--w-surface-1)",
+  border: "1px solid var(--w-line)",
+  color: "var(--w-fg)",
+  padding: "10px 12px",
+  fontFamily: "var(--w-sans)",
+  fontSize: 14,
+};
 
 export default function InviteForm({ eventId }: { eventId: string }) {
   const [phone, setPhone] = useState("");
@@ -52,12 +63,25 @@ export default function InviteForm({ eventId }: { eventId: string }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="card flex flex-col gap-4">
-      <p className="label-mono">Invite someone</p>
+    <form
+      onSubmit={onSubmit}
+      className="w-card"
+      style={{
+        padding: 18,
+        display: "flex",
+        flexDirection: "column",
+        gap: 16,
+      }}
+    >
+      <div className="w-type-meta">INVITE SOMEONE</div>
 
       <div>
-        <label htmlFor="staff-phone" className="label-mono block mb-2">
-          Phone
+        <label
+          htmlFor="staff-phone"
+          className="w-type-meta"
+          style={{ display: "block", marginBottom: 6 }}
+        >
+          PHONE
         </label>
         <input
           id="staff-phone"
@@ -65,15 +89,19 @@ export default function InviteForm({ eventId }: { eventId: string }) {
           inputMode="tel"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          className="input-dark"
+          style={INPUT_STYLE}
           placeholder="(305) 555 1234"
           required
         />
       </div>
 
       <div>
-        <label htmlFor="staff-email" className="label-mono block mb-2">
-          Email (optional)
+        <label
+          htmlFor="staff-email"
+          className="w-type-meta"
+          style={{ display: "block", marginBottom: 6 }}
+        >
+          EMAIL (OPTIONAL)
         </label>
         <input
           id="staff-email"
@@ -81,19 +109,39 @@ export default function InviteForm({ eventId }: { eventId: string }) {
           inputMode="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="input-dark"
+          style={INPUT_STYLE}
           placeholder="they@venue.com"
         />
       </div>
 
       <div>
-        <p className="label-mono mb-2">Role</p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <div className="w-type-meta" style={{ marginBottom: 8 }}>
+          ROLE
+        </div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+            gap: 8,
+          }}
+        >
           {(
             [
-              { id: "door_staff", label: "Door staff", blurb: "Scan + search" },
-              { id: "door_manager", label: "Door manager", blurb: "Full guest list" },
-              { id: "photographer", label: "Photographer", blurb: "Upload event photos" },
+              {
+                id: "door_staff",
+                label: "Door staff",
+                blurb: "Scan + search",
+              },
+              {
+                id: "door_manager",
+                label: "Door manager",
+                blurb: "Full guest list",
+              },
+              {
+                id: "photographer",
+                label: "Photographer",
+                blurb: "Upload event photos",
+              },
             ] as const
           ).map((r) => {
             const active = role === r.id;
@@ -102,54 +150,85 @@ export default function InviteForm({ eventId }: { eventId: string }) {
                 key={r.id}
                 type="button"
                 onClick={() => setRole(r.id)}
-                className={`border rounded-md px-3 py-3 text-left transition ${
-                  active
-                    ? "border-coral bg-s2 text-cream"
-                    : "border-line bg-s1 text-muted hover:text-cream"
-                }`}
+                style={{
+                  border: `1px solid ${active ? "var(--w-acc)" : "var(--w-line)"}`,
+                  background: active
+                    ? "var(--w-acc-soft)"
+                    : "var(--w-surface-1)",
+                  color: active ? "var(--w-acc-ink)" : "var(--w-fg-muted)",
+                  padding: "12px",
+                  textAlign: "left",
+                  cursor: "pointer",
+                }}
               >
-                <p className="font-sans text-sm font-semibold">{r.label}</p>
-                <p className="label-mono mt-1">{r.blurb}</p>
+                <p style={{ fontWeight: 600, fontSize: 14 }}>{r.label}</p>
+                <div className="w-type-meta" style={{ marginTop: 4 }}>
+                  {r.blurb.toUpperCase()}
+                </div>
               </button>
             );
           })}
         </div>
       </div>
 
-      {error && <p className="text-err text-sm">{error}</p>}
+      {error && (
+        <p
+          className="w-type-body-sm"
+          style={{ color: "var(--w-err)" }}
+        >
+          {error}
+        </p>
+      )}
 
       {result && (
-        <div className="bg-s3 border border-line rounded-md p-3">
-          <p className="label-mono mb-2">
-            Invite sent
+        <div
+          style={{
+            background: "var(--w-surface-2)",
+            border: "1px solid var(--w-line)",
+            padding: 12,
+          }}
+        >
+          <div className="w-type-meta" style={{ marginBottom: 8 }}>
+            INVITE SENT
             {result.smsProvider === "dev" && (
-              <span className="text-gold"> (SMS DEV — console log)</span>
+              <span style={{ color: "var(--w-warn)" }}>
+                {" "}
+                (SMS DEV — CONSOLE LOG)
+              </span>
             )}
             {result.emailSent && (
-              <span className="text-mint"> · email also sent</span>
+              <span style={{ color: "var(--w-ok)" }}>
+                {" "}
+                · EMAIL ALSO SENT
+              </span>
             )}
-          </p>
-          <div className="flex gap-2">
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
             <input
               value={result.url}
               readOnly
               onFocus={(e) => e.currentTarget.select()}
-              className="input-dark text-xs font-mono"
+              style={{
+                ...INPUT_STYLE,
+                fontSize: 12,
+                fontFamily: "var(--w-mono)",
+              }}
             />
-            <button
+            <Button
+              variant="ghost"
               type="button"
               onClick={copy}
-              className="btn-ghost w-auto px-4"
+              style={{ padding: "0 18px" }}
             >
               {copied ? "Copied" : "Copy"}
-            </button>
+            </Button>
           </div>
         </div>
       )}
 
-      <button type="submit" className="btn-primary" disabled={pending}>
+      <Button variant="primary" type="submit" disabled={pending}>
         {pending ? "Sending…" : "Send invite"}
-      </button>
+      </Button>
     </form>
   );
 }

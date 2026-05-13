@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { normalizePhone } from "@/lib/routing";
+import { Button } from "@/components/wadl";
 import { acceptInviteAction } from "./actions";
 
 interface Props {
@@ -14,6 +15,16 @@ interface Props {
   alreadyAuthedPhone: string | null;
 }
 
+const INPUT_STYLE: React.CSSProperties = {
+  width: "100%",
+  background: "var(--w-surface-1)",
+  border: "1px solid var(--w-line)",
+  color: "var(--w-fg)",
+  padding: "10px 12px",
+  fontFamily: "var(--w-sans)",
+  fontSize: 14,
+};
+
 export default function InviteAcceptForm({
   token,
   invitePhone,
@@ -23,7 +34,7 @@ export default function InviteAcceptForm({
 }: Props) {
   const router = useRouter();
   const [step, setStep] = useState<"start" | "otp" | "binding">(
-    alreadyAuthedPhone ? "binding" : "start"
+    alreadyAuthedPhone ? "binding" : "start",
   );
   const [phone, setPhone] = useState(invitePhone);
   const [code, setCode] = useState("");
@@ -32,12 +43,12 @@ export default function InviteAcceptForm({
       ? alreadyAuthedPhone.startsWith("+")
         ? alreadyAuthedPhone
         : `+${alreadyAuthedPhone}`
-      : null
+      : null,
   );
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  async function accept(phoneE164: string) {
+  async function accept(_phoneE164: string) {
     const res = await acceptInviteAction(token);
     if (!res.ok) {
       setError(res.error);
@@ -97,34 +108,51 @@ export default function InviteAcceptForm({
     role === "door_manager"
       ? "Door manager"
       : role === "photographer"
-      ? "Photographer"
-      : "Door staff";
+        ? "Photographer"
+        : "Door staff";
 
   if (step === "binding") {
     return (
-      <div className="flex flex-col gap-4">
-        <p className="text-muted text-sm">
-          You&apos;re already signed in as <span className="text-cream">{e164}</span>.
-          Bind this invite to your account.
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <p
+          className="w-type-body-sm"
+          style={{ color: "var(--w-fg-muted)" }}
+        >
+          You&apos;re already signed in as{" "}
+          <span style={{ color: "var(--w-fg)" }}>{e164}</span>. Bind this
+          invite to your account.
         </p>
-        {error && <p className="text-err text-sm">{error}</p>}
-        <button
+        {error && (
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-err)" }}
+          >
+            {error}
+          </p>
+        )}
+        <Button
+          variant="primary"
           type="button"
           onClick={onBindExisting}
-          className="btn-primary"
           disabled={pending}
         >
           {pending ? "Working…" : `Accept invite as ${roleLabel}`}
-        </button>
+        </Button>
       </div>
     );
   }
 
   if (step === "otp") {
     return (
-      <form onSubmit={onVerify} className="flex flex-col gap-4">
-        <p className="text-muted text-sm">
-          Sent to <span className="text-cream">{e164}</span>.
+      <form
+        onSubmit={onVerify}
+        style={{ display: "flex", flexDirection: "column", gap: 16 }}
+      >
+        <p
+          className="w-type-body-sm"
+          style={{ color: "var(--w-fg-muted)" }}
+        >
+          Sent to <span style={{ color: "var(--w-fg)" }}>{e164}</span>.
         </p>
         <input
           type="text"
@@ -134,36 +162,66 @@ export default function InviteAcceptForm({
           maxLength={6}
           value={code}
           onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-          className="input-dark tracking-[0.5em] text-center text-2xl"
+          style={{
+            ...INPUT_STYLE,
+            letterSpacing: "0.5em",
+            textAlign: "center",
+            fontSize: 24,
+          }}
           placeholder="••••••"
           required
         />
-        {error && <p className="text-err text-sm">{error}</p>}
-        <button type="submit" className="btn-primary" disabled={pending}>
+        {error && (
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-err)" }}
+          >
+            {error}
+          </p>
+        )}
+        <Button variant="primary" type="submit" disabled={pending}>
           {pending ? "Verifying…" : `Verify & join as ${roleLabel}`}
-        </button>
+        </Button>
         <button
           type="button"
           onClick={() => setStep("start")}
-          className="label-mono text-center hover:text-cream transition"
+          className="w-type-meta"
+          style={{
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            color: "var(--w-fg-muted)",
+            textAlign: "center",
+            padding: 0,
+          }}
         >
-          ← Wrong number
+          ← WRONG NUMBER
         </button>
       </form>
     );
   }
 
   return (
-    <form onSubmit={onSendCode} className="flex flex-col gap-4">
-      <p className="text-muted text-sm">
+    <form
+      onSubmit={onSendCode}
+      style={{ display: "flex", flexDirection: "column", gap: 16 }}
+    >
+      <p
+        className="w-type-body-sm"
+        style={{ color: "var(--w-fg-muted)", lineHeight: 1.5 }}
+      >
         You were invited to work the door at{" "}
-        <span className="text-cream">{eventName}</span> as{" "}
-        <span className="text-cream">{roleLabel.toLowerCase()}</span>. Verify
-        your phone to continue.
+        <span style={{ color: "var(--w-fg)" }}>{eventName}</span> as{" "}
+        <span style={{ color: "var(--w-fg)" }}>{roleLabel.toLowerCase()}</span>
+        . Verify your phone to continue.
       </p>
       <div>
-        <label htmlFor="invite-phone" className="label-mono block mb-2">
-          Phone
+        <label
+          htmlFor="invite-phone"
+          className="w-type-meta"
+          style={{ display: "block", marginBottom: 6 }}
+        >
+          PHONE
         </label>
         <input
           id="invite-phone"
@@ -171,14 +229,21 @@ export default function InviteAcceptForm({
           inputMode="tel"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          className="input-dark"
+          style={INPUT_STYLE}
           required
         />
       </div>
-      {error && <p className="text-err text-sm">{error}</p>}
-      <button type="submit" className="btn-primary" disabled={pending}>
+      {error && (
+        <p
+          className="w-type-body-sm"
+          style={{ color: "var(--w-err)" }}
+        >
+          {error}
+        </p>
+      )}
+      <Button variant="primary" type="submit" disabled={pending}>
         {pending ? "Sending…" : "Text me the code"}
-      </button>
+      </Button>
     </form>
   );
 }

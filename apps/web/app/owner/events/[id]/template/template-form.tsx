@@ -2,7 +2,18 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/wadl";
 import { saveTemplateAction } from "./actions";
+
+const INPUT_STYLE: React.CSSProperties = {
+  width: "100%",
+  background: "var(--w-surface-1)",
+  border: "1px solid var(--w-line)",
+  color: "var(--w-fg)",
+  padding: "10px 12px",
+  fontFamily: "var(--w-sans)",
+  fontSize: 14,
+};
 
 export default function TemplateForm({ eventId }: { eventId: string }) {
   const router = useRouter();
@@ -30,39 +41,58 @@ export default function TemplateForm({ eventId }: { eventId: string }) {
 
   if (done) {
     return (
-      <div className="card border-mint/40">
-        <p className="label-mono text-mint mb-1">Saved</p>
-        <p className="text-cream text-sm">Template added below.</p>
+      <div
+        className="w-card"
+        style={{ padding: 16, borderColor: "var(--w-ok)" }}
+      >
+        <div
+          className="w-type-meta"
+          style={{ color: "var(--w-ok)", marginBottom: 4 }}
+        >
+          SAVED
+        </div>
+        <p style={{ color: "var(--w-fg)", fontSize: 14 }}>
+          Template added below.
+        </p>
       </div>
     );
   }
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-4">
+    <form
+      onSubmit={submit}
+      style={{ display: "flex", flexDirection: "column", gap: 16 }}
+    >
       <div>
-        <label className="label-mono block mb-2">Template name</label>
+        <div className="w-type-meta" style={{ marginBottom: 6 }}>
+          TEMPLATE NAME
+        </div>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Friday at the Patio"
-          className="input-dark"
+          style={INPUT_STYLE}
         />
       </div>
       <div>
-        <label className="label-mono block mb-2">
-          Auto-create cadence (days; blank = manual only)
-        </label>
+        <div className="w-type-meta" style={{ marginBottom: 6 }}>
+          AUTO-CREATE CADENCE (DAYS; BLANK = MANUAL ONLY)
+        </div>
         <input
           value={cadence}
           onChange={(e) => setCadence(e.target.value.replace(/[^\d]/g, ""))}
           placeholder="7"
-          className="input-dark"
+          style={INPUT_STYLE}
         />
       </div>
-      {err && <p className="text-err text-sm">{err}</p>}
-      <button type="submit" className="btn-primary" disabled={pending}>
+      {err && (
+        <p className="w-type-body-sm" style={{ color: "var(--w-err)" }}>
+          {err}
+        </p>
+      )}
+      <Button variant="primary" type="submit" disabled={pending}>
         {pending ? "Saving…" : "Save template"}
-      </button>
+      </Button>
     </form>
   );
 }

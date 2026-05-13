@@ -1,18 +1,64 @@
 import * as React from "react";
 
 /**
- * Mobile frame for repainted screens. Drop-in replacement for `.mobile-frame`
- * on screens that have moved to the new design system. The body painter
- * (in globals.css) detects `.w-frame` and switches to the near-black canvas.
+ * Frame for repainted screens.
+ *
+ * - Default (no `wide`): phone-shaped 375/420px column. Use this for
+ *   guest-facing / auth-flow screens (signup, /h, /t, /discover, etc.)
+ *   that should feel like a phone app even on desktop.
+ *
+ * - `wide` mode: breaks out of the phone cap and behaves like a normal
+ *   responsive container (full-width with internal max-width). Use this
+ *   for owner/admin-facing screens that should feel like a desktop SaaS
+ *   on wide viewports — forms, dashboards, settings panels, etc.
+ *
+ * On mobile both modes look the same (full-width). On desktop the
+ *  `wide` mode lets the content expand instead of sitting in a narrow
+ *   centered column with empty space on either side.
  */
 interface WFrameProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
+  /** Use the responsive desktop container instead of the phone-shape. */
+  wide?: boolean;
+  /** When `wide`, the desktop max-width. Defaults to 960px. */
+  maxWidth?: number | string;
 }
 
-export function WFrame({ className = "", children, ...rest }: WFrameProps) {
+export function WFrame({
+  className = "",
+  children,
+  wide,
+  maxWidth = 960,
+  style,
+  ...rest
+}: WFrameProps) {
+  if (wide) {
+    return (
+      <div
+        className={["w-app w-frame-wide", className].filter(Boolean).join(" ")}
+        style={{
+          width: "100%",
+          maxWidth,
+          marginInline: "auto",
+          minHeight: "100vh",
+          background: "var(--w-bg)",
+          color: "var(--w-fg)",
+          fontFamily: "var(--w-sans)",
+          display: "flex",
+          flexDirection: "column",
+          position: "relative",
+          ...style,
+        }}
+        {...rest}
+      >
+        {children}
+      </div>
+    );
+  }
   return (
     <div
       className={["w-app w-frame", className].filter(Boolean).join(" ")}
+      style={style}
       {...rest}
     >
       {children}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Button } from "@/components/wadl";
 import { saveNotifPrefsAction, type NotifPrefs } from "./actions";
 import { useToast } from "@/components/toast";
 import { KIND_LABEL, type NotificationKind } from "@/lib/notification-kinds";
@@ -19,6 +20,16 @@ const KINDS: NotificationKind[] = [
   "broadcast_sent",
 ];
 
+const INPUT_STYLE: React.CSSProperties = {
+  width: "100%",
+  background: "var(--w-surface-1)",
+  border: "1px solid var(--w-line)",
+  color: "var(--w-fg)",
+  padding: "10px 12px",
+  fontFamily: "var(--w-sans)",
+  fontSize: 14,
+};
+
 interface ToggleProps {
   label: string;
   checked: boolean;
@@ -28,24 +39,53 @@ interface ToggleProps {
 
 function Toggle({ label, checked, onChange, hint }: ToggleProps) {
   return (
-    <label className="flex items-start justify-between gap-3 cursor-pointer py-2">
-      <div className="min-w-0 flex-1">
-        <p className="font-sans text-cream text-sm">{label}</p>
-        {hint && <p className="label-mono mt-0.5">{hint}</p>}
+    <label
+      style={{
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "space-between",
+        gap: 12,
+        cursor: "pointer",
+        padding: "8px 0",
+      }}
+    >
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <p style={{ color: "var(--w-fg)", fontSize: 14 }}>{label}</p>
+        {hint && (
+          <div className="w-type-meta" style={{ marginTop: 2 }}>
+            {hint.toUpperCase()}
+          </div>
+        )}
       </div>
       <button
         type="button"
         role="switch"
         aria-checked={checked}
         onClick={() => onChange(!checked)}
-        className={`shrink-0 relative w-11 h-6 rounded-full transition ${
-          checked ? "bg-coral" : "bg-s3"
-        }`}
+        style={{
+          flexShrink: 0,
+          position: "relative",
+          width: 44,
+          height: 24,
+          borderRadius: 999,
+          border: "none",
+          cursor: "pointer",
+          background: checked ? "var(--w-acc)" : "var(--w-surface-3)",
+          transition: "background 120ms",
+        }}
       >
         <span
-          className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-cream transition-transform ${
-            checked ? "translate-x-5" : ""
-          }`}
+          style={{
+            position: "absolute",
+            top: 2,
+            left: 2,
+            width: 20,
+            height: 20,
+            borderRadius: 999,
+            background: checked ? "var(--w-acc-ink)" : "var(--w-fg)",
+            transform: checked ? "translateX(20px)" : "translateX(0)",
+            transition: "transform 120ms",
+          }}
         />
       </button>
     </label>
@@ -72,9 +112,11 @@ export default function NotifPrefsForm({ initial }: { initial: NotifPrefs }) {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <section className="card">
-        <p className="label-mono mb-2">Channels</p>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <section className="w-card" style={{ padding: 16 }}>
+        <div className="w-type-meta" style={{ marginBottom: 8 }}>
+          CHANNELS
+        </div>
         <Toggle
           label="Push notifications"
           hint="Browser + iOS app, when enabled per-device."
@@ -95,8 +137,10 @@ export default function NotifPrefsForm({ initial }: { initial: NotifPrefs }) {
         />
       </section>
 
-      <section className="card">
-        <p className="label-mono mb-2">Which events</p>
+      <section className="w-card" style={{ padding: 16 }}>
+        <div className="w-type-meta" style={{ marginBottom: 8 }}>
+          WHICH EVENTS
+        </div>
         {KINDS.map((k) => (
           <Toggle
             key={k}
@@ -107,8 +151,10 @@ export default function NotifPrefsForm({ initial }: { initial: NotifPrefs }) {
         ))}
       </section>
 
-      <section className="card">
-        <p className="label-mono mb-2">Quiet hours</p>
+      <section className="w-card" style={{ padding: 16 }}>
+        <div className="w-type-meta" style={{ marginBottom: 8 }}>
+          QUIET HOURS
+        </div>
         <Toggle
           label="Mute notifications during set hours"
           hint="Inbox still updates; push + SMS pause."
@@ -121,10 +167,21 @@ export default function NotifPrefsForm({ initial }: { initial: NotifPrefs }) {
           }
         />
         {prefs.quiet_hours.enabled && (
-          <div className="grid grid-cols-2 gap-2 mt-3">
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 8,
+              marginTop: 12,
+            }}
+          >
             <div>
-              <label className="label-mono block mb-1" htmlFor="qh-start">
-                From
+              <label
+                htmlFor="qh-start"
+                className="w-type-meta"
+                style={{ display: "block", marginBottom: 4 }}
+              >
+                FROM
               </label>
               <input
                 id="qh-start"
@@ -136,12 +193,16 @@ export default function NotifPrefsForm({ initial }: { initial: NotifPrefs }) {
                     quiet_hours: { ...p.quiet_hours, start: e.target.value },
                   }))
                 }
-                className="input-dark"
+                style={INPUT_STYLE}
               />
             </div>
             <div>
-              <label className="label-mono block mb-1" htmlFor="qh-end">
-                To
+              <label
+                htmlFor="qh-end"
+                className="w-type-meta"
+                style={{ display: "block", marginBottom: 4 }}
+              >
+                TO
               </label>
               <input
                 id="qh-end"
@@ -153,21 +214,16 @@ export default function NotifPrefsForm({ initial }: { initial: NotifPrefs }) {
                     quiet_hours: { ...p.quiet_hours, end: e.target.value },
                   }))
                 }
-                className="input-dark"
+                style={INPUT_STYLE}
               />
             </div>
           </div>
         )}
       </section>
 
-      <button
-        type="button"
-        onClick={save}
-        disabled={pending}
-        className="btn-primary"
-      >
+      <Button variant="primary" type="button" onClick={save} disabled={pending}>
         {pending ? "Saving…" : "Save preferences"}
-      </button>
+      </Button>
     </div>
   );
 }

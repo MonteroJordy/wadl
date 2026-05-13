@@ -1,7 +1,6 @@
 import { requireOwnerContext } from "@/lib/owner";
 import { computeAccountAnalytics } from "@/lib/analytics";
 import { computeExtraAnalytics } from "@/lib/analytics-extra";
-import EmptyState from "@/components/empty-state";
 
 export const dynamic = "force-dynamic";
 
@@ -14,113 +13,251 @@ export default async function AnalyticsOverviewPage() {
 
   if (a.trend.length === 0) {
     return (
-      <EmptyState
-        title="Nothing to chart"
-        body="Run a night. The next morning, every chart on this page tells you who came, who didn't, and who's worth booking again."
-      />
+      <div
+        className="w-card"
+        style={{
+          padding: "64px 32px",
+          textAlign: "center",
+        }}
+      >
+        <div className="w-type-h1">Nothing to chart</div>
+        <p
+          className="w-type-body-sm"
+          style={{
+            color: "var(--w-fg-muted)",
+            marginTop: 12,
+            maxWidth: 480,
+            marginInline: "auto",
+            lineHeight: 1.5,
+          }}
+        >
+          Run a night. The next morning, every chart on this page tells you
+          who came, who didn&apos;t, and who&apos;s worth booking again.
+        </p>
+      </div>
     );
   }
 
   function fmtHourLabel(h: number): string {
     const d = new Date();
     d.setHours(h, 0, 0, 0);
-    return d.toLocaleTimeString("en-US", { hour: "numeric" }).toLowerCase();
+    return d
+      .toLocaleTimeString("en-US", { hour: "numeric" })
+      .toLowerCase();
   }
 
   const dwellH = Math.floor(x.avgDwellMin / 60);
   const dwellM = x.avgDwellMin % 60;
+  const showRatePct = Math.round(a.showRate * 100);
+  const noShowPct = Math.round((1 - a.showRate) * 100);
+  const peakNight = Math.max(1, ...a.trend.map((p) => p.scanned));
 
   return (
-    <div className="flex flex-col gap-3">
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="card">
-          <p className="label-mono">Total events</p>
-          <p className="font-display text-3xl text-cream leading-none mt-1">
-            {a.byVenue.reduce((s, v) => s + v.events, 0)}
-          </p>
-        </div>
-        <div className="card">
-          <p className="label-mono">Total guests</p>
-          <p className="font-display text-3xl text-mint leading-none mt-1">
-            {a.totalScanned}
-          </p>
-        </div>
-        <div className="card">
-          <p className="label-mono">Show rate</p>
-          <p className="font-display text-3xl text-cream leading-none mt-1">
-            {Math.round(a.showRate * 100)}%
-          </p>
-        </div>
-        <div className="card">
-          <p className="label-mono">No-show rate</p>
-          <p className="font-display text-3xl text-coral leading-none mt-1">
-            {Math.round((1 - a.showRate) * 100)}%
-          </p>
-        </div>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 12,
+      }}
+    >
+      {/* Top KPI strip */}
+      <section
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+          gap: 12,
+        }}
+      >
+        <KPI
+          label="TOTAL EVENTS"
+          value={a.byVenue.reduce((s, v) => s + v.events, 0)}
+        />
+        <KPI label="TOTAL GUESTS" value={a.totalScanned} tone="ok" />
+        <KPI label="SHOW RATE" value={`${showRatePct}%`} accent />
+        <KPI label="NO-SHOW RATE" value={`${noShowPct}%`} tone="err" />
       </section>
 
-      <section className="grid md:grid-cols-3 gap-3">
+      {/* Best/peak strip */}
+      <section
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gap: 12,
+        }}
+      >
         {x.bestNight && (
-          <div className="card">
-            <p className="label-mono">Best night</p>
-            <p className="font-display text-2xl text-cream leading-none mt-1">
+          <div className="w-card" style={{ padding: 18 }}>
+            <div className="w-type-meta">BEST NIGHT</div>
+            <div
+              style={{
+                fontFamily: "var(--w-display)",
+                fontWeight: 700,
+                fontSize: 24,
+                letterSpacing: "-0.025em",
+                lineHeight: 1,
+                marginTop: 8,
+              }}
+            >
               {x.bestNight.label}
-            </p>
-            <p className="label-mono mt-1">avg {x.bestNight.avg} checked in</p>
+            </div>
+            <div className="w-type-meta" style={{ marginTop: 6 }}>
+              AVG {x.bestNight.avg} CHECKED IN
+            </div>
           </div>
         )}
         {x.bestEvent && (
-          <div className="card">
-            <p className="label-mono">Best event</p>
-            <p className="font-sans text-cream font-semibold truncate mt-1">
+          <div className="w-card" style={{ padding: 18 }}>
+            <div className="w-type-meta">BEST EVENT</div>
+            <div
+              style={{
+                fontWeight: 600,
+                fontSize: 16,
+                marginTop: 8,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
               {x.bestEvent.name}
-            </p>
-            <p className="label-mono mt-1">{x.bestEvent.count} check-ins</p>
+            </div>
+            <div className="w-type-meta" style={{ marginTop: 6 }}>
+              {x.bestEvent.count} CHECK-INS
+            </div>
           </div>
         )}
         {x.peakHour && (
-          <div className="card">
-            <p className="label-mono">Peak hour</p>
-            <p className="font-display text-2xl text-cream leading-none mt-1">
+          <div className="w-card" style={{ padding: 18 }}>
+            <div className="w-type-meta">PEAK HOUR</div>
+            <div
+              style={{
+                fontFamily: "var(--w-display)",
+                fontWeight: 700,
+                fontSize: 24,
+                letterSpacing: "-0.025em",
+                lineHeight: 1,
+                marginTop: 8,
+              }}
+            >
               {fmtHourLabel(x.peakHour.hour)}
-            </p>
-            <p className="label-mono mt-1">
-              {Math.round(x.peakHour.pct * 100)}% of all check-ins
-            </p>
+            </div>
+            <div className="w-type-meta" style={{ marginTop: 6 }}>
+              {Math.round(x.peakHour.pct * 100)}% OF ALL CHECK-INS
+            </div>
           </div>
         )}
-        <div className="card md:col-span-3">
-          <p className="label-mono">Avg dwell time</p>
-          <p className="font-display text-2xl text-cream leading-none mt-1">
+        <div className="w-card" style={{ padding: 18 }}>
+          <div className="w-type-meta">AVG DWELL TIME</div>
+          <div
+            style={{
+              fontFamily: "var(--w-display)",
+              fontWeight: 700,
+              fontSize: 24,
+              letterSpacing: "-0.025em",
+              lineHeight: 1,
+              marginTop: 8,
+            }}
+          >
             {x.avgDwellMin > 0 ? `${dwellH}h ${dwellM}m` : "—"}
-          </p>
-          <p className="label-mono mt-1">first scan → last scan, averaged</p>
+          </div>
+          <div className="w-type-meta" style={{ marginTop: 6 }}>
+            FIRST SCAN → LAST SCAN, AVERAGED
+          </div>
         </div>
       </section>
 
-      <section className="card">
-        <p className="label-mono mb-3">Attendance trend (90d)</p>
-        <div className="flex items-end gap-1 h-28">
-          {a.trend.map((t) => {
-            const peakNight = Math.max(1, ...a.trend.map((p) => p.scanned));
-            return (
+      {/* Attendance trend */}
+      <section className="w-card" style={{ padding: 20 }}>
+        <div className="w-type-meta">ATTENDANCE TREND · 90 DAYS</div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-end",
+            gap: 2,
+            height: 128,
+            marginTop: 14,
+          }}
+        >
+          {a.trend.map((t) => (
+            <div
+              key={t.date}
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                minWidth: 4,
+              }}
+              title={`${t.date}: ${t.scanned} scanned`}
+            >
               <div
-                key={t.date}
-                className="flex-1 flex flex-col items-center gap-1 min-w-[6px]"
-                title={`${t.date}: ${t.scanned} scanned`}
-              >
-                <div
-                  className="w-full rounded-t bg-mint/60"
-                  style={{ height: `${(t.scanned / peakNight) * 100}%` }}
-                />
-              </div>
-            );
-          })}
+                style={{
+                  width: "100%",
+                  height: `${(t.scanned / peakNight) * 100}%`,
+                  background:
+                    t.scanned === peakNight
+                      ? "var(--w-acc)"
+                      : "oklch(0.86 0.18 145 / 0.6)",
+                }}
+              />
+            </div>
+          ))}
         </div>
-        <p className="label-mono mt-2">
-          {a.trend[0]?.date} → {a.trend[a.trend.length - 1]?.date}
-        </p>
+        <div
+          className="w-type-meta"
+          style={{
+            marginTop: 10,
+            display: "flex",
+            justifyContent: "space-between",
+          }}
+        >
+          <span>{a.trend[0]?.date}</span>
+          <span>{a.trend[a.trend.length - 1]?.date}</span>
+        </div>
       </section>
+    </div>
+  );
+}
+
+function KPI({
+  label,
+  value,
+  tone,
+  accent,
+}: {
+  label: string;
+  value: number | string;
+  tone?: "ok" | "err";
+  accent?: boolean;
+}) {
+  const valueColor =
+    tone === "ok"
+      ? "var(--w-ok)"
+      : tone === "err"
+        ? "var(--w-err)"
+        : "var(--w-fg)";
+  return (
+    <div
+      className="w-card"
+      style={{
+        padding: 18,
+        borderColor: accent ? "var(--w-acc)" : "var(--w-line)",
+        background: accent ? "var(--w-acc-soft)" : "var(--w-surface-2)",
+      }}
+    >
+      <div className="w-type-meta">{label}</div>
+      <div
+        style={{
+          fontFamily: "var(--w-display)",
+          fontWeight: 700,
+          fontSize: 32,
+          letterSpacing: "-0.025em",
+          lineHeight: 1,
+          marginTop: 8,
+          color: valueColor,
+        }}
+      >
+        {value}
+      </div>
     </div>
   );
 }

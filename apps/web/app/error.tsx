@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { Button } from "@/components/wadl";
 
 export default function GlobalError({
   error,
@@ -10,7 +11,6 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Best-effort log to our error sink. Falls back silently in dev.
     fetch("/api/log/client-error", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -25,25 +25,63 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <main id="main-content" className="mobile-frame">
-      <div className="pt-12 text-center">
-        <p className="label-mono mb-3 text-coral">⚠ Something broke</p>
-        <h1 className="display-lg mb-3">We hit a snag.</h1>
-        <p className="text-muted text-sm leading-relaxed mb-6">
+    <main
+      id="main-content"
+      className="w-app"
+      style={{
+        minHeight: "100vh",
+        background: "var(--w-bg)",
+        padding: "32px 24px 96px",
+      }}
+    >
+      <div
+        style={{
+          maxWidth: 540,
+          margin: "0 auto",
+          textAlign: "center",
+          paddingTop: 48,
+        }}
+      >
+        <div
+          className="w-type-meta"
+          style={{ color: "var(--w-err)", marginBottom: 12 }}
+        >
+          ⚠ SOMETHING BROKE
+        </div>
+        <div className="w-type-display-md" style={{ marginBottom: 12 }}>
+          We hit a snag.
+        </div>
+        <p
+          className="w-type-body-sm"
+          style={{
+            color: "var(--w-fg-muted)",
+            marginBottom: 24,
+            lineHeight: 1.5,
+          }}
+        >
           Try again, or reach support if it keeps happening.
         </p>
         {error.digest && (
-          <p className="label-mono text-muted mb-4">ref: {error.digest}</p>
+          <p
+            className="w-type-meta"
+            style={{ color: "var(--w-fg-muted)", marginBottom: 16 }}
+          >
+            REF: {error.digest}
+          </p>
         )}
-        <div className="flex flex-col gap-2">
-          <button type="button" onClick={() => reset()} className="btn-primary">
+        <div
+          style={{ display: "flex", flexDirection: "column", gap: 8 }}
+        >
+          <Button variant="primary" type="button" onClick={() => reset()}>
             Try again
-          </button>
+          </Button>
           <a
             href="mailto:support@wadlwadl.com"
-            className="btn-ghost text-center"
+            style={{ textDecoration: "none" }}
           >
-            Email support
+            <Button variant="ghost" style={{ width: "100%" }}>
+              Email support
+            </Button>
           </a>
         </div>
       </div>

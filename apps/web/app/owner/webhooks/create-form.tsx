@@ -2,7 +2,26 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/wadl";
 import { createWebhookAction } from "./actions";
+
+const INPUT_STYLE: React.CSSProperties = {
+  width: "100%",
+  background: "var(--w-surface-1)",
+  border: "1px solid var(--w-line)",
+  color: "var(--w-fg)",
+  padding: "10px 12px",
+  fontFamily: "var(--w-sans)",
+  fontSize: 14,
+};
+
+const CODE: React.CSSProperties = {
+  fontFamily: "var(--w-mono)",
+  background: "var(--w-surface-2)",
+  border: "1px solid var(--w-line)",
+  padding: "1px 6px",
+  fontSize: 11,
+};
 
 export default function CreateWebhookForm() {
   const router = useRouter();
@@ -26,45 +45,70 @@ export default function CreateWebhookForm() {
   }
 
   return (
-    <form onSubmit={submit} className="card flex flex-col gap-3">
+    <form
+      onSubmit={submit}
+      className="w-card"
+      style={{
+        padding: 18,
+        display: "flex",
+        flexDirection: "column",
+        gap: 12,
+      }}
+    >
       <div>
-        <label className="label-mono block mb-2">Endpoint URL</label>
+        <div className="w-type-meta" style={{ marginBottom: 6 }}>
+          ENDPOINT URL
+        </div>
         <input
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://api.yourdomain.com/wadl"
-          className="input-dark"
+          style={INPUT_STYLE}
           required
         />
       </div>
       <div>
-        <label className="label-mono block mb-2">
-          Events (comma-separated; * for all)
-        </label>
+        <div className="w-type-meta" style={{ marginBottom: 6 }}>
+          EVENTS (COMMA-SEPARATED; * FOR ALL)
+        </div>
         <input
           value={events}
           onChange={(e) => setEvents(e.target.value)}
           placeholder="rsvp.created,guest.checked_in"
-          className="input-dark"
+          style={INPUT_STYLE}
         />
-        <p className="label-mono mt-2">
-          Available: <code>rsvp.created</code>, <code>guest.checked_in</code>,{" "}
-          <code>allocation.full</code>, <code>guest.flagged</code>,{" "}
-          <code>broadcast.sent</code>, <code>event.created</code>
-        </p>
+        <div className="w-type-meta" style={{ marginTop: 8 }}>
+          AVAILABLE: <code style={CODE}>rsvp.created</code>,{" "}
+          <code style={CODE}>guest.checked_in</code>,{" "}
+          <code style={CODE}>allocation.full</code>,{" "}
+          <code style={CODE}>guest.flagged</code>,{" "}
+          <code style={CODE}>broadcast.sent</code>,{" "}
+          <code style={CODE}>event.created</code>
+        </div>
       </div>
-      {err && <p className="text-err text-sm">{err}</p>}
-      {secret && (
-        <p className="text-mint text-sm">
-          Created. Signing secret:{" "}
-          <code className="text-cream break-all">{secret}</code>
-          <br />
-          Save this — every payload includes <code>x-wadl-signature: sha256=&lt;hmac&gt;</code>.
+      {err && (
+        <p
+          className="w-type-body-sm"
+          style={{ color: "var(--w-err)" }}
+        >
+          {err}
         </p>
       )}
-      <button type="submit" className="btn-primary" disabled={pending}>
+      {secret && (
+        <p
+          className="w-type-body-sm"
+          style={{ color: "var(--w-ok)" }}
+        >
+          Created. Signing secret:{" "}
+          <code style={{ ...CODE, wordBreak: "break-all" }}>{secret}</code>
+          <br />
+          Save this — every payload includes{" "}
+          <code style={CODE}>x-wadl-signature: sha256=&lt;hmac&gt;</code>.
+        </p>
+      )}
+      <Button variant="primary" type="submit" disabled={pending}>
         {pending ? "Creating…" : "Add endpoint"}
-      </button>
+      </Button>
     </form>
   );
 }

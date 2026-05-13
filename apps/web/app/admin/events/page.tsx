@@ -17,47 +17,100 @@ export default async function AdminEventsPage() {
   const { data } = await admin
     .from("events")
     .select(
-      "id, name, created_at, account:accounts(display_name), venue:venues(name), event_nights(id)"
+      "id, name, created_at, account:accounts(display_name), venue:venues(name), event_nights(id)",
     )
     .order("created_at", { ascending: false })
     .limit(200);
   const rows = (data ?? []) as unknown as Row[];
 
   return (
-    <main id="main-content" className="mx-auto max-w-5xl px-6 pt-8 pb-12">
-      <h1 className="display-lg mb-2">Events</h1>
-      <p className="label-mono mb-6">Most recent 200</p>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="label-mono text-left">
-            <tr>
-              <th className="pb-2">Name</th>
-              <th>Account</th>
-              <th>Venue</th>
-              <th>Nights</th>
-              <th>Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id} className="border-t border-line">
-                <td className="py-2 text-cream">{r.name}</td>
-                <td className="py-2">{r.account?.display_name}</td>
-                <td className="py-2 label-mono">{r.venue?.name ?? "—"}</td>
-                <td className="py-2">{r.event_nights.length}</td>
-                <td className="py-2 label-mono">
-                  {new Date(r.created_at).toLocaleDateString()}
-                </td>
+    <main id="main-content" style={{ padding: "32px 24px 96px" }}>
+      <div style={{ maxWidth: 1080, margin: "0 auto" }}>
+        <div
+          style={{
+            borderBottom: "1px solid var(--w-line)",
+            paddingBottom: 24,
+            marginBottom: 24,
+          }}
+        >
+          <div className="w-type-meta">PLATFORM</div>
+          <div className="w-type-display-md" style={{ marginTop: 8 }}>
+            Events
+          </div>
+          <p
+            className="w-type-meta"
+            style={{ marginTop: 8, color: "var(--w-fg-muted)" }}
+          >
+            MOST RECENT 200
+          </p>
+        </div>
+        <section
+          className="w-card"
+          style={{ padding: 20, overflowX: "auto" }}
+        >
+          <table
+            style={{
+              width: "100%",
+              fontSize: 14,
+              borderCollapse: "collapse",
+            }}
+          >
+            <thead>
+              <tr>
+                {["NAME", "ACCOUNT", "VENUE", "NIGHTS", "CREATED"].map((h) => (
+                  <th
+                    key={h}
+                    className="w-type-meta"
+                    style={{ textAlign: "left", paddingBottom: 8 }}
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr
+                  key={r.id}
+                  style={{ borderTop: "1px solid var(--w-line)" }}
+                >
+                  <td style={{ padding: "10px 0", color: "var(--w-fg)" }}>
+                    {r.name}
+                  </td>
+                  <td style={{ padding: "10px 0" }}>
+                    {r.account?.display_name}
+                  </td>
+                  <td
+                    className="w-type-meta"
+                    style={{ padding: "10px 0" }}
+                  >
+                    {(r.venue?.name ?? "—").toUpperCase()}
+                  </td>
+                  <td style={{ padding: "10px 0" }}>
+                    {r.event_nights.length}
+                  </td>
+                  <td
+                    className="w-type-meta"
+                    style={{ padding: "10px 0" }}
+                  >
+                    {new Date(r.created_at)
+                      .toLocaleDateString()
+                      .toUpperCase()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+        <p className="w-type-meta" style={{ marginTop: 24 }}>
+          <Link
+            href="/admin"
+            style={{ color: "var(--w-acc)", textDecoration: "none" }}
+          >
+            ← BACK
+          </Link>
+        </p>
       </div>
-      <p className="label-mono mt-8">
-        <Link href="/admin" className="hover:text-cream">
-          ← Back
-        </Link>
-      </p>
     </main>
   );
 }

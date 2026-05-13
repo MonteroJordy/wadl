@@ -29,17 +29,49 @@ export default async function AdminLayout({
   }
 
   return (
-    <div>
-      <header className="border-b border-coral/30 bg-s1 sticky top-0 z-30">
-        <div className="px-4 md:px-8 py-3 flex items-center gap-4">
-          <p className="font-display text-xl text-coral tracking-wide">
+    <div
+      className="w-app"
+      style={{ minHeight: "100vh", background: "var(--w-bg)" }}
+    >
+      <header
+        style={{
+          borderBottom: "1px solid var(--w-line)",
+          background: "var(--w-surface-1)",
+          position: "sticky",
+          top: 0,
+          zIndex: 30,
+        }}
+      >
+        <div
+          style={{
+            padding: "12px 24px",
+            display: "flex",
+            alignItems: "center",
+            gap: 16,
+          }}
+        >
+          <p
+            style={{
+              fontFamily: "var(--w-display)",
+              fontSize: 18,
+              fontWeight: 700,
+              letterSpacing: "0.02em",
+              color: "var(--w-acc)",
+              margin: 0,
+            }}
+          >
             WADL · ADMIN
           </p>
           <Link
             href="/owner"
-            className="ml-auto label-mono hover:text-cream"
+            className="w-type-meta"
+            style={{
+              marginLeft: "auto",
+              color: "var(--w-fg-muted)",
+              textDecoration: "none",
+            }}
           >
-            ← My owner view
+            ← MY OWNER VIEW
           </Link>
         </div>
         <AdminTabs />

@@ -41,7 +41,26 @@ function Shell({
           >
             {body}
           </p>
-          {cta}
+          {cta ?? (
+            <p
+              className="w-type-meta"
+              style={{
+                marginTop: 28,
+                color: "var(--w-fg-dim)",
+              }}
+            >
+              NEED HELP?{" "}
+              <a
+                href="mailto:support@wadlwadl.com"
+                style={{
+                  color: "var(--w-acc)",
+                  textDecoration: "none",
+                }}
+              >
+                EMAIL SUPPORT
+              </a>
+            </p>
+          )}
         </div>
       </WFrame>
     </main>
