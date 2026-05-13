@@ -43,18 +43,48 @@ function OtpInner() {
     setLoading(true);
     setError(null);
     const supabase = createClient();
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      phone,
-      token,
-      type: "sms",
-    });
-    setLoading(false);
+    const { data: verifyData, error: verifyError } =
+      await supabase.auth.verifyOtp({
+        phone,
+        token,
+        type: "sms",
+      });
     if (verifyError) {
+      setLoading(false);
       submittedRef.current = false;
       setError(verifyError.message);
       return;
     }
-    router.replace("/");
+
+    // Honor an explicit ?next= on the OTP URL (e.g. user hit a paywalled
+    // route, got bounced to /login → /otp, then expects to return).
+    const next = params.get("next");
+    if (next && next.startsWith("/") && !next.startsWith("//")) {
+      router.replace(next);
+      return;
+    }
+
+    // Otherwise route based on where the user is in onboarding so they
+    // never land back on the marketing homepage after authenticating.
+    const userId = verifyData.user?.id;
+    let dest = "/owner";
+    if (userId) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role, account_id")
+        .eq("id", userId)
+        .maybeSingle<{ role: string | null; account_id: string | null }>();
+      if (profile?.role === "guest") {
+        dest = "/mytickets";
+      } else if (!profile?.account_id) {
+        // Incomplete signup — bounce back into the wizard.
+        dest = "/signup";
+      } else {
+        dest = "/owner";
+      }
+    }
+    setLoading(false);
+    router.replace(dest);
   }
 
   async function onSubmit(e: React.FormEvent) {
