@@ -11,6 +11,7 @@ import {
   WFrame,
   Wordmark,
 } from "@/components/wadl";
+import { useFormSaveShortcut } from "@/components/use-form-save-shortcut";
 
 interface NightOption {
   id: string;
@@ -39,6 +40,7 @@ export default function NewAllocationForm({
   const [plusOnes, setPlusOnes] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const formRef = useFormSaveShortcut();
 
   const ga = parseInt(gaCap, 10) || 0;
   const vip = parseInt(vipCap, 10) || 0;
@@ -105,6 +107,7 @@ export default function NewAllocationForm({
         </div>
 
         <form
+          ref={formRef}
           onSubmit={onSubmit}
           style={{
             padding: "32px 24px 0",

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireDoorContext, resolveActiveNight } from "@/lib/door";
 import { fmtDate, fmtTime } from "@/lib/format";
 import EscalateButton from "@/components/escalate-button";
+import StatusLegend from "@/components/status-legend";
 import {
   CapacityMeter,
   Chip,
@@ -125,6 +126,12 @@ export default async function DoorEventHome({
               {active.is_frozen ? " · FROZEN" : ""}
             </div>
           ) : null}
+        </div>
+
+        {/* Status key — always visible so staff can decode tones at a
+            glance during a busy door. Collapsed by default to save room. */}
+        <div style={{ padding: "12px 20px 0" }}>
+          <StatusLegend kind="scan" variant="collapsible" />
         </div>
 
         {/* Multi-night picker */}

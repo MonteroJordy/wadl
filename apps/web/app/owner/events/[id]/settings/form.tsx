@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Button } from "@/components/wadl";
+import { useFormSaveShortcut } from "@/components/use-form-save-shortcut";
 import { updateEventAction, updateNightsAction } from "./actions";
 import { fmtDate } from "@/lib/format";
 
@@ -51,6 +52,8 @@ export default function SettingsForm({
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const eventFormRef = useFormSaveShortcut();
+  const nightsFormRef = useFormSaveShortcut();
 
   function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0] ?? null;
@@ -118,6 +121,7 @@ export default function SettingsForm({
   return (
     <>
       <form
+        ref={eventFormRef}
         onSubmit={onSaveEvent}
         style={{ display: "flex", flexDirection: "column", gap: 20 }}
       >
@@ -215,6 +219,7 @@ export default function SettingsForm({
       />
 
       <form
+        ref={nightsFormRef}
         onSubmit={onSaveNights}
         style={{ display: "flex", flexDirection: "column", gap: 16 }}
       >
