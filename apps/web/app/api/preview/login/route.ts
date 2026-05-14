@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getAppUrl } from "@/lib/app-url";
 
 export const dynamic = "force-dynamic";
 
@@ -88,7 +87,13 @@ async function handle(req: NextRequest) {
 
   // Generate a one-shot magic link for the demo user. Supabase handles
   // session cookie setup on the redirect.
-  const redirectTo = `${getAppUrl()}${redirect}`;
+  //
+  // Derive the base URL from the *request* — NEXT_PUBLIC_APP_URL is
+  // unreliable across Vercel preview deployments (each gets its own
+  // hostname, and it's currently misconfigured to localhost). The
+  // request's own origin is always correct.
+  const origin = req.nextUrl.origin;
+  const redirectTo = `${origin}${redirect}`;
   const { data, error } = await admin.auth.admin.generateLink({
     type: "magiclink",
     email,

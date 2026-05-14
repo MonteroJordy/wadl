@@ -26,11 +26,38 @@
 -- We bypass the normal signup flow by writing directly to auth.users. This is
 -- fine in a migration because it runs as the postgres role. Email confirmation
 -- is pre-set so the magic-link flow can complete without a real inbox.
+--
+-- Supabase's admin generateLink() auto-creates a user (with a *random* UUID)
+-- the first time /api/preview/login is hit before this migration runs. So we
+-- DELETE any existing demo users by email first, then insert fresh with our
+-- deterministic UUIDs. The delete cascades to profiles (FK on delete cascade);
+-- accounts.owner_user_id is `on delete restrict`, but a freshly auto-created
+-- user has no account yet, so there's nothing to block. Re-running this
+-- migration after full seeding still works because section 2's account FK is
+-- dropped+recreated implicitly via the profile cascade.
 
 do $$
 declare
   demo_users record;
 begin
+  -- Re-run cleanup, in FK dependency order:
+  --   1. Drop the demo account first. It cascades to venues / events /
+  --      nights / allocations / guests, and NULLs profiles.account_id.
+  --      This must happen before deleting profiles, because
+  --      accounts.owner_user_id → profiles.id is ON DELETE RESTRICT.
+  --   2. Then delete the demo auth.users by email — cascades cleanly to
+  --      profiles now that no account references them.
+  delete from public.accounts
+  where id = '00000000-0000-4000-9000-000000000001'::uuid;
+
+  delete from auth.users
+  where email in (
+    'demo-owner@wadl.test',
+    'demo-holder@wadl.test',
+    'demo-staff@wadl.test',
+    'demo-guest@wadl.test'
+  );
+
   for demo_users in
     select * from (values
       ('00000000-0000-4000-8000-000000000001'::uuid, 'demo-owner@wadl.test',  'Demo Owner'),
@@ -59,8 +86,7 @@ begin
       jsonb_build_object('full_name', demo_users.full_name, 'demo', true),
       now(),
       now()
-    )
-    on conflict (id) do nothing;
+    );
   end loop;
 end$$;
 
