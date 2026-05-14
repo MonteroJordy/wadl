@@ -46,7 +46,7 @@ export default function MobileTabBar({ unread = 0 }: { unread?: number }) {
   return (
     <>
       <nav
-        className="w-tab-bar"
+        className="w-tab-bar v5"
         aria-label="Primary"
         style={{
           position: "fixed",
@@ -54,8 +54,10 @@ export default function MobileTabBar({ unread = 0 }: { unread?: number }) {
           right: 0,
           bottom: 0,
           zIndex: 25,
-          background: "var(--w-surface-2)",
-          borderTop: "1px solid var(--w-line)",
+          height: 64,
+          background: "rgba(10,10,10,0.92)",
+          backdropFilter: "blur(20px)",
+          borderTop: "1px solid var(--line)",
           display: "grid",
           gridTemplateColumns: `repeat(${TABS.length}, 1fr)`,
           paddingBottom: "env(safe-area-inset-bottom)",
@@ -78,35 +80,19 @@ export default function MobileTabBar({ unread = 0 }: { unread?: number }) {
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                padding: "10px 4px",
-                color: active ? "var(--w-acc)" : "var(--w-fg-muted)",
-                textDecoration: "none",
-                fontFamily: "var(--w-mono)",
-                fontSize: 10,
-                letterSpacing: "0.05em",
-                textTransform: "uppercase",
                 gap: 4,
+                color: active ? "var(--fg)" : "var(--fg-3)",
+                textDecoration: "none",
+                fontFamily: "var(--w-display)",
+                fontSize: 10,
+                fontWeight: active ? 500 : 400,
                 transition: "color 0.15s ease",
               }}
             >
-              {active && (
-                <span
-                  aria-hidden="true"
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    width: 28,
-                    height: 2,
-                    background: "var(--w-acc)",
-                  }}
-                />
-              )}
               <svg
                 aria-hidden="true"
-                width="22"
-                height="22"
+                width="20"
+                height="20"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -120,20 +106,14 @@ export default function MobileTabBar({ unread = 0 }: { unread?: number }) {
               {showBadge && (
                 <span
                   aria-hidden="true"
+                  className="badge"
                   style={{
                     position: "absolute",
-                    top: 6,
-                    right: "calc(50% - 18px)",
+                    top: 8,
+                    right: "calc(50% - 20px)",
                     minWidth: 14,
                     height: 14,
-                    padding: "0 4px",
-                    background: "var(--w-acc)",
-                    color: "var(--w-acc-ink)",
                     fontSize: 9,
-                    fontWeight: 700,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
                   }}
                 >
                   {unread > 9 ? "9+" : unread}
