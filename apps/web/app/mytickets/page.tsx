@@ -140,13 +140,6 @@ export default async function MyTicketsPage() {
     }
   }
 
-  const initials = (user.user_metadata?.full_name as string | undefined)
-    ?.split(" ")
-    .map((s) => s[0] ?? "")
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-
   return (
     <main id="main-content" className="v5">
       <WFrame style={{ paddingBottom: 64, background: "var(--bg)" }}>
@@ -156,29 +149,11 @@ export default async function MyTicketsPage() {
             padding: "var(--s-5) var(--s-5) 0",
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "flex-start",
           }}
         >
-          <div>
-            <div className="t-display-sm">Wallet</div>
-            <div className="t-meta" style={{ marginTop: "var(--s-1)" }}>
-              {upcoming.length} live · {past.length} past
-            </div>
-          </div>
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: "var(--r-pill)",
-              background: "var(--bg-3)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 12,
-              fontWeight: 500,
-            }}
-          >
-            {initials || phoneWithPlus.slice(-2)}
+          <div className="t-display-sm">Wallet</div>
+          <div className="t-meta">
+            {upcoming.length} live · {past.length} past
           </div>
         </div>
 

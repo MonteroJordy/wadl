@@ -170,7 +170,7 @@ export default async function ScorecardsPage() {
                       borderRadius: "var(--r-md)",
                       background: gradeColor,
                       color: "var(--bg)",
-                      fontFamily: "var(--w-display)",
+                      fontFamily: "var(--display)",
                       fontWeight: 700,
                       fontSize: 22,
                       display: "flex",

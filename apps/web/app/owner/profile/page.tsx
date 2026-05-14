@@ -123,7 +123,7 @@ export default async function ProfilePage() {
               justifyContent: "center",
               fontSize: 22,
               fontWeight: 500,
-              fontFamily: "var(--w-display)",
+              fontFamily: "var(--display)",
             }}
           >
             {initials(profile.full_name ?? "Owner")}
@@ -286,7 +286,7 @@ export default async function ProfilePage() {
                       justifyContent: "center",
                       fontSize: 11,
                       fontWeight: 500,
-                      fontFamily: "var(--w-display)",
+                      fontFamily: "var(--display)",
                     }}
                   >
                     {initials(m.name)}

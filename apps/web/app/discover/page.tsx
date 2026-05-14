@@ -165,7 +165,7 @@ function Section({
         style={{
           display: "grid",
           gap: "var(--s-4)",
-          gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+          gridTemplateColumns: "repeat(3, 1fr)",
         }}
       >
         {children}

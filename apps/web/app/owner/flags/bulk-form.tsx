@@ -100,7 +100,7 @@ export default function BulkFlagForm({ items }: { items: FlagItem[] }) {
               className="row"
               onClick={() => toggle(it.id)}
               style={{
-                gridTemplateColumns: "24px 200px 1fr 200px 110px",
+                gridTemplateColumns: "24px 180px 1fr 200px 120px",
                 cursor: "pointer",
                 background: isSel ? "var(--bg-3)" : undefined,
               }}
@@ -119,14 +119,14 @@ export default function BulkFlagForm({ items }: { items: FlagItem[] }) {
               <div style={{ minWidth: 0 }}>
                 <span
                   className="t-h2 truncate"
-                  style={{ display: "block" }}
+                  style={{ display: "block", fontFamily: "var(--mono)" }}
                 >
                   {it.full_name}
                 </span>
                 {it.phone && (
                   <span
                     className="t-meta"
-                    style={{ fontFamily: "var(--w-mono)" }}
+                    style={{ fontFamily: "var(--mono)" }}
                   >
                     {it.phone}
                   </span>

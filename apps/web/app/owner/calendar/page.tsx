@@ -272,7 +272,7 @@ export default async function CalendarPage({
                   <div
                     className="t-num"
                     style={{
-                      fontFamily: "var(--w-display)",
+                      fontFamily: "var(--display)",
                       fontWeight: 700,
                       fontSize: 16,
                       lineHeight: 1,
