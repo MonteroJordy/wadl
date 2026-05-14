@@ -3,69 +3,135 @@
 @tailwind utilities;
 
 :root {
-  /* === Legacy CSS vars — REMAPPED to the new palette. Names stay so
-     pages using var(--coral), var(--cream), etc. inherit the repaint
-     without code changes. New work should use --w-* directly. === */
-  --bg: #0a0a0b;
-  --s1: #0f0f10;
-  --s2: #1c1c1e;
-  --s3: #232326;
-  --coral: oklch(0.7 0.24 260);     /* was #ff4a2b — now cobalt */
-  --gold: oklch(0.86 0.16 85);      /* was #f5c842 — now warn   */
-  --mint: oklch(0.86 0.18 145);     /* was #00d97e — now ok     */
-  --lav: oklch(0.7 0.24 260);       /* collapsed into accent    */
-  --cream: #f3f1ec;
-  --muted: #a8a6a0;
-  --line: #2a2a2e;
+  /* ════════════════════════════════════════════════════════════════
+     WADL v5 — design tokens rebuilt from scratch (Claude Design handoff).
+       · 4pt spacing scale          · 1.25 modular type scale
+       · 3 radii (sm/md/lg) + pill  · monochrome: white CTA on near-black
+       · status hues only (no brand accent)
+     The legacy --w-* and --coral/--cream/etc. names below are ALIASED to
+     v5 values so all 168 existing component files inherit the rebrand
+     with zero per-file edits. New work should use the raw v5 tokens.
+     ════════════════════════════════════════════════════════════════ */
 
-  /* Legacy font CSS vars — chain to the new families so font-display,
-     font-sans, font-mono Tailwind utilities resolve to Inter Tight + JBM
-     without touching the existing 168 files. */
+  /* ─── v5 raw tokens (source of truth) ─── */
+  /* Spacing — 4pt grid */
+  --s-0: 0;
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+  --s-12: 48px;
+  --s-16: 64px;
+  --s-20: 80px;
+  --s-24: 96px;
+
+  /* Radii — minimal */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-pill: 999px;
+
+  /* Surfaces — near-black ramp */
+  --bg: #0a0a0a;
+  --bg-2: #131313;
+  --bg-3: #1c1c1c;
+  --bg-4: #262626;
+  --line: rgba(255, 255, 255, 0.06);
+  --line-2: rgba(255, 255, 255, 0.12);
+  --line-3: rgba(255, 255, 255, 0.22);
+
+  /* Type colors */
+  --fg: #fafafa;
+  --fg-2: #a3a3a3;
+  --fg-3: #737373;
+  --fg-4: #525252;
+
+  /* Status — single hue each, soft */
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --err: #f87171;
+  --info: #60a5fa;
+
+  /* Type scale — modular 1.25 */
+  --ts-xs: 11px;
+  --ts-sm: 13px;
+  --ts-md: 14px;
+  --ts-lg: 16px;
+  --ts-xl: 20px;
+  --ts-2xl: 24px;
+  --ts-3xl: 32px;
+  --ts-4xl: 44px;
+  --ts-5xl: 60px;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semi: 600;
+  --fw-bold: 700;
+
+  /* ─── Legacy aliases — map old names → v5 values ─── */
+  --s1: var(--bg);
+  --s2: var(--bg-3);
+  --s3: var(--bg-4);
+  --coral: var(--err);   /* was cobalt — now error red    */
+  --gold: var(--warn);
+  --mint: var(--ok);
+  --lav: var(--info);
+  --cream: var(--fg);
+  --muted: var(--fg-2);
+
+  /* Legacy font CSS vars — chain to the loaded families so font-display,
+     font-sans, font-mono Tailwind utilities resolve without touching
+     the existing 168 files. */
   --font-bebas: var(--font-inter-tight);
   --font-epilogue: var(--font-inter-tight);
   --font-dm-mono: var(--font-jb-mono);
 
-  /* === New design system — verbatim from /tmp/wadl-handoff-2/tokens.css
-     (v2 — highlighter yellow, sharp corners). === */
-  --w-ink: #0a0a0b;
-  --w-bg: #0f0f10;
-  --w-surface: #15151730;
-  --w-surface-2: #1c1c1e;
-  --w-surface-3: #232326;
-  --w-line: #2a2a2e;
-  --w-line-2: #38383d;
+  /* ─── --w-* aliases → v5 (the rebrand inheritance bridge) ─── */
+  --w-ink: var(--bg);
+  --w-bg: var(--bg);
+  --w-surface: rgba(255, 255, 255, 0.02);
+  --w-surface-2: var(--bg-2);
+  --w-surface-3: var(--bg-3);
+  --w-line: var(--line-2);
+  --w-line-2: var(--line-3);
 
-  --w-fg: #f3f1ec;
-  --w-fg-muted: #a8a6a0;
-  --w-fg-dim: #6b6a66;
-  --w-fg-faint: #4a4945;
+  --w-fg: var(--fg);
+  --w-fg-muted: var(--fg-2);
+  --w-fg-dim: var(--fg-3);
+  --w-fg-faint: var(--fg-4);
 
-  /* Accent flipped to highlighter yellow; ink-on-accent is dark. */
-  --w-acc: oklch(0.94 0.22 110);
-  --w-acc-ink: #0a0a0b;
-  --w-acc-soft: oklch(0.94 0.22 110 / 0.16);
+  /* v5 has NO brand accent — the primary CTA is white-on-black. So the
+     old highlighter-yellow accent collapses to white; ink-on-accent
+     becomes the near-black bg. */
+  --w-acc: var(--fg);
+  --w-acc-ink: var(--bg);
+  --w-acc-soft: var(--line-2);
 
-  --w-ga: #f3f1ec;
-  --w-vip: oklch(0.7 0.24 260);   /* VIP keeps cobalt for the holo gradient */
-  --w-aaa: #f3f1ec;
+  --w-ga: var(--fg);
+  --w-vip: var(--info);
+  --w-aaa: var(--fg);
 
-  --w-ok: oklch(0.86 0.18 145);
-  --w-warn: oklch(0.86 0.16 85);
-  --w-err: oklch(0.7 0.2 25);
+  --w-ok: var(--ok);
+  --w-warn: var(--warn);
+  --w-err: var(--err);
 
-  --w-sans: var(--font-inter-tight), -apple-system, BlinkMacSystemFont,
-    "Helvetica Neue", sans-serif;
-  --w-display: var(--font-inter-tight), -apple-system, sans-serif;
-  --w-mono: var(--font-jb-mono), "SF Mono", "IBM Plex Mono", ui-monospace,
-    monospace;
+  --w-sans: var(--font-inter-tight), "Inter", -apple-system,
+    BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  --w-display: var(--font-inter-tight), "Inter", -apple-system, sans-serif;
+  --w-mono: var(--font-jb-mono), "JetBrains Mono", "SF Mono",
+    "IBM Plex Mono", ui-monospace, monospace;
 
-  /* Sharp by default. */
-  --w-r-xs: 0px;
-  --w-r-sm: 0px;
-  --w-r-md: 0px;
-  --w-r-lg: 0px;
+  /* Rounded — v5 introduces 3 radii (was sharp 0px everywhere). */
+  --w-r-xs: 4px;
+  --w-r-sm: var(--r-sm);
+  --w-r-md: var(--r-md);
+  --w-r-lg: var(--r-lg);
 
-  --w-shadow-card: 0 1px 0 0 #ffffff08 inset, 0 0 0 1px var(--w-line);
+  --w-shadow-card: 0 1px 0 0 #ffffff05 inset, 0 0 0 1px var(--w-line);
 
   /* === Responsive scale tokens — these flip at the desktop breakpoint
      so individual components don't have to write media queries. Mobile
@@ -84,15 +150,15 @@
   --w-stack-gap: 12px;
   --w-stack-gap-lg: 20px;
 
-  /* Display sizes — bigger on desktop where there's room. */
-  --w-display-sm: 22px;
-  --w-display-md: 30px;
-  --w-display-lg: 44px;
-  --w-display-xl: 64px;
+  /* Display sizes — v5 modular scale (1.25 ratio). */
+  --w-display-sm: var(--ts-2xl);  /* 24 */
+  --w-display-md: var(--ts-3xl);  /* 32 */
+  --w-display-lg: var(--ts-4xl);  /* 44 */
+  --w-display-xl: var(--ts-5xl);  /* 60 */
 
-  /* Body / meta sizes — slightly bigger on mobile for readability. */
-  --w-body: 15px;
-  --w-meta: 11px;
+  /* Body / meta sizes. */
+  --w-body: var(--ts-md);   /* 14 */
+  --w-meta: var(--ts-xs);   /* 11 */
 
   /* Touch target floor — 44px iOS HIG on mobile, tighter on desktop. */
   --w-touch: 44px;
@@ -1064,3 +1130,200 @@ a:focus-visible > .w-card {
     background-color: var(--w-ink);
   }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   WADL v5 component library — verbatim from the Claude Design handoff
+   (wadl-v5.css). New components should use these classes directly; the
+   --w-* legacy classes above still work via the token aliases.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* Type — clean hierarchy */
+.t-display-xl { font-size: var(--ts-5xl); font-weight: var(--fw-bold); line-height: 1.0; letter-spacing: -0.035em; color: var(--fg); }
+.t-display-lg { font-size: var(--ts-4xl); font-weight: var(--fw-bold); line-height: 1.05; letter-spacing: -0.03em; color: var(--fg); }
+.t-display-md { font-size: var(--ts-3xl); font-weight: var(--fw-bold); line-height: 1.1; letter-spacing: -0.025em; color: var(--fg); }
+.t-display-sm { font-size: var(--ts-2xl); font-weight: var(--fw-semi); line-height: 1.15; letter-spacing: -0.02em; color: var(--fg); }
+.t-h1 { font-size: var(--ts-xl); font-weight: var(--fw-semi); line-height: 1.3; letter-spacing: -0.015em; color: var(--fg); }
+.t-h2 { font-size: var(--ts-lg); font-weight: var(--fw-medium); line-height: 1.4; color: var(--fg); }
+.t-body { font-size: var(--ts-md); font-weight: var(--fw-regular); line-height: 1.5; color: var(--fg); }
+.t-body-2 { font-size: var(--ts-sm); font-weight: var(--fw-regular); line-height: 1.5; color: var(--fg-2); }
+.t-meta { font-family: var(--w-mono); font-size: var(--ts-xs); font-weight: var(--fw-medium); letter-spacing: 0.04em; text-transform: uppercase; color: var(--fg-3); }
+.t-num { font-variant-numeric: tabular-nums; }
+
+/* BUTTON — high contrast, primary is white-on-black */
+.btn {
+  height: 40px; padding: 0 var(--s-5); border-radius: var(--r-md); border: 0;
+  font-family: var(--w-display); font-weight: var(--fw-medium); font-size: var(--ts-md); line-height: 1;
+  cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: var(--s-2);
+  background: var(--fg); color: var(--bg);
+  transition: background .12s, box-shadow .12s, opacity .12s;
+  white-space: nowrap; text-decoration: none;
+}
+.btn:hover { background: #e8e8e8; }
+.btn:focus-visible { outline: 0; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--fg); }
+.btn:active { background: #d4d4d4; }
+.btn[disabled], .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn--secondary { background: var(--bg-3); color: var(--fg); }
+.btn--secondary:hover { background: var(--bg-4); }
+.btn--ghost { background: transparent; color: var(--fg); box-shadow: inset 0 0 0 1px var(--line-2); }
+.btn--ghost:hover { background: var(--bg-2); box-shadow: inset 0 0 0 1px var(--line-3); }
+.btn--danger { background: var(--err); color: var(--bg); }
+.btn--danger:hover { background: #fb8e8e; }
+.btn--sm { height: 32px; padding: 0 var(--s-3); font-size: var(--ts-sm); border-radius: var(--r-sm); }
+.btn--lg { height: 48px; padding: 0 var(--s-6); font-size: 15px; border-radius: var(--r-md); }
+.btn--xl { height: 56px; padding: 0 var(--s-8); font-size: var(--ts-lg); border-radius: var(--r-md); }
+.btn--block { width: 100%; }
+
+/* INPUT */
+.input {
+  width: 100%; height: 44px; padding: 0 var(--s-4); border-radius: var(--r-md);
+  background: var(--bg-2); border: 1px solid var(--line-2);
+  color: var(--fg); font-family: var(--w-display); font-weight: var(--fw-regular);
+  font-size: var(--ts-md); line-height: 1; outline: none; caret-color: var(--fg);
+  transition: border-color .12s, box-shadow .12s;
+}
+.input:hover { border-color: var(--line-3); }
+.input:focus { border-color: var(--fg); box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--fg); }
+.input::placeholder { color: var(--fg-4); }
+
+/* CARD */
+.card {
+  background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--r-lg);
+  overflow: hidden; transition: border-color .15s;
+}
+.card--hover { cursor: pointer; }
+.card--hover:hover { border-color: var(--line-2); }
+
+/* CHIP — single shape, status by color */
+.chip {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  height: 20px; padding: 0 var(--s-2); border-radius: var(--r-pill);
+  background: var(--bg-3);
+  font-family: var(--w-display); font-weight: var(--fw-medium); font-size: var(--ts-xs); line-height: 1;
+  color: var(--fg-2); letter-spacing: 0;
+}
+.chip--solid { background: var(--fg); color: var(--bg); }
+.chip--ok { background: rgba(74,222,128,0.16); color: var(--ok); }
+.chip--warn { background: rgba(251,191,36,0.16); color: var(--warn); }
+.chip--err { background: rgba(248,113,113,0.16); color: var(--err); }
+.chip--info { background: rgba(96,165,250,0.16); color: var(--info); }
+.chip--ghost { background: transparent; box-shadow: inset 0 0 0 1px var(--line-2); }
+
+/* DIVIDER */
+.hr { height: 1px; background: var(--line); border: 0; margin: 0; }
+.hr-label { display: flex; align-items: center; gap: var(--s-3); color: var(--fg-3); }
+.hr-label::before, .hr-label::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+/* NAV ITEM */
+.nav-item {
+  padding: var(--s-2) var(--s-3); border-radius: var(--r-sm);
+  color: var(--fg-2); font-family: var(--w-display); font-weight: var(--fw-medium);
+  font-size: var(--ts-md); line-height: 1;
+  cursor: pointer; transition: background .12s, color .12s; user-select: none;
+}
+.nav-item:hover { color: var(--fg); }
+.nav-item--active { background: var(--bg-3); color: var(--fg); }
+
+/* ROW — consistent table rows */
+.row {
+  display: grid; align-items: center; gap: var(--s-4);
+  padding: var(--s-3) var(--s-5);
+  border-bottom: 1px solid var(--line); transition: background .12s;
+}
+.row:hover { background: var(--bg-2); }
+.row:last-child { border-bottom: 0; }
+
+/* DOT STATUS */
+.dot { display: inline-block; width: 6px; height: 6px; border-radius: var(--r-pill); background: var(--fg-3); }
+.dot--ok { background: var(--ok); }
+.dot--warn { background: var(--warn); }
+.dot--err { background: var(--err); }
+.dot--info { background: var(--info); }
+
+/* BADGE — count */
+.badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 var(--s-1);
+  border-radius: var(--r-pill); background: var(--fg); color: var(--bg);
+  font-family: var(--w-display); font-weight: var(--fw-semi); font-size: 10px; line-height: 1;
+}
+.badge--muted { background: var(--bg-3); color: var(--fg); }
+
+/* STICKY QUICK BAR */
+.quickbar {
+  position: sticky; bottom: 0; z-index: 5;
+  background: rgba(10,10,10,0.92); backdrop-filter: blur(20px);
+  border-top: 1px solid var(--line-2);
+  padding: var(--s-3) var(--s-6);
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s-3);
+}
+.quickbar__group { display: flex; align-items: center; gap: var(--s-2); }
+.quickbar__btn {
+  height: 36px; padding: 0 var(--s-3); border-radius: var(--r-sm);
+  background: transparent; border: 0; color: var(--fg-2); cursor: pointer;
+  display: inline-flex; align-items: center; gap: var(--s-2);
+  font-family: var(--w-display); font-weight: var(--fw-medium); font-size: var(--ts-sm); line-height: 1;
+  transition: color .12s, background .12s;
+}
+.quickbar__btn:hover { color: var(--fg); background: var(--bg-3); }
+.quickbar__btn--primary { color: var(--bg); background: var(--fg); }
+.quickbar__btn--primary:hover { background: #e8e8e8; color: var(--bg); }
+
+/* SAVEBAR */
+.savebar {
+  position: sticky; bottom: 0; z-index: 5;
+  background: var(--bg-2); border-top: 1px solid var(--line-2);
+  padding: var(--s-3) var(--s-6);
+  display: flex; align-items: center; justify-content: space-between;
+  transform: translateY(0); transition: transform .2s ease-out;
+}
+.savebar--hidden { transform: translateY(100%); }
+.savebar__label { display: flex; align-items: center; gap: var(--s-2); color: var(--fg-2); font-size: var(--ts-sm); }
+
+/* PAGE LAYOUT helpers */
+.page { display: flex; flex-direction: column; min-height: 100%; }
+.page__body { flex: 1; }
+
+/* TOAST CONTAINER */
+.toast-stack {
+  position: fixed; bottom: var(--s-6); right: var(--s-6);
+  display: flex; flex-direction: column; gap: var(--s-2);
+  z-index: 10; width: 340px;
+}
+
+/* CMD-K HINT */
+.cmdk-hint {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  padding: var(--s-1) var(--s-2); border-radius: var(--r-sm);
+  background: var(--bg-3); color: var(--fg-3);
+  font-family: var(--w-mono); font-size: 10px;
+  cursor: pointer; transition: color .12s;
+}
+.cmdk-hint:hover { color: var(--fg-2); }
+
+/* KBD */
+.kbd {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 var(--s-1);
+  border-radius: var(--r-sm); background: var(--bg-3);
+  font-family: var(--w-mono); font-size: 10px; font-weight: var(--fw-medium);
+  color: var(--fg-2);
+}
+
+/* PULSE */
+@keyframes v5pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+.pulse { animation: v5pulse 1.5s ease-in-out infinite; }
+
+/* DENSITY UTILITIES */
+.stack-1 > * + * { margin-top: var(--s-1); }
+.stack-2 > * + * { margin-top: var(--s-2); }
+.stack-3 > * + * { margin-top: var(--s-3); }
+.stack-4 > * + * { margin-top: var(--s-4); }
+.stack-6 > * + * { margin-top: var(--s-6); }
+
+/* TRUNCATE / NOSCROLL */
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.noscroll::-webkit-scrollbar { display: none; }
+.noscroll { scrollbar-width: none; }
+
+/* v5 selection — white-on-black highlight */
+::selection { background: var(--fg); color: var(--bg); }
