@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/wadl";
 
 const COOKIE_NAME = "wadl_cookie_consent";
 const ONE_YEAR = 60 * 60 * 24 * 365;
@@ -48,32 +47,28 @@ export default function CookieConsent() {
       }}
     >
       <div
+        className="card"
         style={{
           pointerEvents: "auto",
           margin: "0 auto",
           maxWidth: 720,
-          background: "var(--w-surface-1)",
-          border: "1px solid var(--w-line)",
-          padding: 16,
+          padding: "var(--s-5)",
           boxShadow: "0 24px 64px rgba(0,0,0,0.6)",
           display: "flex",
-          flexDirection: "column",
-          gap: 16,
+          alignItems: "center",
+          gap: "var(--s-4)",
+          flexWrap: "wrap",
         }}
       >
         <div
-          style={{
-            color: "var(--w-fg)",
-            opacity: 0.85,
-            fontSize: 14,
-            lineHeight: 1.5,
-          }}
+          className="t-body-2"
+          style={{ flex: 1, minWidth: 240, lineHeight: 1.5 }}
         >
           We use essential cookies for sign-in and a tiny first-party cookie to
           remember this choice.{" "}
           <Link
             href="/privacy#cookies"
-            style={{ color: "var(--w-acc)", textDecoration: "underline" }}
+            style={{ color: "var(--fg)", textDecoration: "underline" }}
           >
             Privacy policy
           </Link>
@@ -82,25 +77,25 @@ export default function CookieConsent() {
         <div
           style={{
             display: "flex",
-            gap: 8,
+            gap: "var(--s-2)",
             flexShrink: 0,
             flexWrap: "wrap",
           }}
         >
-          <Button
-            variant="ghost"
+          <button
+            className="btn btn--ghost btn--sm"
             type="button"
             onClick={() => pick("rejected")}
           >
             Reject non-essential
-          </Button>
-          <Button
-            variant="primary"
+          </button>
+          <button
+            className="btn btn--sm"
             type="button"
             onClick={() => pick("accepted")}
           >
             Accept
-          </Button>
+          </button>
         </div>
       </div>
     </div>
