@@ -71,7 +71,6 @@ export default async function BroadcastPage({
           templates.length === 1 ? "" : "s"
         } · broadcast SMS`}
         title="Comms"
-        sub={`Send to a filtered slice of ${event.name}. Preview the count before anything goes out.`}
       />
       <EventSubNav active="comms" eventId={event.id} />
 

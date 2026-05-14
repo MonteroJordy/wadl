@@ -48,9 +48,8 @@ export default async function TemplatePage({
       <PageHeader
         eyebrow={`${tpls.length} template${
           tpls.length === 1 ? "" : "s"
-        } · reusable event shapes`}
+        } · drag to reorder`}
         title="Lineup"
-        sub={`Save ${event.name}'s shape (nights + allocations, no guests) as a reusable starting point.`}
       />
       <EventSubNav active="lineup" eventId={event.id} />
 
@@ -84,7 +83,7 @@ export default async function TemplatePage({
                 key={t.id}
                 className="row"
                 style={{
-                  gridTemplateColumns: "24px 200px 1fr 1fr auto",
+                  gridTemplateColumns: "24px 180px 1fr 1fr 24px",
                 }}
               >
                 <span style={{ color: "var(--fg-3)", cursor: "grab" }}>

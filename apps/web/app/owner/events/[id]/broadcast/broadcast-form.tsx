@@ -134,7 +134,7 @@ export default function BroadcastForm({
       style={{
         display: "grid",
         gridTemplateColumns: "repeat(2, 1fr)",
-        gap: "var(--s-5)",
+        gap: "var(--s-3)",
         maxWidth: 880,
       }}
     >

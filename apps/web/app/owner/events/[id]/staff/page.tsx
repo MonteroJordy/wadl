@@ -93,7 +93,7 @@ export default async function StaffPage({
         ]}
       />
       <PageHeader
-        eyebrow={`${staff.length} staff · ${invites.length} pending`}
+        eyebrow={`${staff.length} staff · all confirmed`}
         title="Staff"
       />
       <EventSubNav active="staff" eventId={event.id} />
@@ -125,7 +125,7 @@ export default async function StaffPage({
                 key={s.user_id}
                 className="row"
                 style={{
-                  gridTemplateColumns: "36px 1fr 1fr 160px 100px 32px",
+                  gridTemplateColumns: "36px 1fr 1fr 140px 100px 24px",
                 }}
               >
                 <div

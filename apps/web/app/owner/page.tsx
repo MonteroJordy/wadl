@@ -1,3 +1,4 @@
+import * as React from "react";
 import Link from "next/link";
 import { requireOwnerContext, fmtDate, fmtTime } from "@/lib/owner";
 import OnboardingTour from "@/components/onboarding-tour";
@@ -22,7 +23,12 @@ interface NightWithEvent {
   doors_at: string;
   capacity_cap: number | null;
   is_frozen: boolean;
-  event: { id: string; name: string; flyer_url: string | null } | null;
+  event: {
+    id: string;
+    name: string;
+    flyer_url: string | null;
+    venue_id: string | null;
+  } | null;
 }
 
 interface GuestRow {
@@ -106,6 +112,7 @@ export default async function OwnerWeekViewPage({
       id: string;
       name: string;
       flyer_url: string | null;
+      venue_id: string | null;
       event_nights: Array<{
         id: string;
         event_id: string;
@@ -122,7 +129,12 @@ export default async function OwnerWeekViewPage({
       if (!inRange) continue;
       nights.push({
         ...n,
-        event: { id: ev.id, name: ev.name, flyer_url: ev.flyer_url },
+        event: {
+          id: ev.id,
+          name: ev.name,
+          flyer_url: ev.flyer_url,
+          venue_id: ev.venue_id,
+        },
       });
     }
   }
@@ -231,7 +243,25 @@ export default async function OwnerWeekViewPage({
   } else {
     heroEyebrow = `${RANGE_LABEL[range]} · ${account.display_name}`;
   }
-  const heroTitle = tonight ? (tonight.event?.name ?? "Tonight") : RANGE_LABEL[range];
+  // v5 hero title is 2-line: event name over "at <venue>" (matches the
+  // V5Dashboard artboard's `Donato Dozzy<br/>at BR · BK`). The venue name is
+  // resolved from the venues query already fetched above.
+  const tonightVenueName = tonight?.event?.venue_id
+    ? (venues.find((v) => v.id === tonight.event?.venue_id)?.name ?? null)
+    : null;
+  const heroTitle: React.ReactNode = tonight ? (
+    <>
+      {tonight.event?.name ?? "Tonight"}
+      {tonightVenueName && (
+        <>
+          <br />
+          at {tonightVenueName}
+        </>
+      )}
+    </>
+  ) : (
+    RANGE_LABEL[range]
+  );
 
   // ─── v5 4-up stat row ───
   const showRate =
@@ -483,7 +513,7 @@ export default async function OwnerWeekViewPage({
                 className="t-meta"
                 style={{ marginBottom: "var(--s-4)" }}
               >
-                {tonight ? "Coming up" : RANGE_LABEL[range]} ·{" "}
+                {tonight ? "Upcoming" : RANGE_LABEL[range]} ·{" "}
                 {remainingNights.length}
               </div>
               <div
@@ -540,8 +570,7 @@ export default async function OwnerWeekViewPage({
                             className="t-meta"
                             style={{ color: "rgba(255,255,255,0.7)" }}
                           >
-                            {fmtDate(n.night_date)} · doors{" "}
-                            {fmtTime(n.doors_at)}
+                            {fmtDate(n.night_date)}
                           </div>
                           <div
                             className="t-h1 truncate"
