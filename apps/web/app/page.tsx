@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { Profile } from "@/lib/types";
 import MarketingFooter from "@/components/marketing-footer";
+import { CoverHeader } from "@/components/v5";
 import {
   Avatar,
   Button,
@@ -149,58 +150,62 @@ export default async function RootPage() {
           </nav>
         </header>
 
-        {/* Hero */}
+        {/* Hero — v5 CoverHeader composition: full-bleed procedural
+            cover, eyebrow + display-lg title bottom-aligned, actions
+            inline. Matches Wadl v5.html → V5Marketing exactly. */}
+        <CoverHeader
+          seed="Replace the WhatsApp door"
+          height={560}
+          eyebrow="■ BUILT WITH MIAMI OPERATORS"
+          title={
+            <>
+              Replace the
+              <br />
+              WhatsApp door.
+            </>
+          }
+          actions={
+            <>
+              {user ? (
+                <Link
+                  href={dashboardHref}
+                  className="btn btn--xl"
+                  style={{ textDecoration: "none" }}
+                >
+                  Open dashboard →
+                </Link>
+              ) : (
+                <Link
+                  href="/signup"
+                  className="btn btn--xl"
+                  style={{ textDecoration: "none" }}
+                >
+                  Start free — 4 min →
+                </Link>
+              )}
+              <Link
+                href="/pricing"
+                className="btn btn--ghost btn--xl"
+                style={{ textDecoration: "none" }}
+              >
+                See pricing
+              </Link>
+            </>
+          }
+        />
         <section
           style={{
-            padding: "64px 24px 80px",
-            maxWidth: 1200,
+            padding: "var(--s-8) var(--s-8) var(--s-12)",
+            maxWidth: 1280,
             margin: "0 auto",
           }}
         >
-          <Chip tone="acc">
-            <span
-              className="w-pulse"
-              style={{
-                width: 6,
-                height: 6,
-                background: "currentColor",
-                borderRadius: 0,
-                display: "inline-block",
-              }}
-            />
-            BUILT WITH MIAMI OPERATORS
-          </Chip>
-          <h1
-            style={{
-              fontFamily: "var(--w-display)",
-              fontWeight: 700,
-              fontSize: "clamp(56px, 9vw, 120px)",
-              lineHeight: 0.92,
-              letterSpacing: "-0.045em",
-              marginTop: 20,
-              maxWidth: 1000,
-            }}
-          >
-            Replace the
-            <br />
-            <span
-              style={{
-                background: "var(--w-acc)",
-                color: "var(--w-acc-ink)",
-                padding: "0 14px",
-                display: "inline-block",
-              }}
-            >
-              WhatsApp door.
-            </span>
-          </h1>
           <p
-            className="w-type-body"
+            className="t-body"
             style={{
-              color: "var(--w-fg-muted)",
-              marginTop: 24,
-              fontSize: 19,
-              lineHeight: 1.45,
+              color: "var(--fg-2)",
+              fontSize: 18,
+              lineHeight: 1.5,
               maxWidth: 680,
             }}
           >
@@ -209,33 +214,6 @@ export default async function RootPage() {
             list every venue trusts — and the data nobody else has on their
             promoters.
           </p>
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 12,
-              marginTop: 32,
-            }}
-          >
-            {user ? (
-              <Link href={dashboardHref} style={{ textDecoration: "none" }}>
-                <Button variant="primary" size="lg">
-                  Open dashboard <IconArrow size={14} />
-                </Button>
-              </Link>
-            ) : (
-              <Link href="/signup" style={{ textDecoration: "none" }}>
-                <Button variant="primary" size="lg">
-                  Start free — 4 minutes <IconArrow size={14} />
-                </Button>
-              </Link>
-            )}
-            <Link href="/pricing" style={{ textDecoration: "none" }}>
-              <Button variant="ghost" size="lg">
-                See pricing
-              </Button>
-            </Link>
-          </div>
         </section>
 
         {/* The pain */}
