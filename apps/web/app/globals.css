@@ -793,148 +793,169 @@ a:focus-visible > .w-card {
   letter-spacing: -0.01em;
 }
 
-/* Typographic scale (verbatim from tokens.css) */
+/* Typographic scale — retargeted to v5 (.t-* equivalents) so every
+   legacy .w-type-* consumer inherits the v5 design without per-file edits. */
 .w-type-display-xl {
   font-family: var(--w-display);
-  font-weight: 700;
-  font-size: 88px;
-  line-height: 0.92;
-  letter-spacing: -0.04em;
+  font-size: var(--ts-5xl);
+  font-weight: var(--fw-bold);
+  line-height: 1.0;
+  letter-spacing: -0.035em;
+  color: var(--fg);
 }
 .w-type-display-lg {
   font-family: var(--w-display);
-  font-weight: 700;
-  font-size: 56px;
-  line-height: 0.94;
-  letter-spacing: -0.035em;
+  font-size: var(--ts-4xl);
+  font-weight: var(--fw-bold);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  color: var(--fg);
 }
 .w-type-display-md {
   font-family: var(--w-display);
-  font-weight: 700;
-  font-size: 38px;
-  line-height: 1;
-  letter-spacing: -0.03em;
-}
-.w-type-h1 {
-  font-weight: 600;
-  font-size: 28px;
+  font-size: var(--ts-3xl);
+  font-weight: var(--fw-bold);
   line-height: 1.1;
   letter-spacing: -0.025em;
+  color: var(--fg);
 }
-.w-type-h2 {
-  font-weight: 600;
-  font-size: 22px;
+.w-type-display-sm {
+  font-family: var(--w-display);
+  font-size: var(--ts-2xl);
+  font-weight: var(--fw-semi);
   line-height: 1.15;
   letter-spacing: -0.02em;
+  color: var(--fg);
+}
+.w-type-h1 {
+  font-size: var(--ts-xl);
+  font-weight: var(--fw-semi);
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  color: var(--fg);
+}
+.w-type-h2 {
+  font-size: var(--ts-lg);
+  font-weight: var(--fw-medium);
+  line-height: 1.4;
+  color: var(--fg);
 }
 .w-type-h3 {
-  font-weight: 600;
-  font-size: 17px;
-  line-height: 1.2;
-  letter-spacing: -0.012em;
+  font-size: var(--ts-md);
+  font-weight: var(--fw-semi);
+  line-height: 1.4;
+  color: var(--fg);
 }
 .w-type-body {
-  font-weight: 400;
-  font-size: 15px;
-  line-height: 1.45;
-  letter-spacing: -0.005em;
+  font-size: var(--ts-md);
+  font-weight: var(--fw-regular);
+  line-height: 1.5;
+  color: var(--fg);
 }
 .w-type-body-sm {
-  font-weight: 400;
-  font-size: 13px;
-  line-height: 1.4;
+  font-size: var(--ts-sm);
+  font-weight: var(--fw-regular);
+  line-height: 1.5;
+  color: var(--fg-2);
 }
 .w-type-meta {
   font-family: var(--w-mono);
-  font-weight: 500;
-  font-size: 11px;
+  font-size: var(--ts-xs);
+  font-weight: var(--fw-medium);
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--w-fg-muted);
+  color: var(--fg-3);
 }
 .w-type-meta-lg {
   font-family: var(--w-mono);
-  font-weight: 500;
-  font-size: 13px;
+  font-size: var(--ts-sm);
+  font-weight: var(--fw-medium);
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--w-fg-muted);
+  color: var(--fg-3);
 }
 .w-type-num {
-  font-family: var(--w-mono);
-  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 
-/* Buttons — sharp rectangles, highlighter accent */
+/* Buttons — retargeted to v5 .btn */
 .w-btn {
-  height: 44px;
-  padding: 0 18px;
-  border-radius: 0;
+  height: 40px;
+  padding: 0 var(--s-5);
+  border-radius: var(--r-md);
   border: 0;
-  font-family: var(--w-sans);
-  font-weight: 600;
-  font-size: 14px;
-  letter-spacing: -0.005em;
+  font-family: var(--w-display);
+  font-weight: var(--fw-medium);
+  font-size: var(--ts-md);
+  line-height: 1;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  transition: transform 0.08s ease, background 0.12s ease,
-    box-shadow 0.12s ease, filter 0.12s ease;
+  gap: var(--s-2);
+  background: var(--fg);
+  color: var(--bg);
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
 }
-.w-btn:active {
-  transform: translateY(1px);
+.w-btn:hover:not(:disabled) {
+  background: #e8e8e8;
+}
+.w-btn:active:not(:disabled) {
+  background: #d4d4d4;
 }
 .w-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 .w-btn--primary {
-  background: var(--w-acc);
-  color: var(--w-acc-ink);
+  background: var(--fg);
+  color: var(--bg);
 }
 .w-btn--primary:hover:not(:disabled) {
-  filter: brightness(1.05);
+  background: #e8e8e8;
 }
 .w-btn--solid {
-  background: var(--w-fg);
-  color: var(--w-ink);
+  background: var(--fg);
+  color: var(--bg);
 }
 .w-btn--solid:hover:not(:disabled) {
-  filter: brightness(0.96);
+  background: #e8e8e8;
 }
 .w-btn--ghost {
   background: transparent;
-  color: var(--w-fg);
-  box-shadow: inset 0 0 0 1px var(--w-line-2);
+  color: var(--fg);
+  box-shadow: inset 0 0 0 1px var(--line-2);
 }
 .w-btn--ghost:hover:not(:disabled) {
-  background: #ffffff0a;
+  background: var(--bg-2);
+  box-shadow: inset 0 0 0 1px var(--line-3);
 }
 .w-btn--lg {
-  height: 56px;
-  padding: 0 24px;
-  font-size: 16px;
+  height: 48px;
+  padding: 0 var(--s-6);
+  font-size: 15px;
 }
 .w-btn--block {
   width: 100%;
 }
 
-/* Inputs */
+/* Inputs — retargeted to v5 .input */
 .w-input {
   width: 100%;
-  height: 52px;
-  padding: 0 16px;
-  border-radius: var(--w-r-sm);
-  background: #ffffff06;
-  border: 1px solid var(--w-line);
-  color: var(--w-fg);
-  font-family: var(--w-sans);
-  font-size: 16px;
+  height: 44px;
+  padding: 0 var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  color: var(--fg);
+  font-family: var(--w-display);
+  font-size: var(--ts-md);
+  line-height: 1;
   outline: none;
-  transition: border-color 0.12s, background 0.12s;
+  caret-color: var(--fg);
+  transition: border-color 0.12s, box-shadow 0.12s;
 }
 /* On desktop, cap inputs at a comfortable max so they don't span 1000px
    on wide displays. The parent container can override with its own width.
@@ -949,70 +970,75 @@ a:focus-visible > .w-card {
   .w-input[type="search"] { max-width: 480px; }
   textarea.w-input { max-width: 720px; }
 }
+.w-input:hover {
+  border-color: var(--line-3);
+}
 .w-input:focus {
-  border-color: var(--w-acc);
-  background: #ffffff0a;
+  border-color: var(--fg);
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--fg);
 }
 .w-input::placeholder {
-  color: var(--w-fg-dim);
+  color: var(--fg-4);
 }
 .w-label {
   font-family: var(--w-mono);
-  font-size: 11px;
-  letter-spacing: 0.06em;
+  font-size: var(--ts-xs);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--w-fg-muted);
-  margin-bottom: 8px;
+  color: var(--fg-3);
+  margin-bottom: var(--s-2);
   display: block;
 }
 
-/* Card */
+/* Card — retargeted to v5 .card */
 .w-card {
-  background: var(--w-surface-2);
-  border: 1px solid var(--w-line);
-  border-radius: var(--w-r-md);
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  transition: border-color 0.15s;
 }
 /* List rows in cards — first row should not have a top border. */
 .w-card > .w-list-edit-row:first-child {
   border-top: 0 !important;
 }
 
-/* Chips — square (no longer pill-shaped) */
+/* Chips — retargeted to v5 .chip (pill, status by color) */
 .w-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 22px;
-  padding: 0 8px;
-  border-radius: 0;
-  font-family: var(--w-mono);
-  font-size: 10.5px;
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  background: #ffffff10;
-  color: var(--w-fg);
+  gap: var(--s-1);
+  height: 20px;
+  padding: 0 var(--s-2);
+  border-radius: var(--r-pill);
+  font-family: var(--w-display);
+  font-size: var(--ts-xs);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0;
+  background: var(--bg-3);
+  color: var(--fg-2);
 }
 .w-chip--acc {
-  background: var(--w-acc);
-  color: var(--w-acc-ink);
+  background: var(--fg);
+  color: var(--bg);
 }
 .w-chip--ok {
-  background: oklch(0.86 0.18 145 / 0.18);
-  color: var(--w-ok);
+  background: rgba(74, 222, 128, 0.16);
+  color: var(--ok);
 }
 .w-chip--warn {
-  background: oklch(0.86 0.16 85 / 0.18);
-  color: var(--w-warn);
+  background: rgba(251, 191, 36, 0.16);
+  color: var(--warn);
 }
 .w-chip--err {
-  background: oklch(0.7 0.2 25 / 0.18);
-  color: var(--w-err);
+  background: rgba(248, 113, 113, 0.16);
+  color: var(--err);
 }
 .w-chip--ghost {
   background: transparent;
-  box-shadow: inset 0 0 0 1px var(--w-line-2);
-  color: var(--w-fg-muted);
+  box-shadow: inset 0 0 0 1px var(--line-2);
+  color: var(--fg-3);
 }
 
 /* Divider */
