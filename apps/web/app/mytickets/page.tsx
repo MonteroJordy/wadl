@@ -1,16 +1,9 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { fmtDate, fmtTime } from "@/lib/format";
-import {
-  Avatar,
-  Chip,
-  CredPill,
-  CredentialCard,
-  WFrame,
-  Wordmark,
-} from "@/components/wadl";
-import type { Tier } from "@/components/wadl";
+import { fmtTime } from "@/lib/format";
+import { WFrame } from "@/components/wadl";
+import { Cover, Logo } from "@/components/v5";
 import MyTicketsVerify from "./verify-form";
 
 export const dynamic = "force-dynamic";
@@ -33,29 +26,36 @@ interface TicketRow {
   };
 }
 
-function tierFromString(t: string): Tier {
-  const u = t.toUpperCase().replace(/_/g, "");
-  if (u.includes("VIP")) return "VIP";
-  if (u.includes("ALL") || u === "AAA") return "AAA";
-  return "GA";
+function tierLabel(t: string): string {
+  return t.replace(/_/g, " ").toUpperCase();
+}
+
+function isToday(iso: string): boolean {
+  const d = new Date(iso);
+  const n = new Date();
+  return (
+    d.getFullYear() === n.getFullYear() &&
+    d.getMonth() === n.getMonth() &&
+    d.getDate() === n.getDate()
+  );
 }
 
 function fmtCredDate(d: string): string {
   const dt = new Date(d);
-  const dow = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][dt.getDay()];
+  const dow = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][dt.getDay()];
   const mon = [
-    "JAN",
-    "FEB",
-    "MAR",
-    "APR",
-    "MAY",
-    "JUN",
-    "JUL",
-    "AUG",
-    "SEP",
-    "OCT",
-    "NOV",
-    "DEC",
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
   ][dt.getMonth()];
   return `${dow} ${String(dt.getDate()).padStart(2, "0")} ${mon}`;
 }
@@ -68,42 +68,33 @@ export default async function MyTicketsPage() {
 
   if (!user?.phone) {
     return (
-      <main id="main-content">
-        <WFrame style={{ paddingBottom: 48 }}>
+      <main id="main-content" className="v5">
+        <WFrame style={{ paddingBottom: 48, background: "var(--bg)" }}>
           <div
             style={{
-              padding: "20px 20px 0",
+              padding: "var(--s-5) var(--s-5) 0",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
             }}
           >
-            <Wordmark variant="monogrid" size={16} />
+            <Logo size={16} />
             <Link
               href="/discover"
-              className="w-type-meta"
+              className="t-meta"
               style={{ textDecoration: "none" }}
             >
-              ← DISCOVER
+              Discover →
             </Link>
           </div>
-          <div style={{ padding: "32px 20px 0" }}>
-            <div className="w-type-meta">WALLET</div>
-            <div className="w-type-display-md" style={{ marginTop: 6 }}>
-              My tickets
-            </div>
-            <p
-              className="w-type-body-sm"
-              style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 12,
-              }}
-            >
+          <div style={{ padding: "var(--s-8) var(--s-5) 0" }}>
+            <div className="t-display-sm">Wallet</div>
+            <div className="t-body-2" style={{ marginTop: "var(--s-2)" }}>
               Verify your phone to pull up everything you&apos;ve RSVP&apos;d
               for.
-            </p>
+            </div>
           </div>
-          <div style={{ padding: "32px 20px 0" }}>
+          <div style={{ padding: "var(--s-6) var(--s-5) 0" }}>
             <MyTicketsVerify />
           </div>
         </WFrame>
@@ -149,10 +140,6 @@ export default async function MyTicketsPage() {
     }
   }
 
-  // The hero: the next-up credential, with up to two past credentials
-  // peeking out behind it as a stack. Matches handoff Wallet().
-  const hero = upcoming[0];
-  const stackBehind = [...past].slice(0, 2);
   const initials = (user.user_metadata?.full_name as string | undefined)
     ?.split(" ")
     .map((s) => s[0] ?? "")
@@ -161,200 +148,111 @@ export default async function MyTicketsPage() {
     .toUpperCase();
 
   return (
-    <main id="main-content">
-      <WFrame style={{ paddingBottom: 96 }}>
+    <main id="main-content" className="v5">
+      <WFrame style={{ paddingBottom: 64, background: "var(--bg)" }}>
+        {/* Header — Wallet + N live · N past */}
         <div
           style={{
-            padding: "20px 20px 0",
+            padding: "var(--s-5) var(--s-5) 0",
             display: "flex",
-            alignItems: "center",
             justifyContent: "space-between",
+            alignItems: "flex-start",
           }}
         >
-          <Wordmark variant="monogrid" size={16} />
-          <Avatar name={initials || phoneWithPlus.slice(-2)} size={28} />
-        </div>
-
-        <div style={{ padding: "24px 20px 0" }}>
-          <div className="w-type-meta">
-            WALLET · {rows.length} CREDENTIAL{rows.length === 1 ? "" : "S"}
+          <div>
+            <div className="t-display-sm">Wallet</div>
+            <div className="t-meta" style={{ marginTop: "var(--s-1)" }}>
+              {upcoming.length} live · {past.length} past
+            </div>
           </div>
-          <div className="w-type-display-md" style={{ marginTop: 6 }}>
-            Wallet
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: "var(--r-pill)",
+              background: "var(--bg-3)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 12,
+              fontWeight: 500,
+            }}
+          >
+            {initials || phoneWithPlus.slice(-2)}
           </div>
         </div>
 
         {newUpgrades.length > 0 && (
-          <div style={{ padding: "20px 20px 0" }}>
+          <div style={{ padding: "var(--s-5) var(--s-5) 0" }}>
             <div
-              className="w-card"
-              style={{
-                padding: 14,
-                borderColor: "var(--w-acc)",
-                background: "var(--w-acc-soft)",
-                display: "flex",
-                gap: 10,
-                alignItems: "flex-start",
-              }}
+              className="card"
+              style={{ padding: "var(--s-4)", borderColor: "var(--fg)" }}
             >
-              <Chip tone="acc">↑ TIER UPGRADE</Chip>
-              <div style={{ flex: 1 }}>
+              <span className="chip chip--ok">↑ Tier upgrade</span>
+              <div style={{ marginTop: "var(--s-2)" }}>
                 {newUpgrades.map((t) => (
-                  <p
-                    key={t.id}
-                    className="w-type-body-sm"
-                    style={{ marginTop: 0 }}
-                  >
-                    Bumped to{" "}
-                    <strong>
-                      {t.tier.replace(/_/g, " ").toUpperCase()}
-                    </strong>{" "}
-                    for <strong>{t.night.event.name}</strong>.
-                  </p>
+                  <div key={t.id} className="t-body-2">
+                    Bumped to <strong>{tierLabel(t.tier)}</strong> for{" "}
+                    <strong>{t.night.event.name}</strong>.
+                  </div>
                 ))}
               </div>
             </div>
           </div>
         )}
 
-        {/* Stacked credential hero — handoff Wallet pattern */}
-        {hero ? (
-          <div style={{ padding: "32px 20px 0", position: "relative" }}>
-            <div style={{ position: "relative", height: 320 }}>
-              {stackBehind[1] && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 18,
-                    left: 12,
-                    right: 12,
-                    transform: "scale(.94)",
-                    opacity: 0.35,
-                    pointerEvents: "none",
-                  }}
-                >
-                  <CredentialCard
-                    variant="mono"
-                    tier={tierFromString(stackBehind[1].tier)}
-                    name={stackBehind[1].full_name}
-                    event={stackBehind[1].night.event.name}
-                    date={fmtCredDate(stackBehind[1].night.night_date)}
-                    code={stackBehind[1].check_in_token
-                      .slice(0, 11)
-                      .toUpperCase()}
-                  />
-                </div>
-              )}
-              {stackBehind[0] && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 8,
-                    left: 6,
-                    right: 6,
-                    transform: "scale(.97)",
-                    opacity: 0.6,
-                    pointerEvents: "none",
-                  }}
-                >
-                  <CredentialCard
-                    variant="mono"
-                    tier={tierFromString(stackBehind[0].tier)}
-                    name={stackBehind[0].full_name}
-                    event={stackBehind[0].night.event.name}
-                    date={fmtCredDate(stackBehind[0].night.night_date)}
-                    code={stackBehind[0].check_in_token
-                      .slice(0, 11)
-                      .toUpperCase()}
-                  />
-                </div>
-              )}
-              <Link
-                href={`/t/${hero.check_in_token}`}
-                style={{
-                  textDecoration: "none",
-                  color: "inherit",
-                  position: "relative",
-                  zIndex: 2,
-                  display: "block",
-                }}
-              >
-                <CredentialCard
-                  variant="mono"
-                  tier={tierFromString(hero.tier)}
-                  name={hero.full_name}
-                  event={hero.night.event.name}
-                  date={fmtCredDate(hero.night.night_date)}
-                  code={hero.check_in_token.slice(0, 11).toUpperCase()}
-                />
-              </Link>
-            </div>
-          </div>
-        ) : null}
-
-        {!hero && rows.length === 0 ? (
-          <div style={{ padding: "48px 20px 0", textAlign: "center" }}>
-            <div className="w-type-h2">Nothing here yet</div>
-            <p
-              className="w-type-body-sm"
-              style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 8,
-              }}
-            >
+        {rows.length === 0 ? (
+          <div
+            style={{
+              padding: "var(--s-16) var(--s-5) 0",
+              textAlign: "center",
+            }}
+          >
+            <div className="t-h1">Nothing here yet</div>
+            <div className="t-body-2" style={{ marginTop: "var(--s-2)" }}>
               RSVP to an event and your ticket will appear here.
-            </p>
+            </div>
             <Link
               href="/discover"
-              className="w-btn w-btn--primary"
-              style={{
-                marginTop: 24,
-                textDecoration: "none",
-                display: "inline-flex",
-              }}
+              className="btn"
+              style={{ marginTop: "var(--s-6)" }}
             >
               Browse events
             </Link>
           </div>
-        ) : null}
-
-        {upcoming.length > 1 && (
+        ) : (
           <>
-            <SectionLabel>UPCOMING · {upcoming.length - 1}</SectionLabel>
-            <div style={{ padding: "0 20px" }}>
-              {upcoming.slice(1).map((t, i, arr) => (
-                <PastRow key={t.id} t={t} last={i === arr.length - 1} />
-              ))}
-            </div>
-          </>
-        )}
-
-        {past.length > 0 && (
-          <>
-            <SectionLabel>PAST · {past.length}</SectionLabel>
-            <div style={{ padding: "0 20px" }}>
-              {past.map((t, i, arr) => (
-                <PastRow key={t.id} t={t} last={i === arr.length - 1} />
-              ))}
-            </div>
+            {upcoming.length > 0 && (
+              <TicketSection label={`Live · ${upcoming.length}`}>
+                {upcoming.map((t) => (
+                  <TicketCard key={t.id} t={t} highlight />
+                ))}
+              </TicketSection>
+            )}
+            {past.length > 0 && (
+              <TicketSection label={`Past · ${past.length}`}>
+                {past.map((t) => (
+                  <TicketCard key={t.id} t={t} />
+                ))}
+              </TicketSection>
+            )}
           </>
         )}
 
         <div
-          className="w-type-meta"
+          className="t-meta"
           style={{
             marginTop: "auto",
-            paddingTop: 32,
-            paddingBottom: 16,
+            paddingTop: "var(--s-8)",
             textAlign: "center",
-            color: "var(--w-fg-dim)",
+            color: "var(--fg-4)",
           }}
         >
           <Link
             href="/mytickets/profile"
             style={{ color: "inherit", textDecoration: "none" }}
           >
-            PROFILE
+            Profile
           </Link>
           {" · "}
           <form
@@ -373,7 +271,7 @@ export default async function MyTicketsPage() {
                 font: "inherit",
               }}
             >
-              SIGN OUT
+              Sign out
             </button>
           </form>
         </div>
@@ -382,85 +280,79 @@ export default async function MyTicketsPage() {
   );
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function TicketSection({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div style={{ padding: "32px 20px 12px" }}>
-      <span className="w-type-meta">{children}</span>
+    <div
+      style={{
+        padding: "var(--s-5)",
+        display: "flex",
+        flexDirection: "column",
+        gap: "var(--s-3)",
+      }}
+    >
+      <div className="t-meta">{label}</div>
+      {children}
     </div>
   );
 }
 
-function PastRow({ t, last }: { t: TicketRow; last: boolean }) {
-  const tier = tierFromString(t.tier);
-  const dt = new Date(t.night.night_date);
-  const dow = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][dt.getDay()];
+function TicketCard({ t, highlight }: { t: TicketRow; highlight?: boolean }) {
+  const today = isToday(t.night.doors_at);
+  const timeLine = today
+    ? `Tonight · doors ${fmtTime(t.night.doors_at)}`
+    : `${fmtCredDate(t.night.night_date)} · doors ${fmtTime(t.night.doors_at)}`;
+  const partyLabel =
+    t.plus_ones > 0
+      ? `${tierLabel(t.tier)} · party of ${t.plus_ones + 1}`
+      : tierLabel(t.tier);
+
   return (
     <Link
       href={`/t/${t.check_in_token}`}
-      style={{ textDecoration: "none", color: "inherit", display: "block" }}
+      className="card"
+      style={{
+        textDecoration: "none",
+        color: "inherit",
+        display: "block",
+        ...(highlight ? { borderColor: "var(--fg)" } : null),
+      }}
     >
-      <div
-        style={{
-          padding: "14px 0",
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          borderBottom: last ? "none" : "1px solid var(--w-line)",
-        }}
-      >
+      <Cover seed={t.night.event.name} height={140}>
         <div
           style={{
-            width: 36,
-            height: 36,
-            borderRadius: 0,
-            background: "#ffffff08",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            fontFamily: "var(--w-mono)",
-            flexShrink: 0,
+            position: "absolute",
+            left: "var(--s-4)",
+            right: "var(--s-4)",
+            bottom: "var(--s-4)",
           }}
         >
-          <span style={{ fontSize: 8, color: "var(--w-fg-muted)" }}>
-            {dow}
-          </span>
-          <span style={{ fontSize: 12, fontWeight: 700, marginTop: 1 }}>
-            {String(dt.getDate()).padStart(2, "0")}
-          </span>
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="t-meta" style={{ color: "rgba(255,255,255,0.7)" }}>
+            {timeLine}
+          </div>
           <div
-            style={{
-              fontSize: 14,
-              fontWeight: 500,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
+            className="t-h1"
+            style={{ color: "#fff", marginTop: "var(--s-1)" }}
           >
             {t.night.event.name}
           </div>
-          <div
-            className="w-type-meta"
-            style={{
-              marginTop: 2,
-              color:
-                t.status === "approved"
-                  ? "var(--w-fg-muted)"
-                  : t.status === "pending"
-                    ? "var(--w-warn)"
-                    : t.status === "rejected"
-                      ? "var(--w-err)"
-                      : "var(--w-fg-muted)",
-            }}
-          >
-            {t.status === "approved"
-              ? `DOORS ${fmtTime(t.night.doors_at)}`
-              : t.status.toUpperCase()}
-          </div>
         </div>
-        <CredPill tier={tier} />
+      </Cover>
+      <div
+        style={{
+          padding: "var(--s-4)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <span className="t-h2">{partyLabel}</span>
+        <span className="btn btn--sm">Show QR</span>
       </div>
     </Link>
   );

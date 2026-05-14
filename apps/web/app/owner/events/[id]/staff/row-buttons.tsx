@@ -9,10 +9,7 @@ const INLINE_BTN: React.CSSProperties = {
   border: "none",
   cursor: "pointer",
   padding: 0,
-  fontFamily: "var(--w-mono)",
-  fontSize: 11,
-  letterSpacing: "0.08em",
-  textTransform: "uppercase",
+  fontSize: "var(--ts-sm)",
 };
 
 export function RevokeInviteButton({
@@ -32,7 +29,7 @@ export function RevokeInviteButton({
         onClick={() => setOpen(true)}
         style={{
           ...INLINE_BTN,
-          color: "var(--w-err)",
+          color: "var(--err)",
           opacity: pending ? 0.4 : 1,
         }}
       >
@@ -74,7 +71,7 @@ export function RemoveStaffButton({
         onClick={() => setOpen(true)}
         style={{
           ...INLINE_BTN,
-          color: "var(--w-err)",
+          color: "var(--err)",
           opacity: pending ? 0.4 : 1,
         }}
       >
@@ -111,7 +108,7 @@ export function CopyLinkButton({ url }: { url: string }) {
       }}
       style={{
         ...INLINE_BTN,
-        color: copied ? "var(--w-ok)" : "var(--w-fg-muted)",
+        color: copied ? "var(--ok)" : "var(--fg-3)",
       }}
     >
       {copied ? "Copied" : "Copy link"}

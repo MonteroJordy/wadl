@@ -1,18 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useTransition } from "react";
 import { createEventAction } from "./actions";
 import type { EventType } from "@/lib/types";
-import {
-  Button,
-  Chip,
-  CoverPlaceholder,
-  IconArrow,
-  IconPlus,
-  WFrame,
-  Wordmark,
-} from "@/components/wadl";
+import { Breadcrumb, Cover, PageHeader } from "@/components/v5";
 import { useFormSaveShortcut } from "@/components/use-form-save-shortcut";
 
 interface NightRow {
@@ -138,145 +129,93 @@ export default function NewEventForm({
     });
   }
 
+  const labelStyle: React.CSSProperties = { display: "block" };
+  const firstNight = nights[0];
+  const previewDate = firstNight?.date
+    ? new Date(`${firstNight.date}T${firstNight.time || "22:00"}:00`)
+    : null;
+  const previewMeta = previewDate
+    ? `${previewDate.toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "2-digit",
+      })} · ${firstNight.time || "22:00"}`
+    : "Pick a date";
+
   return (
-    <main id="main-content">
-      {/* .new-event-cols layout rules live in globals.css. */}
-      <WFrame wide maxWidth={1080} style={{ paddingBottom: 96 }}>
-        {/* Top bar — minimal: just the back link. We're already inside the
-            sidebar shell so brand + step indicator are redundant chrome. */}
+    <main
+      id="main-content"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
+    >
+      <Breadcrumb items={[["Events", "/owner"], "New event"]} />
+      <PageHeader
+        eyebrow="New event"
+        title="Create an event"
+        sub="Fill in the basics — we'll auto-publish a public RSVP page."
+        actions={
+          <button
+            type="submit"
+            form="new-event-form"
+            className="btn"
+            disabled={pending}
+          >
+            {pending ? "Creating…" : "Publish"}
+          </button>
+        }
+      />
+
+      <form
+        id="new-event-form"
+        ref={formRef}
+        onSubmit={onSubmit}
+        style={{
+          padding: "var(--s-8)",
+          display: "grid",
+          gridTemplateColumns: "1fr 380px",
+          gap: "var(--s-8)",
+          alignItems: "start",
+        }}
+        className="new-event-cols"
+      >
+        {/* ─── FIELDS COLUMN ─── */}
         <div
           style={{
-            padding: "20px 24px 0",
-          }}
-        >
-          <Link
-            href="/owner"
-            className="w-type-meta"
-            style={{ textDecoration: "none", color: "var(--w-fg-muted)" }}
-          >
-            ← BACK
-          </Link>
-        </div>
-
-        <div style={{ padding: "20px 24px 0" }}>
-          <div className="w-type-meta">NEW EVENT</div>
-          <div
-            className="w-type-display-md"
-            style={{ marginTop: 6, lineHeight: 1.0 }}
-          >
-            Build it.
-          </div>
-        </div>
-
-        <form
-          ref={formRef}
-          onSubmit={onSubmit}
-          className="new-event-cols"
-          style={{
-            padding: "32px 24px 0",
             display: "flex",
             flexDirection: "column",
-            gap: 20,
+            gap: "var(--s-6)",
           }}
         >
-          {/* COVER COLUMN (desktop left rail / mobile top section) */}
-          <div className="new-event-cover">
-            <span className="w-label">COVER · 4:5</span>
-            {flyerPreview ? (
-              <div
-                className="new-event-cover-preview"
-                style={{
-                  width: "100%",
-                  maxWidth: 320,
-                  aspectRatio: "4 / 5",
-                  border: "1px solid var(--w-line)",
-                  background: "var(--w-surface-2)",
-                  overflow: "hidden",
-                  marginTop: 6,
-                  marginBottom: 8,
-                }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={flyerPreview}
-                  alt="Flyer preview"
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                  }}
-                />
-              </div>
-            ) : (
-              <div
-                className="new-event-cover-preview"
-                style={{
-                  width: "100%",
-                  maxWidth: 320,
-                  marginTop: 6,
-                  marginBottom: 8,
-                }}
-              >
-                <CoverPlaceholder />
-              </div>
-            )}
-            <input
-              id="flyer-file"
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={onPickFile}
-              className="w-input"
-              style={{ height: 44, fontSize: 13 }}
-            />
-            <p className="w-type-meta" style={{ marginTop: 8 }}>
-              OR PASTE A URL
-            </p>
-            <input
-              id="flyer-url"
-              type="url"
-              value={flyerUrl}
-              onChange={(e) => setFlyerUrl(e.target.value)}
-              className="w-input"
-              placeholder="https://…"
-              style={{ marginTop: 4 }}
-            />
-          </div>
-
-          {/* FIELDS COLUMN (desktop right / mobile rest of stack) */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 20,
-            }}
-          >
-
           {/* Title */}
           <div>
-            <label htmlFor="name" className="w-label">
-              TITLE
+            <label htmlFor="name" className="t-meta" style={labelStyle}>
+              Title
             </label>
             <input
               id="name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-input"
+              className="input"
               placeholder="Space presents: Diplo"
               required
               autoFocus
+              style={{
+                marginTop: "var(--s-2)",
+                fontSize: 22,
+                height: 56,
+              }}
             />
           </div>
 
-          {/* Event type — compact pills, wrap to fit. */}
+          {/* Event type */}
           <div>
-            <span className="w-label">EVENT TYPE</span>
+            <span className="t-meta">Event type</span>
             <div
               style={{
                 display: "flex",
                 flexWrap: "wrap",
-                gap: 6,
-                marginTop: 6,
+                gap: "var(--s-2)",
+                marginTop: "var(--s-2)",
               }}
             >
               {EVENT_TYPES.map((t) => {
@@ -286,24 +225,9 @@ export default function NewEventForm({
                     key={t.id}
                     type="button"
                     onClick={() => setEventType(t.id)}
-                    style={{
-                      height: 36,
-                      padding: "0 14px",
-                      background: active
-                        ? "var(--w-acc-soft)"
-                        : "transparent",
-                      border: "1px solid",
-                      borderColor: active
-                        ? "var(--w-acc)"
-                        : "var(--w-line-2)",
-                      color: active
-                        ? "var(--w-fg)"
-                        : "var(--w-fg-muted)",
-                      fontFamily: "var(--w-sans)",
-                      fontWeight: active ? 600 : 500,
-                      fontSize: 13,
-                      cursor: "pointer",
-                    }}
+                    className={
+                      "btn btn--sm " + (active ? "" : "btn--ghost")
+                    }
                   >
                     {t.label}
                   </button>
@@ -312,17 +236,22 @@ export default function NewEventForm({
             </div>
           </div>
 
-          {/* Venue (account-type aware) */}
+          {/* Venue */}
           {accountType === "venue" && venues.length > 0 && (
             <div>
-              <label htmlFor="venue" className="w-label">
-                VENUE
+              <label
+                htmlFor="venue"
+                className="t-meta"
+                style={labelStyle}
+              >
+                Venue
               </label>
               <select
                 id="venue"
                 value={venueId}
                 onChange={(e) => setVenueId(e.target.value)}
-                className="w-input"
+                className="input"
+                style={{ marginTop: "var(--s-2)" }}
               >
                 {venues.map((v) => (
                   <option key={v.id} value={v.id}>
@@ -336,10 +265,14 @@ export default function NewEventForm({
 
           {accountType !== "venue" && (
             <div>
-              <label htmlFor="partnerVenue" className="w-label">
+              <label
+                htmlFor="partnerVenue"
+                className="t-meta"
+                style={labelStyle}
+              >
                 {accountType === "brand"
-                  ? "VENUE PARTNER"
-                  : "VENUE (FREE TEXT)"}
+                  ? "Venue partner"
+                  : "Venue (free text)"}
               </label>
               <input
                 id="partnerVenue"
@@ -351,45 +284,80 @@ export default function NewEventForm({
                     ? "Wynwood Studios"
                     : "Floyd Miami"
                 }
-                className="w-input"
+                className="input"
+                style={{ marginTop: "var(--s-2)" }}
               />
-              <p className="w-type-meta" style={{ marginTop: 6 }}>
+              <p className="t-meta" style={{ marginTop: "var(--s-2)" }}>
                 {accountType === "brand"
-                  ? "WHERE THE TAKEOVER LANDS · DIRECTORY SHIPS LATER"
-                  : "VENUE FOR THE NIGHT · FREE TEXT FOR NOW"}
+                  ? "Where the takeover lands · directory ships later"
+                  : "Venue for the night · free text for now"}
               </p>
             </div>
           )}
 
           {/* Description */}
           <div>
-            <label htmlFor="description" className="w-label">
-              DESCRIPTION (OPTIONAL)
+            <label
+              htmlFor="description"
+              className="t-meta"
+              style={labelStyle}
+            >
+              Description (optional)
             </label>
             <textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-input"
+              className="input"
               style={{
+                marginTop: "var(--s-2)",
                 height: 96,
-                padding: "12px 16px",
+                padding: "var(--s-3) var(--s-4)",
                 resize: "vertical",
+                fontFamily: "inherit",
               }}
               placeholder="Guest list open 10–midnight…"
             />
           </div>
 
+          {/* Cover upload */}
+          <div>
+            <span className="t-meta">Cover · 4:5</span>
+            <input
+              id="flyer-file"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={onPickFile}
+              className="input"
+              style={{
+                marginTop: "var(--s-2)",
+                paddingTop: 10,
+                height: "auto",
+                fontSize: 13,
+              }}
+            />
+            <p className="t-meta" style={{ marginTop: "var(--s-2)" }}>
+              Or paste a URL
+            </p>
+            <input
+              id="flyer-url"
+              type="url"
+              value={flyerUrl}
+              onChange={(e) => setFlyerUrl(e.target.value)}
+              className="input"
+              placeholder="https://…"
+              style={{ marginTop: "var(--s-2)" }}
+            />
+          </div>
+
           {/* Schedule toggle */}
           <div>
-            <span className="w-label">SCHEDULE</span>
+            <span className="t-meta">Schedule</span>
             <div
               style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 4,
-                padding: 4,
-                background: "#ffffff08",
+                display: "flex",
+                gap: "var(--s-2)",
+                marginTop: "var(--s-2)",
               }}
             >
               {[
@@ -408,18 +376,9 @@ export default function NewEventForm({
                         setNights([nights[0], newNight()]);
                       }
                     }}
-                    style={{
-                      height: 40,
-                      border: 0,
-                      background: active ? "var(--w-fg)" : "transparent",
-                      color: active
-                        ? "var(--w-ink)"
-                        : "var(--w-fg-muted)",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      fontSize: 14,
-                      fontFamily: "inherit",
-                    }}
+                    className={
+                      "btn btn--sm " + (active ? "" : "btn--ghost")
+                    }
                   >
                     {o.l}
                   </button>
@@ -430,137 +389,230 @@ export default function NewEventForm({
 
           {/* Nights */}
           <div>
-            <span className="w-label">NIGHTS · {nights.length}</span>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 10,
-              }}
-            >
+            <span className="t-meta">Nights · {nights.length}</span>
+            <div className="card" style={{ marginTop: "var(--s-2)" }}>
               {nights.map((n, i) => (
                 <div
                   key={n.key}
-                  className="w-card"
-                  style={{ padding: 14 }}
+                  style={{
+                    padding: "var(--s-4) var(--s-5)",
+                    borderBottom:
+                      i === nights.length - 1
+                        ? "0"
+                        : "1px solid var(--line)",
+                  }}
                 >
                   <div
                     style={{
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
-                      marginBottom: 12,
+                      marginBottom: "var(--s-3)",
                     }}
                   >
-                    <Chip tone="ghost">
-                      NIGHT {String(i + 1).padStart(2, "0")}
-                    </Chip>
+                    <span className="chip chip--ghost">
+                      Night {String(i + 1).padStart(2, "0")}
+                    </span>
                     {nights.length > 1 && (
                       <button
                         type="button"
                         onClick={() => removeNight(i)}
-                        className="w-type-meta"
+                        className="t-meta"
                         style={{
                           background: "transparent",
                           border: 0,
-                          color: "var(--w-err)",
+                          color: "var(--err)",
                           cursor: "pointer",
                           padding: 0,
                         }}
                       >
-                        REMOVE
+                        Remove
                       </button>
                     )}
                   </div>
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
-                      gap: 8,
+                      gridTemplateColumns: "1fr 1fr 1fr",
+                      gap: "var(--s-3)",
                     }}
                   >
                     <div>
-                      <span className="w-type-meta">DATE</span>
+                      <span className="t-meta">Date</span>
                       <input
                         type="date"
                         value={n.date}
                         onChange={(e) =>
                           updateNight(i, { date: e.target.value })
                         }
-                        className="w-input"
-                        style={{ height: 44, marginTop: 4 }}
+                        className="input"
+                        style={{ marginTop: "var(--s-2)" }}
                         required
                       />
                     </div>
                     <div>
-                      <span className="w-type-meta">DOORS</span>
+                      <span className="t-meta">Doors</span>
                       <input
                         type="time"
                         value={n.time}
                         onChange={(e) =>
                           updateNight(i, { time: e.target.value })
                         }
-                        className="w-input"
-                        style={{ height: 44, marginTop: 4 }}
+                        className="input"
+                        style={{ marginTop: "var(--s-2)" }}
                         required
                       />
                     </div>
-                  </div>
-                  <div style={{ marginTop: 8 }}>
-                    <span className="w-type-meta">CAPACITY</span>
-                    <input
-                      type="number"
-                      min={1}
-                      value={n.capacity}
-                      onChange={(e) =>
-                        updateNight(i, { capacity: e.target.value })
-                      }
-                      className="w-input"
-                      style={{ height: 44, marginTop: 4 }}
-                      placeholder={
-                        defaultCapacity
-                          ? `default ${defaultCapacity}`
-                          : "e.g. 400"
-                      }
-                    />
+                    <div>
+                      <span className="t-meta">Capacity</span>
+                      <input
+                        type="number"
+                        min={1}
+                        value={n.capacity}
+                        onChange={(e) =>
+                          updateNight(i, { capacity: e.target.value })
+                        }
+                        className="input"
+                        style={{ marginTop: "var(--s-2)" }}
+                        placeholder={
+                          defaultCapacity
+                            ? `${defaultCapacity}`
+                            : "e.g. 400"
+                        }
+                      />
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
-            <Button
+            <button
               type="button"
-              variant="ghost"
-              block
+              className="btn btn--ghost btn--sm"
               onClick={() => setNights((r) => [...r, newNight()])}
-              style={{ marginTop: 10 }}
+              style={{ marginTop: "var(--s-3)" }}
             >
-              <IconPlus size={14} /> Add another night
-            </Button>
+              + Add another night
+            </button>
           </div>
 
           {error ? (
             <p
-              className="w-type-body-sm"
-              style={{ color: "var(--w-err)" }}
+              className="t-body-2"
+              style={{ color: "var(--err)" }}
               role="alert"
             >
               {error}
             </p>
           ) : null}
 
-          <Button
+          <button
             type="submit"
-            variant="primary"
-            size="lg"
-            block
+            className="btn btn--lg btn--block"
             disabled={pending}
           >
-            {pending ? "Creating…" : "Create event"} <IconArrow size={14} />
-          </Button>
+            {pending ? "Creating…" : "Create event"}
+          </button>
+        </div>
+
+        {/* ─── LIVE PREVIEW COLUMN ─── */}
+        <div>
+          <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+            Live preview
           </div>
-          {/* end fields column */}
-        </form>
-      </WFrame>
+          <div className="card">
+            {flyerPreview ? (
+              <div
+                style={{
+                  position: "relative",
+                  width: "100%",
+                  height: 180,
+                  overflow: "hidden",
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={flyerPreview}
+                  alt="Cover preview"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    background:
+                      "linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,0.72) 100%)",
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    left: "var(--s-4)",
+                    right: "var(--s-4)",
+                    bottom: "var(--s-4)",
+                  }}
+                >
+                  <div
+                    className="t-meta"
+                    style={{ color: "rgba(255,255,255,0.7)" }}
+                  >
+                    {previewMeta}
+                  </div>
+                  <div
+                    className="t-h1 truncate"
+                    style={{
+                      marginTop: "var(--s-1)",
+                      color: "#fff",
+                    }}
+                  >
+                    {name || "Untitled event"}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <Cover seed={name || "new event"} height={180}>
+                <div
+                  style={{
+                    position: "absolute",
+                    left: "var(--s-4)",
+                    right: "var(--s-4)",
+                    bottom: "var(--s-4)",
+                  }}
+                >
+                  <div
+                    className="t-meta"
+                    style={{ color: "rgba(255,255,255,0.7)" }}
+                  >
+                    {previewMeta}
+                  </div>
+                  <div
+                    className="t-h1 truncate"
+                    style={{
+                      marginTop: "var(--s-1)",
+                      color: "#fff",
+                    }}
+                  >
+                    {name || "Untitled event"}
+                  </div>
+                </div>
+              </Cover>
+            )}
+            <div style={{ padding: "var(--s-4)" }}>
+              <span className="chip">Draft</span>
+              <div
+                className="t-body-2"
+                style={{ marginTop: "var(--s-3)" }}
+              >
+                {nights.length} night{nights.length === 1 ? "" : "s"} ·{" "}
+                {EVENT_TYPES.find((t) => t.id === eventType)?.label}
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
     </main>
   );
 }

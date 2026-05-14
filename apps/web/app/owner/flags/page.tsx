@@ -1,7 +1,7 @@
 import { requireOwnerContext } from "@/lib/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fmtDate } from "@/lib/format";
-import { Chip } from "@/components/wadl";
+import { PageHeader } from "@/components/v5";
 import BulkFlagForm from "./bulk-form";
 
 export const dynamic = "force-dynamic";
@@ -51,74 +51,61 @@ export default async function MasterFlagsPage({
   }));
 
   const sortLabels: Record<typeof sort, string> = {
-    recent: "MOST RECENT",
-    name: "BY NAME",
-    event: "BY EVENT",
+    recent: "Most recent",
+    name: "By name",
+    event: "By event",
   };
 
   return (
     <main
       id="main-content"
-      className="w-app"
-      style={{
-        minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
-      }}
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
     >
-      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-        <div
-          style={{
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            marginBottom: 24,
-          }}
-        >
-          <div className="w-type-meta">DO NOT ADMIT · DNA</div>
-          <div className="w-type-display-md" style={{ marginTop: 8 }}>
-            Blocked guests
-          </div>
-          <p
-            className="w-type-body-sm"
-            style={{ color: "var(--w-fg-muted)", marginTop: 8 }}
-          >
-            {items.length} blocked guest{items.length === 1 ? "" : "s"} across
-            this account · the door scanner rejects these on sight.
-          </p>
-        </div>
+      <PageHeader
+        eyebrow="Guests · blocklist"
+        title={`Blocklist · ${items.length} active`}
+        sub="Private to this account · the door scanner rejects these on sight."
+      />
 
+      <div style={{ padding: "var(--s-8)" }}>
         {items.length === 0 ? (
           <div
-            className="w-card"
             style={{
-              padding: "64px 32px",
+              padding: "var(--s-20) var(--s-8)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
               textAlign: "center",
+              maxWidth: 480,
+              margin: "0 auto",
             }}
           >
-            <div className="w-type-h1">Clean sheet</div>
-            <p
-              className="w-type-body-sm"
+            <div
               style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 12,
-                maxWidth: 460,
-                marginInline: "auto",
-                lineHeight: 1.5,
+                width: 56,
+                height: 56,
+                borderRadius: "var(--r-lg)",
+                background: "var(--bg-3)",
+                marginBottom: "var(--s-5)",
               }}
+            />
+            <div className="t-display-md">Clean sheet</div>
+            <div
+              className="t-body-2"
+              style={{ marginTop: "var(--s-3)", maxWidth: 380 }}
             >
               No DNA flags across any of your events. Flag a guest from their
               detail page when needed.
-            </p>
+            </div>
           </div>
         ) : (
           <>
             <div
               style={{
                 display: "flex",
-                gap: 6,
-                overflowX: "auto",
-                paddingBottom: 4,
-                marginBottom: 16,
+                gap: "var(--s-1)",
+                marginBottom: "var(--s-4)",
+                flexWrap: "wrap",
               }}
             >
               {(["recent", "name", "event"] as const).map((s) => (
@@ -127,11 +114,15 @@ export default async function MasterFlagsPage({
                   href={
                     s === "recent" ? "/owner/flags" : `/owner/flags?sort=${s}`
                   }
-                  style={{ textDecoration: "none", flexShrink: 0 }}
+                  className={
+                    "nav-item " + (sort === s ? "nav-item--active" : "")
+                  }
+                  style={{
+                    textDecoration: "none",
+                    fontSize: "var(--ts-sm)",
+                  }}
                 >
-                  <Chip tone={sort === s ? "acc" : "ghost"}>
-                    {sortLabels[s]}
-                  </Chip>
+                  {sortLabels[s]}
                 </a>
               ))}
             </div>

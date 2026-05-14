@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireOwnerContext } from "@/lib/owner";
-import { Button, Chip } from "@/components/wadl";
+import { PageHeader } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Calendar — WADL" };
@@ -15,18 +15,18 @@ interface NightRow {
 }
 
 const MONTH_NAMES = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
+  "January",
+  "February",
+  "March",
+  "April",
   "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 function ymd(d: Date) {
@@ -136,93 +136,58 @@ export default async function CalendarPage({
   return (
     <main
       id="main-content"
-      className="w-app"
-      style={{
-        minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
-      }}
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
     >
-      <div style={{ maxWidth: 1600, margin: "0 auto" }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-end",
-            justifyContent: "space-between",
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            gap: 16,
-            flexWrap: "wrap",
-          }}
-        >
-          <div>
-            <div className="w-type-meta">CALENDAR</div>
-            <div className="w-type-display-md" style={{ marginTop: 8 }}>
-              {MONTH_NAMES[viewMonth]} {viewYear}
-            </div>
-            <p
-              className="w-type-body-sm"
-              style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 8,
-              }}
+      <PageHeader
+        eyebrow="Calendar"
+        title={`${MONTH_NAMES[viewMonth]} ${viewYear}`}
+        sub={`${eventCount} event${eventCount === 1 ? "" : "s"} this month`}
+        actions={
+          <>
+            <Link
+              href={prevHref}
+              className="btn btn--ghost btn--sm"
+              style={{ textDecoration: "none" }}
+              aria-label="Previous month"
             >
-              {eventCount} event{eventCount === 1 ? "" : "s"} this month
-            </p>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-          >
-            <Link href={prevHref} style={{ textDecoration: "none" }}>
-              <Button
-                variant="ghost"
-                style={{ height: 36, padding: "0 14px" }}
-                aria-label="Previous month"
-              >
-                ←
-              </Button>
+              ←
             </Link>
-            <Link href="/owner/calendar" style={{ textDecoration: "none" }}>
-              <Button
-                variant="ghost"
-                style={{ height: 36, padding: "0 14px" }}
-              >
-                Today
-              </Button>
+            <Link
+              href="/owner/calendar"
+              className="btn btn--ghost btn--sm"
+              style={{ textDecoration: "none" }}
+            >
+              Today
             </Link>
-            <Link href={nextHref} style={{ textDecoration: "none" }}>
-              <Button
-                variant="ghost"
-                style={{ height: 36, padding: "0 14px" }}
-                aria-label="Next month"
-              >
-                →
-              </Button>
+            <Link
+              href={nextHref}
+              className="btn btn--ghost btn--sm"
+              style={{ textDecoration: "none" }}
+              aria-label="Next month"
+            >
+              →
             </Link>
-          </div>
-        </div>
+          </>
+        }
+      />
 
+      <div style={{ padding: "var(--s-8)" }}>
         {/* Day-of-week headers */}
         <div
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(7, 1fr)",
-            gap: 4,
-            marginTop: 24,
-            marginBottom: 6,
+            gap: "var(--s-1)",
+            marginBottom: "var(--s-2)",
           }}
         >
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
             <div
               key={d}
-              className="w-type-meta"
+              className="t-meta"
               style={{ textAlign: "center" }}
             >
-              {d.toUpperCase()}
+              {d}
             </div>
           ))}
         </div>
@@ -232,7 +197,7 @@ export default async function CalendarPage({
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(7, 1fr)",
-            gap: 4,
+            gap: "var(--s-1)",
           }}
         >
           {cells.map((c, i) => {
@@ -242,7 +207,8 @@ export default async function CalendarPage({
                   key={`blank-${i}`}
                   style={{
                     aspectRatio: "1 / 1",
-                    background: "rgba(255,255,255,0.02)",
+                    background: "var(--bg)",
+                    borderRadius: "var(--r-sm)",
                   }}
                 />
               );
@@ -266,12 +232,12 @@ export default async function CalendarPage({
               totals.cap > 0
                 ? Math.round((totals.approved / totals.cap) * 100)
                 : 0;
-            const pctTone =
+            const pctColor =
               pct >= 90
-                ? "var(--w-err)"
+                ? "var(--err)"
                 : pct >= 60
-                  ? "var(--w-warn)"
-                  : "var(--w-ok)";
+                  ? "var(--warn)"
+                  : "var(--ok)";
             return (
               <Link
                 key={c.date}
@@ -285,30 +251,32 @@ export default async function CalendarPage({
                 <div
                   style={{
                     aspectRatio: "1 / 1",
-                    padding: 6,
+                    padding: "var(--s-2)",
                     display: "flex",
                     flexDirection: "column",
+                    borderRadius: "var(--r-sm)",
                     border: "1px solid",
                     borderColor: isToday
-                      ? "var(--w-acc)"
+                      ? "var(--line-3)"
                       : has
-                        ? "oklch(0.86 0.18 145 / 0.4)"
-                        : "var(--w-line)",
+                        ? "var(--line-2)"
+                        : "var(--line)",
                     background: isToday
-                      ? "var(--w-acc-soft)"
+                      ? "var(--bg-3)"
                       : has
-                        ? "var(--w-surface-2)"
-                        : "rgba(255,255,255,0.02)",
+                        ? "var(--bg-2)"
+                        : "var(--bg)",
+                    transition: "border-color .12s, background .12s",
                   }}
                 >
                   <div
+                    className="t-num"
                     style={{
                       fontFamily: "var(--w-display)",
                       fontWeight: 700,
-                      fontSize: 18,
-                      letterSpacing: "-0.025em",
+                      fontSize: 16,
                       lineHeight: 1,
-                      color: isToday ? "var(--w-acc-ink)" : "var(--w-fg)",
+                      color: isToday ? "var(--fg)" : "var(--fg-2)",
                     }}
                   >
                     {c.day}
@@ -316,27 +284,31 @@ export default async function CalendarPage({
                   {has && (
                     <div style={{ marginTop: "auto" }}>
                       <div
-                        className="w-type-meta"
+                        className="t-h2 truncate"
+                        style={{ fontSize: 12 }}
+                      >
+                        {c.night[0].event.name}
+                      </div>
+                      <div
                         style={{
-                          fontSize: 9,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "var(--s-1)",
+                          marginTop: "var(--s-1)",
                         }}
                       >
-                        {c.night.length} EV
+                        <span className="t-meta">
+                          {c.night.length} ev
+                        </span>
+                        {totals.cap > 0 && (
+                          <span
+                            className="t-meta"
+                            style={{ color: pctColor }}
+                          >
+                            · {pct}%
+                          </span>
+                        )}
                       </div>
-                      {totals.cap > 0 && (
-                        <div
-                          className="w-type-meta"
-                          style={{
-                            fontSize: 9,
-                            color: pctTone,
-                          }}
-                        >
-                          {pct}%
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
@@ -348,36 +320,24 @@ export default async function CalendarPage({
         {/* Legend */}
         <div
           style={{
-            marginTop: 24,
+            marginTop: "var(--s-6)",
             display: "flex",
-            gap: 12,
+            gap: "var(--s-3)",
             justifyContent: "center",
             flexWrap: "wrap",
           }}
         >
-          <Chip tone="acc">TODAY</Chip>
-          <Chip tone="ok">EVENT</Chip>
-          <Chip tone="ghost">EMPTY</Chip>
-        </div>
-
-        <div
-          className="w-type-meta"
-          style={{
-            marginTop: 24,
-            textAlign: "center",
-            color: "var(--w-fg-dim)",
-          }}
-        >
-          TAP A DAY TO JUMP INTO ITS EVENT ·{" "}
-          <Link
-            href="/owner"
-            style={{
-              color: "var(--w-acc)",
-              textDecoration: "none",
-            }}
-          >
-            LIST VIEW →
-          </Link>
+          <span className="chip">Today</span>
+          <span className="chip chip--ghost">Has event</span>
+          <span className="t-meta" style={{ alignSelf: "center" }}>
+            Tap a day to open its event ·{" "}
+            <Link
+              href="/owner"
+              style={{ color: "var(--fg)", textDecoration: "none" }}
+            >
+              List view →
+            </Link>
+          </span>
         </div>
       </div>
     </main>

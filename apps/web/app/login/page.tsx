@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { normalizePhone } from "@/lib/routing";
-import { Button, Wordmark } from "@/components/wadl";
+import { Cover, Logo } from "@/components/v5";
 
 type AuthTab = "phone" | "email";
 
@@ -64,185 +64,224 @@ export default function LoginPage() {
   return (
     <main
       id="main-content"
-      className="w-app w-frame"
-      style={{ paddingBottom: 32 }}
+      className="v5"
+      style={{
+        minHeight: "100vh",
+        background: "var(--bg)",
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+      }}
     >
-      <div style={{ padding: "20px 24px 0" }}>
-        <Wordmark variant="monogrid" size={20} />
-      </div>
-
-      <div style={{ padding: "72px 24px 0" }}>
-        <div className="w-type-display-lg">
-          The door,
-          <br />
-          de-jammed.
-        </div>
-        <div
-          className="w-type-body"
-          style={{
-            color: "var(--w-fg-muted)",
-            marginTop: 16,
-            maxWidth: 320,
-          }}
-        >
-          Sign in or create an account in seconds. Phone or email — we&apos;ll
-          send you a code.
-        </div>
-      </div>
-
-      {/* Tab toggle */}
+      {/* Left — the form */}
       <div
-        role="tablist"
-        aria-label="Sign-in method"
         style={{
+          padding: "var(--s-16) var(--s-12)",
           display: "flex",
-          gap: 8,
-          padding: "32px 24px 0",
+          flexDirection: "column",
+          borderRight: "1px solid var(--line)",
         }}
       >
-        {(["phone", "email"] as const).map((t) => {
-          const active = tab === t;
-          return (
-            <button
-              key={t}
-              role="tab"
-              aria-selected={active}
-              type="button"
-              onClick={() => {
-                setTab(t);
-                setError(null);
-                setEmailSent(null);
-              }}
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--s-3)" }}>
+          <Logo size={20} />
+        </div>
+
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            maxWidth: 420,
+          }}
+        >
+          <div className="t-display-lg">Sign in</div>
+          <div className="t-body-2" style={{ marginTop: "var(--s-3)" }}>
+            We&apos;ll text you a magic code. No password.
+          </div>
+
+          {/* Method toggle */}
+          <div
+            role="tablist"
+            aria-label="Sign-in method"
+            style={{
+              display: "flex",
+              gap: "var(--s-2)",
+              marginTop: "var(--s-8)",
+            }}
+          >
+            {(["phone", "email"] as const).map((t) => {
+              const active = tab === t;
+              return (
+                <button
+                  key={t}
+                  role="tab"
+                  aria-selected={active}
+                  type="button"
+                  onClick={() => {
+                    setTab(t);
+                    setError(null);
+                    setEmailSent(null);
+                  }}
+                  className={active ? "btn btn--sm" : "btn btn--ghost btn--sm"}
+                  style={{ flex: 1 }}
+                >
+                  {t === "phone" ? "Phone code" : "Email link"}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Form */}
+          {tab === "phone" ? (
+            <form
+              onSubmit={onPhoneSubmit}
               style={{
-                flex: 1,
-                height: 36,
-                borderRadius: 9999,
-                border: 0,
-                fontFamily: "var(--w-mono)",
-                fontSize: 11,
-                letterSpacing: "0.06em",
-                textTransform: "uppercase",
-                cursor: "pointer",
-                background: active ? "var(--w-acc)" : "transparent",
-                color: active ? "var(--w-acc-ink)" : "var(--w-fg-muted)",
-                boxShadow: active
-                  ? "none"
-                  : "inset 0 0 0 1px var(--w-line-2)",
-                transition: "background 0.12s, color 0.12s",
+                display: "flex",
+                flexDirection: "column",
+                gap: "var(--s-3)",
+                marginTop: "var(--s-3)",
               }}
             >
-              {t === "phone" ? "Phone OTP" : "Email link"}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Form */}
-      <div style={{ padding: "16px 24px 0" }}>
-        {tab === "phone" ? (
-          <form
-            onSubmit={onPhoneSubmit}
-            style={{ display: "flex", flexDirection: "column", gap: 12 }}
-          >
-            <div>
-              <label htmlFor="phone" className="w-label">
-                Phone
-              </label>
               <input
                 id="phone"
                 name="phone"
                 type="tel"
                 inputMode="tel"
                 autoComplete="tel"
-                placeholder="(305) 799 0518"
+                aria-label="Phone"
+                placeholder="+1 305 799 0518"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-input"
-                style={{ height: 56, fontSize: 16 }}
+                className="input"
+                style={{ height: 52, fontSize: 15 }}
                 required
               />
-            </div>
-            {error ? <ErrorLine>{error}</ErrorLine> : null}
-            <Button
-              variant="primary"
-              size="lg"
-              block
-              type="submit"
-              disabled={loading}
+              {error ? <ErrorLine>{error}</ErrorLine> : null}
+              <button
+                className="btn btn--lg btn--block"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? "Sending code…" : "Send code"}
+              </button>
+            </form>
+          ) : (
+            <form
+              onSubmit={onEmailSubmit}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "var(--s-3)",
+                marginTop: "var(--s-3)",
+              }}
             >
-              {loading ? "Sending code…" : "Send code"}
-            </Button>
-          </form>
-        ) : (
-          <form
-            onSubmit={onEmailSubmit}
-            style={{ display: "flex", flexDirection: "column", gap: 12 }}
-          >
-            <div>
-              <label htmlFor="email" className="w-label">
-                Email
-              </label>
               <input
                 id="email"
                 name="email"
                 type="email"
                 inputMode="email"
                 autoComplete="email"
+                aria-label="Email"
                 placeholder="you@venue.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-input"
-                style={{ height: 56, fontSize: 16 }}
+                className="input"
+                style={{ height: 52, fontSize: 15 }}
                 required
               />
-            </div>
-            {error ? <ErrorLine>{error}</ErrorLine> : null}
-            {emailSent ? (
-              <p
-                className="w-type-body-sm"
-                style={{ color: "var(--w-ok)" }}
+              {error ? <ErrorLine>{error}</ErrorLine> : null}
+              {emailSent ? (
+                <p className="t-body-2" style={{ color: "var(--ok)" }}>
+                  Magic link sent to{" "}
+                  <span style={{ color: "var(--fg)" }}>{emailSent}</span>. Check
+                  your inbox.
+                </p>
+              ) : null}
+              <button
+                className="btn btn--lg btn--block"
+                type="submit"
+                disabled={loading}
               >
-                Magic link sent to{" "}
-                <span style={{ color: "var(--w-fg)" }}>{emailSent}</span>.
-                Check your inbox.
-              </p>
-            ) : null}
-            <Button
-              variant="primary"
-              size="lg"
-              block
-              type="submit"
-              disabled={loading}
-            >
-              {loading ? "Sending…" : "Send magic link"}
-            </Button>
-          </form>
-        )}
-      </div>
+                {loading ? "Sending…" : "Send magic link"}
+              </button>
+            </form>
+          )}
 
-      <div
-        style={{
-          padding: "32px 24px 24px",
-          marginTop: "auto",
-          textAlign: "center",
-        }}
-      >
-        <span className="w-type-meta" style={{ color: "var(--w-fg-dim)" }}>
-          BY CONTINUING YOU AGREE TO{" "}
+          <div className="t-body-2" style={{ marginTop: "var(--s-5)" }}>
+            No account?{" "}
+            <a
+              href="/signup"
+              style={{
+                color: "var(--fg)",
+                fontWeight: 500,
+                textDecoration: "none",
+              }}
+            >
+              Open a venue
+            </a>
+          </div>
+        </div>
+
+        <div className="t-meta" style={{ color: "var(--fg-4)" }}>
+          By continuing you agree to{" "}
           <a
             href="/terms"
-            style={{ color: "var(--w-fg-muted)", textDecoration: "none" }}
+            style={{ color: "var(--fg-3)", textDecoration: "none" }}
           >
-            TERMS
+            Terms
           </a>{" "}
           ·{" "}
           <a
             href="/privacy"
-            style={{ color: "var(--w-fg-muted)", textDecoration: "none" }}
+            style={{ color: "var(--fg-3)", textDecoration: "none" }}
           >
-            PRIVACY
+            Privacy
           </a>
-        </span>
+        </div>
+      </div>
+
+      {/* Right — full-height cover with live-event caption */}
+      <div style={{ position: "relative", minHeight: "100vh" }}>
+        <Cover
+          seed="signin v5"
+          style={{
+            position: "absolute",
+            inset: 0,
+            height: "100%",
+            borderRadius: 0,
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              left: "var(--s-12)",
+              bottom: "var(--s-12)",
+              color: "#fff",
+            }}
+          >
+            <div
+              className="t-meta"
+              style={{ color: "rgba(255,255,255,0.7)" }}
+            >
+              Live now
+            </div>
+            <div
+              className="t-display-lg"
+              style={{ marginTop: "var(--s-2)", color: "#fff" }}
+            >
+              BR · BK 023
+            </div>
+            <div
+              className="t-body-2"
+              style={{
+                marginTop: "var(--s-1)",
+                color: "rgba(255,255,255,0.8)",
+              }}
+            >
+              241 of 320 · scanning
+            </div>
+          </div>
+        </Cover>
       </div>
     </main>
   );
@@ -250,11 +289,7 @@ export default function LoginPage() {
 
 function ErrorLine({ children }: { children: React.ReactNode }) {
   return (
-    <p
-      className="w-type-body-sm"
-      style={{ color: "var(--w-err)", marginTop: -4 }}
-      role="alert"
-    >
+    <p className="t-body-2" style={{ color: "var(--err)" }} role="alert">
       {children}
     </p>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Button } from "@/components/wadl";
+import { PageHeader, EventSubNav, Cover } from "@/components/v5";
 import { useFormSaveShortcut } from "@/components/use-form-save-shortcut";
 import { updateEventAction, updateNightsAction } from "./actions";
 import { fmtDate } from "@/lib/format";
@@ -15,16 +15,6 @@ interface NightRow {
   lockdown_threshold_pct: number;
 }
 
-const INPUT_STYLE: React.CSSProperties = {
-  width: "100%",
-  background: "var(--w-surface-1)",
-  border: "1px solid var(--w-line)",
-  color: "var(--w-fg)",
-  padding: "10px 12px",
-  fontFamily: "var(--w-sans)",
-  fontSize: 14,
-};
-
 function toLocalDateTimeInputValue(iso: string | null) {
   if (!iso) return "";
   const d = new Date(iso);
@@ -34,10 +24,12 @@ function toLocalDateTimeInputValue(iso: string | null) {
 
 export default function SettingsForm({
   eventId,
+  eventName,
   initial,
   nights: initialNights,
 }: {
   eventId: string;
+  eventName: string;
   initial: { name: string; description: string; flyer_url: string };
   nights: NightRow[];
 }) {
@@ -63,6 +55,17 @@ export default function SettingsForm({
 
   function updateNight(id: string, patch: Partial<NightRow>) {
     setNights((rows) => rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+  }
+
+  function onDiscard() {
+    setName(initial.name);
+    setDescription(initial.description);
+    setFlyerUrl(initial.flyer_url);
+    setFlyerFile(null);
+    setFlyerPreview(initial.flyer_url || null);
+    setNights(initialNights);
+    setError(null);
+    setSaved(null);
   }
 
   function onSaveEvent(e: React.FormEvent) {
@@ -120,215 +123,279 @@ export default function SettingsForm({
 
   return (
     <>
-      <form
-        ref={eventFormRef}
-        onSubmit={onSaveEvent}
-        style={{ display: "flex", flexDirection: "column", gap: 20 }}
-      >
-        <div>
-          <label
-            htmlFor="name"
-            className="w-type-meta"
-            style={{ display: "block", marginBottom: 6 }}
-          >
-            EVENT NAME
-          </label>
-          <input
-            id="name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            style={INPUT_STYLE}
-            required
-          />
-        </div>
-
-        <div>
-          <div className="w-type-meta" style={{ marginBottom: 6 }}>
-            FLYER (4:5 IMAGE)
-          </div>
-          {flyerPreview && (
-            <div
-              style={{
-                overflow: "hidden",
-                border: "1px solid var(--w-line)",
-                marginBottom: 8,
-                aspectRatio: "4 / 5",
-                maxWidth: 200,
-              }}
+      <PageHeader
+        eyebrow="Edit this event"
+        title="Settings"
+        actions={
+          <>
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={onDiscard}
+              disabled={pending}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={flyerPreview}
-                alt="Flyer preview"
+              Discard
+            </button>
+            <button
+              type="submit"
+              form="event-basics-form"
+              className="btn"
+              disabled={pending}
+            >
+              {pending ? "Saving…" : "Save"}
+            </button>
+          </>
+        }
+      />
+      <EventSubNav active="settings" eventId={eventId} />
+
+      <div style={{ padding: "var(--s-8)" }}>
+        {/* Basics */}
+        <div className="t-meta">Basics</div>
+        <form
+          id="event-basics-form"
+          ref={eventFormRef}
+          onSubmit={onSaveEvent}
+          style={{
+            marginTop: "var(--s-4)",
+            display: "grid",
+            gridTemplateColumns: "repeat(2, 1fr)",
+            gap: "var(--s-5)",
+            maxWidth: 720,
+          }}
+        >
+          <div style={{ gridColumn: "1 / -1" }}>
+            <div className="t-meta">Event name</div>
+            <input
+              id="name"
+              type="text"
+              className="input"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              style={{ marginTop: "var(--s-2)" }}
+              required
+            />
+          </div>
+          <div style={{ gridColumn: "1 / -1" }}>
+            <div className="t-meta">Description</div>
+            <textarea
+              id="description"
+              className="input"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              style={{ marginTop: "var(--s-2)", minHeight: 80 }}
+            />
+          </div>
+        </form>
+
+        {/* Cover image */}
+        <div className="t-meta" style={{ marginTop: "var(--s-10)" }}>
+          Cover image
+        </div>
+        <div
+          className="card"
+          style={{
+            marginTop: "var(--s-3)",
+            padding: "var(--s-4)",
+            display: "flex",
+            gap: "var(--s-4)",
+            alignItems: "center",
+            maxWidth: 720,
+          }}
+        >
+          <div style={{ width: 160 }}>
+            {flyerPreview ? (
+              <div
                 style={{
                   width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
+                  height: 100,
+                  borderRadius: "var(--r-lg)",
+                  overflow: "hidden",
                 }}
-              />
-            </div>
-          )}
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={onPickFile}
-            style={INPUT_STYLE}
-          />
-          <div
-            className="w-type-meta"
-            style={{ marginTop: 8, marginBottom: 4 }}
-          >
-            OR PASTE A URL:
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={flyerPreview}
+                  alt="Cover preview"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                />
+              </div>
+            ) : (
+              <Cover seed={eventName} height={100} />
+            )}
           </div>
-          <input
-            type="url"
-            value={flyerUrl}
-            onChange={(e) => setFlyerUrl(e.target.value)}
-            style={INPUT_STYLE}
-          />
-        </div>
-
-        <div>
-          <label
-            htmlFor="description"
-            className="w-type-meta"
-            style={{ display: "block", marginBottom: 6 }}
-          >
-            DESCRIPTION
-          </label>
-          <textarea
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            style={{ ...INPUT_STYLE, minHeight: 80 }}
-          />
-        </div>
-
-        <Button variant="primary" type="submit" disabled={pending}>
-          {pending ? "Saving…" : "Save event"}
-        </Button>
-      </form>
-
-      <div
-        style={{
-          margin: "32px 0",
-          height: 1,
-          background: "var(--w-line)",
-        }}
-      />
-
-      <form
-        ref={nightsFormRef}
-        onSubmit={onSaveNights}
-        style={{ display: "flex", flexDirection: "column", gap: 16 }}
-      >
-        <div className="w-type-meta">NIGHTS</div>
-        {nights.map((n) => (
-          <div key={n.id} className="w-card" style={{ padding: 14 }}>
-            <div className="w-type-meta" style={{ marginBottom: 8 }}>
-              {fmtDate(n.night_date).toUpperCase()}
+          <div style={{ flex: 1 }}>
+            <div className="t-h1">
+              {flyerPreview ? "Cover image" : "Generated cover"}
+            </div>
+            <div className="t-body-2" style={{ marginTop: "var(--s-1)" }}>
+              Used everywhere this event appears.
             </div>
             <div
-              style={{ display: "flex", flexDirection: "column", gap: 8 }}
+              style={{
+                display: "flex",
+                gap: "var(--s-2)",
+                marginTop: "var(--s-3)",
+                flexWrap: "wrap",
+              }}
             >
-              <div>
-                <label
-                  htmlFor={`doors-${n.id}`}
-                  className="w-type-meta"
-                  style={{ display: "block", marginBottom: 4 }}
-                >
-                  DOORS
-                </label>
+              <label
+                className="btn btn--secondary btn--sm"
+                style={{ cursor: "pointer" }}
+              >
+                Upload image
                 <input
-                  id={`doors-${n.id}`}
-                  type="datetime-local"
-                  defaultValue={toLocalDateTimeInputValue(n.doors_at)}
-                  style={INPUT_STYLE}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={onPickFile}
+                  style={{ display: "none" }}
                 />
-              </div>
-              <div>
-                <label
-                  htmlFor={`cutoff-${n.id}`}
-                  className="w-type-meta"
-                  style={{ display: "block", marginBottom: 4 }}
+              </label>
+              {flyerPreview && (
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--sm"
+                  onClick={() => {
+                    setFlyerUrl("");
+                    setFlyerFile(null);
+                    setFlyerPreview(null);
+                  }}
                 >
-                  RSVP CUTOFF
-                </label>
-                <input
-                  id={`cutoff-${n.id}`}
-                  type="datetime-local"
-                  defaultValue={toLocalDateTimeInputValue(n.cutoff_at)}
-                  style={INPUT_STYLE}
-                />
-              </div>
-              <div>
-                <div
-                  className="w-type-meta"
-                  style={{ marginBottom: 4 }}
-                >
-                  CAPACITY CAP
-                </div>
-                <input
-                  type="number"
-                  min={0}
-                  value={n.capacity_cap ?? ""}
-                  onChange={(e) =>
-                    updateNight(n.id, {
-                      capacity_cap: e.target.value
-                        ? parseInt(e.target.value, 10)
-                        : null,
-                    })
-                  }
-                  style={INPUT_STYLE}
-                />
-              </div>
-              <div>
-                <div
-                  className="w-type-meta"
-                  style={{ marginBottom: 4 }}
-                >
-                  LOCKDOWN %
-                </div>
-                <input
-                  type="number"
-                  min={1}
-                  max={100}
-                  value={n.lockdown_threshold_pct}
-                  onChange={(e) =>
-                    updateNight(n.id, {
-                      lockdown_threshold_pct:
-                        parseInt(e.target.value, 10) || 100,
-                    })
-                  }
-                  style={INPUT_STYLE}
-                />
-              </div>
+                  Remove
+                </button>
+              )}
+            </div>
+            <div style={{ marginTop: "var(--s-3)" }}>
+              <div className="t-meta">Or paste a URL</div>
+              <input
+                type="url"
+                className="input"
+                value={flyerUrl}
+                onChange={(e) => {
+                  setFlyerUrl(e.target.value);
+                  setFlyerPreview(e.target.value || null);
+                }}
+                style={{ marginTop: "var(--s-2)" }}
+              />
             </div>
           </div>
-        ))}
+        </div>
 
-        <Button variant="primary" type="submit" disabled={pending}>
-          {pending ? "Saving…" : "Save nights"}
-        </Button>
-      </form>
+        {/* Nights */}
+        <div className="t-meta" style={{ marginTop: "var(--s-10)" }}>
+          Nights
+        </div>
+        <form
+          ref={nightsFormRef}
+          onSubmit={onSaveNights}
+          style={{ marginTop: "var(--s-4)", maxWidth: 720 }}
+        >
+          {nights.map((n) => (
+            <div
+              key={n.id}
+              className="card"
+              style={{
+                padding: "var(--s-5)",
+                marginBottom: "var(--s-3)",
+              }}
+            >
+              <div className="t-h2" style={{ marginBottom: "var(--s-4)" }}>
+                {fmtDate(n.night_date)}
+              </div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, 1fr)",
+                  gap: "var(--s-5)",
+                }}
+              >
+                <div>
+                  <label htmlFor={`doors-${n.id}`} className="t-meta">
+                    Doors
+                  </label>
+                  <input
+                    id={`doors-${n.id}`}
+                    type="datetime-local"
+                    className="input"
+                    defaultValue={toLocalDateTimeInputValue(n.doors_at)}
+                    style={{ marginTop: "var(--s-2)" }}
+                  />
+                </div>
+                <div>
+                  <label htmlFor={`cutoff-${n.id}`} className="t-meta">
+                    RSVP cutoff
+                  </label>
+                  <input
+                    id={`cutoff-${n.id}`}
+                    type="datetime-local"
+                    className="input"
+                    defaultValue={toLocalDateTimeInputValue(n.cutoff_at)}
+                    style={{ marginTop: "var(--s-2)" }}
+                  />
+                </div>
+                <div>
+                  <div className="t-meta">Capacity cap</div>
+                  <input
+                    type="number"
+                    min={0}
+                    className="input"
+                    value={n.capacity_cap ?? ""}
+                    onChange={(e) =>
+                      updateNight(n.id, {
+                        capacity_cap: e.target.value
+                          ? parseInt(e.target.value, 10)
+                          : null,
+                      })
+                    }
+                    style={{ marginTop: "var(--s-2)" }}
+                  />
+                </div>
+                <div>
+                  <div className="t-meta">Lockdown %</div>
+                  <input
+                    type="number"
+                    min={1}
+                    max={100}
+                    className="input"
+                    value={n.lockdown_threshold_pct}
+                    onChange={(e) =>
+                      updateNight(n.id, {
+                        lockdown_threshold_pct:
+                          parseInt(e.target.value, 10) || 100,
+                      })
+                    }
+                    style={{ marginTop: "var(--s-2)" }}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+          <button type="submit" className="btn" disabled={pending}>
+            {pending ? "Saving…" : "Save nights"}
+          </button>
+        </form>
 
-      {error && (
-        <p
-          className="w-type-body-sm"
-          style={{ color: "var(--w-err)", marginTop: 16 }}
-        >
-          {error}
-        </p>
-      )}
-      {saved && (
-        <p
-          className="w-type-body-sm"
-          style={{ color: "var(--w-ok)", marginTop: 16 }}
-        >
-          {saved}
-        </p>
-      )}
+        {error && (
+          <p
+            className="t-body-2"
+            style={{ color: "var(--err)", marginTop: "var(--s-5)" }}
+          >
+            {error}
+          </p>
+        )}
+        {saved && (
+          <p
+            className="t-body-2"
+            style={{ color: "var(--ok)", marginTop: "var(--s-5)" }}
+          >
+            {saved}
+          </p>
+        )}
+      </div>
     </>
   );
 }

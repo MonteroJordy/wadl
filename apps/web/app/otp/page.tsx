@@ -3,13 +3,13 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Button, IconBack, Wordmark } from "@/components/wadl";
+import { Logo } from "@/components/v5";
 
 function formatPhone(raw: string): string {
-  // Show as +1 (305) 555-0123 if it parses, else as-is.
+  // Show as +1 305 555 0123 if it parses, else as-is.
   const digits = raw.replace(/\D/g, "");
   if (digits.length === 11 && digits.startsWith("1")) {
-    return `+1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+    return `+1 ${digits.slice(1, 4)} ${digits.slice(4, 7)} ${digits.slice(7)}`;
   }
   return raw;
 }
@@ -25,6 +25,7 @@ function OtpInner() {
   const [resendMsg, setResendMsg] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
   const submittedRef = useRef(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Cooldown countdown for the Resend button.
   useEffect(() => {
@@ -116,193 +117,175 @@ function OtpInner() {
     if (resendError) setError(resendError.message);
     else {
       setResendMsg("Code resent. Check your messages.");
-      setResendCooldown(30);
+      setResendCooldown(42);
     }
   }
+
+  const digits = code.split("");
 
   return (
     <main
       id="main-content"
-      className="w-app"
+      className="v5"
       style={{
         minHeight: "100vh",
-        background: "var(--w-bg)",
+        background: "var(--bg)",
         display: "flex",
-        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "var(--s-8)",
       }}
     >
-      <div
-        style={{
-          padding: "16px 24px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          maxWidth: 1200,
-          margin: "0 auto",
-          width: "100%",
-        }}
-      >
-        <button
-          type="button"
-          onClick={() => router.push("/login")}
-          aria-label="Back to login"
-          style={{
-            background: "transparent",
-            border: 0,
-            color: "var(--w-fg)",
-            width: 36,
-            height: 36,
-            borderRadius: 9999,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "inset 0 0 0 1px var(--w-line-2)",
-            cursor: "pointer",
-          }}
-        >
-          <IconBack />
-        </button>
-        <Wordmark variant="monogrid" size={18} />
-        <div style={{ width: 36 }} />
-      </div>
+      <div style={{ width: 420 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--s-3)" }}>
+          <Logo size={20} />
+        </div>
 
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "24px 24px 96px",
-        }}
-      >
-        <div style={{ width: "100%", maxWidth: 440 }}>
-          <div className="w-type-meta">VERIFY</div>
-          <div className="w-type-display-lg" style={{ marginTop: 12 }}>
-            Enter
-            <br />
-            code.
-          </div>
-          <div
-            className="w-type-body"
-            style={{ color: "var(--w-fg-muted)", marginTop: 16 }}
-          >
-            Sent to{" "}
-            <span style={{ color: "var(--w-fg)", whiteSpace: "nowrap" }}>
-              {phone ? formatPhone(phone) : "your phone"}
-            </span>
-            .
-          </div>
+        <div className="t-display-md" style={{ marginTop: "var(--s-10)" }}>
+          Enter the code
+        </div>
+        <div className="t-body-2" style={{ marginTop: "var(--s-2)" }}>
+          Texted to{" "}
+          <span style={{ color: "var(--fg)", whiteSpace: "nowrap" }}>
+            {phone ? formatPhone(phone) : "your phone"}
+          </span>
+        </div>
 
-          <form
-            onSubmit={onSubmit}
-            style={{
-              marginTop: 32,
-              display: "flex",
-              flexDirection: "column",
-              gap: 12,
-            }}
-          >
-            <div>
-              <label htmlFor="code" className="w-label">
-                6-digit code
-              </label>
-              <input
-                id="code"
-                name="code"
-                type="text"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                pattern="\d*"
-                maxLength={6}
-                placeholder="••••••"
-                value={code}
-                onChange={(e) =>
-                  setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
-                }
-                className="w-input"
-                style={{
-                  height: 64,
-                  fontSize: 28,
-                  textAlign: "center",
-                  letterSpacing: "0.5em",
-                  fontFamily: "var(--w-mono)",
-                  paddingInlineStart: "0.5em",
-                }}
-                required
-                autoFocus
-                aria-describedby="otp-helper"
-              />
-              <p
-                id="otp-helper"
-                className="w-type-meta"
-                style={{
-                  marginTop: 8,
-                  color: "var(--w-fg-dim)",
-                }}
-              >
-                AUTO-VERIFIES WHEN ALL 6 DIGITS ARE ENTERED.
-              </p>
+        <form onSubmit={onSubmit} style={{ marginTop: "var(--s-6)" }}>
+          {/* 6 digit boxes — visual; the real input sits transparently on
+              top so paste / autocomplete / auto-submit logic is unchanged. */}
+          <div style={{ position: "relative" }}>
+            <div style={{ display: "flex", gap: "var(--s-2)" }}>
+              {[0, 1, 2, 3, 4, 5].map((i) => (
+                <div
+                  key={i}
+                  style={{
+                    width: 52,
+                    height: 60,
+                    borderRadius: "var(--r-md)",
+                    background: "var(--bg-2)",
+                    border:
+                      "1px solid " +
+                      (i === digits.length
+                        ? "var(--fg)"
+                        : "var(--line-2)"),
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 22,
+                    fontWeight: 500,
+                  }}
+                >
+                  {digits[i] ?? ""}
+                </div>
+              ))}
             </div>
-
-            {error ? (
-              <p
-                className="w-type-body-sm"
-                style={{ color: "var(--w-err)" }}
-                role="alert"
-              >
-                {error}
-              </p>
-            ) : null}
-            {resendMsg ? (
-              <p
-                className="w-type-body-sm"
-                style={{ color: "var(--w-ok)" }}
-                role="status"
-              >
-                {resendMsg}
-              </p>
-            ) : null}
-
-            <Button
-              type="submit"
-              variant="primary"
-              size="lg"
-              block
-              disabled={loading || code.length < 4}
-              aria-busy={loading || undefined}
-            >
-              {loading ? "Verifying…" : "Verify"}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="lg"
-              block
-              onClick={onResend}
-              disabled={resendCooldown > 0}
-            >
-              {resendCooldown > 0
-                ? `Resend in ${resendCooldown}s`
-                : "Resend code"}
-            </Button>
-          </form>
-
-          <div style={{ marginTop: 32 }}>
-            <button
-              onClick={() => router.push("/login")}
-              className="w-type-meta"
+            <input
+              ref={inputRef}
+              id="code"
+              name="code"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="\d*"
+              maxLength={6}
+              aria-label="6-digit code"
+              value={code}
+              onChange={(e) =>
+                setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+              }
+              required
+              autoFocus
+              aria-describedby="otp-helper"
               style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                opacity: 0,
+                cursor: "text",
                 background: "transparent",
                 border: 0,
-                color: "var(--w-fg-dim)",
-                cursor: "pointer",
-                padding: 0,
               }}
-            >
-              ← WRONG NUMBER
-            </button>
+            />
           </div>
+          <p
+            id="otp-helper"
+            className="t-meta"
+            style={{ marginTop: "var(--s-2)", color: "var(--fg-4)" }}
+          >
+            Auto-verifies when all 6 digits are entered.
+          </p>
+
+          {error ? (
+            <p
+              className="t-body-2"
+              style={{ color: "var(--err)", marginTop: "var(--s-2)" }}
+              role="alert"
+            >
+              {error}
+            </p>
+          ) : null}
+          {resendMsg ? (
+            <p
+              className="t-body-2"
+              style={{ color: "var(--ok)", marginTop: "var(--s-2)" }}
+              role="status"
+            >
+              {resendMsg}
+            </p>
+          ) : null}
+
+          <button
+            type="submit"
+            className="btn btn--lg btn--block"
+            style={{ marginTop: "var(--s-6)" }}
+            disabled={loading || code.length < 4}
+            aria-busy={loading || undefined}
+          >
+            {loading ? "Verifying…" : "Verify"}
+          </button>
+        </form>
+
+        <div
+          className="t-body-2"
+          style={{ marginTop: "var(--s-4)", textAlign: "center" }}
+        >
+          Didn&apos;t get it?{" "}
+          <button
+            type="button"
+            onClick={onResend}
+            disabled={resendCooldown > 0}
+            style={{
+              background: "transparent",
+              border: 0,
+              padding: 0,
+              font: "inherit",
+              color: resendCooldown > 0 ? "var(--fg-4)" : "var(--fg)",
+              cursor: resendCooldown > 0 ? "default" : "pointer",
+            }}
+          >
+            {resendCooldown > 0
+              ? `Resend in 0:${String(resendCooldown).padStart(2, "0")}`
+              : "Resend code"}
+          </button>
+        </div>
+
+        <div style={{ marginTop: "var(--s-6)", textAlign: "center" }}>
+          <button
+            type="button"
+            onClick={() => router.push("/login")}
+            className="t-meta"
+            style={{
+              background: "transparent",
+              border: 0,
+              color: "var(--fg-4)",
+              cursor: "pointer",
+              padding: 0,
+            }}
+          >
+            ← Wrong number
+          </button>
         </div>
       </div>
     </main>
@@ -315,8 +298,8 @@ export default function OtpPage() {
       fallback={
         <main
           id="main-content"
-          className="w-app"
-          style={{ minHeight: "100vh", background: "var(--w-bg)" }}
+          className="v5"
+          style={{ minHeight: "100vh", background: "var(--bg)" }}
         />
       }
     >

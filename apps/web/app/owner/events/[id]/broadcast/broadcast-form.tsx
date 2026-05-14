@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Button } from "@/components/wadl";
 import ConfirmDialog from "@/components/confirm-dialog";
 import {
   previewBroadcastAction,
@@ -25,27 +24,19 @@ interface TemplateOpt {
   body: string;
 }
 
-const INPUT_STYLE: React.CSSProperties = {
-  width: "100%",
-  background: "var(--w-surface-1)",
-  border: "1px solid var(--w-line)",
-  color: "var(--w-fg)",
-  padding: "10px 12px",
-  fontFamily: "var(--w-sans)",
-  fontSize: 14,
-};
-
-const PILL = (active: boolean): React.CSSProperties => ({
-  padding: 10,
-  border: `1px solid ${active ? "var(--w-acc)" : "var(--w-line)"}`,
-  background: active ? "var(--w-acc-soft)" : "var(--w-surface-1)",
-  color: active ? "var(--w-acc-ink)" : "var(--w-fg-muted)",
-  fontFamily: "var(--w-mono)",
-  fontSize: 12,
-  letterSpacing: "0.08em",
-  textTransform: "uppercase",
-  cursor: "pointer",
-});
+function pillStyle(active: boolean): React.CSSProperties {
+  return {
+    padding: "var(--s-2) var(--s-3)",
+    borderRadius: "var(--r-sm)",
+    border: `1px solid ${active ? "var(--fg)" : "var(--line-2)"}`,
+    background: active ? "var(--fg)" : "transparent",
+    color: active ? "var(--bg)" : "var(--fg-3)",
+    fontSize: "var(--ts-sm)",
+    fontWeight: active ? 500 : 400,
+    cursor: "pointer",
+    textTransform: "capitalize",
+  };
+}
 
 export default function BroadcastForm({
   eventId,
@@ -118,240 +109,249 @@ export default function BroadcastForm({
   if (done) {
     return (
       <div
-        className="w-card"
-        style={{ padding: 16, borderColor: "var(--w-ok)" }}
+        className="card"
+        style={{ padding: "var(--s-6)", maxWidth: 560 }}
       >
         <div
-          className="w-type-meta"
-          style={{ color: "var(--w-ok)", marginBottom: 8 }}
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "baseline",
+          }}
         >
-          SENT
+          <div className="t-h1">Broadcast sent</div>
+          <span className="chip chip--ok">Sent</span>
         </div>
-        <p style={{ color: "var(--w-fg)" }}>
+        <div className="t-body-2" style={{ marginTop: "var(--s-3)" }}>
           {done.sent} sent · {done.failed} failed
-        </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div className="w-card" style={{ padding: 18 }}>
-        <div className="w-type-meta" style={{ marginBottom: 12 }}>
-          TARGET
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(2, 1fr)",
+        gap: "var(--s-5)",
+        maxWidth: 880,
+      }}
+    >
+      {/* Target card */}
+      <div className="card" style={{ padding: "var(--s-5)" }}>
+        <div className="t-h1" style={{ marginBottom: "var(--s-4)" }}>
+          Target
         </div>
-        <div style={{ display: "grid", gap: 8 }}>
-          <div className="w-type-meta">NIGHT</div>
-          <select
-            value={nightId}
-            onChange={(e) => {
-              setNightId(e.target.value);
-              setAllocationId("");
-              setPreview(null);
-            }}
-            style={INPUT_STYLE}
-          >
-            <option value="">All nights</option>
-            {nights.map((n) => (
-              <option key={n.id} value={n.id}>
-                {n.label}
-              </option>
-            ))}
-          </select>
-
-          <div className="w-type-meta">STATUS</div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gap: 6,
-            }}
-          >
-            {(["approved", "pending", "all"] as const).map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => {
-                  setStatus(s);
-                  setPreview(null);
-                }}
-                style={PILL(status === s)}
-              >
-                {s}
-              </button>
-            ))}
+        <div style={{ display: "grid", gap: "var(--s-4)" }}>
+          <div>
+            <div className="t-meta">Night</div>
+            <select
+              value={nightId}
+              onChange={(e) => {
+                setNightId(e.target.value);
+                setAllocationId("");
+                setPreview(null);
+              }}
+              className="input"
+              style={{ marginTop: "var(--s-2)" }}
+            >
+              <option value="">All nights</option>
+              {nights.map((n) => (
+                <option key={n.id} value={n.id}>
+                  {n.label}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <div className="w-type-meta">TIER</div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
-              gap: 6,
-            }}
-          >
-            {(["all", "ga", "vip", "all_access"] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => {
-                  setTier(t);
-                  setPreview(null);
-                }}
-                style={PILL(tier === t)}
-              >
-                {t === "all_access" ? "AA" : t.toUpperCase()}
-              </button>
-            ))}
+          <div>
+            <div className="t-meta">Status</div>
+            <div
+              style={{
+                display: "flex",
+                gap: "var(--s-2)",
+                marginTop: "var(--s-2)",
+                flexWrap: "wrap",
+              }}
+            >
+              {(["approved", "pending", "all"] as const).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => {
+                    setStatus(s);
+                    setPreview(null);
+                  }}
+                  style={pillStyle(status === s)}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="w-type-meta">ALLOCATION</div>
-          <select
-            value={allocationId}
-            onChange={(e) => {
-              setAllocationId(e.target.value);
-              setPreview(null);
-            }}
-            style={INPUT_STYLE}
-          >
-            <option value="">Any</option>
-            {filteredAllocs.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.label}
-              </option>
-            ))}
-          </select>
+          <div>
+            <div className="t-meta">Tier</div>
+            <div
+              style={{
+                display: "flex",
+                gap: "var(--s-2)",
+                marginTop: "var(--s-2)",
+                flexWrap: "wrap",
+              }}
+            >
+              {(["all", "ga", "vip", "all_access"] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => {
+                    setTier(t);
+                    setPreview(null);
+                  }}
+                  style={pillStyle(tier === t)}
+                >
+                  {t === "all_access" ? "AA" : t}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="t-meta">Allocation</div>
+            <select
+              value={allocationId}
+              onChange={(e) => {
+                setAllocationId(e.target.value);
+                setPreview(null);
+              }}
+              className="input"
+              style={{ marginTop: "var(--s-2)" }}
+            >
+              <option value="">Any</option>
+              {filteredAllocs.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
-      <div>
+      {/* Message card */}
+      <div className="card" style={{ padding: "var(--s-5)" }}>
         <div
           style={{
             display: "flex",
             alignItems: "baseline",
             justifyContent: "space-between",
-            marginBottom: 8,
+            marginBottom: "var(--s-4)",
           }}
         >
-          <div className="w-type-meta">MESSAGE ({body.length}/160)</div>
-          {templates.length > 0 && (
-            <select
-              value=""
-              onChange={(e) => {
-                const t = templates.find((x) => x.id === e.target.value);
-                if (t) setBody(t.body.slice(0, 160));
-              }}
-              style={{
-                background: "var(--w-surface-2)",
-                border: "1px solid var(--w-line)",
-                padding: "4px 8px",
-                fontSize: 11,
-                fontFamily: "var(--w-mono)",
-                color: "var(--w-fg)",
-              }}
-              aria-label="Load saved template"
-            >
-              <option value="">Load template…</option>
-              {templates.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-          )}
+          <div className="t-h1">Message</div>
+          <span className="t-meta">{body.length}/160</span>
         </div>
+
+        {templates.length > 0 && (
+          <select
+            value=""
+            onChange={(e) => {
+              const t = templates.find((x) => x.id === e.target.value);
+              if (t) setBody(t.body.slice(0, 160));
+            }}
+            className="input"
+            style={{ marginBottom: "var(--s-3)" }}
+            aria-label="Load saved template"
+          >
+            <option value="">Load template…</option>
+            {templates.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        )}
+
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
           maxLength={160}
-          style={{ ...INPUT_STYLE, minHeight: 120 }}
+          className="input"
+          style={{ minHeight: 120 }}
           placeholder="Doors open at 11. {{guest.name}}, see you there."
         />
-        <div className="w-type-meta" style={{ marginTop: 8 }}>
-          VARIABLES:{" "}
-          <code style={{ fontFamily: "var(--w-mono)" }}>
-            {"{{guest.name}}"}
-          </code>{" "}
-          ·{" "}
-          <code style={{ fontFamily: "var(--w-mono)" }}>
-            {"{{event.name}}"}
-          </code>{" "}
-          ·{" "}
-          <code style={{ fontFamily: "var(--w-mono)" }}>
-            {"{{event.date}}"}
-          </code>{" "}
-          ·{" "}
-          <code style={{ fontFamily: "var(--w-mono)" }}>
-            {"{{venue.name}}"}
-          </code>
+        <div className="t-meta" style={{ marginTop: "var(--s-3)" }}>
+          Variables: {"{{guest.name}}"} · {"{{event.name}}"} ·{" "}
+          {"{{event.date}}"} · {"{{venue.name}}"}
         </div>
+
+        {err && (
+          <p
+            className="t-body-2"
+            style={{ color: "var(--err)", marginTop: "var(--s-3)" }}
+          >
+            {err}
+          </p>
+        )}
+
+        {!preview ? (
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={onPreview}
+            disabled={pending || !body.trim()}
+            style={{ marginTop: "var(--s-4)" }}
+          >
+            {pending ? "Counting…" : "Preview recipients"}
+          </button>
+        ) : (
+          <div
+            className="card"
+            style={{ padding: "var(--s-4)", marginTop: "var(--s-4)" }}
+          >
+            <div className="t-meta">Preview</div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                gap: "var(--s-2)",
+                marginTop: "var(--s-2)",
+              }}
+            >
+              <span className="t-display-sm t-num">{preview.count}</span>
+              <span className="t-body-2">recipients</span>
+            </div>
+            <div className="t-meta" style={{ marginTop: "var(--s-2)" }}>
+              Est. cost ${preview.cost.toFixed(2)}
+            </div>
+            <div
+              style={{
+                display: "flex",
+                gap: "var(--s-2)",
+                marginTop: "var(--s-4)",
+              }}
+            >
+              <button
+                type="button"
+                className="btn btn--ghost"
+                onClick={() => setPreview(null)}
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={onSend}
+                disabled={pending || preview.count === 0}
+              >
+                {pending ? "Sending…" : `Send ${preview.count}`}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {err && (
-        <p className="w-type-body-sm" style={{ color: "var(--w-err)" }}>
-          {err}
-        </p>
-      )}
-
-      {!preview ? (
-        <Button
-          variant="ghost"
-          type="button"
-          onClick={onPreview}
-          disabled={pending || !body.trim()}
-        >
-          {pending ? "Counting…" : "Preview recipients"}
-        </Button>
-      ) : (
-        <div className="w-card" style={{ padding: 16 }}>
-          <div className="w-type-meta" style={{ marginBottom: 4 }}>
-            PREVIEW
-          </div>
-          <div
-            style={{
-              fontFamily: "var(--w-display)",
-              fontWeight: 700,
-              fontSize: 30,
-              lineHeight: 1,
-              color: "var(--w-fg)",
-            }}
-          >
-            {preview.count}{" "}
-            <span
-              style={{ color: "var(--w-fg-muted)", fontSize: 14 }}
-            >
-              recipients
-            </span>
-          </div>
-          <div className="w-type-meta" style={{ marginTop: 6 }}>
-            EST. COST ${preview.cost.toFixed(2)}
-          </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 8,
-              marginTop: 16,
-            }}
-          >
-            <Button
-              variant="ghost"
-              type="button"
-              onClick={() => setPreview(null)}
-            >
-              Edit
-            </Button>
-            <Button
-              variant="primary"
-              type="button"
-              onClick={onSend}
-              disabled={pending || preview.count === 0}
-            >
-              {pending ? "Sending…" : `Send ${preview.count}`}
-            </Button>
-          </div>
-        </div>
-      )}
       <ConfirmDialog
         open={sendOpen}
         title={

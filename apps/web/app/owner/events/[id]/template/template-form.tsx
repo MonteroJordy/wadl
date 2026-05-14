@@ -2,18 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/wadl";
 import { saveTemplateAction } from "./actions";
-
-const INPUT_STYLE: React.CSSProperties = {
-  width: "100%",
-  background: "var(--w-surface-1)",
-  border: "1px solid var(--w-line)",
-  color: "var(--w-fg)",
-  padding: "10px 12px",
-  fontFamily: "var(--w-sans)",
-  fontSize: 14,
-};
 
 export default function TemplateForm({ eventId }: { eventId: string }) {
   const router = useRouter();
@@ -41,19 +30,20 @@ export default function TemplateForm({ eventId }: { eventId: string }) {
 
   if (done) {
     return (
-      <div
-        className="w-card"
-        style={{ padding: 16, borderColor: "var(--w-ok)" }}
-      >
+      <div className="card" style={{ padding: "var(--s-5)" }}>
         <div
-          className="w-type-meta"
-          style={{ color: "var(--w-ok)", marginBottom: 4 }}
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "baseline",
+          }}
         >
-          SAVED
+          <div className="t-h1">Template saved</div>
+          <span className="chip chip--ok">Saved</span>
         </div>
-        <p style={{ color: "var(--w-fg)", fontSize: 14 }}>
-          Template added below.
-        </p>
+        <div className="t-body-2" style={{ marginTop: "var(--s-2)" }}>
+          Template added to the list below.
+        </div>
       </div>
     );
   }
@@ -61,38 +51,53 @@ export default function TemplateForm({ eventId }: { eventId: string }) {
   return (
     <form
       onSubmit={submit}
-      style={{ display: "flex", flexDirection: "column", gap: 16 }}
+      className="card"
+      style={{ padding: "var(--s-5)" }}
     >
-      <div>
-        <div className="w-type-meta" style={{ marginBottom: 6 }}>
-          TEMPLATE NAME
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(2, 1fr)",
+          gap: "var(--s-5)",
+        }}
+      >
+        <div>
+          <div className="t-meta">Template name</div>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Friday at the Patio"
+            className="input"
+            style={{ marginTop: "var(--s-2)" }}
+          />
         </div>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Friday at the Patio"
-          style={INPUT_STYLE}
-        />
-      </div>
-      <div>
-        <div className="w-type-meta" style={{ marginBottom: 6 }}>
-          AUTO-CREATE CADENCE (DAYS; BLANK = MANUAL ONLY)
+        <div>
+          <div className="t-meta">Auto-create cadence (days)</div>
+          <input
+            value={cadence}
+            onChange={(e) => setCadence(e.target.value.replace(/[^\d]/g, ""))}
+            placeholder="7 — blank = manual only"
+            className="input"
+            style={{ marginTop: "var(--s-2)" }}
+          />
         </div>
-        <input
-          value={cadence}
-          onChange={(e) => setCadence(e.target.value.replace(/[^\d]/g, ""))}
-          placeholder="7"
-          style={INPUT_STYLE}
-        />
       </div>
       {err && (
-        <p className="w-type-body-sm" style={{ color: "var(--w-err)" }}>
+        <p
+          className="t-body-2"
+          style={{ color: "var(--err)", marginTop: "var(--s-3)" }}
+        >
           {err}
         </p>
       )}
-      <Button variant="primary" type="submit" disabled={pending}>
+      <button
+        type="submit"
+        className="btn"
+        disabled={pending}
+        style={{ marginTop: "var(--s-4)" }}
+      >
         {pending ? "Saving…" : "Save template"}
-      </Button>
+      </button>
     </form>
   );
 }

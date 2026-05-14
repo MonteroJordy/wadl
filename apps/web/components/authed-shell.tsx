@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Avatar, Wordmark } from "@/components/wadl";
+import { Logo } from "@/components/v5";
 import { openShortcutHelp } from "@/components/shortcut-help";
 
 export interface NavSection {
@@ -39,6 +39,25 @@ interface Props {
   topBarRight?: React.ReactNode;
 }
 
+function initials(name: string): string {
+  return (
+    name
+      .split(" ")
+      .map((s) => s[0] ?? "")
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "?"
+  );
+}
+
+/**
+ * Authed app shell — v5 design. A fixed left sidebar on tablet+ that
+ * slides in as a drawer on mobile. Restyled to the v5 token system:
+ * near-black surfaces, .nav-item classes, v5 Logo, rounded radii,
+ * 4pt-grid spacing. Layout structure (.w-shell / .w-aside-tablet /
+ * .w-content / .w-topbar rules in globals.css) is unchanged so the
+ * 60+ pages that compose inside it keep working.
+ */
 export default function AuthedShell({
   children,
   user,
@@ -51,8 +70,7 @@ export default function AuthedShell({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const pathname = usePathname() ?? "";
 
-  // ESC closes the mobile drawer. Lock body scroll while it's open so
-  // the page behind doesn't scroll on iOS overscroll.
+  // ESC closes the mobile drawer; lock body scroll while it's open.
   useEffect(() => {
     if (!drawerOpen) return;
     function onKey(e: KeyboardEvent) {
@@ -67,8 +85,7 @@ export default function AuthedShell({
     };
   }, [drawerOpen]);
 
-  // Close drawer when route changes (Link clicks already wire this up,
-  // but this catches programmatic navigations too).
+  // Close drawer when route changes.
   useEffect(() => {
     setDrawerOpen(false);
   }, [pathname]);
@@ -81,11 +98,10 @@ export default function AuthedShell({
 
   return (
     <div
-      className="w-app w-shell"
-      style={{ minHeight: "100vh", background: "var(--w-bg)" }}
+      className="w-app w-shell v5"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
     >
-      {/* .w-mobile-chrome / .w-aside-tablet / .w-content / .w-topbar
-          rules live in globals.css to keep SSR/client byte-identical. */}
+      {/* Mobile hamburger — v5 ghost-button styling, rounded. */}
       <button
         type="button"
         onClick={() => setDrawerOpen(true)}
@@ -100,10 +116,10 @@ export default function AuthedShell({
           zIndex: 30,
           width: 40,
           height: 40,
-          borderRadius: 0,
-          background: "var(--w-surface-2)",
-          border: "1px solid var(--w-line)",
-          color: "var(--w-fg)",
+          borderRadius: "var(--r-md)",
+          background: "var(--bg-2)",
+          border: "1px solid var(--line-2)",
+          color: "var(--fg)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -115,7 +131,7 @@ export default function AuthedShell({
         ≡
       </button>
 
-      {/* Mobile backdrop — fades in/out smoothly with the drawer. */}
+      {/* Mobile backdrop — fades in/out with the drawer. */}
       <div
         onClick={() => setDrawerOpen(false)}
         className="w-mobile-chrome"
@@ -123,7 +139,7 @@ export default function AuthedShell({
         style={{
           position: "fixed",
           inset: 0,
-          background: "rgba(15,15,16,0.78)",
+          background: "rgba(10,10,10,0.78)",
           backdropFilter: drawerOpen ? "blur(6px)" : "blur(0)",
           zIndex: 30,
           opacity: drawerOpen ? 1 : 0,
@@ -139,8 +155,8 @@ export default function AuthedShell({
         aria-label="Primary navigation"
         style={{
           width: 256,
-          background: "var(--w-surface-2)",
-          borderRight: "1px solid var(--w-line)",
+          background: "var(--bg)",
+          borderRight: "1px solid var(--line)",
           zIndex: 40,
           display: "flex",
           flexDirection: "column",
@@ -152,69 +168,77 @@ export default function AuthedShell({
           transform: drawerOpen ? "translateX(0)" : "translateX(-100%)",
           transition: "transform 280ms cubic-bezier(0.32, 0.72, 0, 1)",
           willChange: "transform",
-          boxShadow: drawerOpen
-            ? "8px 0 32px rgba(0,0,0,0.45)"
-            : "none",
+          boxShadow: drawerOpen ? "8px 0 32px rgba(0,0,0,0.45)" : "none",
         }}
       >
+        {/* Brand + account chip */}
         <div
           style={{
-            padding: "20px 16px",
-            borderBottom: "1px solid var(--w-line)",
+            padding: "var(--s-5) var(--s-4)",
+            borderBottom: "1px solid var(--line)",
           }}
         >
-          <Wordmark variant="monogrid" size={20} />
+          <div style={{ paddingLeft: "var(--s-1)" }}>
+            <Logo size={18} />
+          </div>
           <div
             style={{
-              marginTop: 14,
-              padding: 10,
-              background: "#ffffff05",
-              border: "1px solid var(--w-line)",
-              borderRadius: 0,
+              marginTop: "var(--s-4)",
+              padding: "var(--s-3)",
+              background: "var(--bg-2)",
+              border: "1px solid var(--line)",
+              borderRadius: "var(--r-md)",
               display: "flex",
               alignItems: "center",
-              gap: 10,
+              gap: "var(--s-3)",
             }}
           >
-            <Avatar
-              name={brand
-                .split(" ")
-                .map((s) => s[0] ?? "")
-                .join("")
-                .slice(0, 2)
-                .toUpperCase()}
-              size={32}
-              accent
-            />
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                flexShrink: 0,
+                borderRadius: "var(--r-pill)",
+                background: "var(--bg-3)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 12,
+                fontWeight: 600,
+                fontFamily: "var(--w-display)",
+              }}
+            >
+              {initials(brand)}
+            </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div
-                style={{
-                  fontWeight: 600,
-                  fontSize: 13,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {brand}
-              </div>
+              <div className="t-h2 truncate">{brand}</div>
               {brandSub && (
-                <div className="w-type-meta" style={{ marginTop: 2, fontSize: 9 }}>
-                  {brandSub.toUpperCase()}
+                <div className="t-meta" style={{ marginTop: 2 }}>
+                  {brandSub}
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        <nav style={{ flex: 1, overflowY: "auto", padding: "12px 0" }}>
+        {/* Nav sections */}
+        <nav
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: "var(--s-3) var(--s-2)",
+          }}
+        >
           {sections.map((section) => (
-            <div key={section.label} style={{ marginBottom: 16 }}>
+            <div key={section.label} style={{ marginBottom: "var(--s-4)" }}>
               <div
-                className="w-type-meta"
-                style={{ padding: "0 20px", marginBottom: 4 }}
+                className="t-meta"
+                style={{
+                  padding: "0 var(--s-3)",
+                  marginBottom: "var(--s-1)",
+                }}
               >
-                {section.label.toUpperCase()}
+                {section.label}
               </div>
               <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                 {section.items.map((item) => {
@@ -225,46 +249,24 @@ export default function AuthedShell({
                         href={item.href}
                         onClick={() => setDrawerOpen(false)}
                         aria-current={active ? "page" : undefined}
+                        className={
+                          "nav-item " + (active ? "nav-item--active" : "")
+                        }
                         style={{
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "space-between",
-                          padding: "10px 20px",
-                          fontSize: 14,
-                          fontWeight: active ? 600 : 500,
                           textDecoration: "none",
-                          background: active ? "#ffffff10" : "transparent",
-                          color: active
-                            ? "var(--w-fg)"
-                            : "var(--w-fg-muted)",
-                          borderLeft: active
-                            ? "2px solid var(--w-acc)"
-                            : "2px solid transparent",
-                          transition: "background 0.12s, color 0.12s",
+                          marginBottom: 2,
                         }}
                       >
                         <span>{item.label}</span>
-                        {typeof item.badge === "number" && item.badge > 0 && (
-                          <span
-                            style={{
-                              marginLeft: 8,
-                              minWidth: 20,
-                              height: 18,
-                              padding: "0 6px",
-                              borderRadius: 999,
-                              background: "var(--w-acc)",
-                              color: "var(--w-acc-ink)",
-                              fontSize: 10,
-                              fontFamily: "var(--w-mono)",
-                              fontWeight: 600,
-                              display: "inline-flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          >
-                            {item.badge > 99 ? "99+" : item.badge}
-                          </span>
-                        )}
+                        {typeof item.badge === "number" &&
+                          item.badge > 0 && (
+                            <span className="badge">
+                              {item.badge > 99 ? "99+" : item.badge}
+                            </span>
+                          )}
                       </Link>
                     </li>
                   );
@@ -274,53 +276,49 @@ export default function AuthedShell({
           ))}
         </nav>
 
+        {/* Footer — profile + sign out + shortcuts */}
         <div
           style={{
-            padding: 12,
-            borderTop: "1px solid var(--w-line)",
+            padding: "var(--s-2)",
+            borderTop: "1px solid var(--line)",
           }}
         >
           <Link
             href="/owner/profile"
             onClick={() => setDrawerOpen(false)}
+            className="nav-item"
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 12,
-              padding: 8,
-              borderRadius: 0,
+              gap: "var(--s-3)",
               textDecoration: "none",
-              color: "inherit",
-              transition: "background 0.12s",
             }}
           >
-            <Avatar
-              name={(user.full_name ?? "?").slice(0, 2).toUpperCase()}
-              size={36}
-            />
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                flexShrink: 0,
+                borderRadius: "var(--r-pill)",
+                background: "var(--bg-3)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 12,
+                fontWeight: 600,
+                fontFamily: "var(--w-display)",
+                color: "var(--fg)",
+              }}
+            >
+              {initials(user.full_name ?? "?")}
+            </div>
             <div style={{ minWidth: 0, flex: 1 }}>
-              <div
-                style={{
-                  fontSize: 13,
-                  fontWeight: 500,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
+              <div className="t-h2 truncate" style={{ color: "var(--fg)" }}>
                 {user.full_name || "Profile"}
               </div>
               {account && (
-                <div
-                  className="w-type-meta"
-                  style={{
-                    marginTop: 2,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {account.display_name.toUpperCase()}
+                <div className="t-meta truncate" style={{ marginTop: 1 }}>
+                  {account.display_name}
                 </div>
               )}
             </div>
@@ -330,19 +328,20 @@ export default function AuthedShell({
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              marginTop: 4,
+              marginTop: "var(--s-1)",
+              paddingLeft: "var(--s-3)",
             }}
           >
             <form action="/api/auth/signout" method="post">
               <button
                 type="submit"
-                className="w-type-meta"
+                className="t-meta"
                 style={{
                   textAlign: "left",
-                  padding: "8px",
+                  padding: "var(--s-2) 0",
                   background: "transparent",
                   border: 0,
-                  color: "var(--w-fg-dim)",
+                  color: "var(--fg-3)",
                   cursor: "pointer",
                 }}
               >
@@ -354,15 +353,8 @@ export default function AuthedShell({
               onClick={() => openShortcutHelp()}
               aria-label="Keyboard shortcuts"
               title="Keyboard shortcuts (press ?)"
-              className="w-type-meta"
-              style={{
-                padding: "8px 10px",
-                background: "transparent",
-                border: 0,
-                color: "var(--w-fg-dim)",
-                cursor: "pointer",
-                fontFamily: "var(--w-mono)",
-              }}
+              className="kbd"
+              style={{ cursor: "pointer", border: 0 }}
             >
               ?
             </button>
@@ -370,24 +362,21 @@ export default function AuthedShell({
         </div>
       </aside>
 
-      <div
-        style={{ minWidth: 0, flex: "1 1 auto" }}
-        className="w-content"
-      >
+      <div style={{ minWidth: 0, flex: "1 1 auto" }} className="w-content">
         {topBarRight && (
           <div
             style={{
               position: "sticky",
               top: 0,
               zIndex: 20,
-              background: "rgba(15,15,16,0.85)",
+              background: "rgba(10,10,10,0.85)",
               backdropFilter: "blur(8px)",
-              borderBottom: "1px solid var(--w-line)",
-              padding: "8px 24px 8px 64px",
+              borderBottom: "1px solid var(--line)",
+              padding: "var(--s-2) var(--s-6) var(--s-2) 64px",
               display: "flex",
               alignItems: "center",
               justifyContent: "flex-end",
-              gap: 8,
+              gap: "var(--s-2)",
             }}
             className="w-topbar"
           >

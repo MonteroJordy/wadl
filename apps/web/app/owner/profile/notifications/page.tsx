@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { requireOwnerContext } from "@/lib/owner";
+import { Breadcrumb, PageHeader } from "@/components/v5";
 import NotifPrefsForm from "./prefs-form";
 import type { NotifPrefs } from "./actions";
 
@@ -33,46 +33,18 @@ export default async function NotifPrefsPage() {
   return (
     <main
       id="main-content"
-      className="w-app"
-      style={{
-        minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
-      }}
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
     >
-      <div style={{ maxWidth: 720, margin: "0 auto" }}>
-        <Link
-          href="/owner/profile"
-          className="w-type-meta"
-          style={{
-            color: "var(--w-fg-muted)",
-            textDecoration: "none",
-            display: "inline-block",
-            marginBottom: 12,
-          }}
-        >
-          ← PROFILE
-        </Link>
-        <div
-          style={{
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            marginBottom: 24,
-          }}
-        >
-          <div className="w-type-meta">NOTIFICATIONS</div>
-          <div className="w-type-display-md" style={{ marginTop: 8 }}>
-            Notification preferences
-          </div>
-          <p
-            className="w-type-body-sm"
-            style={{ color: "var(--w-fg-muted)", marginTop: 8 }}
-          >
-            Channel + per-kind controls. Quiet hours pause push + SMS while
-            keeping the inbox up to date.
-          </p>
-        </div>
+      <Breadcrumb
+        items={[["Profile", "/owner/profile"], "Notifications"]}
+      />
+      <PageHeader
+        eyebrow="Settings · notifications"
+        title="Notifications"
+        sub="Channel + per-kind controls. Quiet hours pause push + SMS while keeping the inbox up to date."
+      />
 
+      <div style={{ padding: "var(--s-8)", maxWidth: 720 }}>
         <NotifPrefsForm initial={prefs} />
       </div>
     </main>

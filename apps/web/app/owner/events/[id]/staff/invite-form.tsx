@@ -1,18 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Button } from "@/components/wadl";
 import { createInviteAction } from "./actions";
-
-const INPUT_STYLE: React.CSSProperties = {
-  width: "100%",
-  background: "var(--w-surface-1)",
-  border: "1px solid var(--w-line)",
-  color: "var(--w-fg)",
-  padding: "10px 12px",
-  fontFamily: "var(--w-sans)",
-  fontSize: 14,
-};
 
 export default function InviteForm({ eventId }: { eventId: string }) {
   const [phone, setPhone] = useState("");
@@ -65,73 +54,66 @@ export default function InviteForm({ eventId }: { eventId: string }) {
   return (
     <form
       onSubmit={onSubmit}
-      className="w-card"
-      style={{
-        padding: 18,
-        display: "flex",
-        flexDirection: "column",
-        gap: 16,
-      }}
+      className="card"
+      style={{ padding: "var(--s-5)" }}
     >
-      <div className="w-type-meta">INVITE SOMEONE</div>
-
-      <div>
-        <label
-          htmlFor="staff-phone"
-          className="w-type-meta"
-          style={{ display: "block", marginBottom: 6 }}
-        >
-          PHONE
-        </label>
-        <input
-          id="staff-phone"
-          type="tel"
-          inputMode="tel"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          style={INPUT_STYLE}
-          placeholder="(305) 555 1234"
-          required
-        />
+      <div className="t-h1" style={{ marginBottom: "var(--s-4)" }}>
+        Invite someone
       </div>
 
-      <div>
-        <label
-          htmlFor="staff-email"
-          className="w-type-meta"
-          style={{ display: "block", marginBottom: 6 }}
-        >
-          EMAIL (OPTIONAL)
-        </label>
-        <input
-          id="staff-email"
-          type="email"
-          inputMode="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          style={INPUT_STYLE}
-          placeholder="they@venue.com"
-        />
-      </div>
-
-      <div>
-        <div className="w-type-meta" style={{ marginBottom: 8 }}>
-          ROLE
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(2, 1fr)",
+          gap: "var(--s-5)",
+        }}
+      >
+        <div>
+          <label htmlFor="staff-phone" className="t-meta">
+            Phone
+          </label>
+          <input
+            id="staff-phone"
+            type="tel"
+            inputMode="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            className="input"
+            style={{ marginTop: "var(--s-2)" }}
+            placeholder="(305) 555 1234"
+            required
+          />
         </div>
+        <div>
+          <label htmlFor="staff-email" className="t-meta">
+            Email (optional)
+          </label>
+          <input
+            id="staff-email"
+            type="email"
+            inputMode="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="input"
+            style={{ marginTop: "var(--s-2)" }}
+            placeholder="they@venue.com"
+          />
+        </div>
+      </div>
+
+      <div style={{ marginTop: "var(--s-5)" }}>
+        <div className="t-meta">Role</div>
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-            gap: 8,
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "var(--s-2)",
+            marginTop: "var(--s-2)",
           }}
         >
           {(
             [
-              {
-                id: "door_staff",
-                label: "Door staff",
-                blurb: "Scan + search",
-              },
+              { id: "door_staff", label: "Door staff", blurb: "Scan + search" },
               {
                 id: "door_manager",
                 label: "Door manager",
@@ -151,19 +133,27 @@ export default function InviteForm({ eventId }: { eventId: string }) {
                 type="button"
                 onClick={() => setRole(r.id)}
                 style={{
-                  border: `1px solid ${active ? "var(--w-acc)" : "var(--w-line)"}`,
-                  background: active
-                    ? "var(--w-acc-soft)"
-                    : "var(--w-surface-1)",
-                  color: active ? "var(--w-acc-ink)" : "var(--w-fg-muted)",
-                  padding: "12px",
+                  border: `1px solid ${
+                    active ? "var(--fg)" : "var(--line-2)"
+                  }`,
+                  borderRadius: "var(--r-md)",
+                  background: active ? "var(--bg-3)" : "transparent",
+                  padding: "var(--s-3)",
                   textAlign: "left",
                   cursor: "pointer",
                 }}
               >
-                <p style={{ fontWeight: 600, fontSize: 14 }}>{r.label}</p>
-                <div className="w-type-meta" style={{ marginTop: 4 }}>
-                  {r.blurb.toUpperCase()}
+                <div
+                  className="t-body"
+                  style={{
+                    fontWeight: 500,
+                    color: active ? "var(--fg)" : "var(--fg-3)",
+                  }}
+                >
+                  {r.label}
+                </div>
+                <div className="t-meta" style={{ marginTop: "var(--s-1)" }}>
+                  {r.blurb}
                 </div>
               </button>
             );
@@ -173,8 +163,8 @@ export default function InviteForm({ eventId }: { eventId: string }) {
 
       {error && (
         <p
-          className="w-type-body-sm"
-          style={{ color: "var(--w-err)" }}
+          className="t-body-2"
+          style={{ color: "var(--err)", marginTop: "var(--s-3)" }}
         >
           {error}
         </p>
@@ -182,53 +172,54 @@ export default function InviteForm({ eventId }: { eventId: string }) {
 
       {result && (
         <div
-          style={{
-            background: "var(--w-surface-2)",
-            border: "1px solid var(--w-line)",
-            padding: 12,
-          }}
+          className="card"
+          style={{ padding: "var(--s-4)", marginTop: "var(--s-4)" }}
         >
-          <div className="w-type-meta" style={{ marginBottom: 8 }}>
-            INVITE SENT
+          <div className="t-meta">
+            Invite sent
             {result.smsProvider === "dev" && (
-              <span style={{ color: "var(--w-warn)" }}>
+              <span style={{ color: "var(--warn)" }}>
                 {" "}
-                (SMS DEV — CONSOLE LOG)
+                · SMS dev (console log)
               </span>
             )}
             {result.emailSent && (
-              <span style={{ color: "var(--w-ok)" }}>
-                {" "}
-                · EMAIL ALSO SENT
-              </span>
+              <span style={{ color: "var(--ok)" }}> · email also sent</span>
             )}
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div
+            style={{
+              display: "flex",
+              gap: "var(--s-2)",
+              marginTop: "var(--s-2)",
+            }}
+          >
             <input
               value={result.url}
               readOnly
               onFocus={(e) => e.currentTarget.select()}
-              style={{
-                ...INPUT_STYLE,
-                fontSize: 12,
-                fontFamily: "var(--w-mono)",
-              }}
+              className="input"
+              style={{ fontSize: "var(--ts-sm)" }}
             />
-            <Button
-              variant="ghost"
+            <button
               type="button"
+              className="btn btn--ghost"
               onClick={copy}
-              style={{ padding: "0 18px" }}
             >
               {copied ? "Copied" : "Copy"}
-            </Button>
+            </button>
           </div>
         </div>
       )}
 
-      <Button variant="primary" type="submit" disabled={pending}>
+      <button
+        type="submit"
+        className="btn"
+        disabled={pending}
+        style={{ marginTop: "var(--s-4)" }}
+      >
         {pending ? "Sending…" : "Send invite"}
-      </Button>
+      </button>
     </form>
   );
 }

@@ -4,12 +4,22 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getAppUrl } from "@/lib/app-url";
 import { getVapidPublicKey } from "@/lib/push";
 import PushSubscribeButton from "@/components/push-subscribe";
-import { Avatar, Button, Chip, IconPlus } from "@/components/wadl";
 import FormSubmit from "@/components/form-submit";
+import { PageHeader } from "@/components/v5";
 import AccountMetaForm from "./account-meta-form";
 import ShareLinkInput from "./share-link";
 
 export const dynamic = "force-dynamic";
+
+function initials(name: string): string {
+  return name
+    .split(" ")
+    .map((x) => x[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
 
 export default async function ProfilePage() {
   const { profile, account } = await requireOwnerContext();
@@ -65,391 +75,369 @@ export default async function ProfilePage() {
 
   const accountTypeLabel =
     account.account_type === "venue"
-      ? "VENUE"
+      ? "Venue"
       : account.account_type === "brand"
-        ? "BRAND"
-        : "INDIVIDUAL";
+        ? "Brand"
+        : "Individual";
+
+  const sectionLabel: React.CSSProperties = {
+    marginBottom: "var(--s-3)",
+  };
 
   return (
     <main
       id="main-content"
-      className="w-app"
-      style={{
-        minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
-      }}
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
     >
-      <div style={{ maxWidth: 800, margin: "0 auto" }}>
+      <PageHeader
+        eyebrow={`${accountTypeLabel} · ${account.display_name}`}
+        title="Profile + venues"
+        sub="Your account, venues, and team — defaults all new events inherit."
+      />
+
+      <div
+        style={{
+          padding: "var(--s-8)",
+          maxWidth: 800,
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-6)",
+        }}
+      >
+        {/* Identity */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 16,
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            flexWrap: "wrap",
+            gap: "var(--s-5)",
           }}
         >
-          <Avatar name={profile.full_name ?? "Owner"} size={56} accent />
+          <div
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: "var(--r-pill)",
+              background: "var(--bg-3)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 22,
+              fontWeight: 500,
+              fontFamily: "var(--w-display)",
+            }}
+          >
+            {initials(profile.full_name ?? "Owner")}
+          </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="w-type-meta">PROFILE</div>
-            <div className="w-type-display-md" style={{ marginTop: 4 }}>
+            <div className="t-display-sm">
               {profile.full_name ?? "Owner"}
             </div>
-            <div className="w-type-meta" style={{ marginTop: 6 }}>
+            <div className="t-body-2" style={{ marginTop: "var(--s-1)" }}>
               {profile.phone ?? "no phone on file"}
+              {profile.email ? ` · ${profile.email}` : ""}
             </div>
           </div>
         </div>
 
-        {/* Account card */}
-        <section
-          className="w-card"
-          style={{ padding: 18, marginTop: 24 }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "baseline",
-              justifyContent: "space-between",
-              gap: 12,
-              flexWrap: "wrap",
-            }}
-          >
-            <div>
-              <div className="w-type-meta">ACCOUNT</div>
-              <div
-                style={{
-                  fontWeight: 600,
-                  fontSize: 18,
-                  marginTop: 4,
-                }}
-              >
-                {account.display_name}
+        {/* Account */}
+        <div>
+          <div className="t-meta" style={sectionLabel}>
+            Account
+          </div>
+          <div className="card" style={{ padding: "var(--s-6)" }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, 1fr)",
+                gap: "var(--s-5)",
+              }}
+            >
+              <div>
+                <div className="t-meta">Display name</div>
+                <div className="t-h2" style={{ marginTop: "var(--s-1)" }}>
+                  {account.display_name}
+                </div>
               </div>
+              <div>
+                <div className="t-meta">Type</div>
+                <div style={{ marginTop: "var(--s-1)" }}>
+                  <span className="chip">{accountTypeLabel}</span>
+                </div>
+              </div>
+              {account.handle && (
+                <div>
+                  <div className="t-meta">Handle</div>
+                  <div
+                    className="t-h2"
+                    style={{ marginTop: "var(--s-1)" }}
+                  >
+                    @{account.handle}
+                  </div>
+                </div>
+              )}
+              {account.city && (
+                <div>
+                  <div className="t-meta">City</div>
+                  <div
+                    className="t-h2"
+                    style={{ marginTop: "var(--s-1)" }}
+                  >
+                    {account.city}
+                  </div>
+                </div>
+              )}
             </div>
-            <Chip tone="acc">{accountTypeLabel}</Chip>
-          </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-              gap: 12,
-              marginTop: 14,
-            }}
-          >
-            {profile.email && (
-              <div>
-                <div className="w-type-meta">EMAIL</div>
-                <div style={{ fontSize: 14, marginTop: 4 }}>
-                  {profile.email}
-                </div>
-              </div>
-            )}
-            {account.handle && (
-              <div>
-                <div className="w-type-meta">HANDLE</div>
-                <div style={{ fontSize: 14, marginTop: 4 }}>
-                  @{account.handle}
-                </div>
-              </div>
-            )}
-            {account.city && (
-              <div>
-                <div className="w-type-meta">CITY</div>
-                <div style={{ fontSize: 14, marginTop: 4 }}>
-                  {account.city}
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-
-        <section
-          className="w-card"
-          style={{ padding: 18, marginTop: 12 }}
-        >
-          <div className="w-type-meta">EDIT HANDLE + CITY</div>
-          <div style={{ marginTop: 12 }}>
+            <div
+              className="hr"
+              style={{ margin: "var(--s-5) 0" }}
+            />
+            <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+              Edit handle + city
+            </div>
             <AccountMetaForm
               initialHandle={account.handle ?? null}
               initialCity={account.city ?? null}
             />
           </div>
-        </section>
+        </div>
 
         {/* Venues */}
-        <section
-          className="w-card"
-          style={{ padding: 18, marginTop: 12 }}
-        >
+        <div>
           <div
             style={{
               display: "flex",
-              alignItems: "baseline",
               justifyContent: "space-between",
-              gap: 12,
+              alignItems: "baseline",
+              marginBottom: "var(--s-3)",
             }}
           >
-            <div className="w-type-meta">
-              VENUES · {venues.length}
-            </div>
+            <div className="t-meta">Venues · {venues.length}</div>
             <Link
               href="/venuesetup"
-              className="w-type-meta"
-              style={{
-                color: "var(--w-acc)",
-                textDecoration: "none",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-              }}
+              className="btn btn--ghost btn--sm"
+              style={{ textDecoration: "none" }}
             >
-              <IconPlus size={12} /> ADD
+              + Add
             </Link>
           </div>
           {venues.length === 0 ? (
-            <p
-              className="w-type-body-sm"
-              style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 12,
-              }}
+            <div
+              className="card"
+              style={{ padding: "var(--s-6)" }}
             >
-              No venue yet — add one to start scheduling events.
-            </p>
+              <div className="t-body-2">
+                No venue yet — add one to start scheduling events.
+              </div>
+            </div>
           ) : (
-            <ul
-              style={{
-                listStyle: "none",
-                padding: 0,
-                marginTop: 12,
-                display: "flex",
-                flexDirection: "column",
-                gap: 10,
-              }}
-            >
+            <div className="card">
               {venues.map((v) => (
-                <li
+                <div
                   key={v.id}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "baseline",
-                    paddingTop: 10,
-                    borderTop: "1px solid var(--w-line)",
-                  }}
+                  className="row"
+                  style={{ gridTemplateColumns: "1fr 1fr 120px" }}
                 >
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 500 }}>
-                      {v.name}
-                    </div>
-                    <div className="w-type-meta" style={{ marginTop: 4 }}>
-                      {v.city || "—"}
-                      {v.default_capacity && ` · CAP ${v.default_capacity}`}
-                    </div>
-                  </div>
-                </li>
+                  <span className="t-h2 truncate">{v.name}</span>
+                  <span className="t-body-2">{v.city || "—"}</span>
+                  <span className="t-meta">
+                    {v.default_capacity
+                      ? `Cap ${v.default_capacity}`
+                      : "No cap"}
+                  </span>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
-        </section>
+        </div>
 
         {/* Team */}
-        <section
-          className="w-card"
-          style={{ padding: 18, marginTop: 12 }}
-        >
-          <div className="w-type-meta">
-            TEAM · DOOR STAFF & MANAGERS · {team.length}
+        <div>
+          <div className="t-meta" style={sectionLabel}>
+            Team · door staff &amp; managers · {team.length}
           </div>
           {team.length === 0 ? (
-            <p
-              className="w-type-body-sm"
-              style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 12,
-              }}
+            <div
+              className="card"
+              style={{ padding: "var(--s-6)" }}
             >
-              No staff invited yet. Add staff per-event from any
-              event&apos;s Staff page.
-            </p>
+              <div className="t-body-2">
+                No staff invited yet. Add staff per-event from any
+                event&apos;s Staff page.
+              </div>
+            </div>
           ) : (
-            <ul
-              style={{
-                listStyle: "none",
-                padding: 0,
-                marginTop: 12,
-                display: "flex",
-                flexDirection: "column",
-                gap: 0,
-              }}
-            >
-              {team.map((m, i) => (
-                <li
+            <div className="card">
+              {team.map((m) => (
+                <div
                   key={m.user_id}
+                  className="row"
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    padding: "12px 0",
-                    borderTop:
-                      i === 0 ? "none" : "1px solid var(--w-line)",
+                    gridTemplateColumns: "36px 1fr 1fr 90px 140px",
                   }}
                 >
-                  <Avatar name={m.name} size={32} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        fontSize: 14,
-                        fontWeight: 500,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {m.name}
-                    </div>
-                    <div
-                      className="w-type-meta"
-                      style={{
-                        marginTop: 2,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {m.phone ?? "no phone"}
-                    </div>
-                  </div>
-                  <Chip tone={m.role === "door_manager" ? "warn" : "ok"}>
-                    {m.role === "door_manager" ? "MGR" : "STAFF"}
-                  </Chip>
-                  <span
-                    className="w-type-meta"
+                  <div
                     style={{
-                      whiteSpace: "nowrap",
-                      maxWidth: 140,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
+                      width: 28,
+                      height: 28,
+                      borderRadius: "var(--r-pill)",
+                      background: "var(--bg-3)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      fontFamily: "var(--w-display)",
                     }}
                   >
+                    {initials(m.name)}
+                  </div>
+                  <span className="t-h2 truncate">{m.name}</span>
+                  <span className="t-body-2 truncate">
+                    {m.phone ?? "no phone"}
+                  </span>
+                  <span
+                    className={
+                      "chip " +
+                      (m.role === "door_manager"
+                        ? "chip--warn"
+                        : "chip--ok")
+                    }
+                  >
+                    {m.role === "door_manager" ? "Manager" : "Staff"}
+                  </span>
+                  <span className="t-meta truncate">
                     {m.events.length === 1
                       ? m.events[0]
-                      : `${m.events.length} EVENTS`}
+                      : `${m.events.length} events`}
                   </span>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
-        </section>
+        </div>
 
-        {/* Push */}
-        <section style={{ marginTop: 12 }}>
-          <PushSubscribeButton vapidPublicKey={getVapidPublicKey()} />
-        </section>
+        {/* Notifications + push */}
+        <div>
+          <div className="t-meta" style={sectionLabel}>
+            Notifications
+          </div>
+          <Link
+            href="/owner/profile/notifications"
+            className="card card--hover"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "var(--s-4)",
+              padding: "var(--s-5)",
+              textDecoration: "none",
+              color: "inherit",
+            }}
+          >
+            <div>
+              <div className="t-h1">Notification preferences</div>
+              <div className="t-meta" style={{ marginTop: "var(--s-1)" }}>
+                Channels, per-kind controls, quiet hours
+              </div>
+            </div>
+            <span style={{ color: "var(--fg-3)" }}>→</span>
+          </Link>
+          <div style={{ marginTop: "var(--s-3)" }}>
+            <PushSubscribeButton vapidPublicKey={getVapidPublicKey()} />
+          </div>
+        </div>
 
         {/* Share link */}
-        <section
-          className="w-card"
-          style={{ padding: 18, marginTop: 12 }}
-        >
-          <div className="w-type-meta">SHARE WITH VENUES</div>
-          <p
-            className="w-type-body-sm"
-            style={{
-              color: "var(--w-fg-muted)",
-              marginTop: 8,
-              marginBottom: 12,
-            }}
-          >
-            Send this link to anyone you want to invite to the platform.
-          </p>
-          <ShareLinkInput url={getAppUrl()} />
-        </section>
-
-        {/* Security shortcut */}
-        <section style={{ marginTop: 12 }}>
-          <Link
-            href="/owner/profile/security"
-            style={{ textDecoration: "none" }}
-          >
-            <div
-              className="w-card"
-              style={{
-                padding: 18,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 12,
-              }}
+        <div>
+          <div className="t-meta" style={sectionLabel}>
+            Share with venues
+          </div>
+          <div className="card" style={{ padding: "var(--s-6)" }}>
+            <p
+              className="t-body-2"
+              style={{ marginBottom: "var(--s-3)" }}
             >
-              <div>
-                <div className="w-type-meta">SECURITY</div>
-                <div
-                  style={{
-                    fontWeight: 600,
-                    fontSize: 15,
-                    marginTop: 4,
-                  }}
-                >
-                  Two-factor auth + recovery codes
-                </div>
-              </div>
-              <span style={{ color: "var(--w-fg-dim)" }}>→</span>
-            </div>
-          </Link>
-        </section>
+              Send this link to anyone you want to invite to the platform.
+            </p>
+            <ShareLinkInput url={getAppUrl()} />
+          </div>
+        </div>
 
-        {/* Danger zone */}
-        <section
-          className="w-card"
+        {/* Security */}
+        <Link
+          href="/owner/profile/security"
+          className="card card--hover"
           style={{
-            padding: 18,
-            marginTop: 12,
-            borderColor: "var(--w-err)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "var(--s-4)",
+            padding: "var(--s-5)",
+            textDecoration: "none",
+            color: "inherit",
           }}
         >
-          <Chip tone="err">DANGER ZONE</Chip>
-          <p
-            className="w-type-body-sm"
+          <div>
+            <div className="t-h1">Security</div>
+            <div className="t-meta" style={{ marginTop: "var(--s-1)" }}>
+              Two-factor auth + recovery codes
+            </div>
+          </div>
+          <span style={{ color: "var(--fg-3)" }}>→</span>
+        </Link>
+
+        {/* Danger zone */}
+        <div>
+          <div className="t-meta" style={sectionLabel}>
+            Danger zone
+          </div>
+          <div
+            className="card"
             style={{
-              color: "var(--w-fg-muted)",
-              marginTop: 12,
-              marginBottom: 14,
-              lineHeight: 1.5,
+              padding: "var(--s-5)",
+              borderColor: "rgba(248,113,113,0.4)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "var(--s-4)",
+              flexWrap: "wrap",
             }}
           >
-            Deleting your account is permanent and removes all events,
-            allocations, and guest data. Contact{" "}
-            <a
-              href="mailto:jmontero@mainframeagency.com"
-              style={{
-                color: "var(--w-acc)",
-                textDecoration: "underline",
-              }}
+            <div>
+              <div className="t-h1" style={{ color: "var(--err)" }}>
+                Delete account
+              </div>
+              <div
+                className="t-body-2"
+                style={{ marginTop: "var(--s-1)", maxWidth: 460 }}
+              >
+                Permanent — removes all events, allocations, and guest data.
+                Contact{" "}
+                <a
+                  href="mailto:jmontero@mainframeagency.com"
+                  style={{
+                    color: "var(--fg)",
+                    textDecoration: "underline",
+                  }}
+                >
+                  support
+                </a>{" "}
+                to request deletion.
+              </div>
+            </div>
+            <button
+              type="button"
+              className="btn btn--danger"
+              disabled
+              title="Stub — contact support"
             >
-              support
-            </a>{" "}
-            to request deletion.
-          </p>
-          <Button
-            type="button"
-            variant="ghost"
-            disabled
-            title="Stub — contact support"
-            style={{
-              borderColor: "var(--w-err)",
-              color: "var(--w-err)",
-            }}
-          >
-            Delete account (request)
-          </Button>
-        </section>
+              Delete account
+            </button>
+          </div>
+        </div>
 
         {/* Sign out */}
-        <form action="/api/auth/signout" method="post" style={{ marginTop: 24 }}>
+        <form action="/api/auth/signout" method="post">
           <FormSubmit variant="ghost" block pendingLabel="Signing out…">
             Sign out
           </FormSubmit>
@@ -457,32 +445,25 @@ export default async function ProfilePage() {
 
         {!profile.full_name && (
           <div
-            className="w-card"
+            className="card"
             style={{
-              padding: "32px 24px",
+              padding: "var(--s-8)",
               textAlign: "center",
-              marginTop: 16,
-              borderColor: "var(--w-acc)",
-              background: "var(--w-acc-soft)",
+              borderColor: "var(--line-2)",
             }}
           >
-            <Chip tone="acc">PROFILE INCOMPLETE</Chip>
-            <div className="w-type-h2" style={{ marginTop: 8 }}>
+            <span className="chip">Profile incomplete</span>
+            <div className="t-h1" style={{ marginTop: "var(--s-3)" }}>
               Finish onboarding
             </div>
-            <p
-              className="w-type-body-sm"
-              style={{
-                marginTop: 8,
-              }}
-            >
+            <p className="t-body-2" style={{ marginTop: "var(--s-2)" }}>
               Complete signup to unlock the rest of the dashboard.
             </p>
             <Link
               href="/signup"
-              className="w-btn w-btn--primary"
+              className="btn"
               style={{
-                marginTop: 16,
+                marginTop: "var(--s-4)",
                 textDecoration: "none",
                 display: "inline-flex",
               }}

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import PublicShell from "@/components/public-shell";
 import MarketingFooter from "@/components/marketing-footer";
-import { Button, Chip, IconArrow, IconCheck } from "@/components/wadl";
 
 export const metadata = {
   title: "Pricing — WADL",
@@ -71,7 +70,7 @@ const TIERS = [
   },
 ];
 
-const FAQ = [
+const FAQ: Array<[string, string]> = [
   [
     "Is there a per-guest fee?",
     "No. Pro and Enterprise are flat. Starter caps at 50 guests per event so you can prove it works without committing.",
@@ -93,202 +92,177 @@ const FAQ = [
 export default function PricingPage() {
   return (
     <>
-      <PublicShell maxWidth="6xl" ambient>
-        <header style={{ textAlign: "center", marginBottom: 48 }}>
-          <div className="w-type-meta">PRICING</div>
-          <h1
-            className="w-type-display-lg"
-            style={{ marginTop: 12, lineHeight: 0.94 }}
+      <PublicShell maxWidth="6xl">
+        <div className="v5">
+          <header
+            style={{ textAlign: "center", marginBottom: "var(--s-16)" }}
           >
-            Honest pricing.
-            <br />
-            Door-first.
-          </h1>
-          <p
-            className="w-type-body"
-            style={{
-              color: "var(--w-fg-muted)",
-              marginTop: 16,
-              maxWidth: 540,
-              marginInline: "auto",
-            }}
-          >
-            One venue, free forever. Bigger nights, bigger plan. We don&apos;t
-            charge per-guest because that&apos;s the SaaS-bro move and you
-            already pay enough for the bar.
-          </p>
-        </header>
-
-        <section
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-            gap: 16,
-            marginBottom: 64,
-          }}
-        >
-          {TIERS.map((t) => (
-            <div
-              key={t.name}
-              className="w-card"
+            <div className="t-meta">Pricing</div>
+            <h1
+              className="t-display-lg"
+              style={{ marginTop: "var(--s-3)", lineHeight: 1.0 }}
+            >
+              Honest pricing.
+              <br />
+              Door-first.
+            </h1>
+            <p
+              className="t-body-2"
               style={{
-                padding: 28,
-                display: "flex",
-                flexDirection: "column",
-                borderColor: t.highlight
-                  ? "var(--w-acc)"
-                  : "var(--w-line)",
-                background: t.highlight
-                  ? "var(--w-acc-soft)"
-                  : "var(--w-surface-2)",
-                position: "relative",
+                marginTop: "var(--s-4)",
+                maxWidth: 540,
+                marginInline: "auto",
               }}
             >
-              {t.highlight && (
-                <Chip
-                  tone="acc"
-                  style={{
-                    position: "absolute",
-                    top: 16,
-                    right: 16,
-                  }}
-                >
-                  RECOMMENDED
-                </Chip>
-              )}
+              One venue, free forever. Bigger nights, bigger plan. We
+              don&apos;t charge per-guest because that&apos;s the SaaS-bro
+              move and you already pay enough for the bar.
+            </p>
+          </header>
+
+          <section
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: "var(--s-4)",
+              marginBottom: "var(--s-20)",
+            }}
+          >
+            {TIERS.map((t) => (
               <div
-                className="w-type-meta"
-                style={{ color: t.highlight ? "var(--w-acc)" : "var(--w-fg-muted)" }}
-              >
-                {t.name.toUpperCase()}
-              </div>
-              <div
+                key={t.name}
+                className="card"
                 style={{
-                  fontFamily: "var(--w-display)",
-                  fontWeight: 700,
-                  fontSize: 56,
-                  letterSpacing: "-0.035em",
-                  lineHeight: 0.94,
-                  marginTop: 6,
-                }}
-              >
-                {t.price}
-              </div>
-              <div className="w-type-meta" style={{ marginTop: 6 }}>
-                {t.sub.toUpperCase()}
-              </div>
-              <ul
-                style={{
-                  flex: 1,
-                  marginTop: 22,
-                  marginBottom: 22,
-                  padding: 0,
-                  listStyle: "none",
+                  padding: "var(--s-7)",
                   display: "flex",
                   flexDirection: "column",
-                  gap: 8,
+                  borderColor: t.highlight ? "var(--fg)" : "var(--line)",
+                  position: "relative",
                 }}
               >
-                {t.features.map((f) => (
-                  <li
-                    key={f}
+                {t.highlight && (
+                  <span
+                    className="chip chip--ok"
                     style={{
-                      display: "flex",
-                      gap: 10,
-                      fontSize: 14,
-                      color: "var(--w-fg)",
-                      lineHeight: 1.4,
+                      position: "absolute",
+                      top: "var(--s-4)",
+                      right: "var(--s-4)",
                     }}
                   >
-                    <span
-                      style={{
-                        color: t.highlight
-                          ? "var(--w-acc)"
-                          : "var(--w-fg-muted)",
-                        flexShrink: 0,
-                        marginTop: 2,
-                      }}
-                    >
-                      <IconCheck size={14} />
-                    </span>
-                    <span>{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href={t.cta.href}
-                style={{ textDecoration: "none" }}
-              >
-                <Button variant={t.highlight ? "primary" : "ghost"} block>
-                  {t.cta.label}
-                </Button>
-              </Link>
-            </div>
-          ))}
-        </section>
-
-        <section style={{ marginBottom: 56 }}>
-          <div className="w-type-meta">FAQ</div>
-          <h2
-            className="w-type-display-md"
-            style={{ marginTop: 8, marginBottom: 28 }}
-          >
-            The short answers.
-          </h2>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 10,
-            }}
-          >
-            {FAQ.map(([q, a]) => (
-              <div key={q} className="w-card" style={{ padding: 18 }}>
-                <div style={{ fontWeight: 600, fontSize: 15 }}>{q}</div>
-                <p
-                  className="w-type-body-sm"
+                    Recommended
+                  </span>
+                )}
+                <div className="t-meta">{t.name}</div>
+                <div
+                  className="t-display-md t-num"
+                  style={{ marginTop: "var(--s-2)" }}
+                >
+                  {t.price}
+                </div>
+                <div className="t-meta" style={{ marginTop: "var(--s-2)" }}>
+                  {t.sub}
+                </div>
+                <ul
                   style={{
-                    color: "var(--w-fg-muted)",
-                    marginTop: 8,
-                    lineHeight: 1.5,
+                    flex: 1,
+                    marginTop: "var(--s-6)",
+                    marginBottom: "var(--s-6)",
+                    padding: 0,
+                    listStyle: "none",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "var(--s-2)",
                   }}
                 >
-                  {a}
-                </p>
+                  {t.features.map((f) => (
+                    <li
+                      key={f}
+                      className="t-body-2"
+                      style={{
+                        display: "flex",
+                        gap: "var(--s-3)",
+                        color: "var(--fg-2)",
+                      }}
+                    >
+                      <span style={{ color: "var(--fg-4)", flexShrink: 0 }}>
+                        ·
+                      </span>
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href={t.cta.href}
+                  className={
+                    t.highlight
+                      ? "btn btn--lg btn--block"
+                      : "btn btn--ghost btn--lg btn--block"
+                  }
+                  style={{ textDecoration: "none" }}
+                >
+                  {t.cta.label}
+                </Link>
               </div>
             ))}
-          </div>
-        </section>
+          </section>
 
-        <section
-          style={{
-            textAlign: "center",
-            padding: "32px 0 16px",
-          }}
-        >
-          <h2 className="w-type-display-md">Try it on a real night.</h2>
-          <p
-            className="w-type-body"
+          <section style={{ marginBottom: "var(--s-16)" }}>
+            <div className="t-meta">FAQ</div>
+            <h2
+              className="t-display-md"
+              style={{
+                marginTop: "var(--s-2)",
+                marginBottom: "var(--s-7)",
+              }}
+            >
+              The short answers.
+            </h2>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, 1fr)",
+                gap: "var(--s-3)",
+              }}
+            >
+              {FAQ.map(([q, a]) => (
+                <div
+                  key={q}
+                  className="card"
+                  style={{ padding: "var(--s-5)" }}
+                >
+                  <div className="t-h1">{q}</div>
+                  <p
+                    className="t-body-2"
+                    style={{ marginTop: "var(--s-2)" }}
+                  >
+                    {a}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section
             style={{
-              color: "var(--w-fg-muted)",
-              marginTop: 12,
+              textAlign: "center",
+              padding: "var(--s-8) 0 var(--s-4)",
             }}
           >
-            Five minutes to set up. Free for your first venue.
-          </p>
-          <Link
-            href="/signup"
-            style={{
-              display: "inline-flex",
-              marginTop: 24,
-              textDecoration: "none",
-            }}
-          >
-            <Button variant="primary" size="lg">
-              Start free <IconArrow size={14} />
-            </Button>
-          </Link>
-        </section>
+            <h2 className="t-display-md">Try it on a real night.</h2>
+            <p className="t-body-2" style={{ marginTop: "var(--s-3)" }}>
+              Five minutes to set up. Free for your first venue.
+            </p>
+            <div style={{ marginTop: "var(--s-6)" }}>
+              <Link
+                href="/signup"
+                className="btn btn--lg"
+                style={{ textDecoration: "none" }}
+              >
+                Start free →
+              </Link>
+            </div>
+          </section>
+        </div>
       </PublicShell>
       <MarketingFooter />
     </>

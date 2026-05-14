@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Button } from "@/components/wadl";
 import ConfirmDialog from "@/components/confirm-dialog";
 import { bulkUnflagAction } from "./actions";
 
@@ -13,18 +12,6 @@ interface FlagItem {
   night_date: string;
   phone: string | null;
 }
-
-const INLINE_BTN: React.CSSProperties = {
-  background: "transparent",
-  border: "none",
-  cursor: "pointer",
-  padding: 0,
-  fontFamily: "var(--w-mono)",
-  fontSize: 11,
-  letterSpacing: "0.08em",
-  textTransform: "uppercase",
-  color: "var(--w-fg-muted)",
-};
 
 export default function BulkFlagForm({ items }: { items: FlagItem[] }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -67,101 +54,95 @@ export default function BulkFlagForm({ items }: { items: FlagItem[] }) {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          marginBottom: 12,
+          marginBottom: "var(--s-3)",
+          gap: "var(--s-3)",
         }}
       >
-        <button type="button" onClick={selectAll} style={INLINE_BTN}>
-          {selected.size === items.length ? "CLEAR" : "SELECT ALL"}
-        </button>
-        <Button
-          variant="ghost"
+        <button
           type="button"
+          onClick={selectAll}
+          className="t-meta"
+          style={{
+            background: "transparent",
+            border: 0,
+            cursor: "pointer",
+            padding: 0,
+            color: "var(--fg-3)",
+          }}
+        >
+          {selected.size === items.length ? "Clear" : "Select all"}
+        </button>
+        <button
+          type="button"
+          className="btn btn--sm btn--ghost"
           disabled={selected.size === 0 || pending}
           onClick={unflag}
-          style={{ padding: "0 18px" }}
         >
           {pending ? "Working…" : `Unflag ${selected.size || ""}`}
-        </Button>
+        </button>
       </div>
 
       {msg && (
         <p
-          className="w-type-body-sm"
-          style={{ color: "var(--w-ok)", marginBottom: 12 }}
+          className="t-body-2"
+          style={{ color: "var(--ok)", marginBottom: "var(--s-3)" }}
         >
           {msg}
         </p>
       )}
 
-      <ul
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 8,
-          listStyle: "none",
-          padding: 0,
-          margin: 0,
-        }}
-      >
-        {items.map((it) => (
-          <li
-            key={it.id}
-            className="w-card"
-            style={{
-              padding: 14,
-              display: "flex",
-              alignItems: "flex-start",
-              gap: 12,
-              borderColor: selected.has(it.id) ? "var(--w-acc)" : undefined,
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={selected.has(it.id)}
-              onChange={() => toggle(it.id)}
+      <div className="card">
+        {items.map((it) => {
+          const isSel = selected.has(it.id);
+          return (
+            <div
+              key={it.id}
+              className="row"
+              onClick={() => toggle(it.id)}
               style={{
-                marginTop: 4,
-                accentColor: "var(--w-acc)",
-                width: 18,
-                height: 18,
+                gridTemplateColumns: "24px 200px 1fr 200px 110px",
+                cursor: "pointer",
+                background: isSel ? "var(--bg-3)" : undefined,
               }}
-            />
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <p
-                style={{ color: "var(--w-fg)", fontWeight: 600 }}
-              >
-                {it.full_name}
+            >
+              <input
+                type="checkbox"
+                checked={isSel}
+                onChange={() => toggle(it.id)}
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  accentColor: "var(--fg)",
+                  width: 16,
+                  height: 16,
+                }}
+              />
+              <div style={{ minWidth: 0 }}>
+                <span
+                  className="t-h2 truncate"
+                  style={{ display: "block" }}
+                >
+                  {it.full_name}
+                </span>
                 {it.phone && (
                   <span
-                    style={{
-                      color: "var(--w-fg-muted)",
-                      marginLeft: 8,
-                      fontSize: 12,
-                      fontFamily: "var(--w-mono)",
-                    }}
+                    className="t-meta"
+                    style={{ fontFamily: "var(--w-mono)" }}
                   >
                     {it.phone}
                   </span>
                 )}
-              </p>
-              <div className="w-type-meta" style={{ marginTop: 2 }}>
-                {it.event_name.toUpperCase()} · {it.night_date.toUpperCase()}
               </div>
-              {it.reason && (
-                <p
-                  style={{
-                    color: "var(--w-err)",
-                    fontSize: 14,
-                    marginTop: 4,
-                  }}
-                >
-                  {it.reason}
-                </p>
-              )}
+              <span className="t-body-2 truncate">
+                {it.reason ?? "no reason on file"}
+              </span>
+              <span className="t-meta truncate">
+                {it.event_name} · {it.night_date}
+              </span>
+              <span className="chip chip--warn">Do not admit</span>
             </div>
-          </li>
-        ))}
-      </ul>
+          );
+        })}
+      </div>
       <ConfirmDialog
         open={open}
         title={`Remove DNA flag from ${selected.size} guest${selected.size === 1 ? "" : "s"}?`}

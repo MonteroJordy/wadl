@@ -2,12 +2,9 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { Profile } from "@/lib/types";
 import MarketingFooter from "@/components/marketing-footer";
-import { CoverHeader } from "@/components/v5";
+import { Cover, CoverHeader } from "@/components/v5";
 import {
   Avatar,
-  Button,
-  Chip,
-  CredPill,
   IconArrow,
   Wordmark,
 } from "@/components/wadl";
@@ -193,9 +190,10 @@ export default async function RootPage() {
             </>
           }
         />
+        {/* Intro line under hero */}
         <section
           style={{
-            padding: "var(--s-8) var(--s-8) var(--s-12)",
+            padding: "var(--s-8) var(--s-8) var(--s-4)",
             maxWidth: 1280,
             margin: "0 auto",
           }}
@@ -216,20 +214,106 @@ export default async function RootPage() {
           </p>
         </section>
 
+        {/* Tonight, somewhere — 3-card grid (V5Marketing) */}
+        <section
+          style={{
+            padding: "var(--s-4) var(--s-8) var(--s-12)",
+            maxWidth: 1280,
+            margin: "0 auto",
+          }}
+        >
+          <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+            Tonight, somewhere
+          </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: "var(--s-4)",
+            }}
+          >
+            {[
+              {
+                seed: "Donato Dozzy",
+                when: "Fri · BR · BK · 22",
+                name: "Donato Dozzy",
+                chip: "ok" as const,
+                status: "VIP open",
+              },
+              {
+                seed: "House Brand · 04",
+                when: "Sat · Output · 23",
+                name: "House Brand · 04",
+                chip: "warn" as const,
+                status: "Waitlist",
+              },
+              {
+                seed: "Bossa Nova jam",
+                when: "Sun · Bossa Nova · 22:30",
+                name: "Bossa Nova jam",
+                chip: "ok" as const,
+                status: "GA open",
+              },
+            ].map((ev) => (
+              <Link
+                key={ev.seed}
+                href="/discover"
+                className="card card--hover"
+                style={{ textDecoration: "none" }}
+              >
+                <Cover seed={ev.seed} height={200}>
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: "var(--s-4)",
+                      right: "var(--s-4)",
+                      bottom: "var(--s-4)",
+                    }}
+                  >
+                    <div
+                      className="t-meta"
+                      style={{ color: "rgba(255,255,255,0.7)" }}
+                    >
+                      {ev.when}
+                    </div>
+                    <div
+                      className="t-h1"
+                      style={{ marginTop: "var(--s-1)", color: "#fff" }}
+                    >
+                      {ev.name}
+                    </div>
+                  </div>
+                </Cover>
+                <div
+                  style={{
+                    padding: "var(--s-4)",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <span className={"chip chip--" + ev.chip}>{ev.status}</span>
+                  <span className="btn btn--sm">RSVP</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
         {/* The pain */}
         <section
           style={{
-            padding: "64px 24px",
-            background: "var(--w-surface-2)",
-            borderTop: "1px solid var(--w-line)",
-            borderBottom: "1px solid var(--w-line)",
+            padding: "var(--s-16) var(--s-8)",
+            background: "var(--bg-2)",
+            borderTop: "1px solid var(--line)",
+            borderBottom: "1px solid var(--line)",
           }}
         >
-          <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-            <div className="w-type-meta">THE NIGHT BEFORE</div>
+          <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+            <div className="t-meta">The night before</div>
             <h2
-              className="w-type-display-md"
-              style={{ marginTop: 12, maxWidth: 720 }}
+              className="t-display-md"
+              style={{ marginTop: "var(--s-3)", maxWidth: 720 }}
             >
               Right now your guest list lives in three Google Sheets and a
               WhatsApp.
@@ -237,10 +321,9 @@ export default async function RootPage() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns:
-                  "repeat(auto-fit, minmax(280px, 1fr))",
-                gap: 20,
-                marginTop: 40,
+                gridTemplateColumns: "repeat(3, 1fr)",
+                gap: "var(--s-4)",
+                marginTop: "var(--s-10)",
               }}
             >
               {[
@@ -262,23 +345,16 @@ export default async function RootPage() {
               ].map((p) => (
                 <div
                   key={p.k}
-                  className="w-card"
-                  style={{ padding: 24 }}
+                  className="card"
+                  style={{ padding: "var(--s-6)" }}
                 >
-                  <div className="w-type-meta">{p.k}</div>
-                  <h3
-                    className="w-type-h2"
-                    style={{ marginTop: 8 }}
-                  >
+                  <div className="t-meta">{p.k}</div>
+                  <h3 className="t-h1" style={{ marginTop: "var(--s-3)" }}>
                     {p.t}
                   </h3>
                   <p
-                    className="w-type-body-sm"
-                    style={{
-                      color: "var(--w-fg-muted)",
-                      marginTop: 8,
-                      lineHeight: 1.55,
-                    }}
+                    className="t-body-2"
+                    style={{ marginTop: "var(--s-2)" }}
                   >
                     {p.d}
                   </p>
@@ -291,15 +367,15 @@ export default async function RootPage() {
         {/* What WADL does */}
         <section
           style={{
-            padding: "80px 24px",
-            maxWidth: 1200,
+            padding: "var(--s-20) var(--s-8)",
+            maxWidth: 1280,
             margin: "0 auto",
           }}
         >
-          <div className="w-type-meta">WHAT YOU GET</div>
+          <div className="t-meta">What you get</div>
           <h2
-            className="w-type-display-md"
-            style={{ marginTop: 12, maxWidth: 800 }}
+            className="t-display-md"
+            style={{ marginTop: "var(--s-3)", maxWidth: 800 }}
           >
             One link per tier. One scan at the door. One score per promoter.
           </h2>
@@ -307,100 +383,69 @@ export default async function RootPage() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fit, minmax(300px, 1fr))",
-              gap: 20,
-              marginTop: 40,
+              gridTemplateColumns: "repeat(2, 1fr)",
+              gap: "var(--s-4)",
+              marginTop: "var(--s-10)",
             }}
           >
             <div
-              className="w-card"
+              className="card"
               style={{
-                padding: 24,
-                borderColor: "var(--w-acc)",
-                background: "var(--w-acc-soft)",
+                padding: "var(--s-6)",
+                borderColor: "var(--fg)",
               }}
             >
-              <div
-                className="w-type-meta"
-                style={{ color: "var(--w-acc-ink)" }}
-              >
-                THE WEDGE
-              </div>
-              <h3
-                className="w-type-h2"
-                style={{ marginTop: 8 }}
-              >
+              <div className="t-meta">The wedge</div>
+              <h3 className="t-h1" style={{ marginTop: "var(--s-3)" }}>
                 Sub-links per tier
               </h3>
-              <p
-                className="w-type-body-sm"
-                style={{
-                  marginTop: 10,
-                  lineHeight: 1.55,
-                }}
-              >
+              <p className="t-body-2" style={{ marginTop: "var(--s-2)" }}>
                 Diplo&apos;s 25-spot list = 5 AAA · 10 VIP · 10 GA. Three
                 links, three audiences. AAA in his Signal group, VIP in his
                 inner circle, GA in his Instagram bio.
               </p>
-              <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-                <CredPill tier="GA" />
-                <CredPill tier="VIP" />
-                <CredPill tier="AAA" />
+              <div
+                style={{
+                  display: "flex",
+                  gap: "var(--s-2)",
+                  marginTop: "var(--s-4)",
+                }}
+              >
+                <span className="chip">GA</span>
+                <span className="chip">VIP</span>
+                <span className="chip">AAA</span>
               </div>
             </div>
 
-            <div className="w-card" style={{ padding: 24 }}>
-              <div className="w-type-meta">02</div>
-              <h3 className="w-type-h2" style={{ marginTop: 8 }}>
+            <div className="card" style={{ padding: "var(--s-6)" }}>
+              <div className="t-meta">02</div>
+              <h3 className="t-h1" style={{ marginTop: "var(--s-3)" }}>
                 Magic-link holders
               </h3>
-              <p
-                className="w-type-body-sm"
-                style={{
-                  color: "var(--w-fg-muted)",
-                  marginTop: 8,
-                  lineHeight: 1.55,
-                }}
-              >
+              <p className="t-body-2" style={{ marginTop: "var(--s-2)" }}>
                 Send a holder a link. They add names, set caps, approve.
                 No app, no account, no password reset at midnight.
               </p>
             </div>
 
-            <div className="w-card" style={{ padding: 24 }}>
-              <div className="w-type-meta">03</div>
-              <h3 className="w-type-h2" style={{ marginTop: 8 }}>
+            <div className="card" style={{ padding: "var(--s-6)" }}>
+              <div className="t-meta">03</div>
+              <h3 className="t-h1" style={{ marginTop: "var(--s-3)" }}>
                 Door scanner + manual
               </h3>
-              <p
-                className="w-type-body-sm"
-                style={{
-                  color: "var(--w-fg-muted)",
-                  marginTop: 8,
-                  lineHeight: 1.55,
-                }}
-              >
+              <p className="t-body-2" style={{ marginTop: "var(--s-2)" }}>
                 QR scan with five fail states. Tap-to-search by name when the
                 phone won&apos;t scan. Works offline; sync when reception
                 returns.
               </p>
             </div>
 
-            <div className="w-card" style={{ padding: 24 }}>
-              <div className="w-type-meta">04</div>
-              <h3 className="w-type-h2" style={{ marginTop: 8 }}>
+            <div className="card" style={{ padding: "var(--s-6)" }}>
+              <div className="t-meta">04</div>
+              <h3 className="t-h1" style={{ marginTop: "var(--s-3)" }}>
                 Per-tier promoter scoring
               </h3>
-              <p
-                className="w-type-body-sm"
-                style={{
-                  color: "var(--w-fg-muted)",
-                  marginTop: 8,
-                  lineHeight: 1.55,
-                }}
-              >
+              <p className="t-body-2" style={{ marginTop: "var(--s-2)" }}>
                 AAA at 100% check-in but GA at 40%? Cap his GA at 5 next
                 event. The data nobody else has.
               </p>
@@ -411,28 +456,24 @@ export default async function RootPage() {
         {/* Co-host strip */}
         <section
           style={{
-            padding: "64px 24px",
-            background: "var(--w-surface-2)",
-            borderTop: "1px solid var(--w-line)",
-            borderBottom: "1px solid var(--w-line)",
+            padding: "var(--s-16) var(--s-8)",
+            background: "var(--bg-2)",
+            borderTop: "1px solid var(--line)",
+            borderBottom: "1px solid var(--line)",
           }}
         >
-          <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-            <div className="w-type-meta">VENUE × BRAND</div>
+          <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+            <div className="t-meta">Venue × brand</div>
             <h2
-              className="w-type-display-md"
-              style={{ marginTop: 12, maxWidth: 720 }}
+              className="t-display-md"
+              style={{ marginTop: "var(--s-3)", maxWidth: 720 }}
             >
               When a brand brings a show into your room, you both own the
               door.
             </h2>
             <p
-              className="w-type-body"
-              style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 16,
-                maxWidth: 640,
-              }}
+              className="t-body-2"
+              style={{ marginTop: "var(--s-4)", maxWidth: 640 }}
             >
               Equal capabilities. The brand invites the venue (or vice versa)
               by handle, email, or phone. If they&apos;re not on WADL yet,
@@ -444,90 +485,72 @@ export default async function RootPage() {
         {/* Founder note */}
         <section
           style={{
-            padding: "80px 24px",
+            padding: "var(--s-20) var(--s-8)",
             maxWidth: 720,
             margin: "0 auto",
           }}
         >
-          <div className="w-type-meta">A NOTE FROM THE FOUNDER</div>
-          <h2
-            className="w-type-display-md"
-            style={{ marginTop: 12 }}
-          >
+          <div className="t-meta">A note from the founder</div>
+          <h2 className="t-display-md" style={{ marginTop: "var(--s-3)" }}>
             I work the door too.
           </h2>
           <div
-            className="w-type-body"
             style={{
-              color: "var(--w-fg-muted)",
-              marginTop: 20,
+              marginTop: "var(--s-5)",
               display: "flex",
               flexDirection: "column",
-              gap: 16,
-              fontSize: 16,
-              lineHeight: 1.55,
+              gap: "var(--s-4)",
             }}
           >
-            <p>
+            <p className="t-body">
               I&apos;m Jordy. I run nights in Miami. The list is a Google
               Sheet that becomes three Google Sheets that becomes a WhatsApp
               screenshot at the door. Fights start over names that
               aren&apos;t there. Promoters take credit for arrivals they
               didn&apos;t bring. The line stops moving.
             </p>
-            <p>
+            <p className="t-body">
               WADL is the tool I needed. If you run nights, you know exactly
               what I mean.
             </p>
-            <p style={{ color: "var(--w-acc)", fontWeight: 600 }}>— Jordy</p>
+            <p className="t-body" style={{ fontWeight: 500 }}>
+              — Jordy
+            </p>
           </div>
         </section>
 
         {/* Final CTA */}
         <section
           style={{
-            padding: "80px 24px 96px",
+            padding: "var(--s-20) var(--s-8) var(--s-24)",
             maxWidth: 720,
             margin: "0 auto",
             textAlign: "center",
           }}
         >
-          <h2 className="w-type-display-md">
-            Run your next night with WADL.
-          </h2>
-          <p
-            className="w-type-body"
-            style={{ color: "var(--w-fg-muted)", marginTop: 12 }}
-          >
+          <h2 className="t-display-md">Run your next night with WADL.</h2>
+          <p className="t-body-2" style={{ marginTop: "var(--s-3)" }}>
             Free for one venue. No card. Set up in under five minutes.
           </p>
-          {user ? (
-            <Link
-              href={dashboardHref}
-              style={{
-                display: "inline-flex",
-                marginTop: 24,
-                textDecoration: "none",
-              }}
-            >
-              <Button variant="primary" size="lg">
-                Open dashboard <IconArrow size={14} />
-              </Button>
-            </Link>
-          ) : (
-            <Link
-              href="/signup"
-              style={{
-                display: "inline-flex",
-                marginTop: 24,
-                textDecoration: "none",
-              }}
-            >
-              <Button variant="primary" size="lg">
-                Start free <IconArrow size={14} />
-              </Button>
-            </Link>
-          )}
+          <div style={{ marginTop: "var(--s-6)" }}>
+            {user ? (
+              <Link
+                href={dashboardHref}
+                className="btn btn--lg"
+                style={{ textDecoration: "none" }}
+              >
+                Open dashboard →
+              </Link>
+            ) : (
+              <Link
+                href="/signup"
+                className="btn btn--lg"
+                style={{ textDecoration: "none" }}
+              >
+                Start free →
+              </Link>
+            )}
+          </div>
         </section>
       </main>
       <MarketingFooter />

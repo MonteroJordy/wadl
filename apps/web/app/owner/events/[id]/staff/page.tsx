@@ -1,9 +1,8 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOwnerContext } from "@/lib/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAppUrl } from "@/lib/app-url";
-import { Avatar, Chip } from "@/components/wadl";
+import { Breadcrumb, PageHeader, EventSubNav } from "@/components/v5";
 import InviteForm from "./invite-form";
 import {
   CopyLinkButton,
@@ -31,18 +30,23 @@ interface InviteRow {
   created_at: string;
 }
 
-function roleTone(role: string): "warn" | "ok" | "acc" | "ghost" {
-  if (role === "door_manager") return "warn";
-  if (role === "door_staff") return "ok";
-  if (role === "photographer") return "acc";
-  return "ghost";
+function roleLabel(role: string) {
+  if (role === "door_manager") return "Manager";
+  if (role === "door_staff") return "Scanner";
+  if (role === "photographer") return "Photographer";
+  return role.replace(/_/g, " ");
 }
 
-function roleLabel(role: string) {
-  if (role === "door_manager") return "MANAGER";
-  if (role === "door_staff") return "STAFF";
-  if (role === "photographer") return "PHOTOGRAPHER";
-  return role.toUpperCase();
+function initials(name: string) {
+  return (
+    name
+      .trim()
+      .split(/\s+/)
+      .map((x) => x[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "?"
+  );
 }
 
 export default async function StaffPage({
@@ -80,194 +84,114 @@ export default async function StaffPage({
   const appUrl = getAppUrl();
 
   return (
-    <main
-      id="main-content"
-      className="w-app"
-      style={{
-        minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
-      }}
-    >
-      <div style={{ maxWidth: 1000, margin: "0 auto" }}>
-        <Link
-          href={`/owner/events/${event.id}`}
-          className="w-type-meta"
-          style={{ textDecoration: "none" }}
-        >
-          ← {event.name.toUpperCase()}
-        </Link>
+    <main id="main-content">
+      <Breadcrumb
+        items={[
+          ["Events", "/owner"],
+          [event.name, `/owner/events/${event.id}`],
+          "Staff",
+        ]}
+      />
+      <PageHeader
+        eyebrow={`${staff.length} staff · ${invites.length} pending`}
+        title="Staff"
+      />
+      <EventSubNav active="staff" eventId={event.id} />
 
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-end",
-            justifyContent: "space-between",
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            marginTop: 16,
-            gap: 16,
-            flexWrap: "wrap",
-          }}
-        >
-          <div>
-            <div className="w-type-meta">DOOR STAFF</div>
-            <div className="w-type-display-md" style={{ marginTop: 8 }}>
-              Roster
-            </div>
-            <p
-              className="w-type-body-sm"
-              style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 8,
-              }}
-            >
-              {staff.length} on · {invites.length} pending
-            </p>
-          </div>
-        </div>
-
+      <div style={{ padding: "var(--s-8)" }}>
         {/* Invite form */}
-        <div style={{ marginTop: 24 }}>
+        <div style={{ marginBottom: "var(--s-8)", maxWidth: 720 }}>
           <InviteForm eventId={event.id} />
         </div>
 
         {/* Active staff */}
-        <section style={{ marginTop: 32 }}>
-          <div className="w-type-meta" style={{ marginBottom: 12 }}>
-            STAFF ON THIS EVENT · {staff.length}
+        <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+          On this event · {staff.length}
+        </div>
+        {staff.length === 0 ? (
+          <div
+            className="card"
+            style={{ padding: "var(--s-10)", textAlign: "center" }}
+          >
+            <div className="t-h1">No staff yet</div>
+            <div className="t-body-2" style={{ marginTop: "var(--s-2)" }}>
+              Invite someone above to put them on the scanner tonight.
+            </div>
           </div>
-          {staff.length === 0 ? (
-            <div
-              className="w-card"
-              style={{
-                padding: "48px 32px",
-                textAlign: "center",
-              }}
-            >
-              <div className="w-type-h2">No staff yet</div>
-              <p
-                className="w-type-body-sm"
+        ) : (
+          <div className="card">
+            {staff.map((s) => (
+              <div
+                key={s.user_id}
+                className="row"
                 style={{
-                  color: "var(--w-fg-muted)",
-                  marginTop: 12,
+                  gridTemplateColumns: "36px 1fr 1fr 160px 100px 32px",
                 }}
               >
-                Invite someone above to put them on the scanner tonight.
-              </p>
-            </div>
-          ) : (
-            <ul
-              style={{
-                listStyle: "none",
-                padding: 0,
-                margin: 0,
-                display: "flex",
-                flexDirection: "column",
-                gap: 6,
-              }}
-            >
-              {staff.map((s) => (
-                <li key={s.user_id}>
-                  <div
-                    className="w-card"
-                    style={{
-                      padding: 14,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                    }}
-                  >
-                    <Avatar
-                      name={s.profile?.full_name ?? "?"}
-                      size={36}
-                    />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div
-                        style={{
-                          fontWeight: 600,
-                          fontSize: 14,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {s.profile?.full_name ?? "Unnamed"}
-                      </div>
-                      <div className="w-type-meta" style={{ marginTop: 2 }}>
-                        {s.profile?.phone ?? "NO PHONE"}
-                      </div>
-                    </div>
-                    <Chip tone={roleTone(s.role)}>
-                      {roleLabel(s.role)}
-                    </Chip>
-                    <RemoveStaffButton
-                      eventId={event.id}
-                      userId={s.user_id}
-                    />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+                <div
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: "var(--r-pill)",
+                    background: "var(--bg-3)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 11,
+                    fontWeight: 500,
+                  }}
+                >
+                  {initials(s.profile?.full_name ?? "?")}
+                </div>
+                <span className="t-h1">
+                  {s.profile?.full_name ?? "Unnamed"}
+                </span>
+                <span className="t-body-2">{roleLabel(s.role)}</span>
+                <span className="t-meta">
+                  {s.profile?.phone ?? "No phone"}
+                </span>
+                <span className="chip chip--ok">Confirmed</span>
+                <RemoveStaffButton eventId={event.id} userId={s.user_id} />
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Pending invites */}
         {invites.length > 0 && (
-          <section style={{ marginTop: 32 }}>
-            <div className="w-type-meta" style={{ marginBottom: 12 }}>
-              PENDING INVITES · {invites.length}
-            </div>
-            <ul
+          <>
+            <div
+              className="t-meta"
               style={{
-                listStyle: "none",
-                padding: 0,
-                margin: 0,
-                display: "flex",
-                flexDirection: "column",
-                gap: 6,
+                marginTop: "var(--s-10)",
+                marginBottom: "var(--s-3)",
               }}
             >
+              Pending invites · {invites.length}
+            </div>
+            <div className="card">
               {invites.map((i) => (
-                <li key={i.id}>
-                  <div
-                    className="w-card"
-                    style={{
-                      padding: 14,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                      borderColor: "var(--w-warn)",
-                      background: "oklch(0.86 0.16 85 / 0.06)",
-                    }}
-                  >
-                    <Chip tone="warn">PENDING</Chip>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div
-                        style={{
-                          fontFamily: "var(--w-mono)",
-                          fontSize: 14,
-                          fontWeight: 500,
-                        }}
-                      >
-                        {i.phone}
-                      </div>
-                      <div className="w-type-meta" style={{ marginTop: 2 }}>
-                        {roleLabel(i.role)}
-                      </div>
-                    </div>
-                    <CopyLinkButton
-                      url={`${appUrl}/staff-invite/${i.token}`}
-                    />
-                    <RevokeInviteButton
-                      eventId={event.id}
-                      inviteId={i.id}
-                    />
-                  </div>
-                </li>
+                <div
+                  key={i.id}
+                  className="row"
+                  style={{
+                    gridTemplateColumns: "1fr 1fr 100px auto auto",
+                  }}
+                >
+                  <span className="t-h1">{i.phone}</span>
+                  <span className="t-body-2">{roleLabel(i.role)}</span>
+                  <span className="chip chip--warn">Pending</span>
+                  <CopyLinkButton
+                    url={`${appUrl}/staff-invite/${i.token}`}
+                  />
+                  <RevokeInviteButton
+                    eventId={event.id}
+                    inviteId={i.id}
+                  />
+                </div>
               ))}
-            </ul>
-          </section>
+            </div>
+          </>
         )}
       </div>
     </main>

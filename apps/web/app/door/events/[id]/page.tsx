@@ -4,17 +4,18 @@ import { requireDoorContext, resolveActiveNight } from "@/lib/door";
 import { fmtDate, fmtTime } from "@/lib/format";
 import EscalateButton from "@/components/escalate-button";
 import StatusLegend from "@/components/status-legend";
-import {
-  CapacityMeter,
-  Chip,
-  IconArrow,
-  IconQr,
-  IconSearch,
-  WFrame,
-  Wordmark,
-} from "@/components/wadl";
 
 export const dynamic = "force-dynamic";
+
+function relTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const s = Math.max(0, Math.round(diff / 1000));
+  if (s < 60) return `${s}s ago`;
+  const m = Math.round(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.round(m / 60);
+  return `${h}h ago`;
+}
 
 export default async function DoorEventHome({
   params,
@@ -35,8 +36,9 @@ export default async function DoorEventHome({
   let inCount = 0;
   let approvedCount = 0;
   let pendingCount = 0;
+  let lastScan: { name: string; tier: string; at: string } | null = null;
   if (active) {
-    const [checkInsRes, guestsRes] = await Promise.all([
+    const [checkInsRes, guestsRes, lastScanRes] = await Promise.all([
       admin
         .from("check_ins")
         .select("id", { count: "exact", head: true })
@@ -47,6 +49,16 @@ export default async function DoorEventHome({
         .select("status, plus_ones")
         .eq("event_night_id", active.id)
         .in("status", ["approved", "pending"]),
+      admin
+        .from("check_ins")
+        .select(
+          "created_at, guest:guests!inner(full_name, tier)",
+        )
+        .eq("event_night_id", active.id)
+        .eq("state", "approved")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ]);
     inCount = checkInsRes.count ?? 0;
     for (const g of guestsRes.data ?? []) {
@@ -55,6 +67,19 @@ export default async function DoorEventHome({
       else if (g.status === "pending")
         pendingCount += 1 + (g.plus_ones ?? 0);
     }
+    const ls = lastScanRes.data as
+      | {
+          created_at: string;
+          guest: { full_name: string; tier: string } | null;
+        }
+      | null;
+    if (ls?.guest) {
+      lastScan = {
+        name: ls.guest.full_name,
+        tier: ls.guest.tier,
+        at: ls.created_at,
+      };
+    }
   }
 
   const capacity = active?.capacity_cap ?? 0;
@@ -62,88 +87,65 @@ export default async function DoorEventHome({
     capacity > 0 ? Math.round((inCount / capacity) * 100) : 0;
 
   return (
-    <main id="main-content">
-      <WFrame style={{ paddingBottom: 32, background: "#000" }}>
-        {/* Top status bar */}
+    <main id="main-content" className="v5">
+      <div style={{ background: "var(--bg)", minHeight: "100vh" }}>
+        {/* ── Header row — Tonight · live + event name + scanning pulse ── */}
         <div
           style={{
-            padding: "16px 20px 0",
+            padding: "var(--s-6) var(--s-8)",
+            borderBottom: "1px solid var(--line)",
             display: "flex",
-            alignItems: "center",
             justifyContent: "space-between",
+            alignItems: "center",
+            gap: "var(--s-6)",
+            flexWrap: "wrap",
           }}
         >
           <div>
-            <div
-              className="w-type-meta"
-              style={{
-                color: "var(--w-acc)",
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
-              <span
-                className="w-pulse"
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: 99,
-                  background: "currentColor",
-                  display: "inline-block",
-                }}
-              />
-              LIVE · {resolved.event.name.toUpperCase()}
+            <div className="t-meta">Tonight · live</div>
+            <div className="t-display-md" style={{ marginTop: "var(--s-2)" }}>
+              {resolved.event.name}
             </div>
             {active ? (
-              <div
-                style={{
-                  fontFamily: "var(--w-mono)",
-                  fontSize: 13,
-                  marginTop: 4,
-                }}
-              >
-                <strong style={{ color: "var(--w-fg)" }}>{inCount}</strong>
-                <span style={{ color: "var(--w-fg-dim)" }}>
-                  {capacity ? ` / ${capacity}` : ""}
-                  {capacity ? ` · ${pct}%` : ""}
-                </span>
+              <div className="t-meta" style={{ marginTop: "var(--s-2)" }}>
+                {fmtDate(active.night_date)} · doors{" "}
+                {fmtTime(active.doors_at)}
+                {active.is_frozen ? " · frozen" : ""}
               </div>
             ) : null}
           </div>
-          <Wordmark variant="monogrid" size={14} />
-        </div>
-
-        <div style={{ padding: "24px 20px 0" }}>
-          <div className="w-type-meta">DOOR</div>
-          <div className="w-type-display-md" style={{ marginTop: 6 }}>
-            {resolved.event.name}
-          </div>
           {active ? (
-            <div className="w-type-meta" style={{ marginTop: 8 }}>
-              {fmtDate(active.night_date).toUpperCase()} · DOORS{" "}
-              {fmtTime(active.doors_at).toUpperCase()}
-              {active.is_frozen ? " · FROZEN" : ""}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "var(--s-2)",
+              }}
+            >
+              <div
+                className="pulse"
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: "var(--r-pill)",
+                  background: "var(--ok)",
+                }}
+              />
+              <span className="t-meta">Scanning</span>
             </div>
           ) : null}
-        </div>
-
-        {/* Status key — always visible so staff can decode tones at a
-            glance during a busy door. Collapsed by default to save room. */}
-        <div style={{ padding: "12px 20px 0" }}>
-          <StatusLegend kind="scan" variant="collapsible" />
         </div>
 
         {/* Multi-night picker */}
         {nights.length > 1 && active ? (
           <div
             style={{
-              padding: "16px 20px 0",
+              padding: "var(--s-4) var(--s-8) 0",
               display: "flex",
-              gap: 6,
+              gap: "var(--s-2)",
               overflowX: "auto",
             }}
-            className="w-noscroll"
+            className="noscroll"
           >
             {nights.map((n) => {
               const isActive = n.id === active.id;
@@ -151,14 +153,13 @@ export default async function DoorEventHome({
                 <Link
                   key={n.id}
                   href={`/door/events/${params.id}?night=${n.id}`}
-                  style={{
-                    textDecoration: "none",
-                    flexShrink: 0,
-                  }}
+                  style={{ textDecoration: "none", flexShrink: 0 }}
                 >
-                  <Chip tone={isActive ? "neutral" : "ghost"}>
-                    {fmtDate(n.night_date).toUpperCase()}
-                  </Chip>
+                  <span
+                    className={"chip " + (isActive ? "" : "chip--ghost")}
+                  >
+                    {fmtDate(n.night_date)}
+                  </span>
                 </Link>
               );
             })}
@@ -167,220 +168,197 @@ export default async function DoorEventHome({
 
         {active ? (
           <>
-            {/* Big-stat IN card */}
-            <div style={{ padding: "24px 20px 0" }}>
+            {/* ── 2-col body ── */}
+            <div
+              style={{
+                padding: "var(--s-8)",
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "var(--s-4)",
+              }}
+            >
+              {/* Left — giant checked-in count */}
               <div
-                className="w-card"
-                style={{
-                  padding: 22,
-                  borderColor: "var(--w-acc)",
-                  background: "var(--w-acc-soft)",
-                }}
+                className="card"
+                style={{ padding: "var(--s-8)", textAlign: "center" }}
               >
+                <div className="t-meta">Checked in</div>
                 <div
-                  className="w-type-meta"
-                  style={{ color: "var(--w-acc)" }}
-                >
-                  IN
-                </div>
-                <div
+                  className="t-num"
                   style={{
-                    fontFamily: "var(--w-display)",
-                    fontSize: 88,
+                    fontSize: 96,
                     fontWeight: 700,
                     letterSpacing: "-0.04em",
-                    lineHeight: 0.92,
-                    marginTop: 4,
+                    lineHeight: 1,
+                    marginTop: "var(--s-3)",
                   }}
                 >
                   {inCount}
-                  <span style={{ color: "var(--w-fg-dim)", fontSize: 44 }}>
-                    {capacity ? `/${capacity}` : ""}
-                  </span>
                 </div>
-                {capacity > 0 && (
-                  <div style={{ marginTop: 14 }}>
-                    <CapacityMeter
-                      current={inCount}
-                      total={capacity}
-                      accent
-                      label="CAPACITY"
-                    />
-                  </div>
-                )}
+                <div className="t-body-2" style={{ marginTop: "var(--s-2)" }}>
+                  {capacity ? `of ${capacity} · ${pct}% cap` : "no cap set"}
+                </div>
                 <div
                   style={{
                     display: "flex",
-                    gap: 8,
-                    marginTop: 14,
-                    flexWrap: "wrap",
+                    gap: "var(--s-2)",
+                    justifyContent: "center",
+                    marginTop: "var(--s-4)",
                   }}
                 >
-                  <Chip tone="ok">{approvedCount} APPROVED</Chip>
+                  <span className="chip chip--ok">
+                    {approvedCount} approved
+                  </span>
                   {pendingCount > 0 && (
-                    <Chip tone="warn">{pendingCount} PENDING</Chip>
+                    <span className="chip chip--warn">
+                      {pendingCount} pending
+                    </span>
                   )}
                 </div>
-              </div>
-            </div>
-
-            {/* Action grid */}
-            <div
-              style={{
-                padding: "16px 20px 0",
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 10,
-              }}
-            >
-              <Link
-                href={`/door/events/${params.id}/scan?night=${active.id}`}
-                style={{ textDecoration: "none", color: "inherit" }}
-              >
                 <div
-                  className="w-card"
                   style={{
-                    padding: 24,
-                    textAlign: "center",
-                    borderColor: "var(--w-acc)",
-                    background: "var(--w-acc-soft)",
-                    color: "var(--w-fg)",
+                    marginTop: "var(--s-5)",
+                    padding: "var(--s-3) var(--s-4)",
+                    background: "var(--bg-3)",
+                    borderRadius: "var(--r-md)",
                   }}
                 >
-                  <div
-                    style={{
-                      width: 48,
-                      height: 48,
-                      margin: "0 auto",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "var(--w-acc)",
-                    }}
-                  >
-                    <IconQr size={32} />
+                  <div className="t-meta">
+                    {lastScan ? `Last · ${relTime(lastScan.at)}` : "Last scan"}
                   </div>
-                  <div
-                    className="w-type-display-md"
-                    style={{ marginTop: 8, fontSize: 28 }}
-                  >
-                    Scan
-                  </div>
-                  <div className="w-type-meta" style={{ marginTop: 4 }}>
-                    CAMERA QR
+                  <div className="t-h1" style={{ marginTop: "var(--s-1)" }}>
+                    {lastScan
+                      ? `${lastScan.name} · ${lastScan.tier
+                          .replace(/_/g, " ")
+                          .toUpperCase()}`
+                      : "No scans yet"}
                   </div>
                 </div>
-              </Link>
-              <Link
-                href={`/door/events/${params.id}/search?night=${active.id}`}
-                style={{ textDecoration: "none", color: "inherit" }}
-              >
-                <div
-                  className="w-card"
-                  style={{
-                    padding: 24,
-                    textAlign: "center",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 48,
-                      height: 48,
-                      margin: "0 auto",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "var(--w-fg)",
-                    }}
-                  >
-                    <IconSearch size={32} />
-                  </div>
-                  <div
-                    className="w-type-display-md"
-                    style={{ marginTop: 8, fontSize: 28 }}
-                  >
-                    Search
-                  </div>
-                  <div className="w-type-meta" style={{ marginTop: 4 }}>
-                    BY NAME
-                  </div>
-                </div>
-              </Link>
-            </div>
-
-            {resolved.role !== "door_manager" && (
-              <div style={{ padding: "32px 20px 0" }}>
-                <EscalateButton eventId={params.id} />
               </div>
-            )}
 
-            {resolved.role === "door_manager" && (
+              {/* Right — action stack + briefing */}
               <div
-                style={{ padding: "24px 20px 0", textAlign: "center" }}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "var(--s-2)",
+                }}
               >
                 <Link
-                  href={`/manager/events/${params.id}`}
-                  style={{
-                    color: "var(--w-warn)",
-                    textDecoration: "none",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
-                  className="w-type-meta"
+                  href={`/door/events/${params.id}/scan?night=${active.id}`}
+                  className="btn btn--xl btn--block"
                 >
-                  MANAGER VIEW <IconArrow size={12} />
+                  Open scanner
                 </Link>
+                <Link
+                  href={`/door/events/${params.id}/search?night=${active.id}`}
+                  className="btn btn--ghost btn--xl btn--block"
+                >
+                  Manual lookup
+                </Link>
+                <Link
+                  href={`/door/events/${params.id}/search?night=${active.id}&walkin=1`}
+                  className="btn btn--ghost btn--xl btn--block"
+                >
+                  Add walk-in
+                </Link>
+
+                <div
+                  className="card"
+                  style={{ padding: "var(--s-5)", marginTop: "var(--s-2)" }}
+                >
+                  <div className="t-meta">Briefing</div>
+                  <div
+                    style={{
+                      marginTop: "var(--s-3)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "var(--s-2)",
+                    }}
+                  >
+                    {[
+                      "Scan or search only — no overrides at the door",
+                      "Same QR twice means already in — wave them through",
+                      "Flagged or denied — hold them, escalate",
+                    ].map((t) => (
+                      <div
+                        key={t}
+                        className="t-body-2"
+                        style={{ display: "flex", gap: "var(--s-2)" }}
+                      >
+                        <span style={{ color: "var(--fg-4)" }}>·</span>
+                        {t}
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ marginTop: "var(--s-4)" }}>
+                    <StatusLegend kind="scan" variant="collapsible" />
+                  </div>
+                </div>
+
+                {resolved.role !== "door_manager" && (
+                  <div style={{ marginTop: "var(--s-2)" }}>
+                    <EscalateButton eventId={params.id} />
+                  </div>
+                )}
+
+                {resolved.role === "door_manager" && (
+                  <Link
+                    href={`/manager/events/${params.id}`}
+                    className="t-meta"
+                    style={{
+                      marginTop: "var(--s-2)",
+                      color: "var(--warn)",
+                      textDecoration: "none",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "var(--s-2)",
+                    }}
+                  >
+                    Manager view →
+                  </Link>
+                )}
               </div>
-            )}
+            </div>
           </>
         ) : (
-          <div style={{ padding: "32px 20px 0" }}>
+          <div style={{ padding: "var(--s-8)" }}>
             <div
-              className="w-card"
-              style={{ padding: 24, textAlign: "center" }}
+              className="card"
+              style={{ padding: "var(--s-8)", textAlign: "center" }}
             >
-              <div className="w-type-meta">NO NIGHTS YET</div>
+              <div className="t-meta">No nights yet</div>
             </div>
           </div>
         )}
 
         <div
-          className="w-type-meta"
-          style={{
-            marginTop: "auto",
-            paddingTop: 24,
-            paddingBottom: 12,
-            textAlign: "center",
-            color: "var(--w-fg-dim)",
-          }}
-        >
-          STAFF · SCAN OR SEARCH ONLY
-        </div>
-
-        <div
           style={{
             display: "flex",
             justifyContent: "center",
-            paddingTop: 8,
+            gap: "var(--s-3)",
+            padding: "var(--s-6) var(--s-8) var(--s-8)",
           }}
         >
+          <span className="t-meta" style={{ color: "var(--fg-4)" }}>
+            Staff · scan or search only
+          </span>
           <form action="/api/auth/signout" method="post">
             <button
               type="submit"
-              className="w-type-meta"
+              className="t-meta"
               style={{
                 background: "transparent",
                 border: 0,
-                color: "var(--w-fg-dim)",
+                color: "var(--fg-4)",
                 cursor: "pointer",
               }}
             >
-              SIGN OUT
+              Sign out
             </button>
           </form>
         </div>
-      </WFrame>
+      </div>
     </main>
   );
 }

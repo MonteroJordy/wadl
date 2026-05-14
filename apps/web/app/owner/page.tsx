@@ -2,13 +2,7 @@ import Link from "next/link";
 import { requireOwnerContext, fmtDate, fmtTime } from "@/lib/owner";
 import OnboardingTour from "@/components/onboarding-tour";
 import { dashboardFraming } from "@wadl/shared/account-type";
-import {
-  Avatar,
-  CapacityMeter,
-  Chip,
-  IconArrow,
-  IconPlus,
-} from "@/components/wadl";
+import { Cover, CoverHeader, Stat } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 
@@ -67,15 +61,6 @@ function isSameDay(a: Date, b: Date): boolean {
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate()
   );
-}
-
-function dayLabel(date: Date): { dow: string; day: string } {
-  return {
-    dow: date
-      .toLocaleDateString("en-US", { weekday: "short" })
-      .toUpperCase(),
-    day: String(date.getDate()),
-  };
 }
 
 export default async function OwnerWeekViewPage({
@@ -229,519 +214,365 @@ export default async function OwnerWeekViewPage({
     return s ? `/owner?${s}` : "/owner";
   }
 
-  const tonightLabel = tonight
-    ? `${fmtDate(tonight.night_date)} · ${tonight.event?.name ?? "—"}`
-    : `${RANGE_LABEL[range]} · ${account.display_name}`;
+  // ─── v5 hero framing ───
+  // When there's an event today, the hero counts down to doors; otherwise it
+  // frames the current range. The seed drives the procedural cover gradient.
+  const heroSeed = tonight?.event?.name ?? account.display_name;
+  let heroEyebrow: string;
+  if (tonight) {
+    const doorsMs = new Date(tonight.doors_at).getTime() - Date.now();
+    if (doorsMs > 0) {
+      const h = Math.floor(doorsMs / 3_600_000);
+      const m = Math.floor((doorsMs % 3_600_000) / 60_000);
+      heroEyebrow = `Tonight · doors in ${h > 0 ? `${h}h ` : ""}${m}m`;
+    } else {
+      heroEyebrow = `Tonight · doors ${fmtTime(tonight.doors_at)}`;
+    }
+  } else {
+    heroEyebrow = `${RANGE_LABEL[range]} · ${account.display_name}`;
+  }
+  const heroTitle = tonight ? (tonight.event?.name ?? "Tonight") : RANGE_LABEL[range];
+
+  // ─── v5 4-up stat row ───
+  const showRate =
+    totalRsvpd > 0 ? Math.round((totalScanned / totalRsvpd) * 100) : 0;
+
+  const isEmpty = nights.length === 0 && !tonight;
 
   return (
     <main
       id="main-content"
-      className="w-app"
-      style={{
-        minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
-      }}
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
     >
-      <div style={{ maxWidth: 1600, margin: "0 auto" }}>
-        {/* Header — BizHome style */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-end",
-            justifyContent: "space-between",
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            gap: 16,
-            flexWrap: "wrap",
-          }}
-        >
-          <div style={{ minWidth: 0 }}>
-            <div className="w-type-meta">
-              {tonightLabel.toUpperCase()}
-              {account.handle ? ` · @${account.handle}` : ""}
-              {account.city ? ` · ${account.city}` : ""}
-            </div>
-            <div className="w-type-display-md" style={{ marginTop: 8 }}>
-              {tonight ? "Tonight at the door" : RANGE_LABEL[range]}
-            </div>
-          </div>
-          <Link
-            href="/owner/events/new"
-            className="w-btn w-btn--primary"
-            style={{ textDecoration: "none" }}
-          >
-            <IconPlus /> New event
-          </Link>
-        </div>
-
-        {/* KPI row */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: 16,
-            marginTop: 28,
-          }}
-        >
-          {tonight ? (
-            <Link
-              href={`/owner/events/${tonight.event_id}?night=${tonight.id}`}
-              style={{ textDecoration: "none", color: "inherit" }}
-              aria-label="Open tonight's daydash"
+      {isEmpty ? (
+        // ─── v5 empty state — matches V5Empty ───
+        (() => {
+          const framing = dashboardFraming(account.account_type);
+          const emptyTitle = q
+            ? "Nothing matches"
+            : range === "past"
+              ? "No past events"
+              : range === "upcoming"
+                ? "Nothing booked"
+                : framing.emptyTitle;
+          const emptyBody = q
+            ? `Nothing named "${q}". Try a different search or change the range.`
+            : range === "past"
+              ? "Once you run a night, the recap lands here."
+              : framing.emptyBody;
+          return (
+            <div
+              style={{
+                padding: "var(--s-20) var(--s-8)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                textAlign: "center",
+                maxWidth: 480,
+                margin: "0 auto",
+              }}
             >
-              <KPI
-                eyebrow="DOORS"
-                big={fmtTime(tonight.doors_at)}
-                sub={`tonight · ${tonightStats?.approved ?? 0} on list`}
-                accent
-              />
-            </Link>
-          ) : (
-            <KPI
-              eyebrow="DOORS"
-              big="—"
-              sub="no event today"
-            />
-          )}
-          <KPI
-            eyebrow="RSVP'D"
-            big={String(totalRsvpd)}
-            sub={`across ${nights.length} night${nights.length === 1 ? "" : "s"}`}
-          />
-          <KPI
-            eyebrow="EVENTS"
-            big={String(distinctEvents)}
-            sub={`${RANGE_LABEL[range].toLowerCase()}`}
-          />
-          <KPI
-            eyebrow="LIVE NOW"
-            big={String(liveNow)}
-            sub={`${totalScanned} checked in`}
-            accent={liveNow > 0}
-          />
-        </div>
-
-        {/* Filter row */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            marginTop: 28,
-            paddingBottom: 14,
-            borderBottom: "1px solid var(--w-line)",
-            flexWrap: "wrap",
-          }}
-        >
-          <form action="/owner" method="get" style={{ flex: 1, minWidth: 220 }}>
-            <input
-              type="text"
-              name="q"
-              defaultValue={q}
-              placeholder="search events…"
-              className="w-input"
-              style={{ height: 36, fontSize: 13 }}
-            />
-            {range !== "week" && (
-              <input type="hidden" name="range" value={range} />
-            )}
-            {venueFilter && (
-              <input type="hidden" name="venue" value={venueFilter} />
-            )}
-          </form>
-          {RANGES.map((r) => {
-            const active = r === range;
-            return (
-              <Link
-                key={r}
-                href={rangeHref(r)}
+              <div
                 style={{
-                  textDecoration: "none",
-                  flexShrink: 0,
+                  width: 56,
+                  height: 56,
+                  borderRadius: "var(--r-lg)",
+                  background: "var(--bg-3)",
+                  marginBottom: "var(--s-5)",
                 }}
+              />
+              <div className="t-display-md">{emptyTitle}</div>
+              <div
+                className="t-body-2"
+                style={{ marginTop: "var(--s-3)", maxWidth: 380 }}
               >
-                <Chip tone={active ? "neutral" : "ghost"}>
-                  {RANGE_LABEL[r].toUpperCase()}
-                </Chip>
-              </Link>
-            );
-          })}
-        </div>
+                {emptyBody}
+              </div>
+              {!q && range !== "past" && (
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "var(--s-2)",
+                    marginTop: "var(--s-6)",
+                  }}
+                >
+                  <Link
+                    href="/owner/events/new"
+                    className="btn"
+                    style={{ textDecoration: "none" }}
+                  >
+                    {framing.emptyCtaLabel}
+                  </Link>
+                  <Link
+                    href="/owner/calendar"
+                    className="btn btn--ghost"
+                    style={{ textDecoration: "none" }}
+                  >
+                    Open calendar
+                  </Link>
+                </div>
+              )}
+            </div>
+          );
+        })()
+      ) : (
+        <>
+          {/* ─── CoverHeader hero ─── */}
+          <CoverHeader
+            seed={heroSeed}
+            eyebrow={heroEyebrow}
+            title={heroTitle}
+            height={360}
+            actions={
+              <>
+                <Link
+                  href="/owner/calendar"
+                  className="btn btn--ghost btn--lg"
+                  style={{ textDecoration: "none" }}
+                >
+                  Calendar
+                </Link>
+                <Link
+                  href={
+                    tonight
+                      ? `/owner/events/${tonight.event_id}?night=${tonight.id}`
+                      : "/owner/events/new"
+                  }
+                  className="btn btn--lg"
+                  style={{ textDecoration: "none" }}
+                >
+                  {tonight ? "Open daydash" : "New event"}
+                </Link>
+              </>
+            }
+          />
 
-        {/* Venue pills */}
-        {venues.length > 1 && (
+          {/* ─── 4-up Stat row ─── */}
           <div
             style={{
-              display: "flex",
-              gap: 6,
-              flexWrap: "wrap",
-              marginTop: 16,
+              display: "grid",
+              gridTemplateColumns: "repeat(4, 1fr)",
+              borderBottom: "1px solid var(--line)",
             }}
           >
-            <Link href={venueHref("")} style={{ textDecoration: "none" }}>
-              <Chip tone={!venueFilter ? "neutral" : "ghost"}>
-                ALL VENUES
-              </Chip>
-            </Link>
-            {venues.map((v) => (
-              <Link
-                key={v.id}
-                href={venueHref(v.id)}
-                style={{ textDecoration: "none" }}
-              >
-                <Chip tone={venueFilter === v.id ? "neutral" : "ghost"}>
-                  {v.name.toUpperCase()}
-                </Chip>
-              </Link>
-            ))}
+            <Stat
+              label="Doors"
+              value={tonight ? fmtTime(tonight.doors_at) : "—"}
+              sub={
+                tonight
+                  ? `${tonightStats?.approved ?? 0} on list`
+                  : "no event today"
+              }
+            />
+            <Stat
+              label="RSVP'd"
+              value={String(totalRsvpd)}
+              sub={`across ${nights.length} night${nights.length === 1 ? "" : "s"}`}
+            />
+            <Stat
+              label="Events"
+              value={String(distinctEvents)}
+              sub={RANGE_LABEL[range].toLowerCase()}
+            />
+            <Stat
+              label="Live now"
+              value={String(liveNow)}
+              sub={`${totalScanned} checked in`}
+              delta={showRate > 0 ? `${showRate}% show` : undefined}
+              last
+            />
           </div>
-        )}
 
-        {/* TONIGHT hero card */}
-        {tonight && tonightStats && (
-          <Link
-            href={`/owner/events/${tonight.event_id}?night=${tonight.id}`}
+          {/* ─── Filters: search + range + venue ─── */}
+          <div
             style={{
-              display: "block",
-              textDecoration: "none",
-              color: "inherit",
-              marginTop: 28,
+              padding: "var(--s-4) var(--s-8)",
+              borderBottom: "1px solid var(--line)",
+              display: "flex",
+              alignItems: "center",
+              gap: "var(--s-3)",
+              flexWrap: "wrap",
             }}
           >
+            <form
+              action="/owner"
+              method="get"
+              style={{ flex: 1, minWidth: 220 }}
+            >
+              <input
+                type="text"
+                name="q"
+                defaultValue={q}
+                placeholder="Search events…"
+                className="input"
+                style={{ maxWidth: 320 }}
+              />
+              {range !== "week" && (
+                <input type="hidden" name="range" value={range} />
+              )}
+              {venueFilter && (
+                <input type="hidden" name="venue" value={venueFilter} />
+              )}
+            </form>
             <div
-              className="w-card"
               style={{
-                padding: 0,
-                overflow: "hidden",
-                borderColor: "var(--w-acc)",
+                display: "flex",
+                gap: "var(--s-1)",
+                marginLeft: "auto",
               }}
             >
-              <div
-                style={{
-                  position: "relative",
-                  padding: 28,
-                  background:
-                    "linear-gradient(135deg, oklch(0.7 0.24 260) 0%, oklch(0.55 0.22 280) 100%)",
-                  color: "var(--w-acc-ink)",
-                }}
-              >
-                {tonight.event?.flyer_url && (
-                  <>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={tonight.event.flyer_url}
-                      alt=""
-                      style={{
-                        position: "absolute",
-                        inset: 0,
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        opacity: 0.32,
-                      }}
-                    />
-                  </>
-                )}
-                <div style={{ position: "relative", zIndex: 1 }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <span
-                      className="w-type-meta"
-                      style={{ color: "rgba(255,255,255,0.85)" }}
-                    >
-                      TONIGHT · {fmtDate(tonight.night_date).toUpperCase()}
-                    </span>
-                    <Chip tone="acc" style={{ background: "rgba(0,0,0,0.3)" }}>
-                      <span
-                        className="w-pulse"
-                        style={{
-                          width: 6,
-                          height: 6,
-                          borderRadius: 99,
-                          background: "currentColor",
-                        }}
-                      />
-                      LIVE
-                    </Chip>
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "clamp(40px, 5vw, 64px)",
-                      fontWeight: 700,
-                      letterSpacing: "-0.04em",
-                      lineHeight: 0.92,
-                      marginTop: 16,
-                      fontFamily: "var(--w-display)",
-                    }}
-                  >
-                    {tonight.event?.name}
-                  </div>
-                  <div
-                    className="w-type-meta"
-                    style={{
-                      color: "rgba(255,255,255,0.85)",
-                      marginTop: 8,
-                    }}
-                  >
-                    DOORS {fmtTime(tonight.doors_at)}
-                    {tonight.is_frozen ? " · LOCKDOWN" : ""}
-                  </div>
-
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(3, 1fr)",
-                      gap: 12,
-                      marginTop: 28,
-                      maxWidth: 460,
-                    }}
-                  >
-                    <BigStat
-                      n={tonightStats.scanned}
-                      label="IN"
-                    />
-                    <BigStat
-                      n={tonightStats.pending}
-                      label="PENDING"
-                      muted
-                    />
-                    <BigStat
-                      n={tonightStats.rsvps}
-                      label="RSVPS"
-                    />
-                  </div>
-                </div>
-              </div>
-              <div
-                style={{
-                  padding: "12px 24px",
-                  background: "rgba(0,0,0,0.25)",
-                  borderTop: "1px solid rgba(255,255,255,0.1)",
-                }}
-              >
-                <span
-                  className="w-type-meta"
-                  style={{ color: "rgba(255,255,255,0.85)" }}
+              {RANGES.map((r) => (
+                <Link
+                  key={r}
+                  href={rangeHref(r)}
+                  className={
+                    "nav-item " + (r === range ? "nav-item--active" : "")
+                  }
+                  style={{
+                    textDecoration: "none",
+                    fontSize: "var(--ts-sm)",
+                  }}
                 >
-                  TAP TO OPEN DASHBOARD →
-                </span>
-              </div>
+                  {RANGE_LABEL[r]}
+                </Link>
+              ))}
             </div>
-          </Link>
-        )}
-
-        {/* Empty / list */}
-        {nights.length === 0 && !tonight ? (
-          <section
-            className="w-card"
-            style={{
-              padding: "64px 32px",
-              textAlign: "center",
-              marginTop: 28,
-            }}
-          >
-            {(() => {
-              const framing = dashboardFraming(account.account_type);
-              return (
-                <>
-                  <div className="w-type-h1">
-                    {q
-                      ? "Nothing matches"
-                      : range === "past"
-                        ? "No past events"
-                        : range === "upcoming"
-                          ? "Nothing booked"
-                          : framing.emptyTitle}
-                  </div>
-                  <p
-                    className="w-type-body-sm"
-                    style={{
-                      color: "var(--w-fg-muted)",
-                      marginTop: 12,
-                      maxWidth: 480,
-                      marginInline: "auto",
-                    }}
-                  >
-                    {q
-                      ? `Nothing named "${q}". Try a different search or change the range.`
-                      : range === "past"
-                        ? "Once you run a night, the recap lands here."
-                        : framing.emptyBody}
-                  </p>
-                  {!q && range !== "past" && (
-                    <Link
-                      href="/owner/events/new"
-                      className="w-btn w-btn--primary"
-                      style={{
-                        marginTop: 24,
-                        textDecoration: "none",
-                        display: "inline-flex",
-                      }}
-                    >
-                      <IconPlus /> {framing.emptyCtaLabel}
-                    </Link>
-                  )}
-                </>
-              );
-            })()}
-          </section>
-        ) : remainingNights.length > 0 ? (
-          <section style={{ marginTop: 32 }}>
-            <div className="w-type-meta" style={{ marginBottom: 14 }}>
-              {tonight ? "COMING UP" : RANGE_LABEL[range].toUpperCase()} ·{" "}
-              {remainingNights.length}
-            </div>
+          </div>
+          {venues.length > 1 && (
             <div
               style={{
-                display: "grid",
-                gridTemplateColumns:
-                  "repeat(auto-fill, minmax(280px, 1fr))",
-                gap: 12,
+                padding: "var(--s-3) var(--s-8)",
+                borderBottom: "1px solid var(--line)",
+                display: "flex",
+                gap: "var(--s-1)",
+                flexWrap: "wrap",
               }}
             >
-              {remainingNights.map((n) => {
-                const s = statsFor(n.id);
-                const cap = n.capacity_cap ?? 0;
-                const date = new Date(n.doors_at);
-                const lbl = dayLabel(date);
-                const linkHref =
-                  range === "past"
-                    ? `/owner/events/${n.event_id}/recap?night=${n.id}`
-                    : `/owner/events/${n.event_id}?night=${n.id}`;
-                return (
-                  <Link
-                    key={n.id}
-                    href={linkHref}
-                    style={{
-                      textDecoration: "none",
-                      color: "inherit",
-                    }}
-                  >
-                    <div
-                      className="w-card"
+              <Link
+                href={venueHref("")}
+                className={
+                  "nav-item " + (!venueFilter ? "nav-item--active" : "")
+                }
+                style={{ textDecoration: "none", fontSize: "var(--ts-sm)" }}
+              >
+                All venues
+              </Link>
+              {venues.map((v) => (
+                <Link
+                  key={v.id}
+                  href={venueHref(v.id)}
+                  className={
+                    "nav-item " +
+                    (venueFilter === v.id ? "nav-item--active" : "")
+                  }
+                  style={{
+                    textDecoration: "none",
+                    fontSize: "var(--ts-sm)",
+                  }}
+                >
+                  {v.name}
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {/* ─── Upcoming · 3-col event card grid ─── */}
+          {remainingNights.length > 0 && (
+            <div style={{ padding: "var(--s-8)" }}>
+              <div
+                className="t-meta"
+                style={{ marginBottom: "var(--s-4)" }}
+              >
+                {tonight ? "Coming up" : RANGE_LABEL[range]} ·{" "}
+                {remainingNights.length}
+              </div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, 1fr)",
+                  gap: "var(--s-4)",
+                }}
+              >
+                {remainingNights.map((n) => {
+                  const s = statsFor(n.id);
+                  const cap = n.capacity_cap ?? 0;
+                  const name = n.event?.name ?? "—";
+                  const linkHref =
+                    range === "past"
+                      ? `/owner/events/${n.event_id}/recap?night=${n.id}`
+                      : `/owner/events/${n.event_id}?night=${n.id}`;
+                  // Status chip mirrors V5Dashboard: scanned → ok,
+                  // has list → info, otherwise draft/ghost.
+                  let chipClass = "chip chip--ghost";
+                  let chipLabel = "Draft";
+                  if (s.scanned > 0) {
+                    chipClass = "chip chip--ok";
+                    chipLabel = "Live";
+                  } else if (s.approved > 0) {
+                    chipClass = "chip chip--info";
+                    chipLabel = "On list";
+                  } else if (n.is_frozen) {
+                    chipClass = "chip chip--warn";
+                    chipLabel = "Locked";
+                  }
+                  const countLabel = cap > 0 ? `${s.approved} / ${cap}` : `${s.approved}`;
+                  return (
+                    <Link
+                      key={n.id}
+                      href={linkHref}
+                      className="card card--hover"
                       style={{
-                        padding: 16,
-                        display: "flex",
-                        gap: 14,
-                        alignItems: "flex-start",
+                        textDecoration: "none",
+                        color: "inherit",
+                        cursor: "pointer",
                       }}
                     >
+                      <Cover seed={name} height={160}>
+                        <div
+                          style={{
+                            position: "absolute",
+                            left: "var(--s-4)",
+                            right: "var(--s-4)",
+                            bottom: "var(--s-4)",
+                          }}
+                        >
+                          <div
+                            className="t-meta"
+                            style={{ color: "rgba(255,255,255,0.7)" }}
+                          >
+                            {fmtDate(n.night_date)} · doors{" "}
+                            {fmtTime(n.doors_at)}
+                          </div>
+                          <div
+                            className="t-h1 truncate"
+                            style={{
+                              marginTop: "var(--s-1)",
+                              color: "#fff",
+                            }}
+                          >
+                            {name}
+                          </div>
+                        </div>
+                      </Cover>
                       <div
                         style={{
-                          width: 48,
-                          flexShrink: 0,
-                          background: "#ffffff08",
-                          borderRadius: 0,
-                          padding: "8px 0",
-                          textAlign: "center",
-                          fontFamily: "var(--w-mono)",
+                          padding: "var(--s-4)",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
                         }}
                       >
-                        <div
-                          style={{
-                            fontSize: 9,
-                            color: "var(--w-fg-muted)",
-                            letterSpacing: "0.06em",
-                          }}
-                        >
-                          {lbl.dow}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: 20,
-                            fontWeight: 700,
-                            marginTop: 2,
-                          }}
-                        >
-                          {lbl.day}
-                        </div>
+                        <span className="t-body-2 t-num">{countLabel}</span>
+                        <span className={chipClass}>{chipLabel}</span>
                       </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div
-                          style={{
-                            fontWeight: 600,
-                            fontSize: 14,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {n.event?.name ?? "—"}
-                        </div>
-                        <div
-                          className="w-type-meta"
-                          style={{ marginTop: 4 }}
-                        >
-                          DOORS {fmtTime(n.doors_at)}
-                          {n.is_frozen ? " · LOCKED" : ""}
-                        </div>
-                        {cap > 0 ? (
-                          <div style={{ marginTop: 12 }}>
-                            <CapacityMeter
-                              current={
-                                s.scanned > 0 ? s.scanned : s.approved
-                              }
-                              total={cap}
-                              accent
-                              label={
-                                s.scanned > 0 ? "CHECKED IN" : "ON LIST"
-                              }
-                            />
-                          </div>
-                        ) : null}
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: 6,
-                            marginTop: 10,
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          {s.approved > 0 ? (
-                            <Chip tone="neutral">
-                              {s.approved} APPROVED
-                            </Chip>
-                          ) : (
-                            <Chip tone="ghost">EMPTY LIST</Chip>
-                          )}
-                          {s.pending > 0 && (
-                            <Chip tone="warn">
-                              {s.pending} PENDING
-                            </Chip>
-                          )}
-                          {s.scanned > 0 && (
-                            <Chip tone="ok">{s.scanned} SCANNED</Chip>
-                          )}
-                          {s.approved > 0 && s.rsvps > s.approved && (
-                            <Chip tone="ghost">
-                              {Math.round((s.approved / s.rsvps) * 100)}%
-                              CONVERT
-                            </Chip>
-                          )}
-                        </div>
-                      </div>
-                      <span
-                        style={{
-                          color: "var(--w-fg-dim)",
-                          marginTop: 4,
-                        }}
-                      >
-                        <IconArrow />
-                      </span>
-                    </div>
-                  </Link>
-                );
-              })}
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
-          </section>
-        ) : null}
-      </div>
+          )}
+        </>
+      )}
 
       {!profile.tour_completed_at && !profile.tour_dismissed_at && (
         <OnboardingTour alreadySeeded={!!profile.demo_seeded_at} />
@@ -750,108 +581,3 @@ export default async function OwnerWeekViewPage({
   );
 }
 
-function KPI({
-  eyebrow,
-  big,
-  sub,
-  delta,
-  pos,
-  accent,
-}: {
-  eyebrow: string;
-  big: string;
-  sub?: string;
-  delta?: string;
-  pos?: boolean;
-  accent?: boolean;
-}) {
-  return (
-    <div
-      className="w-card"
-      style={{
-        padding: 20,
-        borderColor: accent ? "var(--w-acc)" : "var(--w-line)",
-        background: accent ? "var(--w-acc-soft)" : "var(--w-surface-2)",
-      }}
-    >
-      <div className="w-type-meta">{eyebrow}</div>
-      <div
-        style={{
-          fontSize: 36,
-          fontWeight: 700,
-          letterSpacing: "-0.03em",
-          marginTop: 6,
-          fontFamily: "var(--w-display)",
-          lineHeight: 1,
-        }}
-      >
-        {big}
-      </div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "baseline",
-          marginTop: 10,
-          gap: 8,
-        }}
-      >
-        {sub && (
-          <span
-            className="w-type-body-sm"
-            style={{ color: "var(--w-fg-muted)" }}
-          >
-            {sub}
-          </span>
-        )}
-        {delta && (
-          <span
-            style={{
-              fontFamily: "var(--w-mono)",
-              fontSize: 11,
-              color: pos ? "var(--w-ok)" : "var(--w-acc)",
-            }}
-          >
-            {delta}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function BigStat({
-  n,
-  label,
-  muted,
-}: {
-  n: number;
-  label: string;
-  muted?: boolean;
-}) {
-  return (
-    <div>
-      <div
-        style={{
-          fontFamily: "var(--w-display)",
-          fontSize: 56,
-          fontWeight: 700,
-          letterSpacing: "-0.035em",
-          lineHeight: 0.94,
-          color: muted ? "rgba(255,255,255,0.7)" : "currentColor",
-        }}
-      >
-        {n}
-      </div>
-      <div
-        className="w-type-meta"
-        style={{
-          color: "rgba(255,255,255,0.7)",
-          marginTop: 4,
-        }}
-      >
-        {label}
-      </div>
-    </div>
-  );
-}
