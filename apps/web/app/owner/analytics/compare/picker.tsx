@@ -35,15 +35,7 @@ export default function ComparePicker({
         next.set(side, e.target.value);
         router.replace(`/owner/analytics/compare?${next.toString()}`);
       }}
-      style={{
-        width: "100%",
-        background: "var(--w-surface-1)",
-        border: "1px solid var(--w-line)",
-        color: "var(--w-fg)",
-        padding: "10px 12px",
-        fontFamily: "var(--w-sans)",
-        fontSize: 14,
-      }}
+      className="input"
       aria-label={`Event ${side.toUpperCase()}`}
     >
       {events.map((ev) => (

@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireDoorContext, resolveActiveNight } from "@/lib/door";
 import { fmtDate, fmtTime } from "@/lib/format";
-import { Chip } from "@/components/wadl";
 import GuestRow from "./guest-row";
 
 export const dynamic = "force-dynamic";
@@ -96,11 +95,11 @@ export default async function ManagerEventPage({
   return (
     <main
       id="main-content"
-      className="w-app"
+      className="v5"
       style={{
         minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
+        background: "var(--bg)",
+        padding: "var(--s-8) var(--s-6) var(--s-24)",
       }}
     >
       <div style={{ maxWidth: 720, margin: "0 auto" }}>
@@ -109,50 +108,46 @@ export default async function ManagerEventPage({
             display: "flex",
             alignItems: "flex-start",
             justifyContent: "space-between",
-            paddingBottom: 16,
-            marginBottom: 16,
+            paddingBottom: "var(--s-4)",
+            marginBottom: "var(--s-4)",
           }}
         >
           <div>
-            <div className="w-type-meta" style={{ color: "var(--w-acc)" }}>
-              MANAGER
-            </div>
-            <div className="w-type-display-md" style={{ marginTop: 8 }}>
+            <div className="t-meta">Manager</div>
+            <div className="t-display-md" style={{ marginTop: "var(--s-2)" }}>
               {resolved.event.name}
             </div>
           </div>
           <form action="/api/auth/signout" method="post">
             <button
               type="submit"
-              className="w-type-meta"
+              className="t-meta"
               style={{
                 background: "transparent",
                 border: "none",
                 cursor: "pointer",
-                color: "var(--w-fg-muted)",
                 padding: 0,
               }}
             >
-              SIGN OUT
+              Sign out
             </button>
           </form>
         </div>
 
         {active ? (
           <>
-            <div className="w-type-meta" style={{ marginBottom: 16 }}>
-              {fmtDate(active.night_date).toUpperCase()} · DOORS{" "}
-              {fmtTime(active.doors_at).toUpperCase()}
-              {active.is_frozen ? " · FROZEN" : ""}
+            <div className="t-meta" style={{ marginBottom: "var(--s-4)" }}>
+              {fmtDate(active.night_date)} · Doors {fmtTime(active.doors_at)}
+              {active.is_frozen ? " · Frozen" : ""}
             </div>
 
             {nights.length > 1 && (
               <div
                 style={{
                   display: "flex",
-                  gap: 8,
+                  gap: "var(--s-2)",
                   overflowX: "auto",
-                  marginBottom: 16,
+                  marginBottom: "var(--s-4)",
                 }}
               >
                 {nights.map((n) => {
@@ -163,9 +158,13 @@ export default async function ManagerEventPage({
                       href={`/manager/events/${params.id}?night=${n.id}`}
                       style={{ textDecoration: "none", flexShrink: 0 }}
                     >
-                      <Chip tone={isActive ? "acc" : "ghost"}>
-                        {fmtDate(n.night_date).toUpperCase()}
-                      </Chip>
+                      <span
+                        className={
+                          isActive ? "chip chip--solid" : "chip chip--ghost"
+                        }
+                      >
+                        {fmtDate(n.night_date)}
+                      </span>
                     </Link>
                   );
                 })}
@@ -173,38 +172,27 @@ export default async function ManagerEventPage({
             )}
 
             <section
-              className="w-card"
+              className="card"
               style={{
-                padding: 18,
-                borderColor: "var(--w-acc)",
-                background: "var(--w-acc-soft)",
-                marginBottom: 16,
+                padding: "var(--s-6)",
+                marginBottom: "var(--s-4)",
               }}
             >
+              <div className="t-meta">In</div>
               <div
-                className="w-type-meta"
-                style={{ color: "var(--w-acc-ink)" }}
-              >
-                IN
-              </div>
-              <div
+                className="t-num"
                 style={{
-                  fontFamily: "var(--w-display)",
+                  fontFamily: "var(--display)",
                   fontWeight: 700,
                   fontSize: 56,
                   lineHeight: 1,
                   letterSpacing: "-0.04em",
-                  marginTop: 8,
-                  color: "var(--w-acc-ink)",
+                  marginTop: "var(--s-2)",
+                  color: "var(--fg)",
                 }}
               >
                 {inCount}
-                <span
-                  style={{
-                    color: "var(--w-fg-muted)",
-                    fontSize: 32,
-                  }}
-                >
+                <span style={{ color: "var(--fg-3)", fontSize: 32 }}>
                   /{capacity || "—"}
                 </span>
               </div>
@@ -214,84 +202,62 @@ export default async function ManagerEventPage({
               style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(3, 1fr)",
-                gap: 8,
-                marginBottom: 20,
+                gap: "var(--s-2)",
+                marginBottom: "var(--s-5)",
               }}
             >
               <Link
                 href={`/door/events/${params.id}/scan?night=${active.id}`}
-                className="w-card"
+                className="card card--hover"
                 style={{
                   textAlign: "center",
                   textDecoration: "none",
-                  padding: 16,
-                  borderColor: "var(--w-ok)",
+                  padding: "var(--s-4)",
+                  borderColor: "var(--ok)",
                 }}
               >
                 <div
-                  style={{
-                    fontFamily: "var(--w-display)",
-                    fontWeight: 700,
-                    fontSize: 22,
-                    color: "var(--w-ok)",
-                  }}
+                  className="t-h1"
+                  style={{ color: "var(--ok)" }}
                 >
-                  SCAN
+                  Scan
                 </div>
               </Link>
               <Link
                 href={`/door/events/${params.id}/search?night=${active.id}`}
-                className="w-card"
+                className="card card--hover"
                 style={{
                   textAlign: "center",
                   textDecoration: "none",
-                  padding: 16,
+                  padding: "var(--s-4)",
                 }}
               >
-                <div
-                  style={{
-                    fontFamily: "var(--w-display)",
-                    fontWeight: 700,
-                    fontSize: 22,
-                    color: "var(--w-fg)",
-                  }}
-                >
-                  SEARCH
-                </div>
+                <div className="t-h1">Search</div>
               </Link>
               <Link
                 href={`/manager/events/${params.id}/add?night=${active.id}`}
-                className="w-card"
+                className="card card--hover"
                 style={{
                   textAlign: "center",
                   textDecoration: "none",
-                  padding: 16,
-                  borderColor: "var(--w-acc)",
+                  padding: "var(--s-4)",
+                  borderColor: "var(--line-3)",
                 }}
               >
-                <div
-                  style={{
-                    fontFamily: "var(--w-display)",
-                    fontWeight: 700,
-                    fontSize: 22,
-                    color: "var(--w-acc)",
-                  }}
-                >
-                  + ADD
-                </div>
+                <div className="t-h1">+ Add</div>
               </Link>
             </section>
 
-            <section style={{ marginBottom: 12 }}>
-              <div className="w-type-meta" style={{ marginBottom: 6 }}>
-                STATUS
+            <section style={{ marginBottom: "var(--s-3)" }}>
+              <div className="t-meta" style={{ marginBottom: "var(--s-2)" }}>
+                Status
               </div>
               <div
                 style={{
                   display: "flex",
-                  gap: 6,
+                  gap: "var(--s-2)",
                   overflowX: "auto",
-                  paddingBottom: 4,
+                  paddingBottom: "var(--s-1)",
                 }}
               >
                 {STATUS_FILTERS.map((s) => {
@@ -302,25 +268,29 @@ export default async function ManagerEventPage({
                       href={filterLink("status", s)}
                       style={{ textDecoration: "none", flexShrink: 0 }}
                     >
-                      <Chip tone={isActive ? "acc" : "ghost"}>
-                        {(s === "in" ? "CHECKED IN" : s).toUpperCase()}
-                      </Chip>
+                      <span
+                        className={
+                          isActive ? "chip chip--solid" : "chip chip--ghost"
+                        }
+                      >
+                        {s === "in" ? "Checked in" : s}
+                      </span>
                     </Link>
                   );
                 })}
               </div>
             </section>
 
-            <section style={{ marginBottom: 16 }}>
-              <div className="w-type-meta" style={{ marginBottom: 6 }}>
-                TIER
+            <section style={{ marginBottom: "var(--s-4)" }}>
+              <div className="t-meta" style={{ marginBottom: "var(--s-2)" }}>
+                Tier
               </div>
               <div
                 style={{
                   display: "flex",
-                  gap: 6,
+                  gap: "var(--s-2)",
                   overflowX: "auto",
-                  paddingBottom: 4,
+                  paddingBottom: "var(--s-1)",
                 }}
               >
                 {TIER_FILTERS.map((t) => {
@@ -331,21 +301,29 @@ export default async function ManagerEventPage({
                       href={filterLink("tier", t)}
                       style={{ textDecoration: "none", flexShrink: 0 }}
                     >
-                      <Chip tone={isActive ? "acc" : "ghost"}>
-                        {t.replace("_", " ").toUpperCase()}
-                      </Chip>
+                      <span
+                        className={
+                          isActive ? "chip chip--solid" : "chip chip--ghost"
+                        }
+                      >
+                        {t.replace("_", " ")}
+                      </span>
                     </Link>
                   );
                 })}
               </div>
             </section>
 
-            <div className="w-type-meta" style={{ marginBottom: 8 }}>
-              {filtered.length} / {rows.length} SHOWING
+            <div className="t-meta" style={{ marginBottom: "var(--s-2)" }}>
+              {filtered.length} / {rows.length} showing
             </div>
 
             <div
-              style={{ display: "flex", flexDirection: "column", gap: 8 }}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "var(--s-2)",
+              }}
             >
               {filtered.map((g) => {
                 const approvedScan = g.check_ins.find(
@@ -372,22 +350,20 @@ export default async function ManagerEventPage({
 
             {filtered.length === 0 && (
               <div
-                className="w-card"
+                className="card"
                 style={{
-                  padding: "48px 32px",
+                  padding: "var(--s-12) var(--s-8)",
                   textAlign: "center",
-                  marginTop: 12,
+                  marginTop: "var(--s-3)",
                 }}
               >
-                <div className="w-type-h1">Nothing matches</div>
+                <div className="t-h1">Nothing matches</div>
                 <p
-                  className="w-type-body-sm"
+                  className="t-body-2"
                   style={{
-                    color: "var(--w-fg-muted)",
-                    marginTop: 12,
+                    marginTop: "var(--s-3)",
                     maxWidth: 400,
                     marginInline: "auto",
-                    lineHeight: 1.5,
                   }}
                 >
                   {rows.length === 0
@@ -399,21 +375,19 @@ export default async function ManagerEventPage({
           </>
         ) : (
           <div
-            className="w-card"
+            className="card"
             style={{
-              padding: "48px 32px",
+              padding: "var(--s-12) var(--s-8)",
               textAlign: "center",
             }}
           >
-            <div className="w-type-h1">No nights yet</div>
+            <div className="t-h1">No nights yet</div>
             <p
-              className="w-type-body-sm"
+              className="t-body-2"
               style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 12,
+                marginTop: "var(--s-3)",
                 maxWidth: 400,
                 marginInline: "auto",
-                lineHeight: 1.5,
               }}
             >
               The event has no nights defined. Ask the owner to add one.
@@ -422,14 +396,10 @@ export default async function ManagerEventPage({
         )}
 
         <div
-          className="w-type-meta"
-          style={{
-            marginTop: 32,
-            textAlign: "center",
-            color: "var(--w-acc)",
-          }}
+          className="t-meta"
+          style={{ marginTop: "var(--s-8)", textAlign: "center" }}
         >
-          MANAGER — APPROVE, CHECK IN, AND ADD WALK-UPS
+          Manager — approve, check in, and add walk-ups
         </div>
       </div>
     </main>

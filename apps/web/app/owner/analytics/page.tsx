@@ -1,6 +1,7 @@
 import { requireOwnerContext } from "@/lib/owner";
 import { computeAccountAnalytics } from "@/lib/analytics";
 import { computeExtraAnalytics } from "@/lib/analytics-extra";
+import { Stat } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 
@@ -14,25 +15,20 @@ export default async function AnalyticsOverviewPage() {
   if (a.trend.length === 0) {
     return (
       <div
-        className="w-card"
-        style={{
-          padding: "64px 32px",
-          textAlign: "center",
-        }}
+        className="card"
+        style={{ padding: "var(--s-16) var(--s-8)", textAlign: "center" }}
       >
-        <div className="w-type-h1">Nothing to chart</div>
+        <div className="t-display-sm">Nothing to chart</div>
         <p
-          className="w-type-body-sm"
+          className="t-body-2"
           style={{
-            color: "var(--w-fg-muted)",
-            marginTop: 12,
+            marginTop: "var(--s-3)",
             maxWidth: 480,
             marginInline: "auto",
-            lineHeight: 1.5,
           }}
         >
-          Run a night. The next morning, every chart on this page tells you
-          who came, who didn&apos;t, and who&apos;s worth booking again.
+          Run a night. The next morning, every chart on this page tells you who
+          came, who didn&apos;t, and who&apos;s worth booking again.
         </p>
       </div>
     );
@@ -41,9 +37,7 @@ export default async function AnalyticsOverviewPage() {
   function fmtHourLabel(h: number): string {
     const d = new Date();
     d.setHours(h, 0, 0, 0);
-    return d
-      .toLocaleTimeString("en-US", { hour: "numeric" })
-      .toLowerCase();
+    return d.toLocaleTimeString("en-US", { hour: "numeric" }).toLowerCase();
   }
 
   const dwellH = Math.floor(x.avgDwellMin / 60);
@@ -51,130 +45,90 @@ export default async function AnalyticsOverviewPage() {
   const showRatePct = Math.round(a.showRate * 100);
   const noShowPct = Math.round((1 - a.showRate) * 100);
   const peakNight = Math.max(1, ...a.trend.map((p) => p.scanned));
+  const totalEvents = a.byVenue.reduce((s, v) => s + v.events, 0);
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 12,
-      }}
-    >
-      {/* Top KPI strip */}
-      <section
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
+      {/* Top KPI strip — show rate gets primary prominence */}
+      <div
+        className="card"
         style={{
+          padding: 0,
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: 12,
+          gridTemplateColumns: "repeat(4, 1fr)",
         }}
       >
-        <KPI
-          label="TOTAL EVENTS"
-          value={a.byVenue.reduce((s, v) => s + v.events, 0)}
+        <Stat
+          label="Show rate"
+          value={`${showRatePct}%`}
+          sub={`${noShowPct}% no-show · the ROI proof`}
         />
-        <KPI label="TOTAL GUESTS" value={a.totalScanned} tone="ok" />
-        <KPI label="SHOW RATE" value={`${showRatePct}%`} accent />
-        <KPI label="NO-SHOW RATE" value={`${noShowPct}%`} tone="err" />
-      </section>
+        <Stat label="Total events" value={totalEvents} />
+        <Stat label="Total guests" value={a.totalScanned} sub="scanned in" />
+        <Stat
+          label="Avg dwell"
+          value={x.avgDwellMin > 0 ? `${dwellH}h ${dwellM}m` : "—"}
+          sub="first → last scan"
+          last
+        />
+      </div>
 
       {/* Best/peak strip */}
-      <section
+      <div
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: 12,
+          gap: "var(--s-4)",
         }}
       >
         {x.bestNight && (
-          <div className="w-card" style={{ padding: 18 }}>
-            <div className="w-type-meta">BEST NIGHT</div>
-            <div
-              style={{
-                fontFamily: "var(--w-display)",
-                fontWeight: 700,
-                fontSize: 24,
-                letterSpacing: "-0.025em",
-                lineHeight: 1,
-                marginTop: 8,
-              }}
-            >
+          <div className="card" style={{ padding: "var(--s-5)" }}>
+            <div className="t-meta">Best night</div>
+            <div className="t-display-sm" style={{ marginTop: "var(--s-2)" }}>
               {x.bestNight.label}
             </div>
-            <div className="w-type-meta" style={{ marginTop: 6 }}>
-              AVG {x.bestNight.avg} CHECKED IN
+            <div className="t-meta" style={{ marginTop: "var(--s-2)" }}>
+              Avg {x.bestNight.avg} checked in
             </div>
           </div>
         )}
         {x.bestEvent && (
-          <div className="w-card" style={{ padding: 18 }}>
-            <div className="w-type-meta">BEST EVENT</div>
+          <div className="card" style={{ padding: "var(--s-5)" }}>
+            <div className="t-meta">Best event</div>
             <div
-              style={{
-                fontWeight: 600,
-                fontSize: 16,
-                marginTop: 8,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
+              className="t-h1 truncate"
+              style={{ marginTop: "var(--s-2)" }}
             >
               {x.bestEvent.name}
             </div>
-            <div className="w-type-meta" style={{ marginTop: 6 }}>
-              {x.bestEvent.count} CHECK-INS
+            <div className="t-meta" style={{ marginTop: "var(--s-2)" }}>
+              {x.bestEvent.count} check-ins
             </div>
           </div>
         )}
         {x.peakHour && (
-          <div className="w-card" style={{ padding: 18 }}>
-            <div className="w-type-meta">PEAK HOUR</div>
-            <div
-              style={{
-                fontFamily: "var(--w-display)",
-                fontWeight: 700,
-                fontSize: 24,
-                letterSpacing: "-0.025em",
-                lineHeight: 1,
-                marginTop: 8,
-              }}
-            >
+          <div className="card" style={{ padding: "var(--s-5)" }}>
+            <div className="t-meta">Peak hour</div>
+            <div className="t-display-sm" style={{ marginTop: "var(--s-2)" }}>
               {fmtHourLabel(x.peakHour.hour)}
             </div>
-            <div className="w-type-meta" style={{ marginTop: 6 }}>
-              {Math.round(x.peakHour.pct * 100)}% OF ALL CHECK-INS
+            <div className="t-meta" style={{ marginTop: "var(--s-2)" }}>
+              {Math.round(x.peakHour.pct * 100)}% of all check-ins
             </div>
           </div>
         )}
-        <div className="w-card" style={{ padding: 18 }}>
-          <div className="w-type-meta">AVG DWELL TIME</div>
-          <div
-            style={{
-              fontFamily: "var(--w-display)",
-              fontWeight: 700,
-              fontSize: 24,
-              letterSpacing: "-0.025em",
-              lineHeight: 1,
-              marginTop: 8,
-            }}
-          >
-            {x.avgDwellMin > 0 ? `${dwellH}h ${dwellM}m` : "—"}
-          </div>
-          <div className="w-type-meta" style={{ marginTop: 6 }}>
-            FIRST SCAN → LAST SCAN, AVERAGED
-          </div>
-        </div>
-      </section>
+      </div>
 
       {/* Attendance trend */}
-      <section className="w-card" style={{ padding: 20 }}>
-        <div className="w-type-meta">ATTENDANCE TREND · 90 DAYS</div>
+      <div className="card" style={{ padding: "var(--s-6)" }}>
+        <div className="t-meta">Attendance trend · 90 days</div>
         <div
           style={{
             display: "flex",
             alignItems: "flex-end",
             gap: 2,
             height: 128,
-            marginTop: 14,
+            marginTop: "var(--s-4)",
           }}
         >
           {a.trend.map((t) => (
@@ -194,18 +148,16 @@ export default async function AnalyticsOverviewPage() {
                   width: "100%",
                   height: `${(t.scanned / peakNight) * 100}%`,
                   background:
-                    t.scanned === peakNight
-                      ? "var(--w-acc)"
-                      : "oklch(0.86 0.18 145 / 0.6)",
+                    t.scanned === peakNight ? "var(--fg)" : "var(--fg-4)",
                 }}
               />
             </div>
           ))}
         </div>
         <div
-          className="w-type-meta"
+          className="t-meta"
           style={{
-            marginTop: 10,
+            marginTop: "var(--s-3)",
             display: "flex",
             justifyContent: "space-between",
           }}
@@ -213,50 +165,6 @@ export default async function AnalyticsOverviewPage() {
           <span>{a.trend[0]?.date}</span>
           <span>{a.trend[a.trend.length - 1]?.date}</span>
         </div>
-      </section>
-    </div>
-  );
-}
-
-function KPI({
-  label,
-  value,
-  tone,
-  accent,
-}: {
-  label: string;
-  value: number | string;
-  tone?: "ok" | "err";
-  accent?: boolean;
-}) {
-  const valueColor =
-    tone === "ok"
-      ? "var(--w-ok)"
-      : tone === "err"
-        ? "var(--w-err)"
-        : "var(--w-fg)";
-  return (
-    <div
-      className="w-card"
-      style={{
-        padding: 18,
-        borderColor: accent ? "var(--w-acc)" : "var(--w-line)",
-        background: accent ? "var(--w-acc-soft)" : "var(--w-surface-2)",
-      }}
-    >
-      <div className="w-type-meta">{label}</div>
-      <div
-        style={{
-          fontFamily: "var(--w-display)",
-          fontWeight: 700,
-          fontSize: 32,
-          letterSpacing: "-0.025em",
-          lineHeight: 1,
-          marginTop: 8,
-          color: valueColor,
-        }}
-      >
-        {value}
       </div>
     </div>
   );

@@ -1,7 +1,9 @@
-import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { PageHeader } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
+
+const COLS = "1.6fr 1fr 1.4fr 80px 90px 120px";
 
 interface VenueRow {
   id: string;
@@ -45,151 +47,72 @@ export default async function AdminVenuesPage({
   }
 
   return (
-    <main id="main-content" style={{ padding: "32px 24px 96px" }}>
-      <div style={{ maxWidth: 1080, margin: "0 auto" }}>
-        <div
-          style={{
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            marginBottom: 24,
-          }}
-        >
-          <div className="w-type-meta">PLATFORM</div>
-          <div className="w-type-display-md" style={{ marginTop: 8 }}>
-            Venues
-          </div>
-          <p
-            className="w-type-meta"
-            style={{ marginTop: 8, color: "var(--w-fg-muted)" }}
-          >
-            {rows.length} MOST-RECENT
-          </p>
-        </div>
-
-        <form
-          action="/admin/venues"
-          method="get"
-          style={{ marginBottom: 16 }}
-        >
+    <main id="main-content">
+      <PageHeader
+        eyebrow="Platform"
+        title="Venues"
+        sub={`${rows.length} most-recent`}
+      />
+      <div
+        style={{
+          padding: "var(--s-4) var(--s-8)",
+          borderBottom: "1px solid var(--line)",
+        }}
+      >
+        <form action="/admin/venues" method="get">
           <input
+            className="input"
             type="text"
             name="q"
             defaultValue={q}
             placeholder="Search venue name…"
-            style={{
-              width: "100%",
-              maxWidth: 420,
-              background: "var(--w-surface-1)",
-              border: "1px solid var(--w-line)",
-              color: "var(--w-fg)",
-              padding: "10px 12px",
-              fontFamily: "var(--w-sans)",
-              fontSize: 14,
-            }}
+            style={{ maxWidth: 420 }}
           />
         </form>
+      </div>
 
-        <section
-          className="w-card"
-          style={{ padding: 20, overflowX: "auto" }}
-        >
-          <table
+      <div style={{ padding: "var(--s-8)" }}>
+        <div className="card" style={{ overflowX: "auto" }}>
+          <div
+            className="row"
             style={{
-              width: "100%",
-              fontSize: 14,
-              borderCollapse: "collapse",
+              gridTemplateColumns: COLS,
+              padding: "var(--s-3) var(--s-5)",
+              background: "var(--bg)",
             }}
           >
-            <thead>
-              <tr>
-                {[
-                  ["VENUE", "left"],
-                  ["CITY", "left"],
-                  ["OWNER", "left"],
-                  ["CAP", "right"],
-                  ["EVENTS", "right"],
-                  ["CREATED", "left"],
-                ].map(([h, align]) => (
-                  <th
-                    key={h}
-                    className="w-type-meta"
-                    style={{
-                      textAlign: align as "left" | "right",
-                      paddingBottom: 8,
-                    }}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((v) => (
-                <tr
-                  key={v.id}
-                  style={{ borderTop: "1px solid var(--w-line)" }}
-                >
-                  <td
-                    style={{
-                      padding: "10px 0",
-                      color: "var(--w-fg)",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      maxWidth: 240,
-                    }}
-                  >
-                    {v.name}
-                  </td>
-                  <td
-                    className="w-type-meta"
-                    style={{ padding: "10px 0" }}
-                  >
-                    {(v.city ?? "—").toUpperCase()}
-                  </td>
-                  <td
-                    style={{
-                      padding: "10px 0",
-                      color: "var(--w-fg-muted)",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      maxWidth: 220,
-                    }}
-                  >
-                    {v.account?.display_name ?? "—"}
-                  </td>
-                  <td style={{ padding: "10px 0", textAlign: "right" }}>
-                    {v.default_capacity ?? "—"}
-                  </td>
-                  <td style={{ padding: "10px 0", textAlign: "right" }}>
-                    {counts.get(v.id) ?? 0}
-                  </td>
-                  <td
-                    className="w-type-meta"
-                    style={{
-                      padding: "10px 0",
-                      color: "var(--w-fg-muted)",
-                    }}
-                  >
-                    {new Date(v.created_at)
-                      .toLocaleDateString()
-                      .toUpperCase()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
-
-        <p className="w-type-meta" style={{ marginTop: 24 }}>
-          <Link
-            href="/admin"
-            style={{ color: "var(--w-acc)", textDecoration: "none" }}
-          >
-            ← STATS
-          </Link>
-        </p>
+            {["Venue", "City", "Owner", "Cap", "Events", "Created"].map((h) => (
+              <span key={h} className="t-meta">
+                {h}
+              </span>
+            ))}
+          </div>
+          {rows.map((v) => (
+            <div
+              key={v.id}
+              className="row"
+              style={{
+                gridTemplateColumns: COLS,
+                padding: "var(--s-4) var(--s-5)",
+              }}
+            >
+              <span className="t-body truncate" style={{ color: "var(--fg)" }}>
+                {v.name}
+              </span>
+              <span className="t-body-2">{v.city ?? "—"}</span>
+              <span className="t-body-2 truncate">
+                {v.account?.display_name ?? "—"}
+              </span>
+              <span className="t-body-2 t-num">
+                {v.default_capacity ?? "—"}
+              </span>
+              <span className="t-body-2 t-num">{counts.get(v.id) ?? 0}</span>
+              <span className="t-meta">
+                {new Date(v.created_at).toLocaleDateString()}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     </main>
   );

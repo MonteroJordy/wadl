@@ -20,53 +20,47 @@ export default async function ManagerHome() {
   return (
     <main
       id="main-content"
-      className="w-app"
+      className="v5"
       style={{
         minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
+        background: "var(--bg)",
+        padding: "var(--s-8) var(--s-6) var(--s-24)",
       }}
     >
       <div style={{ maxWidth: 720, margin: "0 auto" }}>
         <div
           style={{
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            marginBottom: 24,
+            borderBottom: "1px solid var(--line)",
+            paddingBottom: "var(--s-6)",
+            marginBottom: "var(--s-6)",
           }}
         >
-          <div
-            className="w-type-meta"
-            style={{ color: "var(--w-acc)" }}
-          >
-            MANAGER
-          </div>
-          <div className="w-type-display-md" style={{ marginTop: 8 }}>
+          <div className="t-meta">Manager</div>
+          <div className="t-display-md" style={{ marginTop: "var(--s-2)" }}>
             Pick an event.
           </div>
         </div>
         <div
-          style={{ display: "flex", flexDirection: "column", gap: 8 }}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "var(--s-2)",
+          }}
         >
           {managerEvents.map((s) => (
             <Link
               key={s.event_id}
               href={`/manager/events/${s.event_id}`}
-              className="w-card"
+              className="card card--hover"
               style={{
-                padding: 16,
+                padding: "var(--s-4)",
                 textDecoration: "none",
                 color: "inherit",
               }}
             >
-              <p style={{ fontWeight: 600, color: "var(--w-fg)" }}>
-                {s.event.name}
-              </p>
-              <div
-                className="w-type-meta"
-                style={{ marginTop: 6, color: "var(--w-acc)" }}
-              >
-                DOOR MANAGER
+              <p className="t-h1">{s.event.name}</p>
+              <div className="t-meta" style={{ marginTop: "var(--s-2)" }}>
+                Door manager
               </div>
             </Link>
           ))}

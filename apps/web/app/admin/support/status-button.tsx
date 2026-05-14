@@ -39,21 +39,8 @@ export default function StatusButton({
         });
       }}
       disabled={pending}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 4,
-        padding: "4px 12px",
-        border: "1px solid var(--w-line)",
-        background: "var(--w-surface-2)",
-        color: "var(--w-fg)",
-        fontFamily: "var(--w-mono)",
-        fontSize: 11,
-        letterSpacing: "0.08em",
-        textTransform: "uppercase",
-        cursor: "pointer",
-        opacity: pending ? 0.5 : 1,
-      }}
+      className="btn btn--ghost btn--sm"
+      style={{ opacity: pending ? 0.5 : 1 }}
     >
       {pending ? "…" : label}
     </button>

@@ -2,7 +2,7 @@ import Link from "next/link";
 import QRCode from "qrcode";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fmtDate, fmtTime } from "@/lib/format";
-import { Chip, IconArrow, WFrame, Wordmark } from "@/components/wadl";
+import { Logo } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 
@@ -36,38 +36,39 @@ export default async function TicketPage({
 
   if (!guest) {
     return (
-      <main id="main-content">
-        <WFrame style={{ paddingBottom: 48 }}>
-          <div style={{ padding: "20px 24px 0" }}>
-            <Wordmark variant="monogrid" size={18} />
+      <main
+        id="main-content"
+        style={{ minHeight: "100vh", background: "var(--bg)" }}
+      >
+        <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
+          <Logo size={18} />
+        </div>
+        <div
+          style={{
+            padding: "var(--s-24) var(--s-6) 0",
+            textAlign: "center",
+            maxWidth: 420,
+            margin: "0 auto",
+          }}
+        >
+          <div className="t-meta">Credential</div>
+          <div className="t-display-md" style={{ marginTop: "var(--s-3)" }}>
+            Ticket not found.
           </div>
-          <div style={{ padding: "96px 24px 0", textAlign: "center" }}>
-            <div className="w-type-meta">CREDENTIAL</div>
-            <div
-              className="w-type-display-md"
-              style={{ marginTop: 12 }}
-            >
-              Ticket not found.
-            </div>
-            <p
-              className="w-type-body-sm"
-              style={{ color: "var(--w-fg-muted)", marginTop: 12 }}
-            >
-              The link may be wrong or the ticket may have been revoked.
-            </p>
-            <Link
-              href="/mytickets"
-              className="w-btn w-btn--primary"
-              style={{
-                marginTop: 24,
-                display: "inline-flex",
-                textDecoration: "none",
-              }}
-            >
-              My tickets <IconArrow size={14} />
-            </Link>
-          </div>
-        </WFrame>
+          <p className="t-body-2" style={{ marginTop: "var(--s-3)" }}>
+            The link may be wrong or the ticket may have been revoked.
+          </p>
+          <Link
+            href="/mytickets"
+            className="btn"
+            style={{
+              marginTop: "var(--s-6)",
+              textDecoration: "none",
+            }}
+          >
+            My tickets
+          </Link>
+        </div>
       </main>
     );
   }
@@ -97,148 +98,13 @@ export default async function TicketPage({
 
   if (isPast) {
     return (
-      <main id="main-content">
-        <WFrame style={{ paddingBottom: 32 }}>
-          <div
-            style={{
-              padding: "20px 24px 0",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <Link
-              href="/mytickets"
-              className="w-type-meta"
-              style={{ textDecoration: "none" }}
-            >
-              ← TICKETS
-            </Link>
-            <Wordmark variant="monogrid" size={16} />
-            <Chip tone="ghost">PAST</Chip>
-          </div>
-
-          <div style={{ padding: "24px 24px 0" }}>
-            <div className="w-type-meta">
-              {fmtDate(guest.night.night_date).toUpperCase()} · DOORS{" "}
-              {fmtTime(guest.night.doors_at).toUpperCase()}
-            </div>
-            <div
-              className="w-type-display-md"
-              style={{ marginTop: 6 }}
-            >
-              {guest.night.event.name}
-            </div>
-          </div>
-
-          {guest.night.event.flyer_url && (
-            <div style={{ padding: "20px 24px 0" }}>
-              <div
-                style={{
-                  width: "100%",
-                  aspectRatio: "4 / 5",
-                  border: "1px solid var(--w-line)",
-                  background: "var(--w-surface-2)",
-                  overflow: "hidden",
-                }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={guest.night.event.flyer_url}
-                  alt={guest.night.event.name}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
-          <div style={{ padding: "20px 24px 0" }}>
-            <div className="w-card" style={{ padding: 16 }}>
-              {scan ? (
-                <>
-                  <Chip tone="ok">✓ ATTENDED</Chip>
-                  <p
-                    className="w-type-body-sm"
-                    style={{ marginTop: 10 }}
-                  >
-                    Scanned in at{" "}
-                    {new Date(scan.scanned_at).toLocaleString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })}
-                  </p>
-                </>
-              ) : (
-                <>
-                  <Chip tone="warn">NO-SHOW</Chip>
-                  <p
-                    className="w-type-body-sm"
-                    style={{
-                      color: "var(--w-fg-muted)",
-                      marginTop: 10,
-                    }}
-                  >
-                    We don&apos;t have a record of you scanning in. Talk to the
-                    host if that&apos;s a mistake.
-                  </p>
-                </>
-              )}
-            </div>
-          </div>
-
-          <div
-            style={{
-              padding: "20px 24px 0",
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 8,
-            }}
-          >
-            <Link
-              href={`/e/${guest.night.event.id}/feedback?token=${guest.check_in_token}`}
-              className="w-btn w-btn--ghost"
-              style={{ textDecoration: "none" }}
-            >
-              Leave feedback
-            </Link>
-            <Link
-              href="/discover"
-              className="w-btn w-btn--primary"
-              style={{ textDecoration: "none" }}
-            >
-              What&apos;s next →
-            </Link>
-          </div>
-
-          <div
-            className="w-type-meta"
-            style={{
-              marginTop: "auto",
-              padding: "32px 24px 16px",
-              textAlign: "center",
-              color: "var(--w-fg-dim)",
-              wordBreak: "break-all",
-            }}
-          >
-            TOKEN · {guest.check_in_token}
-          </div>
-        </WFrame>
-      </main>
-    );
-  }
-
-  return (
-    <main id="main-content">
-      <WFrame style={{ paddingBottom: 32 }}>
+      <main
+        id="main-content"
+        style={{ minHeight: "100vh", background: "var(--bg)" }}
+      >
         <div
           style={{
-            padding: "20px 24px 0",
+            padding: "var(--s-6) var(--s-6) 0",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -246,181 +112,289 @@ export default async function TicketPage({
         >
           <Link
             href="/mytickets"
-            className="w-type-meta"
+            className="t-meta"
             style={{ textDecoration: "none" }}
           >
-            ← TICKETS
+            ← Tickets
           </Link>
-          <Wordmark variant="monogrid" size={16} />
-          <Chip
-            tone={
-              guest.status === "approved"
-                ? "ok"
-                : guest.status === "pending"
-                  ? "warn"
-                  : guest.status === "rejected"
-                    ? "err"
-                    : "ghost"
-            }
-          >
-            {guest.status.toUpperCase()}
-          </Chip>
+          <Logo size={16} />
+          <span className="chip chip--ghost">Past</span>
         </div>
 
-        <div style={{ padding: "20px 24px 0" }}>
-          <div className="w-type-meta">
-            {fmtDate(guest.night.night_date).toUpperCase()} · DOORS{" "}
-            {fmtTime(guest.night.doors_at).toUpperCase()}
+        <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
+          <div className="t-meta">
+            {fmtDate(guest.night.night_date)} · Doors{" "}
+            {fmtTime(guest.night.doors_at)}
           </div>
-          <div className="w-type-display-md" style={{ marginTop: 6 }}>
+          <div className="t-display-md" style={{ marginTop: "var(--s-2)" }}>
             {guest.night.event.name}
           </div>
         </div>
 
-        {/* Big QR */}
-        <div style={{ padding: "24px 24px 0" }}>
-          <div
-            style={{
-              aspectRatio: "1 / 1",
-              border: "1px solid var(--w-line)",
-              background: active ? "var(--w-fg)" : "var(--w-surface-2)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: active ? 24 : 32,
-            }}
-          >
-            {active ? (
-              <div
-                style={{ width: "100%", height: "100%" }}
-                dangerouslySetInnerHTML={{ __html: svg }}
+        {guest.night.event.flyer_url && (
+          <div style={{ padding: "var(--s-5) var(--s-6) 0" }}>
+            <div
+              style={{
+                width: "100%",
+                aspectRatio: "4 / 5",
+                borderRadius: "var(--r-lg)",
+                border: "1px solid var(--line)",
+                background: "var(--bg-3)",
+                overflow: "hidden",
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={guest.night.event.flyer_url}
+                alt={guest.night.event.name}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
               />
-            ) : (
-              <div style={{ textAlign: "center" }}>
-                <div
-                  className="w-type-meta"
-                  style={{ color: "var(--w-warn)" }}
-                >
-                  PENDING
-                </div>
-                <div
-                  className="w-type-display-md"
-                  style={{ marginTop: 8 }}
-                >
-                  Hold tight.
-                </div>
-                <p
-                  className="w-type-body-sm"
-                  style={{
-                    color: "var(--w-fg-muted)",
-                    marginTop: 12,
-                    maxWidth: 240,
-                  }}
-                >
-                  Your QR activates once the host approves this RSVP.
+            </div>
+          </div>
+        )}
+
+        <div style={{ padding: "var(--s-5) var(--s-6) 0" }}>
+          <div className="card" style={{ padding: "var(--s-4)" }}>
+            {scan ? (
+              <>
+                <span className="chip chip--ok">Attended</span>
+                <p className="t-body-2" style={{ marginTop: "var(--s-3)" }}>
+                  Scanned in at{" "}
+                  {new Date(scan.scanned_at).toLocaleString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
                 </p>
-              </div>
+              </>
+            ) : (
+              <>
+                <span className="chip chip--warn">No-show</span>
+                <p className="t-body-2" style={{ marginTop: "var(--s-3)" }}>
+                  We don&apos;t have a record of you scanning in. Talk to the
+                  host if that&apos;s a mistake.
+                </p>
+              </>
             )}
           </div>
         </div>
 
-        <div style={{ padding: "20px 24px 0" }}>
-          <div className="w-card" style={{ padding: 16 }}>
-            <div className="w-type-meta">GUEST</div>
-            <div
-              style={{
-                fontWeight: 600,
-                fontSize: 17,
-                marginTop: 4,
-              }}
-            >
-              {guest.full_name}
-              {guest.plus_ones > 0 && (
-                <span
-                  style={{
-                    color: "var(--w-fg-muted)",
-                    fontWeight: 400,
-                  }}
-                >
-                  {" "}+{guest.plus_ones}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {active && (
-          <div
-            style={{
-              padding: "20px 24px 0",
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 8,
-            }}
-          >
-            <a
-              href={`/api/wallet/apple/${guest.check_in_token}`}
-              className="w-btn w-btn--ghost"
-              style={{ fontSize: 12, textDecoration: "none" }}
-            >
-              Apple Wallet
-            </a>
-            <a
-              href={`/api/wallet/google/${guest.check_in_token}`}
-              className="w-btn w-btn--ghost"
-              style={{ fontSize: 12, textDecoration: "none" }}
-            >
-              Google Wallet
-            </a>
-          </div>
-        )}
-
         <div
           style={{
-            padding: "24px 24px 0",
+            padding: "var(--s-5) var(--s-6) 0",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "var(--s-2)",
+          }}
+        >
+          <Link
+            href={`/e/${guest.night.event.id}/feedback?token=${guest.check_in_token}`}
+            className="btn btn--ghost"
+            style={{ textDecoration: "none" }}
+          >
+            Leave feedback
+          </Link>
+          <Link
+            href="/discover"
+            className="btn"
+            style={{ textDecoration: "none" }}
+          >
+            What&apos;s next
+          </Link>
+        </div>
+
+        <div
+          className="t-meta"
+          style={{
+            padding: "var(--s-8) var(--s-6) var(--s-4)",
+            textAlign: "center",
+            wordBreak: "break-all",
+          }}
+        >
+          Token · {guest.check_in_token}
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main
+      id="main-content"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
+    >
+      <div
+        style={{
+          padding: "var(--s-6) var(--s-6) 0",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <Link
+          href="/mytickets"
+          className="t-meta"
+          style={{ textDecoration: "none" }}
+        >
+          ← Tickets
+        </Link>
+        <Logo size={16} />
+        <span
+          className={
+            "chip " +
+            (guest.status === "approved"
+              ? "chip--ok"
+              : guest.status === "pending"
+                ? "chip--warn"
+                : guest.status === "rejected"
+                  ? "chip--err"
+                  : "chip--ghost")
+          }
+        >
+          {guest.status.charAt(0).toUpperCase() + guest.status.slice(1)}
+        </span>
+      </div>
+
+      <div style={{ padding: "var(--s-5) var(--s-6) 0" }}>
+        <div className="t-meta">
+          {fmtDate(guest.night.night_date)} · Doors{" "}
+          {fmtTime(guest.night.doors_at)}
+        </div>
+        <div className="t-display-md" style={{ marginTop: "var(--s-2)" }}>
+          {guest.night.event.name}
+        </div>
+      </div>
+
+      {/* Big QR */}
+      <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
+        <div
+          style={{
+            aspectRatio: "1 / 1",
+            borderRadius: "var(--r-lg)",
+            border: "1px solid var(--line)",
+            background: active ? "var(--fg)" : "var(--bg-3)",
             display: "flex",
-            flexDirection: "column",
-            gap: 8,
-            textAlign: "center",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: active ? "var(--s-6)" : "var(--s-8)",
           }}
         >
-          <a
-            href={`/api/events/${guest.night.event.id}/calendar.ics`}
-            className="w-type-meta"
-            style={{ textDecoration: "none" }}
-          >
-            + ADD TO CALENDAR
-          </a>
-          <a
-            href={`/referral/${guest.id}`}
-            className="w-type-meta"
-            style={{ textDecoration: "none" }}
-          >
-            BRING A FRIEND →
-          </a>
+          {active ? (
+            <div
+              style={{ width: "100%", height: "100%" }}
+              dangerouslySetInnerHTML={{ __html: svg }}
+            />
+          ) : (
+            <div style={{ textAlign: "center" }}>
+              <div className="t-meta" style={{ color: "var(--warn)" }}>
+                Pending
+              </div>
+              <div
+                className="t-display-md"
+                style={{ marginTop: "var(--s-2)" }}
+              >
+                Hold tight.
+              </div>
+              <p
+                className="t-body-2"
+                style={{ marginTop: "var(--s-3)", maxWidth: 240 }}
+              >
+                Your QR activates once the host approves this RSVP.
+              </p>
+            </div>
+          )}
         </div>
+      </div>
 
-        <div
-          style={{
-            marginTop: "auto",
-            padding: "32px 24px 16px",
-            textAlign: "center",
-          }}
-        >
-          <div className="w-type-meta">SHOW THIS SCREEN AT THE DOOR</div>
-          <div
-            className="w-type-meta"
-            style={{
-              marginTop: 12,
-              color: "var(--w-fg-dim)",
-              wordBreak: "break-all",
-              fontSize: 9,
-            }}
-          >
-            {guest.check_in_token}
+      <div style={{ padding: "var(--s-5) var(--s-6) 0" }}>
+        <div className="card" style={{ padding: "var(--s-4)" }}>
+          <div className="t-meta">Guest</div>
+          <div className="t-h1" style={{ marginTop: "var(--s-1)" }}>
+            {guest.full_name}
+            {guest.plus_ones > 0 && (
+              <span style={{ color: "var(--fg-3)", fontWeight: 400 }}>
+                {" "}
+                +{guest.plus_ones}
+              </span>
+            )}
           </div>
         </div>
-      </WFrame>
+      </div>
+
+      {active && (
+        <div
+          style={{
+            padding: "var(--s-5) var(--s-6) 0",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "var(--s-2)",
+          }}
+        >
+          <a
+            href={`/api/wallet/apple/${guest.check_in_token}`}
+            className="btn btn--ghost"
+            style={{ textDecoration: "none" }}
+          >
+            Apple Wallet
+          </a>
+          <a
+            href={`/api/wallet/google/${guest.check_in_token}`}
+            className="btn btn--ghost"
+            style={{ textDecoration: "none" }}
+          >
+            Google Wallet
+          </a>
+        </div>
+      )}
+
+      <div
+        style={{
+          padding: "var(--s-6) var(--s-6) 0",
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-2)",
+          textAlign: "center",
+        }}
+      >
+        <a
+          href={`/api/events/${guest.night.event.id}/calendar.ics`}
+          className="t-meta"
+          style={{ textDecoration: "none" }}
+        >
+          + Add to calendar
+        </a>
+        <a
+          href={`/referral/${guest.id}`}
+          className="t-meta"
+          style={{ textDecoration: "none" }}
+        >
+          Bring a friend →
+        </a>
+      </div>
+
+      <div
+        style={{
+          padding: "var(--s-8) var(--s-6) var(--s-4)",
+          textAlign: "center",
+        }}
+      >
+        <div className="t-meta">Show this screen at the door</div>
+        <div
+          className="t-meta"
+          style={{
+            marginTop: "var(--s-3)",
+            color: "var(--fg-4)",
+            wordBreak: "break-all",
+            fontSize: 9,
+          }}
+        >
+          {guest.check_in_token}
+        </div>
+      </div>
     </main>
   );
 }

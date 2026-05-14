@@ -1,13 +1,7 @@
 import Link from "next/link";
 import { requireOwnerContext, fmtDate } from "@/lib/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
-import {
-  Avatar,
-  Button,
-  CapacityMeter,
-  Chip,
-  IconArrow,
-} from "@/components/wadl";
+import { PageHeader, Stat } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Holders — WADL" };
@@ -40,6 +34,15 @@ interface HolderAgg {
   most_recent_at: string;
   phones: Set<string>;
   emails: Set<string>;
+}
+
+function initials(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? "")
+    .join("");
 }
 
 export default async function HoldersPage({
@@ -106,127 +109,88 @@ export default async function HoldersPage({
     totalApproved === 0 ? 0 : Math.round((totalScanned / totalApproved) * 100);
 
   return (
-    <main
-      id="main-content"
-      className="w-app"
-      style={{
-        minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
-      }}
-    >
-      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-        {/* Header */}
+    <main id="main-content" style={{ minHeight: "100vh", background: "var(--bg)" }}>
+      <PageHeader
+        eyebrow="People who bring nights"
+        title="Promoters"
+        sub={`${holders.length} unique promoter${
+          holders.length === 1 ? "" : "s"
+        } across this account · ranked by show rate`}
+        actions={
+          <Link href="/owner" className="btn btn--ghost">
+            ← Events
+          </Link>
+        }
+      />
+
+      {/* Aggregate KPI — show rate gets primary prominence */}
+      {holders.length > 0 && (
         <div
           style={{
-            display: "flex",
-            alignItems: "flex-end",
-            justifyContent: "space-between",
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            gap: 16,
-            flexWrap: "wrap",
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            borderBottom: "1px solid var(--line)",
           }}
         >
-          <div>
-            <div className="w-type-meta">PEOPLE WHO BRING NIGHTS</div>
-            <div className="w-type-display-md" style={{ marginTop: 8 }}>
-              Promoters
-            </div>
-            <p
-              className="w-type-body-sm"
-              style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 8,
-              }}
-            >
-              {holders.length} unique promoter
-              {holders.length === 1 ? "" : "s"} across this account · ranked
-              by show rate
-            </p>
-          </div>
-          <Link href="/owner" style={{ textDecoration: "none" }}>
-            <Button variant="ghost">← Events</Button>
-          </Link>
+          <Stat
+            label="Show rate"
+            value={`${aggShowRate}%`}
+            sub={`${totalScanned} scanned in · the ROI proof`}
+          />
+          <Stat
+            label="Holders"
+            value={holders.length}
+            sub="active across this account"
+          />
+          <Stat
+            label="Heads delivered"
+            value={totalApproved}
+            sub={`of ${totalCap} cap`}
+            last
+          />
         </div>
+      )}
 
-        {/* Aggregate KPI */}
-        {holders.length > 0 && (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fit, minmax(200px, 1fr))",
-              gap: 16,
-              marginTop: 28,
-            }}
-          >
-            <KPI
-              eyebrow="HOLDERS"
-              big={String(holders.length)}
-              sub="active across this account"
-            />
-            <KPI
-              eyebrow="HEADS DELIVERED"
-              big={String(totalApproved)}
-              sub={`of ${totalCap} cap`}
-            />
-            <KPI
-              eyebrow="SHOW RATE"
-              big={`${aggShowRate}%`}
-              sub={`${totalScanned} scanned in`}
-              accent
-            />
-          </div>
-        )}
-
+      <div style={{ padding: "var(--s-8)" }}>
         {/* Search */}
-        <form
-          action="/owner/holders"
-          method="get"
-          style={{ marginTop: 28 }}
-        >
+        <form action="/owner/holders" method="get">
           <input
             type="text"
             name="q"
             defaultValue={q}
-            placeholder="search by holder name…"
-            className="w-input"
+            placeholder="Search by holder name…"
+            className="input"
+            style={{ maxWidth: 320 }}
           />
         </form>
 
         {/* List */}
         {holders.length === 0 ? (
           <div
-            className="w-card"
+            className="card"
             style={{
-              padding: "64px 32px",
+              padding: "var(--s-16) var(--s-8)",
               textAlign: "center",
-              marginTop: 28,
+              marginTop: "var(--s-6)",
             }}
           >
-            <div className="w-type-h1">No promoters yet</div>
+            <div className="t-display-sm">No promoters yet</div>
             <p
-              className="w-type-body-sm"
+              className="t-body-2"
               style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 12,
+                marginTop: "var(--s-3)",
                 maxWidth: 440,
                 marginInline: "auto",
               }}
             >
               Open an event, hand a promoter a list, send them their magic
-              link. Their show rate (how many of their RSVPs actually
-              scanned in) starts ranking here after their first night.
+              link. Their show rate (how many of their RSVPs actually scanned
+              in) starts ranking here after their first night.
             </p>
             <Link
               href="/owner"
-              className="w-btn w-btn--primary"
-              style={{
-                marginTop: 24,
-                textDecoration: "none",
-                display: "inline-flex",
-              }}
+              className="btn"
+              style={{ marginTop: "var(--s-6)" }}
             >
               Back to events
             </Link>
@@ -236,10 +200,10 @@ export default async function HoldersPage({
             style={{
               listStyle: "none",
               padding: 0,
-              margin: "20px 0 0",
+              margin: "var(--s-5) 0 0",
               display: "flex",
               flexDirection: "column",
-              gap: 10,
+              gap: "var(--s-2)",
             }}
           >
             {holders.map((h) => {
@@ -249,10 +213,14 @@ export default async function HoldersPage({
                   : Math.round((h.scanned / h.approved) * 100);
               const showRateColor =
                 showRate >= 80
-                  ? "var(--w-ok)"
+                  ? "var(--ok)"
                   : showRate >= 60
-                    ? "var(--w-fg)"
-                    : "var(--w-warn)";
+                    ? "var(--fg)"
+                    : "var(--warn)";
+              const fillPct =
+                h.cap_total > 0
+                  ? Math.min(100, (h.scanned / h.cap_total) * 100)
+                  : 0;
               return (
                 <li key={h.key}>
                   <Link
@@ -260,47 +228,59 @@ export default async function HoldersPage({
                     style={{ textDecoration: "none", color: "inherit" }}
                   >
                     <div
-                      className="w-card"
+                      className="card card--hover"
                       style={{
-                        padding: 18,
+                        padding: "var(--s-5)",
                         display: "flex",
                         alignItems: "center",
-                        gap: 14,
+                        gap: "var(--s-4)",
                       }}
                     >
-                      <Avatar name={h.display_name} size={40} />
+                      <div
+                        style={{
+                          width: 40,
+                          height: 40,
+                          flexShrink: 0,
+                          borderRadius: "var(--r-pill)",
+                          background: "var(--bg-3)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontFamily: "var(--display)",
+                          fontWeight: 600,
+                          fontSize: 13,
+                          color: "var(--fg-2)",
+                        }}
+                      >
+                        {initials(h.display_name)}
+                      </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className="t-h1 truncate">{h.display_name}</div>
                         <div
-                          style={{
-                            fontWeight: 600,
-                            fontSize: 15,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
+                          className="t-meta"
+                          style={{ marginTop: "var(--s-1)" }}
                         >
-                          {h.display_name}
-                        </div>
-                        <div
-                          className="w-type-meta"
-                          style={{ marginTop: 4 }}
-                        >
-                          {h.events.size} EVENT
-                          {h.events.size === 1 ? "" : "S"} · CAP {h.cap_total}{" "}
-                          · LAST {fmtDate(h.most_recent_at).toUpperCase()}
+                          {h.events.size} event
+                          {h.events.size === 1 ? "" : "s"} · cap {h.cap_total} ·
+                          last {fmtDate(h.most_recent_at)}
                         </div>
                         {h.cap_total > 0 && (
                           <div
                             style={{
-                              marginTop: 10,
+                              marginTop: "var(--s-2)",
                               maxWidth: 280,
+                              height: 6,
+                              background: "var(--bg-3)",
+                              borderRadius: "var(--r-pill)",
+                              overflow: "hidden",
                             }}
                           >
-                            <CapacityMeter
-                              current={h.scanned}
-                              total={h.cap_total}
-                              accent
-                              label="DELIVERED"
+                            <div
+                              style={{
+                                width: `${fillPct}%`,
+                                height: "100%",
+                                background: "var(--fg)",
+                              }}
                             />
                           </div>
                         )}
@@ -312,27 +292,18 @@ export default async function HoldersPage({
                           display: "flex",
                           flexDirection: "column",
                           alignItems: "flex-end",
-                          gap: 6,
+                          gap: "var(--s-1)",
                         }}
                       >
                         <div
-                          style={{
-                            fontFamily: "var(--w-display)",
-                            fontWeight: 700,
-                            fontSize: 32,
-                            letterSpacing: "-0.025em",
-                            lineHeight: 1,
-                            color: showRateColor,
-                          }}
+                          className="t-display-sm t-num"
+                          style={{ color: showRateColor }}
                         >
                           {showRate}%
                         </div>
-                        <div className="w-type-meta">
+                        <div className="t-meta">
                           {h.scanned}/{h.approved}
                         </div>
-                        <Chip tone="ghost">
-                          <IconArrow size={12} />
-                        </Chip>
                       </div>
                     </div>
                   </Link>
@@ -343,53 +314,5 @@ export default async function HoldersPage({
         )}
       </div>
     </main>
-  );
-}
-
-function KPI({
-  eyebrow,
-  big,
-  sub,
-  accent,
-}: {
-  eyebrow: string;
-  big: string;
-  sub?: string;
-  accent?: boolean;
-}) {
-  return (
-    <div
-      className="w-card"
-      style={{
-        padding: 18,
-        borderColor: accent ? "var(--w-acc)" : "var(--w-line)",
-        background: accent ? "var(--w-acc-soft)" : "var(--w-surface-2)",
-      }}
-    >
-      <div className="w-type-meta">{eyebrow}</div>
-      <div
-        style={{
-          fontFamily: "var(--w-display)",
-          fontWeight: 700,
-          fontSize: 32,
-          letterSpacing: "-0.025em",
-          marginTop: 6,
-          lineHeight: 1,
-        }}
-      >
-        {big}
-      </div>
-      {sub && (
-        <div
-          className="w-type-body-sm"
-          style={{
-            color: "var(--w-fg-muted)",
-            marginTop: 8,
-          }}
-        >
-          {sub}
-        </div>
-      )}
-    </div>
   );
 }

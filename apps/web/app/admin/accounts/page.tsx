@@ -1,7 +1,9 @@
-import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { PageHeader } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
+
+const COLS = "1.4fr 100px 1.6fr 120px";
 
 interface Row {
   id: string;
@@ -22,105 +24,57 @@ export default async function AdminAccountsPage() {
   const rows = (data ?? []) as unknown as Row[];
 
   return (
-    <main id="main-content" style={{ padding: "32px 24px 96px" }}>
-      <div style={{ maxWidth: 1080, margin: "0 auto" }}>
-        <div
-          style={{
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            marginBottom: 24,
-          }}
-        >
-          <div className="w-type-meta">PLATFORM</div>
-          <div className="w-type-display-md" style={{ marginTop: 8 }}>
-            Accounts
-          </div>
-          <p
-            className="w-type-meta"
-            style={{ marginTop: 8, color: "var(--w-fg-muted)" }}
-          >
-            {rows.length} TOTAL
-          </p>
-        </div>
-
-        <section
-          className="w-card"
-          style={{ padding: 20, overflowX: "auto" }}
-        >
-          <table
+    <main id="main-content">
+      <PageHeader
+        eyebrow="Platform"
+        title="Accounts"
+        sub={`${rows.length} total`}
+      />
+      <div style={{ padding: "var(--s-8)" }}>
+        <div className="card" style={{ overflowX: "auto" }}>
+          <div
+            className="row"
             style={{
-              width: "100%",
-              fontSize: 14,
-              borderCollapse: "collapse",
+              gridTemplateColumns: COLS,
+              padding: "var(--s-3) var(--s-5)",
+              background: "var(--bg)",
             }}
           >
-            <thead>
-              <tr>
-                {["NAME", "TYPE", "OWNER", "CREATED"].map((h) => (
-                  <th
-                    key={h}
-                    className="w-type-meta"
-                    style={{ textAlign: "left", paddingBottom: 8 }}
+            {["Name", "Type", "Owner", "Created"].map((h) => (
+              <span key={h} className="t-meta">
+                {h}
+              </span>
+            ))}
+          </div>
+          {rows.map((r) => (
+            <div
+              key={r.id}
+              className="row"
+              style={{
+                gridTemplateColumns: COLS,
+                padding: "var(--s-4) var(--s-5)",
+              }}
+            >
+              <span className="t-body" style={{ color: "var(--fg)" }}>
+                {r.display_name}
+              </span>
+              <span className="chip">{r.account_type}</span>
+              <span className="t-body-2">
+                {r.owner?.full_name ?? "—"}
+                {r.owner?.email && (
+                  <span
+                    style={{ color: "var(--fg-3)", marginLeft: "var(--s-2)" }}
                   >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr
-                  key={r.id}
-                  style={{ borderTop: "1px solid var(--w-line)" }}
-                >
-                  <td style={{ padding: "10px 0", color: "var(--w-fg)" }}>
-                    {r.display_name}
-                  </td>
-                  <td
-                    className="w-type-meta"
-                    style={{ padding: "10px 0" }}
-                  >
-                    {r.account_type.toUpperCase()}
-                  </td>
-                  <td style={{ padding: "10px 0", color: "var(--w-fg)" }}>
-                    {r.owner?.full_name ?? "—"}
-                    {r.owner?.email && (
-                      <span
-                        style={{
-                          color: "var(--w-fg-muted)",
-                          fontSize: 12,
-                          marginLeft: 8,
-                        }}
-                      >
-                        {r.owner.email}
-                      </span>
-                    )}
-                  </td>
-                  <td
-                    className="w-type-meta"
-                    style={{ padding: "10px 0" }}
-                  >
-                    {new Date(r.created_at)
-                      .toLocaleDateString()
-                      .toUpperCase()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
-
-        <p
-          className="w-type-meta"
-          style={{ marginTop: 24 }}
-        >
-          <Link
-            href="/admin"
-            style={{ color: "var(--w-acc)", textDecoration: "none" }}
-          >
-            ← BACK TO STATS
-          </Link>
-        </p>
+                    {r.owner.email}
+                  </span>
+                )}
+              </span>
+              <span className="t-meta">
+                {new Date(r.created_at).toLocaleDateString()}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     </main>
   );

@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOwnerContext } from "@/lib/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { Breadcrumb, PageHeader, EventSubNav } from "@/components/v5";
 import DryRunControls from "./controls";
 
 export const dynamic = "force-dynamic";
@@ -45,89 +45,58 @@ export default async function DryRunPage({
   return (
     <main
       id="main-content"
-      className="w-app"
-      style={{
-        minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
-      }}
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
     >
-      <div style={{ maxWidth: 880, margin: "0 auto" }}>
-        <Link
-          href={`/owner/events/${event.id}`}
-          className="w-type-meta"
-          style={{
-            color: "var(--w-fg-muted)",
-            textDecoration: "none",
-            display: "inline-block",
-            marginBottom: 12,
-          }}
-        >
-          ← {event.name.toUpperCase()}
-        </Link>
-        <div
-          style={{
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            marginBottom: 24,
-          }}
-        >
-          <div className="w-type-meta">DRY RUN</div>
-          <div className="w-type-display-md" style={{ marginTop: 8 }}>
-            Dry run
-          </div>
-          <p
-            style={{
-              color: "var(--w-fg)",
-              opacity: 0.7,
-              fontSize: 14,
-              lineHeight: 1.6,
-              marginTop: 12,
-              maxWidth: 640,
-            }}
-          >
-            Stress-test the daydash, queue, recap, and SMS log without burning
-            a real Friday. Seeds DRYRUN-flagged guests with realistic
-            distribution (mix of approved + pending + waitlisted, plus-ones,
-            tier mix). Optional check-in simulation jitters scans across the
-            2h after doors so the arrival-velocity chart populates.
-          </p>
-        </div>
+      <Breadcrumb
+        items={[
+          ["Events", "/owner"],
+          [event.name, `/owner/events/${event.id}`],
+          "Dry run",
+        ]}
+      />
+      <PageHeader
+        eyebrow="Dry run"
+        title="Dry run"
+        sub="Stress-test the daydash, queue, recap, and SMS log without burning a real Friday. Seeds DRYRUN-flagged guests with realistic distribution. Optional check-in simulation jitters scans across the 2h after doors."
+      />
+      <EventSubNav active="overview" eventId={event.id} />
 
+      <div style={{ padding: "var(--s-8)", maxWidth: 880 }}>
         <section
-          className="w-card"
-          style={{ padding: 20, marginBottom: 12 }}
+          className="card"
+          style={{ padding: "var(--s-5)", marginBottom: "var(--s-3)" }}
         >
-          <div className="w-type-meta" style={{ marginBottom: 14 }}>
-            CURRENT STATE
+          <div className="t-meta" style={{ marginBottom: "var(--s-4)" }}>
+            Current state
           </div>
           <div
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(3, 1fr)",
-              gap: 16,
+              gap: "var(--s-4)",
             }}
           >
-            <DryStat label="DRYRUN GUESTS" value={existingCount} />
+            <DryStat label="DRYRUN guests" value={existingCount} />
             <DryStat
-              label={`NIGHT${event.event_nights.length === 1 ? "" : "S"}`}
+              label={`Night${event.event_nights.length === 1 ? "" : "s"}`}
               value={event.event_nights.length}
             />
-            <DryStat label="TOTAL CAP" value={totalCap || "—"} />
+            <DryStat label="Total cap" value={totalCap || "—"} />
           </div>
         </section>
 
         <DryRunControls eventId={event.id} existingCount={existingCount} />
 
-        <section className="w-card" style={{ padding: 20, marginTop: 12 }}>
-          <div className="w-type-meta" style={{ marginBottom: 12 }}>
-            WHAT THIS POPULATES
+        <section
+          className="card"
+          style={{ padding: "var(--s-5)", marginTop: "var(--s-3)" }}
+        >
+          <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+            What this populates
           </div>
           <ul
+            className="t-body-2"
             style={{
-              color: "var(--w-fg)",
-              opacity: 0.85,
-              fontSize: 14,
               lineHeight: 1.7,
               listStyle: "none",
               padding: 0,
@@ -135,55 +104,52 @@ export default async function DryRunPage({
             }}
           >
             <Bullet>
-              <span style={{ color: "var(--w-acc)" }}>Daydash hero stats</span>{" "}
+              <strong style={{ color: "var(--fg)" }}>Daydash hero stats</strong>{" "}
               — In/Pending/RSVPs counters move with realistic numbers.
             </Bullet>
             <Bullet>
-              <span style={{ color: "var(--w-acc)" }}>Capacity ETA</span> —
+              <strong style={{ color: "var(--fg)" }}>Capacity ETA</strong> —
               recent-30-minute scan rate becomes nonzero, the projected-at-cap
               pill activates.
             </Bullet>
             <Bullet>
-              <span style={{ color: "var(--w-acc)" }}>Approval queue</span> —
+              <strong style={{ color: "var(--fg)" }}>Approval queue</strong> —
               the pending bucket has things to approve.
             </Bullet>
             <Bullet>
-              <span style={{ color: "var(--w-acc)" }}>Top holders</span> — if
+              <strong style={{ color: "var(--fg)" }}>Top holders</strong> — if
               you have allocations, simulated guests roll up to them.
             </Bullet>
             <Bullet>
-              <span style={{ color: "var(--w-acc)" }}>Recap</span> — show rate,
+              <strong style={{ color: "var(--fg)" }}>Recap</strong> — show rate,
               tier breakdown, top-holder ranking all populate.
             </Bullet>
             <Bullet>
-              <span style={{ color: "var(--w-acc)" }}>
+              <strong style={{ color: "var(--fg)" }}>
                 Hour velocity chart
-              </span>{" "}
+              </strong>{" "}
               — arrival distribution renders properly.
             </Bullet>
           </ul>
         </section>
 
         <section
-          className="w-card"
+          className="card"
           style={{
-            padding: 20,
-            marginTop: 12,
-            borderColor: "var(--w-err)",
-            background: "var(--w-surface-2)",
+            padding: "var(--s-5)",
+            marginTop: "var(--s-3)",
+            borderColor: "var(--err)",
           }}
         >
           <div
-            className="w-type-meta"
-            style={{ color: "var(--w-err)", marginBottom: 12 }}
+            className="t-meta"
+            style={{ color: "var(--err)", marginBottom: "var(--s-3)" }}
           >
-            WHAT IT DOESN&apos;T DO
+            What it doesn&apos;t do
           </div>
           <ul
+            className="t-body-2"
             style={{
-              color: "var(--w-fg)",
-              opacity: 0.85,
-              fontSize: 14,
               lineHeight: 1.7,
               listStyle: "none",
               padding: 0,
@@ -202,9 +168,9 @@ export default async function DryRunPage({
               Cleanup deletes every guest tagged{" "}
               <code
                 style={{
-                  color: "var(--w-acc)",
-                  fontFamily: "var(--w-mono)",
-                  fontSize: 12,
+                  fontFamily: "var(--mono)",
+                  fontSize: "var(--ts-sm)",
+                  color: "var(--fg)",
                 }}
               >
                 notes = &quot;DRYRUN&quot;
@@ -218,22 +184,17 @@ export default async function DryRunPage({
   );
 }
 
-function DryStat({ label, value }: { label: string; value: number | string }) {
+function DryStat({
+  label,
+  value,
+}: {
+  label: string;
+  value: number | string;
+}) {
   return (
     <div>
-      <div
-        style={{
-          fontFamily: "var(--w-display)",
-          fontWeight: 700,
-          fontSize: 30,
-          letterSpacing: "-0.025em",
-          lineHeight: 1,
-          color: "var(--w-fg)",
-        }}
-      >
-        {value}
-      </div>
-      <div className="w-type-meta" style={{ marginTop: 6 }}>
+      <div className="t-display-md t-num">{value}</div>
+      <div className="t-meta" style={{ marginTop: "var(--s-2)" }}>
         {label}
       </div>
     </div>
@@ -244,9 +205,9 @@ function Bullet({ children }: { children: React.ReactNode }) {
   return (
     <li
       style={{
-        paddingLeft: 18,
+        paddingLeft: "var(--s-5)",
         position: "relative",
-        marginBottom: 6,
+        marginBottom: "var(--s-2)",
       }}
     >
       <span
@@ -254,7 +215,7 @@ function Bullet({ children }: { children: React.ReactNode }) {
           position: "absolute",
           left: 0,
           top: 0,
-          color: "var(--w-fg-dim)",
+          color: "var(--fg-4)",
         }}
       >
         ·

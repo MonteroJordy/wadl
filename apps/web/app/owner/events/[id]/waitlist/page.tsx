@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOwnerContext } from "@/lib/owner";
 import { fmtDate } from "@/lib/format";
+import { Breadcrumb, PageHeader, EventSubNav } from "@/components/v5";
 import PromoteButton from "./row-buttons";
 
 export const dynamic = "force-dynamic";
@@ -61,76 +61,49 @@ export default async function WaitlistPage({
   return (
     <main
       id="main-content"
-      className="w-app"
-      style={{
-        minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
-      }}
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
     >
-      <div style={{ maxWidth: 720, margin: "0 auto" }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 16,
-          }}
-        >
-          <Link
-            href={`/owner/events/${event.id}`}
-            className="w-type-meta"
-            style={{ color: "var(--w-fg-muted)", textDecoration: "none" }}
-          >
-            ← BACK
-          </Link>
-          <div className="w-type-meta">WAITLIST</div>
-        </div>
+      <Breadcrumb
+        items={[
+          ["Events", "/owner"],
+          [event.name, `/owner/events/${event.id}`],
+          "Waitlist",
+        ]}
+      />
+      <PageHeader
+        eyebrow="Waitlist"
+        title={event.name}
+        sub={`${list.length} waiting · oldest gets promoted automatically when a seat opens up`}
+      />
+      <EventSubNav active="guests" eventId={event.id} />
 
-        <div
-          style={{
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            marginBottom: 24,
-          }}
-        >
-          <div className="w-type-display-md">{event.name}</div>
-          <p
-            className="w-type-body-sm"
-            style={{ color: "var(--w-fg-muted)", marginTop: 8 }}
-          >
-            {list.length} waiting · oldest gets promoted automatically when a
-            seat opens up
-          </p>
-        </div>
-
+      <div style={{ padding: "var(--s-8)" }}>
         {list.length === 0 ? (
           <div
-            className="w-card"
-            style={{
-              padding: "64px 32px",
-              textAlign: "center",
-            }}
+            className="card"
+            style={{ padding: "var(--s-16) var(--s-8)", textAlign: "center" }}
           >
-            <div className="w-type-h1">No one on the waitlist</div>
-            <p
-              className="w-type-body-sm"
+            <div className="t-h1">No one on the waitlist</div>
+            <div
+              className="t-body-2"
               style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 12,
+                marginTop: "var(--s-3)",
                 maxWidth: 460,
                 marginInline: "auto",
-                lineHeight: 1.5,
               }}
             >
-              If a night fills up, set pending RSVPs to waitlist from the
-              queue. They&apos;ll get auto-promoted (with SMS) when a confirmed
-              guest cancels.
-            </p>
+              If a night fills up, set pending RSVPs to waitlist from the queue.
+              They&apos;ll get auto-promoted (with SMS) when a confirmed guest
+              cancels.
+            </div>
           </div>
         ) : (
           <div
-            style={{ display: "flex", flexDirection: "column", gap: 24 }}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "var(--s-8)",
+            }}
           >
             {nights.map((n) => {
               const items = byNight.get(n.id) ?? [];
@@ -138,79 +111,59 @@ export default async function WaitlistPage({
               return (
                 <section key={n.id}>
                   <div
-                    className="w-type-meta"
-                    style={{ marginBottom: 8 }}
+                    className="t-meta"
+                    style={{ marginBottom: "var(--s-3)" }}
                   >
-                    {fmtDate(n.night_date).toUpperCase()} · {items.length}{" "}
-                    WAITING
+                    {fmtDate(n.night_date)} · {items.length} waiting
                   </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 8,
-                    }}
-                  >
+                  <div className="card">
                     {items.map((r, idx) => (
                       <div
                         key={r.id}
-                        className="w-card"
-                        style={{
-                          padding: 14,
-                          display: "flex",
-                          alignItems: "flex-start",
-                          justifyContent: "space-between",
-                          gap: 12,
-                        }}
+                        className="row"
+                        style={{ gridTemplateColumns: "1fr 200px 120px" }}
                       >
-                        <div style={{ minWidth: 0, flex: 1 }}>
-                          <p
+                        <span className="t-h1 truncate">
+                          <span
+                            className="t-num"
                             style={{
-                              color: "var(--w-fg)",
-                              fontWeight: 600,
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
+                              color: "var(--fg-4)",
+                              fontFamily: "var(--mono)",
+                              fontSize: "var(--ts-sm)",
+                              marginRight: "var(--s-2)",
                             }}
                           >
+                            #{idx + 1}
+                          </span>
+                          {r.full_name}
+                          {r.plus_ones > 0 && (
                             <span
                               style={{
-                                color: "var(--w-fg-muted)",
-                                fontFamily: "var(--w-mono)",
-                                fontSize: 12,
-                                marginRight: 6,
+                                color: "var(--fg-3)",
+                                fontWeight: 400,
                               }}
                             >
-                              #{idx + 1}
+                              {" "}
+                              +{r.plus_ones}
                             </span>
-                            {r.full_name}
-                            {r.plus_ones > 0 && (
-                              <span
-                                style={{
-                                  color: "var(--w-fg-muted)",
-                                  fontWeight: 400,
-                                }}
-                              >
-                                {" "}
-                                +{r.plus_ones}
-                              </span>
-                            )}
-                          </p>
-                          <div
-                            className="w-type-meta"
-                            style={{
-                              marginTop: 4,
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                            }}
-                          >
-                            {r.tier.toUpperCase()}
-                            {r.allocation?.holder_name &&
-                              ` · ${r.allocation.holder_name}`}
-                          </div>
+                          )}
+                        </span>
+                        <span className="t-meta truncate">
+                          {r.tier}
+                          {r.allocation?.holder_name &&
+                            ` · ${r.allocation.holder_name}`}
+                        </span>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "flex-end",
+                          }}
+                        >
+                          <PromoteButton
+                            eventId={event.id}
+                            guestId={r.id}
+                          />
                         </div>
-                        <PromoteButton eventId={event.id} guestId={r.id} />
                       </div>
                     ))}
                   </div>

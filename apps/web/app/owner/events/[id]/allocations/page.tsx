@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOwnerContext, fmtDate } from "@/lib/owner";
-import { Button, CapacityMeter, Chip, IconPlus } from "@/components/wadl";
+import { Breadcrumb, PageHeader, EventSubNav } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 
@@ -79,8 +79,7 @@ export default async function AllocationsPage({
 
   const byNight = new Map<string, AllocationRow[]>();
   for (const a of allocs) {
-    if (!byNight.has(a.event_night_id))
-      byNight.set(a.event_night_id, []);
+    if (!byNight.has(a.event_night_id)) byNight.set(a.event_night_id, []);
     byNight.get(a.event_night_id)!.push(a);
   }
 
@@ -91,108 +90,85 @@ export default async function AllocationsPage({
   );
   const fillPct =
     totalCap === 0 ? 0 : Math.round((totalUsed / totalCap) * 100);
-  const fillTone =
-    fillPct >= 90 ? "err" : fillPct >= 70 ? "warn" : "ok";
+  const fillTone = fillPct >= 90 ? "err" : fillPct >= 70 ? "warn" : "ok";
 
   return (
     <main
       id="main-content"
-      className="w-app"
-      style={{
-        minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
-      }}
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
     >
-      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-        <Link
-          href={`/owner/events/${event.id}`}
-          className="w-type-meta"
-          style={{ textDecoration: "none" }}
-        >
-          ← {event.name.toUpperCase()}
-        </Link>
-
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-end",
-            justifyContent: "space-between",
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            marginTop: 16,
-            gap: 16,
-            flexWrap: "wrap",
-          }}
-        >
-          <div style={{ minWidth: 0 }}>
-            <div className="w-type-meta">ALLOCATIONS</div>
-            <div className="w-type-display-md" style={{ marginTop: 8 }}>
-              Hand the door out
-            </div>
-            <p
-              className="w-type-body-sm"
-              style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 8,
-              }}
-            >
-              {allocs.length}{" "}
-              {allocs.length === 1 ? "holder" : "holders"} · {totalUsed}/
-              {totalCap} used
-            </p>
-          </div>
+      <Breadcrumb
+        items={[
+          ["Events", "/owner"],
+          [event.name, `/owner/events/${event.id}`],
+          "Allocations",
+        ]}
+      />
+      <PageHeader
+        eyebrow="Allocations"
+        title="Hand the door out"
+        sub={`${allocs.length} ${
+          allocs.length === 1 ? "holder" : "holders"
+        } · ${totalUsed}/${totalCap} used`}
+        actions={
           <Link
             href={`/owner/events/${event.id}/allocations/new`}
+            className="btn"
             style={{ textDecoration: "none" }}
           >
-            <Button variant="primary">
-              <IconPlus size={14} /> New allocation
-            </Button>
+            New allocation
           </Link>
-        </div>
+        }
+      />
+      <EventSubNav active="guests" eventId={event.id} />
 
+      <div style={{ padding: "var(--s-8)" }}>
         {/* Aggregate fill */}
         {totalCap > 0 && (
-          <div
-            className="w-card"
-            style={{ padding: 18, marginTop: 24 }}
-          >
+          <div className="card" style={{ padding: "var(--s-5)" }}>
             <div
               style={{
                 display: "flex",
                 alignItems: "baseline",
                 justifyContent: "space-between",
-                gap: 12,
+                gap: "var(--s-3)",
                 flexWrap: "wrap",
               }}
             >
               <div>
-                <div className="w-type-meta">TOTAL CAPACITY ACROSS HOLDERS</div>
+                <div className="t-meta">Total capacity across holders</div>
                 <div
-                  style={{
-                    fontFamily: "var(--w-display)",
-                    fontSize: 32,
-                    fontWeight: 700,
-                    letterSpacing: "-0.025em",
-                    lineHeight: 1,
-                    marginTop: 6,
-                  }}
+                  className="t-display-md t-num"
+                  style={{ marginTop: "var(--s-2)" }}
                 >
                   {totalUsed}
-                  <span style={{ color: "var(--w-fg-dim)" }}>
-                    /{totalCap}
-                  </span>
+                  <span style={{ color: "var(--fg-4)" }}>/{totalCap}</span>
                 </div>
               </div>
-              <Chip tone={fillTone}>{fillPct}% FILLED</Chip>
+              <span className={`chip chip--${fillTone}`}>
+                {fillPct}% filled
+              </span>
             </div>
-            <div style={{ marginTop: 14 }}>
-              <CapacityMeter
-                current={totalUsed}
-                total={totalCap}
-                accent={fillTone === "ok"}
-                label="USED"
+            <div
+              style={{
+                marginTop: "var(--s-4)",
+                height: 6,
+                borderRadius: "var(--r-pill)",
+                background: "var(--bg-3)",
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  height: "100%",
+                  width: `${Math.min(fillPct, 100)}%`,
+                  background:
+                    fillTone === "err"
+                      ? "var(--err)"
+                      : fillTone === "warn"
+                        ? "var(--warn)"
+                        : "var(--fg)",
+                }}
               />
             </div>
           </div>
@@ -200,30 +176,29 @@ export default async function AllocationsPage({
 
         {nights.length === 0 ? (
           <div
-            className="w-card"
+            className="card"
             style={{
-              padding: "64px 32px",
+              padding: "var(--s-16) var(--s-8)",
               textAlign: "center",
-              marginTop: 24,
+              marginTop: "var(--s-6)",
             }}
           >
-            <div className="w-type-h1">No nights yet</div>
-            <p
-              className="w-type-body-sm"
+            <div className="t-h1">No nights yet</div>
+            <div
+              className="t-body-2"
               style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 12,
+                marginTop: "var(--s-3)",
                 maxWidth: 420,
                 marginInline: "auto",
               }}
             >
               Add nights from settings, then come back to distribute the list.
-            </p>
+            </div>
             <Link
               href={`/owner/events/${event.id}/settings`}
-              className="w-btn w-btn--primary"
+              className="btn"
               style={{
-                marginTop: 24,
+                marginTop: "var(--s-6)",
                 textDecoration: "none",
                 display: "inline-flex",
               }}
@@ -233,64 +208,54 @@ export default async function AllocationsPage({
           </div>
         ) : allocs.length === 0 ? (
           <div
-            className="w-card"
+            className="card"
             style={{
-              padding: "64px 32px",
+              padding: "var(--s-16) var(--s-8)",
               textAlign: "center",
-              marginTop: 24,
-              borderColor: "var(--w-acc)",
-              background: "var(--w-acc-soft)",
+              marginTop: "var(--s-6)",
             }}
           >
             <div
               style={{
                 width: 56,
                 height: 56,
-                background: "var(--w-acc)",
-                color: "var(--w-acc-ink)",
-                margin: "0 auto 16px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 28,
-                fontWeight: 700,
+                borderRadius: "var(--r-lg)",
+                background: "var(--bg-3)",
+                margin: "0 auto var(--s-5)",
               }}
-            >
-              +
-            </div>
-            <div className="w-type-h1">No allocations yet</div>
-            <p
-              className="w-type-body-sm"
+            />
+            <div className="t-h1">No allocations yet</div>
+            <div
+              className="t-body-2"
               style={{
-                marginTop: 12,
+                marginTop: "var(--s-3)",
                 maxWidth: 460,
                 marginInline: "auto",
-                lineHeight: 1.5,
               }}
             >
-              Drop a promoter, artist, or brand a magic link. They add names
-              up to their cap. Every name gets attributed back to them — feeds
-              the scorecards.
-            </p>
+              Drop a promoter, artist, or brand a magic link. They add names up
+              to their cap. Every name gets attributed back to them — feeds the
+              scorecards.
+            </div>
             <Link
               href={`/owner/events/${event.id}/allocations/new`}
-              className="w-btn w-btn--primary"
+              className="btn"
               style={{
-                marginTop: 24,
+                marginTop: "var(--s-6)",
                 textDecoration: "none",
                 display: "inline-flex",
               }}
             >
-              <IconPlus size={14} /> Add first allocation
+              Add first allocation
             </Link>
           </div>
         ) : (
           <div
             style={{
-              marginTop: 28,
+              marginTop: "var(--s-6)",
               display: "flex",
               flexDirection: "column",
-              gap: 28,
+              gap: "var(--s-8)",
             }}
           >
             {nights.map((n) => {
@@ -299,111 +264,110 @@ export default async function AllocationsPage({
               return (
                 <section key={n.id}>
                   <div
-                    className="w-type-meta"
-                    style={{ marginBottom: 12 }}
+                    className="t-meta"
+                    style={{ marginBottom: "var(--s-3)" }}
                   >
-                    {fmtDate(n.night_date).toUpperCase()} · {list.length}{" "}
-                    {list.length === 1 ? "HOLDER" : "HOLDERS"}
+                    {fmtDate(n.night_date)} · {list.length}{" "}
+                    {list.length === 1 ? "holder" : "holders"}
                   </div>
                   <div
                     style={{
                       display: "grid",
                       gridTemplateColumns:
                         "repeat(auto-fill, minmax(320px, 1fr))",
-                      gap: 10,
+                      gap: "var(--s-3)",
                     }}
                   >
                     {list.map((a) => {
                       const used = usedByAlloc.get(a.id) ?? 0;
                       const pct = a.cap === 0 ? 0 : (used / a.cap) * 100;
                       const tone =
-                        pct >= 100
-                          ? "err"
-                          : pct >= 80
-                            ? "warn"
-                            : "ok";
+                        pct >= 100 ? "err" : pct >= 80 ? "warn" : "ok";
                       return (
                         <Link
                           key={a.id}
                           href={`/owner/events/${event.id}/allocations/${a.id}`}
+                          className="card card--hover"
                           style={{
                             textDecoration: "none",
                             color: "inherit",
+                            padding: "var(--s-5)",
                           }}
                         >
                           <div
-                            className="w-card"
-                            style={{ padding: 16 }}
+                            style={{
+                              display: "flex",
+                              alignItems: "flex-start",
+                              justifyContent: "space-between",
+                              gap: "var(--s-3)",
+                            }}
+                          >
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div className="t-h1 truncate">
+                                {a.holder_name}
+                              </div>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexWrap: "wrap",
+                                  gap: "var(--s-1)",
+                                  marginTop: "var(--s-2)",
+                                }}
+                              >
+                                {a.auto_approve && (
+                                  <span className="chip chip--ok">
+                                    Auto-approve
+                                  </span>
+                                )}
+                                {!a.list_open && (
+                                  <span className="chip chip--err">
+                                    Closed
+                                  </span>
+                                )}
+                                {a.list_open && !a.auto_approve && (
+                                  <span className="chip chip--ghost">
+                                    Host approves
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div
+                              className="t-display-md t-num"
+                              style={{ textAlign: "right" }}
+                            >
+                              {used}
+                              <span style={{ color: "var(--fg-4)" }}>
+                                /{a.cap}
+                              </span>
+                            </div>
+                          </div>
+                          <div
+                            style={{
+                              marginTop: "var(--s-4)",
+                              height: 6,
+                              borderRadius: "var(--r-pill)",
+                              background: "var(--bg-3)",
+                              overflow: "hidden",
+                            }}
                           >
                             <div
                               style={{
-                                display: "flex",
-                                alignItems: "flex-start",
-                                justifyContent: "space-between",
-                                gap: 12,
+                                height: "100%",
+                                width: `${Math.min(pct, 100)}%`,
+                                background:
+                                  tone === "err"
+                                    ? "var(--err)"
+                                    : tone === "warn"
+                                      ? "var(--warn)"
+                                      : "var(--fg)",
                               }}
-                            >
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div
-                                  style={{
-                                    fontWeight: 600,
-                                    fontSize: 16,
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    whiteSpace: "nowrap",
-                                  }}
-                                >
-                                  {a.holder_name}
-                                </div>
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    flexWrap: "wrap",
-                                    gap: 6,
-                                    marginTop: 6,
-                                  }}
-                                >
-                                  {a.auto_approve && (
-                                    <Chip tone="ok">AUTO-APPROVE</Chip>
-                                  )}
-                                  {!a.list_open && (
-                                    <Chip tone="err">CLOSED</Chip>
-                                  )}
-                                  {a.list_open && !a.auto_approve && (
-                                    <Chip tone="ghost">HOST APPROVES</Chip>
-                                  )}
-                                </div>
-                              </div>
-                              <div style={{ textAlign: "right" }}>
-                                <div
-                                  style={{
-                                    fontFamily: "var(--w-display)",
-                                    fontSize: 28,
-                                    fontWeight: 700,
-                                    letterSpacing: "-0.025em",
-                                    lineHeight: 1,
-                                  }}
-                                >
-                                  {used}
-                                  <span
-                                    style={{
-                                      color: "var(--w-fg-dim)",
-                                      fontSize: 18,
-                                    }}
-                                  >
-                                    /{a.cap}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                            <div style={{ marginTop: 14 }}>
-                              <CapacityMeter
-                                current={used}
-                                total={a.cap}
-                                accent={tone === "ok"}
-                                label={`${Math.round(pct)}% FILLED`}
-                              />
-                            </div>
+                            />
+                          </div>
+                          <div
+                            className="t-meta"
+                            style={{ marginTop: "var(--s-2)" }}
+                          >
+                            {Math.round(pct)}% filled
                           </div>
                         </Link>
                       );

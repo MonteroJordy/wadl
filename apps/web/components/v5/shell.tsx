@@ -171,7 +171,7 @@ export default function V5Shell({
                 cursor: "pointer",
                 fontSize: 12,
                 fontWeight: 600,
-                fontFamily: "var(--w-display)",
+                fontFamily: "var(--display)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -259,7 +259,7 @@ export default function V5Shell({
               border: 0,
               color: "var(--fg)",
               cursor: "pointer",
-              fontFamily: "var(--w-mono)",
+              fontFamily: "var(--mono)",
               fontSize: 16,
             }}
           >

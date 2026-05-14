@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOwnerContext } from "@/lib/owner";
 import { fmtDate } from "@/lib/format";
+import { Breadcrumb, PageHeader, EventSubNav } from "@/components/v5";
 import OverrideForm from "./override-form";
 
 export const dynamic = "force-dynamic";
@@ -42,52 +42,25 @@ export default async function OwnerOverridePage({
   return (
     <main
       id="main-content"
-      className="w-app"
-      style={{
-        minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
-      }}
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
     >
-      <div style={{ maxWidth: 720, margin: "0 auto" }}>
-        <Link
-          href={`/owner/events/${event.id}`}
-          className="w-type-meta"
-          style={{
-            color: "var(--w-fg-muted)",
-            textDecoration: "none",
-            display: "inline-block",
-            marginBottom: 12,
-          }}
-        >
-          ← {event.name.toUpperCase()}
-        </Link>
-        <div
-          style={{
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            marginBottom: 24,
-          }}
-        >
-          <div className="w-type-meta">OVERRIDE</div>
-          <div className="w-type-display-md" style={{ marginTop: 8 }}>
-            Owner override
-          </div>
-          <p
-            className="w-type-body-sm"
-            style={{ color: "var(--w-fg-muted)", marginTop: 8 }}
-          >
-            Manually admit a guest. Bypasses caps + lockdown. Audit-logged.
-          </p>
-        </div>
+      <Breadcrumb
+        items={[
+          ["Events", "/owner"],
+          [event.name, `/owner/events/${event.id}`],
+          "Override",
+        ]}
+      />
+      <PageHeader
+        eyebrow="Override"
+        title="Owner override"
+        sub="Manually admit a guest. Bypasses caps + lockdown. Audit-logged."
+      />
+      <EventSubNav active="guests" eventId={event.id} />
 
+      <div style={{ padding: "var(--s-8)", maxWidth: 720 }}>
         {nights.length === 0 ? (
-          <p
-            className="w-type-body-sm"
-            style={{ color: "var(--w-fg-muted)" }}
-          >
-            Add a night first.
-          </p>
+          <div className="t-body-2">Add a night first.</div>
         ) : (
           <OverrideForm eventId={event.id} nights={nights} />
         )}

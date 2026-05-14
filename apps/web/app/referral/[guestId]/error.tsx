@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { Button } from "@/components/wadl";
 
 export default function AdminError({
   error,
@@ -27,50 +26,49 @@ export default function AdminError({
   return (
     <main
       id="main-content"
-      className="w-app"
       style={{
         minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
+        background: "var(--bg)",
+        padding: "var(--s-8) var(--s-6) var(--s-24)",
       }}
     >
       <div style={{ maxWidth: 540, margin: "0 auto" }}>
         <div
-          className="w-type-meta"
-          style={{ color: "var(--w-err)", marginBottom: 8 }}
+          className="t-meta"
+          style={{ color: "var(--err)", marginBottom: "var(--s-2)" }}
         >
-          ⚠ PAGE ERROR
+          Page error
         </div>
-        <div className="w-type-display-md" style={{ marginBottom: 12 }}>
+        <div
+          className="t-display-md"
+          style={{ marginBottom: "var(--s-3)" }}
+        >
           Something went wrong here.
         </div>
-        <p
-          className="w-type-body-sm"
-          style={{ color: "var(--w-fg-muted)", marginBottom: 24 }}
-        >
+        <p className="t-body-2" style={{ marginBottom: "var(--s-6)" }}>
           Try refresh, or contact support if it keeps happening.
         </p>
         {error.digest && (
-          <p
-            className="w-type-meta"
-            style={{ color: "var(--w-fg-muted)", marginBottom: 16 }}
-          >
-            REF: {error.digest}
+          <p className="t-meta" style={{ marginBottom: "var(--s-4)" }}>
+            Ref: {error.digest}
           </p>
         )}
         <div
-          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "var(--s-2)",
+          }}
         >
-          <Button variant="primary" type="button" onClick={() => reset()}>
+          <button className="btn" type="button" onClick={() => reset()}>
             Refresh
-          </Button>
+          </button>
           <a
             href="mailto:support@wadlwadl.com"
+            className="btn btn--ghost"
             style={{ textDecoration: "none" }}
           >
-            <Button variant="ghost" style={{ width: "100%" }}>
-              Support
-            </Button>
+            Support
           </a>
         </div>
       </div>

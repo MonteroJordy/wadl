@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { requireOwnerContext } from "@/lib/owner";
 import { fmtDate, fmtTime } from "@/lib/format";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Chip } from "@/components/wadl";
+import { Breadcrumb, PageHeader, EventSubNav } from "@/components/v5";
 import PrintButton from "./print-button";
 
 export const dynamic = "force-dynamic";
@@ -86,12 +86,7 @@ export default async function PrintRosterPage({
   return (
     <main
       id="main-content"
-      className="w-app"
-      style={{
-        minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
-      }}
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
     >
       <style>{`
         @media print {
@@ -110,96 +105,89 @@ export default async function PrintRosterPage({
         }
       `}</style>
 
-      <div style={{ maxWidth: 760, margin: "0 auto" }}>
-        <div
-          className="print-hide"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 16,
-          }}
-        >
-          <Link
-            href={`/owner/events/${event.id}`}
-            className="w-type-meta"
-            style={{ color: "var(--w-fg-muted)", textDecoration: "none" }}
-          >
-            ← BACK
-          </Link>
-          <div className="w-type-meta">PRINT ROSTER</div>
-        </div>
+      <div className="print-hide">
+        <Breadcrumb
+          items={[
+            ["Events", "/owner"],
+            [event.name, `/owner/events/${event.id}`],
+            "Print roster",
+          ]}
+        />
+        <PageHeader
+          eyebrow="Print roster"
+          title="Door roster"
+          sub="Grouped by holder · check-box per head."
+          actions={<PrintButton />}
+        />
+        <EventSubNav active="guests" eventId={event.id} />
+      </div>
 
-        <div className="print-hide" style={{ marginBottom: 16 }}>
-          <PrintButton />
-        </div>
+      <div style={{ padding: "var(--s-8)", maxWidth: 760 }}>
+        {nights.length > 1 && (
+          <div
+            className="print-hide"
+            style={{
+              display: "flex",
+              gap: "var(--s-1)",
+              overflowX: "auto",
+              marginBottom: "var(--s-4)",
+              paddingBottom: "var(--s-1)",
+            }}
+          >
+            <Link
+              href={`/owner/events/${event.id}/print`}
+              style={{ textDecoration: "none", flexShrink: 0 }}
+            >
+              <span
+                className={`chip ${!activeNight ? "chip--solid" : "chip--ghost"}`}
+              >
+                All nights
+              </span>
+            </Link>
+            {nights.map((n) => (
+              <Link
+                key={n.id}
+                href={`/owner/events/${event.id}/print?night=${n.id}`}
+                style={{ textDecoration: "none", flexShrink: 0 }}
+              >
+                <span
+                  className={`chip ${
+                    activeNight?.id === n.id ? "chip--solid" : "chip--ghost"
+                  }`}
+                >
+                  {fmtDate(n.night_date)}
+                </span>
+              </Link>
+            ))}
+          </div>
+        )}
 
         <div className="print-roster">
           <div
             style={{
-              borderBottom: "1px solid var(--w-line)",
-              paddingBottom: 20,
-              marginBottom: 20,
+              borderBottom: "1px solid var(--line)",
+              paddingBottom: "var(--s-5)",
+              marginBottom: "var(--s-5)",
             }}
           >
-            <div className="w-type-display-md">{event.name}</div>
-            <p
-              className="w-type-meta"
-              style={{ marginTop: 8, color: "var(--w-fg-muted)" }}
-            >
+            <div className="t-display-md">{event.name}</div>
+            <div className="t-meta" style={{ marginTop: "var(--s-2)" }}>
               {activeNight
-                ? `${fmtDate(activeNight.night_date).toUpperCase()} · DOORS ${fmtTime(activeNight.doors_at).toUpperCase()}`
-                : `${nights.length} NIGHTS`}
-              {event.venue?.name && ` · ${event.venue.name.toUpperCase()}`}
-              {event.venue?.city && `, ${event.venue.city.toUpperCase()}`}
-            </p>
-            <p
-              className="w-type-meta"
-              style={{ marginTop: 6, color: "var(--w-fg-muted)" }}
-            >
-              {guests.length} APPROVED · {total} HEADS INCL. +1S
-            </p>
+                ? `${fmtDate(activeNight.night_date)} · doors ${fmtTime(activeNight.doors_at)}`
+                : `${nights.length} nights`}
+              {event.venue?.name && ` · ${event.venue.name}`}
+              {event.venue?.city && `, ${event.venue.city}`}
+            </div>
+            <div className="t-meta" style={{ marginTop: "var(--s-1)" }}>
+              {guests.length} approved · {total} heads incl. +1s
+            </div>
           </div>
 
-          {nights.length > 1 && (
-            <div
-              className="print-hide"
-              style={{
-                display: "flex",
-                gap: 8,
-                overflowX: "auto",
-                marginBottom: 16,
-                paddingBottom: 4,
-              }}
-            >
-              <Link
-                href={`/owner/events/${event.id}/print`}
-                style={{ textDecoration: "none", flexShrink: 0 }}
-              >
-                <Chip tone={!activeNight ? "acc" : "ghost"}>ALL NIGHTS</Chip>
-              </Link>
-              {nights.map((n) => (
-                <Link
-                  key={n.id}
-                  href={`/owner/events/${event.id}/print?night=${n.id}`}
-                  style={{ textDecoration: "none", flexShrink: 0 }}
-                >
-                  <Chip tone={activeNight?.id === n.id ? "acc" : "ghost"}>
-                    {fmtDate(n.night_date).toUpperCase()}
-                  </Chip>
-                </Link>
-              ))}
-            </div>
-          )}
-
           {guests.length === 0 ? (
-            <p
-              className="w-type-meta"
-              style={{ color: "var(--w-fg-muted)" }}
-            >
-              NO APPROVED GUESTS ON THIS SCOPE. APPROVE SOME FROM THE QUEUE
-              FIRST.
-            </p>
+            <div className="t-body-2">
+              No approved guests on this scope. Approve some from the queue
+              first.
+            </div>
           ) : (
             groupOrder.map((name) => {
               const list = groups.get(name) ?? [];
@@ -208,30 +196,26 @@ export default async function PrintRosterPage({
                 0,
               );
               return (
-                <section key={name} style={{ marginBottom: 24 }}>
+                <section key={name} style={{ marginBottom: "var(--s-6)" }}>
                   <div
                     style={{
                       display: "flex",
                       alignItems: "baseline",
                       justifyContent: "space-between",
-                      marginBottom: 8,
-                      borderTop: "1px solid var(--w-line)",
-                      paddingTop: 10,
+                      marginBottom: "var(--s-2)",
+                      borderTop: "1px solid var(--line)",
+                      paddingTop: "var(--s-3)",
                     }}
                   >
-                    <p
-                      style={{ color: "var(--w-fg)", fontWeight: 600 }}
-                    >
-                      {name}
-                    </p>
-                    <div className="w-type-meta">
-                      {list.length} · {subtotal} HEADS
-                    </div>
+                    <span className="t-h1">{name}</span>
+                    <span className="t-meta">
+                      {list.length} · {subtotal} heads
+                    </span>
                   </div>
                   <table
                     style={{
                       width: "100%",
-                      fontSize: 14,
+                      fontSize: "var(--ts-md)",
                       borderCollapse: "collapse",
                     }}
                   >
@@ -239,41 +223,44 @@ export default async function PrintRosterPage({
                       <tr>
                         <th style={{ width: 24, textAlign: "left" }}></th>
                         <th
-                          className="w-type-meta"
-                          style={{ textAlign: "left", paddingBottom: 8 }}
+                          className="t-meta"
+                          style={{
+                            textAlign: "left",
+                            paddingBottom: "var(--s-2)",
+                          }}
                         >
-                          NAME
+                          Name
                         </th>
                         <th
-                          className="w-type-meta"
+                          className="t-meta"
                           style={{
                             width: 64,
                             textAlign: "left",
-                            paddingBottom: 8,
+                            paddingBottom: "var(--s-2)",
                           }}
                         >
-                          TIER
+                          Tier
                         </th>
                         <th
-                          className="w-type-meta"
+                          className="t-meta"
                           style={{
                             width: 32,
                             textAlign: "right",
-                            paddingBottom: 8,
+                            paddingBottom: "var(--s-2)",
                           }}
                         >
                           +1
                         </th>
                         {!activeNight && (
                           <th
-                            className="w-type-meta"
+                            className="t-meta"
                             style={{
                               width: 80,
                               textAlign: "left",
-                              paddingBottom: 8,
+                              paddingBottom: "var(--s-2)",
                             }}
                           >
-                            NIGHT
+                            Night
                           </th>
                         )}
                       </tr>
@@ -287,8 +274,8 @@ export default async function PrintRosterPage({
                           <tr
                             key={g.id}
                             style={{
-                              borderTop: "1px solid var(--w-line)",
-                              color: g.flag_dna ? "var(--w-err)" : undefined,
+                              borderTop: "1px solid var(--line)",
+                              color: g.flag_dna ? "var(--err)" : undefined,
                             }}
                           >
                             <td style={{ padding: "6px 0" }}>
@@ -299,11 +286,11 @@ export default async function PrintRosterPage({
                                   width: 14,
                                   height: 14,
                                   background: scanned
-                                    ? "var(--w-ok)"
+                                    ? "var(--ok)"
                                     : "transparent",
                                   border: scanned
-                                    ? "1px solid var(--w-ok)"
-                                    : "1px solid var(--w-line)",
+                                    ? "1px solid var(--ok)"
+                                    : "1px solid var(--line-2)",
                                 }}
                               />
                             </td>
@@ -311,21 +298,21 @@ export default async function PrintRosterPage({
                               {g.full_name}
                               {g.flag_dna && (
                                 <span
-                                  className="w-type-meta"
-                                  style={{ marginLeft: 8 }}
+                                  className="t-meta"
+                                  style={{ marginLeft: "var(--s-2)" }}
                                 >
                                   ⚠ DNA
                                 </span>
                               )}
                             </td>
                             <td
-                              className="w-type-meta"
+                              className="t-meta"
                               style={{ padding: "6px 0" }}
                             >
-                              {g.tier.toUpperCase()}
+                              {g.tier}
                             </td>
                             <td
-                              className="w-type-meta"
+                              className="t-meta"
                               style={{
                                 padding: "6px 0",
                                 textAlign: "right",
@@ -335,10 +322,10 @@ export default async function PrintRosterPage({
                             </td>
                             {!activeNight && (
                               <td
-                                className="w-type-meta"
+                                className="t-meta"
                                 style={{ padding: "6px 0" }}
                               >
-                                {fmtDate(g.night.night_date).toUpperCase()}
+                                {fmtDate(g.night.night_date)}
                               </td>
                             )}
                           </tr>

@@ -16,9 +16,9 @@ interface EventLite {
 type DiffTone = "ok" | "err" | "muted";
 
 function diffTone(tone: DiffTone): string {
-  if (tone === "ok") return "var(--w-ok)";
-  if (tone === "err") return "var(--w-err)";
-  return "var(--w-fg-muted)";
+  if (tone === "ok") return "var(--ok)";
+  if (tone === "err") return "var(--err)";
+  return "var(--fg-3)";
 }
 
 function diffPct(a: number, b: number): { label: string; tone: DiffTone } {
@@ -63,21 +63,16 @@ export default async function CompareEventsPage({
   if (events.length < 2) {
     return (
       <div
-        className="w-card"
-        style={{
-          padding: "64px 32px",
-          textAlign: "center",
-        }}
+        className="card"
+        style={{ padding: "var(--s-16) var(--s-8)", textAlign: "center" }}
       >
-        <div className="w-type-h1">Need a second night</div>
+        <div className="t-display-sm">Need a second night</div>
         <p
-          className="w-type-body-sm"
+          className="t-body-2"
           style={{
-            color: "var(--w-fg-muted)",
-            marginTop: 12,
+            marginTop: "var(--s-3)",
             maxWidth: 480,
             marginInline: "auto",
-            lineHeight: 1.5,
           }}
         >
           Two nights with check-ins unlock side-by-side. Pace this Friday vs.
@@ -133,94 +128,77 @@ export default async function CompareEventsPage({
     .slice(0, 8);
 
   return (
-    <div
-      style={{ display: "flex", flexDirection: "column", gap: 12 }}
-    >
-      <section
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
+      <div
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-          gap: 12,
+          gap: "var(--s-4)",
         }}
       >
-        <div className="w-card" style={{ padding: 18 }}>
-          <div className="w-type-meta" style={{ marginBottom: 8 }}>
-            EVENT A
+        <div className="card" style={{ padding: "var(--s-5)" }}>
+          <div className="t-meta" style={{ marginBottom: "var(--s-2)" }}>
+            Event A
           </div>
           <ComparePicker side="a" events={events} current={aId} />
           {evA && (
             <p
-              style={{
-                marginTop: 12,
-                color: "var(--w-fg)",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
+              className="t-body truncate"
+              style={{ marginTop: "var(--s-3)" }}
             >
               {evA.name}
             </p>
           )}
         </div>
-        <div className="w-card" style={{ padding: 18 }}>
-          <div className="w-type-meta" style={{ marginBottom: 8 }}>
-            EVENT B
+        <div className="card" style={{ padding: "var(--s-5)" }}>
+          <div className="t-meta" style={{ marginBottom: "var(--s-2)" }}>
+            Event B
           </div>
           <ComparePicker side="b" events={events} current={bId} />
           {evB && (
             <p
-              style={{
-                marginTop: 12,
-                color: "var(--w-fg)",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
+              className="t-body truncate"
+              style={{ marginTop: "var(--s-3)" }}
             >
               {evB.name}
             </p>
           )}
         </div>
-      </section>
+      </div>
 
-      <section
+      <div
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: 12,
+          gap: "var(--s-4)",
         }}
       >
         <DiffKPI
-          label="SHOW RATE"
+          label="Show rate"
           a={`${Math.round(showA * 100)}%`}
           b={`${Math.round(showB * 100)}%`}
           diff={showDiff}
         />
         <DiffKPI
-          label="SCANNED"
+          label="Scanned"
           a={recapA.totalCheckedIn}
           b={recapB.totalCheckedIn}
           diff={scannedDiff}
         />
         <DiffKPI
-          label="APPROVED"
+          label="Approved"
           a={recapA.totalApproved}
           b={recapB.totalApproved}
           diff={approvedDiff}
         />
-      </section>
+      </div>
 
-      <section className="w-card" style={{ padding: 20 }}>
-        <div className="w-type-meta" style={{ marginBottom: 14 }}>
-          BY TIER · APPROVED &amp; SHOW RATE
+      <div className="card" style={{ padding: "var(--s-6)" }}>
+        <div className="t-meta" style={{ marginBottom: "var(--s-4)" }}>
+          By tier · approved &amp; show rate
         </div>
         {tierKeys.length === 0 ? (
-          <p
-            className="w-type-body-sm"
-            style={{ color: "var(--w-fg-muted)" }}
-          >
-            No tier data on either event yet.
-          </p>
+          <p className="t-body-2">No tier data on either event yet.</p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column" }}>
             {tierKeys.map((tier) => {
@@ -246,48 +224,39 @@ export default async function CompareEventsPage({
                     display: "grid",
                     gridTemplateColumns: "80px 1fr 1fr 80px",
                     alignItems: "center",
-                    gap: 12,
-                    padding: "12px 0",
-                    borderTop: "1px solid var(--w-line)",
+                    gap: "var(--s-3)",
+                    padding: "var(--s-3) 0",
+                    borderTop: "1px solid var(--line)",
                   }}
                 >
-                  <div
-                    className="w-type-meta"
-                    style={{ letterSpacing: "0.08em" }}
-                  >
-                    {tier.toUpperCase()}
-                  </div>
+                  <div className="t-meta">{tier.toUpperCase()}</div>
                   <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 14, color: "var(--w-fg)" }}>
+                    <div className="t-body">
                       {aApproved}{" "}
-                      <span style={{ color: "var(--w-fg-muted)" }}>
-                        approved
-                      </span>
+                      <span style={{ color: "var(--fg-3)" }}>approved</span>
                     </div>
-                    <div className="w-type-meta">
-                      {Math.round(aShow * 100)}% SHOW
+                    <div className="t-meta">
+                      {Math.round(aShow * 100)}% show
                     </div>
                   </div>
                   <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 14, color: "var(--w-fg)" }}>
+                    <div className="t-body">
                       {bApproved}{" "}
-                      <span style={{ color: "var(--w-fg-muted)" }}>
-                        approved
-                      </span>
+                      <span style={{ color: "var(--fg-3)" }}>approved</span>
                     </div>
-                    <div className="w-type-meta">
-                      {Math.round(bShow * 100)}% SHOW
+                    <div className="t-meta">
+                      {Math.round(bShow * 100)}% show
                     </div>
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <div
-                      className="w-type-meta"
+                      className="t-meta"
                       style={{ color: diffTone(apprDiff.tone) }}
                     >
                       {apprDiff.label}
                     </div>
                     <div
-                      className="w-type-meta"
+                      className="t-meta"
                       style={{ color: diffTone(showTone) }}
                     >
                       {showLabel}
@@ -298,19 +267,14 @@ export default async function CompareEventsPage({
             })}
           </div>
         )}
-      </section>
+      </div>
 
-      <section className="w-card" style={{ padding: 20 }}>
-        <div className="w-type-meta" style={{ marginBottom: 14 }}>
-          TOP HOLDERS · SCANNED HEADS
+      <div className="card" style={{ padding: "var(--s-6)" }}>
+        <div className="t-meta" style={{ marginBottom: "var(--s-4)" }}>
+          Top holders · scanned heads
         </div>
         {holderRows.length === 0 ? (
-          <p
-            className="w-type-body-sm"
-            style={{ color: "var(--w-fg-muted)" }}
-          >
-            No holder activity to compare.
-          </p>
+          <p className="t-body-2">No holder activity to compare.</p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column" }}>
             {holderRows.map((r) => {
@@ -325,41 +289,27 @@ export default async function CompareEventsPage({
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    gap: 12,
-                    padding: "12px 0",
-                    borderTop: "1px solid var(--w-line)",
+                    gap: "var(--s-3)",
+                    padding: "var(--s-3) 0",
+                    borderTop: "1px solid var(--line)",
                   }}
                 >
-                  <p
-                    style={{
-                      flex: 1,
-                      color: "var(--w-fg)",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
+                  <p className="t-body truncate" style={{ flex: 1 }}>
                     {r.name}
                   </p>
                   <div
-                    className="w-type-meta"
-                    style={{
-                      width: 80,
-                      textAlign: "right",
-                      flexShrink: 0,
-                      fontFamily: "var(--w-mono)",
-                    }}
+                    className="t-meta t-num"
+                    style={{ width: 80, textAlign: "right", flexShrink: 0 }}
                   >
                     {r.a} / {r.b}
                   </div>
                   <div
-                    className="w-type-meta"
+                    className="t-meta t-num"
                     style={{
                       width: 60,
                       textAlign: "right",
                       flexShrink: 0,
                       color: diffTone(tone),
-                      fontFamily: "var(--w-mono)",
                     }}
                   >
                     {sign}
@@ -370,23 +320,20 @@ export default async function CompareEventsPage({
             })}
           </div>
         )}
-      </section>
+      </div>
 
-      <div
-        className="w-type-meta"
-        style={{ color: "var(--w-fg-dim)" }}
-      >
-        OPEN RECAP FOR{" "}
+      <div className="t-meta" style={{ color: "var(--fg-4)" }}>
+        Open recap for{" "}
         <Link
           href={`/owner/events/${aId}/recap`}
-          style={{ color: "var(--w-acc)", textDecoration: "none" }}
+          style={{ color: "var(--fg)", textDecoration: "none" }}
         >
           A
         </Link>{" "}
         ·{" "}
         <Link
           href={`/owner/events/${bId}/recap`}
-          style={{ color: "var(--w-acc)", textDecoration: "none" }}
+          style={{ color: "var(--fg)", textDecoration: "none" }}
         >
           B
         </Link>
@@ -407,40 +354,24 @@ function DiffKPI({
   diff: { label: string; tone: DiffTone };
 }) {
   return (
-    <div
-      className="w-card"
-      style={{
-        padding: 18,
-        background: "var(--w-surface-2)",
-      }}
-    >
-      <div className="w-type-meta">{label}</div>
+    <div className="card" style={{ padding: "var(--s-5)" }}>
+      <div className="t-meta">{label}</div>
       <div
-        style={{
-          fontFamily: "var(--w-display)",
-          fontWeight: 700,
-          fontSize: 28,
-          letterSpacing: "-0.025em",
-          lineHeight: 1.1,
-          marginTop: 8,
-          color: "var(--w-fg)",
-        }}
+        className="t-display-sm t-num"
+        style={{ marginTop: "var(--s-2)" }}
       >
         {a}{" "}
         <span
-          style={{
-            color: "var(--w-fg-muted)",
-            fontSize: 14,
-            fontWeight: 400,
-          }}
+          className="t-body-2"
+          style={{ fontWeight: 400 }}
         >
           vs
         </span>{" "}
         {b}
       </div>
       <div
-        className="w-type-meta"
-        style={{ marginTop: 8, color: diffTone(diff.tone) }}
+        className="t-meta"
+        style={{ marginTop: "var(--s-2)", color: diffTone(diff.tone) }}
       >
         {diff.label}
       </div>

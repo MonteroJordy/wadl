@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Button, Wordmark } from "@/components/wadl";
+import { Logo } from "@/components/v5";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -42,100 +42,84 @@ export default function ForgotPasswordPage() {
   return (
     <main
       id="main-content"
-      className="w-app"
+      className="v5"
       style={{
         minHeight: "100vh",
-        background: "var(--w-bg)",
+        background: "var(--bg)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: "32px 24px",
+        padding: "var(--s-8) var(--s-6)",
       }}
     >
       <div
+        className="card"
         style={{
           width: "100%",
           maxWidth: 420,
-          padding: 32,
-          background: "var(--w-surface-2)",
-          border: "1px solid var(--w-line)",
+          padding: "var(--s-8)",
         }}
       >
-        <Wordmark variant="monogrid" size={20} />
+        <Logo size={20} />
 
-        <div className="w-type-meta" style={{ marginTop: 32 }}>
-          RESET ACCESS
+        <div className="t-meta" style={{ marginTop: "var(--s-8)" }}>
+          Reset access
         </div>
-        <div
-          style={{
-            fontFamily: "var(--w-display)",
-            fontWeight: 700,
-            fontSize: 32,
-            letterSpacing: "-0.02em",
-            marginTop: 8,
-          }}
-        >
+        <div className="t-display-md" style={{ marginTop: "var(--s-2)" }}>
           Forgot how to get in?
         </div>
-        <p
-          className="w-type-body-sm"
-          style={{
-            color: "var(--w-fg-muted)",
-            marginTop: 8,
-            lineHeight: 1.55,
-          }}
-        >
+        <p className="t-body-2" style={{ marginTop: "var(--s-2)" }}>
           Enter your email and we&apos;ll send a sign-in link. No password
           needed — just tap the link from the same device.
         </p>
 
         {sent ? (
-          <div style={{ marginTop: 24 }}>
+          <div style={{ marginTop: "var(--s-6)" }}>
             <div
-              className="w-card"
+              className="card"
               style={{
-                padding: 16,
-                borderColor: "var(--w-acc)",
-                background: "var(--w-acc-soft)",
+                padding: "var(--s-4)",
+                borderColor: "var(--ok)",
               }}
             >
-              <div
-                className="w-type-meta"
-                style={{ color: "var(--w-acc-ink)" }}
-              >
-                ✓ LINK SENT
+              <div className="t-meta" style={{ color: "var(--ok)" }}>
+                ✓ Link sent
               </div>
               <p
-                className="w-type-body-sm"
-                style={{ marginTop: 8, color: "var(--w-fg)" }}
+                className="t-body-2"
+                style={{ marginTop: "var(--s-2)", color: "var(--fg)" }}
               >
                 We sent a sign-in link to{" "}
-                <strong>{email.trim()}</strong>. Check your inbox.
+                <span style={{ fontWeight: 500 }}>{email.trim()}</span>. Check
+                your inbox.
               </p>
             </div>
-            <Button
-              variant="ghost"
-              size="lg"
-              block
+            <button
+              type="button"
+              className="btn btn--ghost btn--lg btn--block"
               onClick={() => router.push("/login")}
-              style={{ marginTop: 12 }}
+              style={{ marginTop: "var(--s-3)" }}
             >
               Back to sign in
-            </Button>
+            </button>
           </div>
         ) : (
           <form
             onSubmit={onSubmit}
             style={{
-              marginTop: 24,
+              marginTop: "var(--s-6)",
               display: "flex",
               flexDirection: "column",
-              gap: 12,
+              gap: "var(--s-3)",
             }}
           >
             <div>
-              <label htmlFor="email" className="w-label">
-                EMAIL
+              <label
+                htmlFor="email"
+                className="t-meta"
+                style={{ display: "block", marginBottom: "var(--s-2)" }}
+              >
+                Email
               </label>
               <input
                 id="email"
@@ -143,7 +127,7 @@ export default function ForgotPasswordPage() {
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-input"
+                className="input"
                 placeholder="you@venue.com"
                 required
                 autoFocus
@@ -152,32 +136,28 @@ export default function ForgotPasswordPage() {
 
             {error ? (
               <p
-                className="w-type-body-sm"
-                style={{ color: "var(--w-err)" }}
+                className="t-body-2"
+                style={{ color: "var(--err)" }}
                 role="alert"
               >
                 {error}
               </p>
             ) : null}
 
-            <Button
+            <button
               type="submit"
-              variant="primary"
-              size="lg"
-              block
+              className="btn btn--lg btn--block"
               disabled={loading}
             >
               {loading ? "Sending…" : "Send sign-in link"}
-            </Button>
-            <Button
+            </button>
+            <button
               type="button"
-              variant="ghost"
-              size="lg"
-              block
+              className="btn btn--ghost btn--lg btn--block"
               onClick={() => router.push("/login")}
             >
               Back to sign in
-            </Button>
+            </button>
           </form>
         )}
       </div>

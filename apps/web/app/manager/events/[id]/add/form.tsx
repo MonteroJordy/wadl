@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { Button } from "@/components/wadl";
 import { managerAddGuestAction } from "./actions";
 
 type Tier = "ga" | "vip" | "all_access";
@@ -14,14 +13,9 @@ interface AllocationOption {
   used: number;
 }
 
-const INPUT_STYLE: React.CSSProperties = {
-  width: "100%",
-  background: "var(--w-surface-1)",
-  border: "1px solid var(--w-line)",
-  color: "var(--w-fg)",
-  padding: "10px 12px",
-  fontFamily: "var(--w-sans)",
-  fontSize: 14,
+const LABEL_STYLE: React.CSSProperties = {
+  display: "block",
+  marginBottom: "var(--s-2)",
 };
 
 export default function ManagerAddForm({
@@ -71,11 +65,11 @@ export default function ManagerAddForm({
   return (
     <main
       id="main-content"
-      className="w-app"
+      className="v5"
       style={{
         minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
+        background: "var(--bg)",
+        padding: "var(--s-8) var(--s-6) var(--s-24)",
       }}
     >
       <div style={{ maxWidth: 540, margin: "0 auto" }}>
@@ -84,48 +78,43 @@ export default function ManagerAddForm({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            marginBottom: 16,
+            marginBottom: "var(--s-4)",
           }}
         >
           <Link
             href={backHref}
-            className="w-type-meta"
-            style={{ color: "var(--w-fg-muted)", textDecoration: "none" }}
+            className="t-meta"
+            style={{ textDecoration: "none" }}
           >
-            ← BACK
+            ← Back
           </Link>
-          <div className="w-type-meta" style={{ color: "var(--w-acc)" }}>
-            ADD AT DOOR
-          </div>
+          <div className="t-meta">Add at door</div>
         </div>
 
         <div
           style={{
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            marginBottom: 24,
+            borderBottom: "1px solid var(--line)",
+            paddingBottom: "var(--s-6)",
+            marginBottom: "var(--s-6)",
           }}
         >
-          <div className="w-type-display-md">{eventName}</div>
-          <p
-            className="w-type-body-sm"
-            style={{ color: "var(--w-fg-muted)", marginTop: 8 }}
-          >
+          <div className="t-display-md">{eventName}</div>
+          <p className="t-body-2" style={{ marginTop: "var(--s-2)" }}>
             Walk-up manual add. Auto-checks in.
           </p>
         </div>
 
         <form
           onSubmit={onSubmit}
-          style={{ display: "flex", flexDirection: "column", gap: 20 }}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "var(--s-5)",
+          }}
         >
           <div>
-            <label
-              htmlFor="fullName"
-              className="w-type-meta"
-              style={{ display: "block", marginBottom: 6 }}
-            >
-              FULL NAME
+            <label htmlFor="fullName" className="t-meta" style={LABEL_STYLE}>
+              Full name
             </label>
             <input
               id="fullName"
@@ -133,18 +122,14 @@ export default function ManagerAddForm({
               autoFocus
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              style={INPUT_STYLE}
+              className="input"
               required
             />
           </div>
 
           <div>
-            <label
-              htmlFor="phone"
-              className="w-type-meta"
-              style={{ display: "block", marginBottom: 6 }}
-            >
-              PHONE (OPTIONAL)
+            <label htmlFor="phone" className="t-meta" style={LABEL_STYLE}>
+              Phone (optional)
             </label>
             <input
               id="phone"
@@ -152,24 +137,20 @@ export default function ManagerAddForm({
               inputMode="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              style={INPUT_STYLE}
+              className="input"
               placeholder="(305) 555 1234"
             />
           </div>
 
           <div>
-            <label
-              htmlFor="allocation"
-              className="w-type-meta"
-              style={{ display: "block", marginBottom: 6 }}
-            >
-              CHARGE TO
+            <label htmlFor="allocation" className="t-meta" style={LABEL_STYLE}>
+              Charge to
             </label>
             <select
               id="allocation"
               value={allocationId}
               onChange={(e) => setAllocationId(e.target.value)}
-              style={INPUT_STYLE}
+              className="input"
               required
             >
               {allocations.length === 0 && (
@@ -185,14 +166,14 @@ export default function ManagerAddForm({
           </div>
 
           <div>
-            <div className="w-type-meta" style={{ marginBottom: 8 }}>
-              TIER
+            <div className="t-meta" style={{ marginBottom: "var(--s-2)" }}>
+              Tier
             </div>
             <div
               style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(3, 1fr)",
-                gap: 6,
+                gap: "var(--s-2)",
               }}
             >
               {(["ga", "vip", "all_access"] as const).map((t) => {
@@ -202,21 +183,7 @@ export default function ManagerAddForm({
                     key={t}
                     type="button"
                     onClick={() => setTier(t)}
-                    style={{
-                      border: `1px solid ${active ? "var(--w-acc)" : "var(--w-line)"}`,
-                      background: active
-                        ? "var(--w-acc-soft)"
-                        : "var(--w-surface-1)",
-                      color: active
-                        ? "var(--w-acc-ink)"
-                        : "var(--w-fg-muted)",
-                      padding: "12px 10px",
-                      fontFamily: "var(--w-mono)",
-                      fontSize: 12,
-                      letterSpacing: "0.08em",
-                      textTransform: "uppercase",
-                      cursor: "pointer",
-                    }}
+                    className={active ? "btn btn--sm" : "btn btn--ghost btn--sm"}
                   >
                     {t.replace("_", " ")}
                   </button>
@@ -226,18 +193,14 @@ export default function ManagerAddForm({
           </div>
 
           <div>
-            <label
-              htmlFor="plusOnes"
-              className="w-type-meta"
-              style={{ display: "block", marginBottom: 6 }}
-            >
-              +1S
+            <label htmlFor="plusOnes" className="t-meta" style={LABEL_STYLE}>
+              +1s
             </label>
             <select
               id="plusOnes"
               value={plusOnes}
               onChange={(e) => setPlusOnes(parseInt(e.target.value, 10))}
-              style={INPUT_STYLE}
+              className="input"
             >
               {[0, 1, 2, 3, 4].map((n) => (
                 <option key={n} value={n}>
@@ -248,22 +211,18 @@ export default function ManagerAddForm({
           </div>
 
           {error && (
-            <p
-              className="w-type-body-sm"
-              style={{ color: "var(--w-err)" }}
-            >
+            <p className="t-body-2" style={{ color: "var(--err)" }}>
               {error}
             </p>
           )}
 
-          <Button
-            variant="primary"
+          <button
+            className="btn btn--lg btn--block"
             type="submit"
             disabled={pending || allocations.length === 0}
-            style={{ width: "100%", padding: "16px 0" }}
           >
             {pending ? "Adding…" : "Add & check in"}
-          </Button>
+          </button>
         </form>
       </div>
     </main>

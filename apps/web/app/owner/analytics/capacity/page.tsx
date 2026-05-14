@@ -1,27 +1,24 @@
 import Link from "next/link";
 import { requireOwnerContext } from "@/lib/owner";
 import { computeExtraAnalytics } from "@/lib/analytics-extra";
-import { Chip } from "@/components/wadl";
+import { Stat } from "@/components/v5";
 import { fmtDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Capacity — WADL" };
 
-const STATUS_TONE: Record<
-  string,
-  "err" | "warn" | "ok" | "ghost"
-> = {
-  sold_out: "err",
-  near_cap: "warn",
-  normal: "ok",
-  low: "ghost",
+const STATUS_CHIP: Record<string, string> = {
+  sold_out: "chip chip--err",
+  near_cap: "chip chip--warn",
+  normal: "chip chip--ok",
+  low: "chip chip--ghost",
 };
 
 const STATUS_LABEL: Record<string, string> = {
-  sold_out: "SOLD OUT",
-  near_cap: "NEAR CAP",
-  normal: "NORMAL",
-  low: "LOW",
+  sold_out: "Sold out",
+  near_cap: "Near cap",
+  normal: "Normal",
+  low: "Low",
 };
 
 export default async function CapacityAnalyticsPage() {
@@ -31,21 +28,16 @@ export default async function CapacityAnalyticsPage() {
   if (x.capacityRows.length === 0) {
     return (
       <div
-        className="w-card"
-        style={{
-          padding: "64px 32px",
-          textAlign: "center",
-        }}
+        className="card"
+        style={{ padding: "var(--s-16) var(--s-8)", textAlign: "center" }}
       >
-        <div className="w-type-h1">Set caps to plot</div>
+        <div className="t-display-sm">Set caps to plot</div>
         <p
-          className="w-type-body-sm"
+          className="t-body-2"
           style={{
-            color: "var(--w-fg-muted)",
-            marginTop: 12,
+            marginTop: "var(--s-3)",
             maxWidth: 460,
             marginInline: "auto",
-            lineHeight: 1.5,
           }}
         >
           Drop a capacity number on each night in event settings. The
@@ -67,63 +59,58 @@ export default async function CapacityAnalyticsPage() {
   );
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 12,
-      }}
-    >
-      <section
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
+      <div
+        className="card"
         style={{
+          padding: 0,
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: 12,
+          gridTemplateColumns: "repeat(3, 1fr)",
         }}
       >
-        <KPI
-          label="AVG UTILIZATION"
+        <Stat
+          label="Avg utilization"
           value={`${Math.round(avgUtil * 100)}%`}
-          accent
+          sub="across nights with a cap"
         />
-        <KPI label="SOLD OUT" value={soldOut} tone="err" />
-        <KPI label="UNUSED SPOTS" value={unused} />
-      </section>
+        <Stat label="Sold out" value={soldOut} sub="nights at capacity" />
+        <Stat label="Unused spots" value={unused} sub="seats left empty" last />
+      </div>
 
-      <section className="w-card" style={{ padding: 20 }}>
-        <div className="w-type-meta" style={{ marginBottom: 14 }}>
-          CAPACITY BY EVENT-NIGHT
+      <div className="card" style={{ padding: "var(--s-6)" }}>
+        <div className="t-meta" style={{ marginBottom: "var(--s-4)" }}>
+          Capacity by event-night
         </div>
         <div
           style={{
             overflowX: "auto",
-            margin: "0 -20px",
-            padding: "0 20px",
+            margin: "0 calc(-1 * var(--s-6))",
+            padding: "0 var(--s-6)",
           }}
         >
           <table
             style={{
               width: "100%",
-              fontSize: 14,
+              fontSize: "var(--ts-md)",
               borderCollapse: "collapse",
             }}
           >
             <thead>
               <tr>
                 {[
-                  ["DATE", "left"],
-                  ["EVENT", "left"],
-                  ["IN", "right"],
-                  ["CAP", "right"],
-                  ["UTIL", "right"],
-                  ["STATUS", "right"],
+                  ["Date", "left"],
+                  ["Event", "left"],
+                  ["In", "right"],
+                  ["Cap", "right"],
+                  ["Util", "right"],
+                  ["Status", "right"],
                 ].map(([h, align]) => (
                   <th
                     key={h}
-                    className="w-type-meta"
+                    className="t-meta"
                     style={{
                       textAlign: align as "left" | "right",
-                      paddingBottom: 8,
+                      paddingBottom: "var(--s-2)",
                     }}
                   >
                     {h}
@@ -135,89 +122,48 @@ export default async function CapacityAnalyticsPage() {
               {x.capacityRows.map((r) => (
                 <tr
                   key={`${r.event_id}-${r.date}`}
-                  style={{ borderTop: "1px solid var(--w-line)" }}
+                  style={{ borderTop: "1px solid var(--line)" }}
                 >
-                  <td
-                    className="w-type-meta"
-                    style={{ padding: "10px 0" }}
-                  >
-                    {fmtDate(r.date).toUpperCase()}
+                  <td className="t-meta" style={{ padding: "var(--s-3) 0" }}>
+                    {fmtDate(r.date)}
                   </td>
-                  <td style={{ padding: "10px 0" }}>
+                  <td style={{ padding: "var(--s-3) 0" }}>
                     <Link
                       href={`/owner/events/${r.event_id}`}
-                      style={{
-                        color: "var(--w-fg)",
-                        textDecoration: "none",
-                      }}
+                      className="t-body"
+                      style={{ color: "var(--fg)", textDecoration: "none" }}
                     >
                       {r.event_name}
                     </Link>
                   </td>
-                  <td style={{ padding: "10px 0", textAlign: "right" }}>
+                  <td
+                    className="t-body t-num"
+                    style={{ padding: "var(--s-3) 0", textAlign: "right" }}
+                  >
                     {r.in_count}
                   </td>
-                  <td style={{ padding: "10px 0", textAlign: "right" }}>
+                  <td
+                    className="t-body t-num"
+                    style={{ padding: "var(--s-3) 0", textAlign: "right" }}
+                  >
                     {r.cap || "—"}
                   </td>
                   <td
-                    style={{
-                      padding: "10px 0",
-                      textAlign: "right",
-                      fontFamily: "var(--w-mono)",
-                    }}
+                    className="t-body t-num"
+                    style={{ padding: "var(--s-3) 0", textAlign: "right" }}
                   >
                     {r.cap > 0 ? Math.round(r.pct * 100) + "%" : "—"}
                   </td>
-                  <td style={{ padding: "10px 0", textAlign: "right" }}>
-                    <Chip tone={STATUS_TONE[r.status]}>
+                  <td style={{ padding: "var(--s-3) 0", textAlign: "right" }}>
+                    <span className={STATUS_CHIP[r.status]}>
                       {STATUS_LABEL[r.status]}
-                    </Chip>
+                    </span>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </section>
-    </div>
-  );
-}
-
-function KPI({
-  label,
-  value,
-  tone,
-  accent,
-}: {
-  label: string;
-  value: number | string;
-  tone?: "err";
-  accent?: boolean;
-}) {
-  const valueColor = tone === "err" ? "var(--w-err)" : "var(--w-fg)";
-  return (
-    <div
-      className="w-card"
-      style={{
-        padding: 18,
-        borderColor: accent ? "var(--w-acc)" : "var(--w-line)",
-        background: accent ? "var(--w-acc-soft)" : "var(--w-surface-2)",
-      }}
-    >
-      <div className="w-type-meta">{label}</div>
-      <div
-        style={{
-          fontFamily: "var(--w-display)",
-          fontWeight: 700,
-          fontSize: 32,
-          letterSpacing: "-0.025em",
-          lineHeight: 1,
-          marginTop: 8,
-          color: valueColor,
-        }}
-      >
-        {value}
       </div>
     </div>
   );

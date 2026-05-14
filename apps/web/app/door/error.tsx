@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { Button } from "@/components/wadl";
 
 export default function DoorError({
   error,
@@ -27,54 +26,55 @@ export default function DoorError({
   return (
     <main
       id="main-content"
-      className="w-app"
+      className="v5"
       style={{
         minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
+        background: "var(--bg)",
+        padding: "var(--s-8) var(--s-8) var(--s-16)",
       }}
     >
       <div style={{ maxWidth: 540, margin: "0 auto" }}>
+        <span className="chip chip--err">Page error</span>
         <div
-          className="w-type-meta"
-          style={{ color: "var(--w-err)", marginBottom: 8 }}
+          className="t-display-md"
+          style={{ marginTop: "var(--s-4)" }}
         >
-          ⚠ PAGE ERROR
-        </div>
-        <div className="w-type-display-md" style={{ marginBottom: 12 }}>
           Something went wrong here.
         </div>
         <p
-          className="w-type-body-sm"
-          style={{ color: "var(--w-fg-muted)", marginBottom: 24 }}
+          className="t-body-2"
+          style={{ marginTop: "var(--s-2)", marginBottom: "var(--s-6)" }}
         >
           Try refresh, or contact support if it keeps happening.
         </p>
         {error.digest && (
           <p
-            className="w-type-meta"
-            style={{ color: "var(--w-fg-muted)", marginBottom: 16 }}
+            className="t-meta"
+            style={{ marginBottom: "var(--s-4)" }}
           >
-            REF: {error.digest}
+            Ref: {error.digest}
           </p>
         )}
         <div
           style={{
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
-            gap: 8,
+            gap: "var(--s-2)",
           }}
         >
-          <Button variant="primary" type="button" onClick={() => reset()}>
+          <button
+            type="button"
+            className="btn btn--block"
+            onClick={() => reset()}
+          >
             Refresh
-          </Button>
+          </button>
           <a
             href="mailto:support@wadlwadl.com"
+            className="btn btn--ghost btn--block"
             style={{ textDecoration: "none" }}
           >
-            <Button variant="ghost" style={{ width: "100%" }}>
-              Support
-            </Button>
+            Support
           </a>
         </div>
       </div>

@@ -1,19 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Button } from "@/components/wadl";
 import ConfirmDialog from "@/components/confirm-dialog";
 import { seedDryRunAction, clearDryRunAction } from "./actions";
-
-const INPUT_STYLE: React.CSSProperties = {
-  width: "100%",
-  background: "var(--w-surface-1)",
-  border: "1px solid var(--w-line)",
-  color: "var(--w-fg)",
-  padding: "10px 12px",
-  fontFamily: "var(--w-sans)",
-  fontSize: 14,
-};
 
 export default function DryRunControls({
   eventId,
@@ -61,7 +50,10 @@ export default function DryRunControls({
     startTransition(async () => {
       const res = await clearDryRunAction(eventId);
       if (res.ok) {
-        setMsg({ kind: "ok", text: `Cleared ${res.deleted} DRYRUN guests.` });
+        setMsg({
+          kind: "ok",
+          text: `Cleared ${res.deleted} DRYRUN guests.`,
+        });
       } else {
         setMsg({ kind: "err", text: res.error });
       }
@@ -70,25 +62,21 @@ export default function DryRunControls({
   }
 
   return (
-    <section className="w-card" style={{ padding: 20 }}>
-      <div className="w-type-meta" style={{ marginBottom: 12 }}>
-        GENERATE
+    <section className="card" style={{ padding: "var(--s-5)" }}>
+      <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+        Generate
       </div>
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
-          gap: 12,
-          marginBottom: 16,
+          gap: "var(--s-3)",
+          marginBottom: "var(--s-4)",
         }}
       >
         <div>
-          <label
-            htmlFor="count"
-            className="w-type-meta"
-            style={{ display: "block", marginBottom: 4 }}
-          >
-            COUNT (1–200)
+          <label htmlFor="count" className="t-meta">
+            Count (1–200)
           </label>
           <input
             id="count"
@@ -99,69 +87,56 @@ export default function DryRunControls({
             onChange={(e) =>
               setCount(e.target.value.replace(/[^\d]/g, "").slice(0, 3))
             }
-            style={INPUT_STYLE}
+            className="input"
+            style={{ marginTop: "var(--s-2)" }}
           />
         </div>
         <label
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 8,
+            gap: "var(--s-2)",
             cursor: "pointer",
-            marginTop: 24,
+            marginTop: "var(--s-6)",
           }}
         >
           <input
             type="checkbox"
             checked={simulateScans}
             onChange={(e) => setSimulateScans(e.target.checked)}
-            style={{ width: 16, height: 16, accentColor: "var(--w-acc)" }}
+            style={{ width: 16, height: 16, accentColor: "var(--fg)" }}
           />
-          <span
-            style={{ color: "var(--w-fg)", fontSize: 14 }}
-          >
-            Simulate ~80% scans
-          </span>
+          <span className="t-body">Simulate ~80% scans</span>
         </label>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 8,
-        }}
-      >
-        <Button
-          variant="primary"
+      <div style={{ display: "flex", gap: "var(--s-2)" }}>
+        <button
           type="button"
+          className="btn"
           onClick={seed}
           disabled={pending}
         >
           {pending ? "Working…" : "Seed dry run"}
-        </Button>
-        <Button
-          variant="ghost"
+        </button>
+        <button
           type="button"
+          className="btn btn--danger"
           onClick={clear}
           disabled={pending || existingCount === 0}
-          style={{
-            borderColor: "var(--w-err)",
-            color: "var(--w-err)",
-          }}
         >
           {pending
             ? "…"
             : `Clear ${existingCount > 0 ? `(${existingCount})` : ""}`}
-        </Button>
+        </button>
       </div>
 
       {msg && (
         <div
-          className="w-type-meta"
+          className="t-meta"
           style={{
-            marginTop: 12,
-            color: msg.kind === "ok" ? "var(--w-ok)" : "var(--w-err)",
+            marginTop: "var(--s-3)",
+            color: msg.kind === "ok" ? "var(--ok)" : "var(--err)",
           }}
         >
           {msg.text}

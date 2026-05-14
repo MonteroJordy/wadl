@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Button } from "@/components/wadl";
 import ConfirmDialog from "@/components/confirm-dialog";
 import {
   updateAllocationAction,
@@ -20,16 +19,6 @@ interface Props {
   holderUrl: string;
 }
 
-const INPUT_STYLE: React.CSSProperties = {
-  width: "100%",
-  background: "var(--w-surface-1)",
-  border: "1px solid var(--w-line)",
-  color: "var(--w-fg)",
-  padding: "10px 12px",
-  fontFamily: "var(--w-sans)",
-  fontSize: 14,
-};
-
 function CheckboxRow({
   label,
   checked,
@@ -44,7 +33,7 @@ function CheckboxRow({
       style={{
         display: "flex",
         alignItems: "center",
-        gap: 12,
+        gap: "var(--s-3)",
         cursor: "pointer",
       }}
     >
@@ -52,15 +41,9 @@ function CheckboxRow({
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        style={{ width: 20, height: 20, accentColor: "var(--w-acc)" }}
+        style={{ width: 18, height: 18, accentColor: "var(--fg)" }}
       />
-      <span
-        style={{
-          color: "var(--w-fg)",
-          fontWeight: 600,
-          fontSize: 14,
-        }}
-      >
+      <span className="t-body" style={{ fontWeight: 500 }}>
         {label}
       </span>
     </label>
@@ -124,61 +107,65 @@ export default function AllocationControls({
 
   return (
     <>
-      <section
-        className="w-card"
-        style={{ padding: 16, marginBottom: 20 }}
-      >
-        <div className="w-type-meta" style={{ marginBottom: 8 }}>
-          MAGIC LINK
+      <section className="card" style={{ padding: "var(--s-5)" }}>
+        <div className="t-meta" style={{ marginBottom: "var(--s-2)" }}>
+          Magic link
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "var(--s-2)",
+          }}
+        >
           <input
             value={holderUrl}
             readOnly
-            style={{
-              ...INPUT_STYLE,
-              fontSize: 12,
-              fontFamily: "var(--w-mono)",
-            }}
+            className="input"
+            style={{ fontSize: "var(--ts-sm)", fontFamily: "var(--mono)" }}
             onFocus={(e) => e.currentTarget.select()}
           />
-          <Button
-            variant="ghost"
+          <button
             type="button"
+            className="btn btn--ghost"
             onClick={onCopy}
-            style={{ padding: "0 18px" }}
           >
             {copied ? "Copied" : "Copy"}
-          </Button>
+          </button>
         </div>
         <button
           type="button"
           onClick={onRegenerate}
-          className="w-type-meta"
+          className="t-meta"
           style={{
             background: "transparent",
             border: "none",
             cursor: "pointer",
-            color: "var(--w-acc)",
+            color: "var(--fg)",
             padding: 0,
-            marginTop: 12,
+            marginTop: "var(--s-3)",
           }}
         >
-          ROTATE LINK →
+          Rotate link →
         </button>
       </section>
 
       <form
         onSubmit={onSave}
-        style={{ display: "flex", flexDirection: "column", gap: 20 }}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-5)",
+          marginTop: "var(--s-5)",
+        }}
       >
         <div>
           <label
             htmlFor="cap"
-            className="w-type-meta"
-            style={{ display: "block", marginBottom: 6 }}
+            className="t-meta"
+            style={{ display: "block", marginBottom: "var(--s-2)" }}
           >
-            CAP
+            Cap
           </label>
           <input
             id="cap"
@@ -186,7 +173,7 @@ export default function AllocationControls({
             min={1}
             value={cap}
             onChange={(e) => setCap(e.target.value)}
-            style={INPUT_STYLE}
+            className="input"
           />
         </div>
 
@@ -207,25 +194,19 @@ export default function AllocationControls({
         />
 
         {error && (
-          <p
-            className="w-type-body-sm"
-            style={{ color: "var(--w-err)" }}
-          >
+          <p className="t-body-2" style={{ color: "var(--err)" }}>
             {error}
           </p>
         )}
         {saved && (
-          <p
-            className="w-type-body-sm"
-            style={{ color: "var(--w-ok)" }}
-          >
+          <p className="t-body-2" style={{ color: "var(--ok)" }}>
             {saved}
           </p>
         )}
 
-        <Button variant="primary" type="submit" disabled={pending}>
+        <button type="submit" className="btn" disabled={pending}>
           {pending ? "Saving…" : "Save"}
-        </Button>
+        </button>
       </form>
       <ConfirmDialog
         open={regenerateOpen}

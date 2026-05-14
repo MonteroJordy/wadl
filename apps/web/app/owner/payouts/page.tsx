@@ -1,6 +1,6 @@
 import { requireOwnerContext } from "@/lib/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Button } from "@/components/wadl";
+import { PageHeader } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 
@@ -27,37 +27,21 @@ export default async function PayoutsPage({
     return (
       <main
         id="main-content"
-        className="w-app"
-        style={{
-          minHeight: "100vh",
-          background: "var(--w-bg)",
-          padding: "32px 24px 96px",
-        }}
+        style={{ minHeight: "100vh", background: "var(--bg)" }}
       >
-        <div style={{ maxWidth: 720, margin: "0 auto" }}>
-          <div className="w-type-meta">PROMOTER PAYOUTS</div>
-          <div
-            className="w-type-display-md"
-            style={{ marginTop: 8, marginBottom: 24 }}
-          >
-            Coming soon
-          </div>
+        <PageHeader eyebrow="Promoter payouts" title="Coming soon" />
+        <div style={{ padding: "var(--s-8)", maxWidth: 720 }}>
           <section
-            className="w-card"
-            style={{
-              padding: "64px 32px",
-              textAlign: "center",
-            }}
+            className="card"
+            style={{ padding: "var(--s-16) var(--s-8)", textAlign: "center" }}
           >
-            <div className="w-type-h1">Pay your promoters</div>
+            <div className="t-display-sm">Pay your promoters</div>
             <p
-              className="w-type-body-sm"
+              className="t-body-2"
               style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 12,
+                marginTop: "var(--s-3)",
                 maxWidth: 480,
                 marginInline: "auto",
-                lineHeight: 1.5,
               }}
             >
               Stripe Connect is wired but not turned on yet. Each holder
@@ -66,14 +50,10 @@ export default async function PayoutsPage({
             </p>
             <a
               href="mailto:jmontero@mainframeagency.com?subject=Turn%20on%20Stripe%20Connect"
-              style={{ textDecoration: "none" }}
+              className="btn btn--ghost"
+              style={{ marginTop: "var(--s-5)" }}
             >
-              <Button
-                variant="ghost"
-                style={{ marginTop: 20 }}
-              >
-                Email the founder
-              </Button>
+              Email the founder
             </a>
           </section>
         </div>
@@ -102,52 +82,36 @@ export default async function PayoutsPage({
   const oauthUrl = `https://connect.stripe.com/oauth/authorize?response_type=code&client_id=${process.env.STRIPE_CONNECT_CLIENT_ID}&scope=read_write&stripe_user[email]=${encodeURIComponent("")}`;
 
   return (
-    <main
-      id="main-content"
-      className="w-app"
-      style={{
-        minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
-      }}
-    >
-      <div style={{ maxWidth: 720, margin: "0 auto" }}>
-        <div
-          style={{
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            marginBottom: 24,
-          }}
-        >
-          <div className="w-type-meta">PROMOTER PAYOUTS</div>
-          <div className="w-type-display-md" style={{ marginTop: 8 }}>
-            Payouts
-          </div>
-          <p
-            className="w-type-body-sm"
-            style={{ color: "var(--w-fg-muted)", marginTop: 8 }}
-          >
-            {account.display_name}
-          </p>
-        </div>
-
+    <main id="main-content" style={{ minHeight: "100vh", background: "var(--bg)" }}>
+      <PageHeader
+        eyebrow="Promoter payouts"
+        title="Payouts"
+        sub={account.display_name}
+      />
+      <div
+        style={{
+          padding: "var(--s-8)",
+          maxWidth: 720,
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-3)",
+        }}
+      >
         {searchParams.connect === "ok" && (
           <div
-            className="w-card"
+            className="card"
             style={{
-              padding: 16,
-              borderColor: "var(--w-ok)",
-              background: "var(--w-surface-2)",
-              marginBottom: 12,
+              padding: "var(--s-4)",
+              borderColor: "var(--ok)",
             }}
           >
             <div
-              className="w-type-meta"
-              style={{ color: "var(--w-ok)", marginBottom: 4 }}
+              className="t-meta"
+              style={{ color: "var(--ok)", marginBottom: "var(--s-1)" }}
             >
-              CONNECTED
+              Connected
             </div>
-            <p style={{ color: "var(--w-fg)", fontSize: 14 }}>
+            <p className="t-body">
               Stripe account linked. Status will update once onboarding
               finishes.
             </p>
@@ -155,163 +119,118 @@ export default async function PayoutsPage({
         )}
         {searchParams.connect_error && (
           <div
-            className="w-card"
+            className="card"
             style={{
-              padding: 16,
-              borderColor: "var(--w-err)",
-              background: "var(--w-surface-2)",
-              marginBottom: 12,
+              padding: "var(--s-4)",
+              borderColor: "var(--err)",
             }}
           >
             <div
-              className="w-type-meta"
-              style={{ color: "var(--w-err)", marginBottom: 4 }}
+              className="t-meta"
+              style={{ color: "var(--err)", marginBottom: "var(--s-1)" }}
             >
-              CONNECT ERROR
+              Connect error
             </div>
-            <p
-              style={{
-                color: "var(--w-fg)",
-                fontSize: 14,
-                wordBreak: "break-word",
-              }}
-            >
+            <p className="t-body" style={{ wordBreak: "break-word" }}>
               {searchParams.connect_error.replace(/_/g, " ")}
             </p>
           </div>
         )}
 
-        <section
-          className="w-card"
-          style={{ padding: 20, marginBottom: 12 }}
-        >
-          <div className="w-type-meta" style={{ marginBottom: 12 }}>
-            STATUS
+        <section className="card" style={{ padding: "var(--s-6)" }}>
+          <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+            Status
           </div>
           {ready ? (
             <>
-              <p
-                style={{
-                  color: "var(--w-fg)",
-                  fontWeight: 600,
-                  marginBottom: 6,
-                }}
-              >
+              <p className="t-h2" style={{ marginBottom: "var(--s-1)" }}>
                 Ready to receive payouts
               </p>
               <p
-                className="w-type-meta"
+                className="t-meta"
                 style={{
-                  color: "var(--w-fg-muted)",
-                  fontFamily: "var(--w-mono)",
-                  marginBottom: 12,
+                  fontFamily: "var(--mono)",
+                  marginBottom: "var(--s-3)",
                 }}
               >
                 {connect?.stripe_account_id} ·{" "}
                 {(connect?.country ?? "").toUpperCase()} ·{" "}
                 {(connect?.default_currency ?? "").toUpperCase()}
               </p>
-              <p
-                style={{
-                  color: "var(--w-fg-muted)",
-                  fontSize: 14,
-                  lineHeight: 1.5,
-                }}
-              >
+              <p className="t-body-2">
                 Promoter payouts will fire weekly based on scanned-in heads ×
                 commission rate.
               </p>
             </>
           ) : inProgress ? (
             <>
-              <p
-                style={{
-                  color: "var(--w-fg)",
-                  fontWeight: 600,
-                  marginBottom: 8,
-                }}
-              >
+              <p className="t-h2" style={{ marginBottom: "var(--s-2)" }}>
                 Onboarding in progress
               </p>
               <ul
+                className="t-meta"
                 style={{
-                  fontSize: 12,
-                  color: "var(--w-fg-muted)",
-                  marginBottom: 12,
+                  marginBottom: "var(--s-3)",
                   display: "flex",
                   flexDirection: "column",
-                  gap: 4,
-                  fontFamily: "var(--w-mono)",
+                  gap: "var(--s-1)",
+                  listStyle: "none",
+                  padding: 0,
                 }}
               >
                 <li>
-                  DETAILS SUBMITTED:{" "}
-                  {connect?.details_submitted ? "YES" : "NO"}
+                  Details submitted:{" "}
+                  {connect?.details_submitted ? "yes" : "no"}
                 </li>
                 <li>
-                  CHARGES ENABLED:{" "}
-                  {connect?.charges_enabled ? "YES" : "NO"}
+                  Charges enabled:{" "}
+                  {connect?.charges_enabled ? "yes" : "no"}
                 </li>
                 <li>
-                  PAYOUTS ENABLED:{" "}
-                  {connect?.payouts_enabled ? "YES" : "NO"}
+                  Payouts enabled:{" "}
+                  {connect?.payouts_enabled ? "yes" : "no"}
                 </li>
               </ul>
               <p
-                style={{
-                  color: "var(--w-fg-muted)",
-                  fontSize: 14,
-                  lineHeight: 1.5,
-                  marginBottom: 16,
-                }}
+                className="t-body-2"
+                style={{ marginBottom: "var(--s-4)" }}
               >
                 Stripe is still verifying your business. We&apos;ll auto-update
                 this card the moment your dashboard flips green.
               </p>
-              <a href={oauthUrl} style={{ textDecoration: "none" }}>
-                <Button variant="ghost">Resume onboarding</Button>
+              <a href={oauthUrl} className="btn btn--ghost">
+                Resume onboarding
               </a>
             </>
           ) : (
             <>
-              <p
-                style={{
-                  color: "var(--w-fg)",
-                  fontWeight: 600,
-                  marginBottom: 6,
-                }}
-              >
+              <p className="t-h2" style={{ marginBottom: "var(--s-1)" }}>
                 Connect onboarding pending
               </p>
               <p
-                style={{
-                  color: "var(--w-fg-muted)",
-                  fontSize: 14,
-                  lineHeight: 1.5,
-                  marginBottom: 16,
-                }}
+                className="t-body-2"
+                style={{ marginBottom: "var(--s-4)" }}
               >
                 Complete Stripe&apos;s Express onboarding to start receiving
                 promoter commissions.
               </p>
-              <a href={oauthUrl} style={{ textDecoration: "none" }}>
-                <Button variant="primary">Connect Stripe account</Button>
+              <a href={oauthUrl} className="btn">
+                Connect Stripe account
               </a>
             </>
           )}
         </section>
 
-        <section className="w-card" style={{ padding: 20 }}>
-          <div className="w-type-meta" style={{ marginBottom: 12 }}>
-            HOW IT WORKS
+        <section className="card" style={{ padding: "var(--s-6)" }}>
+          <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+            How it works
           </div>
           <ul
+            className="t-body-2"
             style={{
-              color: "var(--w-fg-muted)",
-              fontSize: 14,
               lineHeight: 1.7,
               listStyle: "disc",
-              paddingLeft: 18,
+              paddingLeft: "var(--s-5)",
             }}
           >
             <li>Each promoter onboards via Stripe Connect Express</li>

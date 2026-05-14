@@ -2,11 +2,21 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fmtTime } from "@/lib/format";
-import { WFrame } from "@/components/wadl";
 import { Cover, Logo } from "@/components/v5";
 import MyTicketsVerify from "./verify-form";
 
 export const dynamic = "force-dynamic";
+
+const SHELL_STYLE: React.CSSProperties = {
+  marginInline: "auto",
+  width: "100%",
+  maxWidth: 420,
+  minHeight: "100vh",
+  background: "var(--bg)",
+  display: "flex",
+  flexDirection: "column",
+  position: "relative",
+};
 
 interface TicketRow {
   id: string;
@@ -69,7 +79,7 @@ export default async function MyTicketsPage() {
   if (!user?.phone) {
     return (
       <main id="main-content" className="v5">
-        <WFrame style={{ paddingBottom: 48, background: "var(--bg)" }}>
+        <div style={{ ...SHELL_STYLE, paddingBottom: "var(--s-12)" }}>
           <div
             style={{
               padding: "var(--s-5) var(--s-5) 0",
@@ -97,7 +107,7 @@ export default async function MyTicketsPage() {
           <div style={{ padding: "var(--s-6) var(--s-5) 0" }}>
             <MyTicketsVerify />
           </div>
-        </WFrame>
+        </div>
       </main>
     );
   }
@@ -142,7 +152,7 @@ export default async function MyTicketsPage() {
 
   return (
     <main id="main-content" className="v5">
-      <WFrame style={{ paddingBottom: 64, background: "var(--bg)" }}>
+      <div style={{ ...SHELL_STYLE, paddingBottom: "var(--s-16)" }}>
         {/* Header — Wallet + N live · N past */}
         <div
           style={{
@@ -250,7 +260,7 @@ export default async function MyTicketsPage() {
             </button>
           </form>
         </div>
-      </WFrame>
+      </div>
     </main>
   );
 }

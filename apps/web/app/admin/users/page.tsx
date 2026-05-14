@@ -1,8 +1,9 @@
-import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Button } from "@/components/wadl";
+import { PageHeader } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
+
+const COLS = "1.4fr 110px 1.2fr 130px 1.4fr 110px";
 
 interface UserRow {
   id: string;
@@ -14,14 +15,6 @@ interface UserRow {
   created_at: string;
 }
 
-const INPUT_STYLE = {
-  background: "var(--w-surface-1)",
-  border: "1px solid var(--w-line)",
-  color: "var(--w-fg)",
-  padding: "10px 12px",
-  fontFamily: "var(--w-sans)",
-  fontSize: 14,
-} as const;
 
 export default async function AdminUsersPage({
   searchParams,
@@ -48,48 +41,41 @@ export default async function AdminUsersPage({
   const rows = (data ?? []) as unknown as UserRow[];
 
   return (
-    <main id="main-content" style={{ padding: "32px 24px 96px" }}>
-      <div style={{ maxWidth: 1080, margin: "0 auto" }}>
-        <div
-          style={{
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            marginBottom: 24,
-          }}
-        >
-          <div className="w-type-meta">PLATFORM</div>
-          <div className="w-type-display-md" style={{ marginTop: 8 }}>
-            Users
-          </div>
-          <p
-            className="w-type-meta"
-            style={{ marginTop: 8, color: "var(--w-fg-muted)" }}
-          >
-            {rows.length} MOST-RECENT
-          </p>
-        </div>
-
+    <main id="main-content">
+      <PageHeader
+        eyebrow="Platform"
+        title="Users"
+        sub={`${rows.length} most-recent`}
+      />
+      <div
+        style={{
+          padding: "var(--s-4) var(--s-8)",
+          borderBottom: "1px solid var(--line)",
+        }}
+      >
         <form
           action="/admin/users"
           method="get"
           style={{
             display: "flex",
-            gap: 8,
-            marginBottom: 16,
+            gap: "var(--s-2)",
             flexWrap: "wrap",
+            alignItems: "center",
           }}
         >
           <input
+            className="input"
             type="text"
             name="q"
             defaultValue={q}
             placeholder="Search name / phone / email…"
-            style={{ ...INPUT_STYLE, width: "100%", maxWidth: 380 }}
+            style={{ maxWidth: 380 }}
           />
           <select
+            className="input"
             name="role"
             defaultValue={role}
-            style={{ ...INPUT_STYLE, maxWidth: 180 }}
+            style={{ maxWidth: 180 }}
           >
             <option value="">All roles</option>
             <option value="owner">Owner</option>
@@ -100,107 +86,57 @@ export default async function AdminUsersPage({
             <option value="photographer">Photographer</option>
             <option value="guest">Guest</option>
           </select>
-          <Button variant="ghost" type="submit" style={{ padding: "0 18px" }}>
+          <button className="btn btn--ghost" type="submit">
             Search
-          </Button>
+          </button>
         </form>
+      </div>
 
-        <section
-          className="w-card"
-          style={{ padding: 20, overflowX: "auto" }}
-        >
-          <table
+      <div style={{ padding: "var(--s-8)" }}>
+        <div className="card" style={{ overflowX: "auto" }}>
+          <div
+            className="row"
             style={{
-              width: "100%",
-              fontSize: 14,
-              borderCollapse: "collapse",
+              gridTemplateColumns: COLS,
+              padding: "var(--s-3) var(--s-5)",
+              background: "var(--bg)",
             }}
           >
-            <thead>
-              <tr>
-                {[
-                  "NAME",
-                  "ROLE",
-                  "ACCOUNT",
-                  "PHONE",
-                  "EMAIL",
-                  "JOINED",
-                ].map((h) => (
-                  <th
-                    key={h}
-                    className="w-type-meta"
-                    style={{ textAlign: "left", paddingBottom: 8 }}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((u) => (
-                <tr
-                  key={u.id}
-                  style={{ borderTop: "1px solid var(--w-line)" }}
-                >
-                  <td style={{ padding: "10px 0", color: "var(--w-fg)" }}>
-                    {u.full_name ?? (
-                      <span style={{ color: "var(--w-fg-muted)" }}>—</span>
-                    )}
-                  </td>
-                  <td
-                    className="w-type-meta"
-                    style={{ padding: "10px 0" }}
-                  >
-                    {u.role.toUpperCase()}
-                  </td>
-                  <td
-                    style={{
-                      padding: "10px 0",
-                      color: "var(--w-fg-muted)",
-                    }}
-                  >
-                    {u.account?.display_name ?? "—"}
-                  </td>
-                  <td
-                    style={{
-                      padding: "10px 0",
-                      fontFamily: "var(--w-mono)",
-                      fontSize: 12,
-                    }}
-                  >
-                    {u.phone ?? "—"}
-                  </td>
-                  <td
-                    style={{
-                      padding: "10px 0",
-                      color: "var(--w-fg-muted)",
-                      fontSize: 12,
-                    }}
-                  >
-                    {u.email ?? "—"}
-                  </td>
-                  <td
-                    className="w-type-meta"
-                    style={{ padding: "10px 0" }}
-                  >
-                    {new Date(u.created_at)
-                      .toLocaleDateString()
-                      .toUpperCase()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
-
-        <p className="w-type-meta" style={{ marginTop: 24 }}>
-          <Link
-            href="/admin"
-            style={{ color: "var(--w-acc)", textDecoration: "none" }}
-          >
-            ← STATS
-          </Link>
-        </p>
+            {["Name", "Role", "Account", "Phone", "Email", "Joined"].map(
+              (h) => (
+                <span key={h} className="t-meta">
+                  {h}
+                </span>
+              ),
+            )}
+          </div>
+          {rows.map((u) => (
+            <div
+              key={u.id}
+              className="row"
+              style={{
+                gridTemplateColumns: COLS,
+                padding: "var(--s-4) var(--s-5)",
+              }}
+            >
+              <span className="t-body" style={{ color: "var(--fg)" }}>
+                {u.full_name ?? "—"}
+              </span>
+              <span className="chip">{u.role}</span>
+              <span className="t-body-2">{u.account?.display_name ?? "—"}</span>
+              <span
+                className="t-body-2"
+                style={{ fontFamily: "var(--mono)", fontSize: "var(--ts-sm)" }}
+              >
+                {u.phone ?? "—"}
+              </span>
+              <span className="t-body-2 truncate">{u.email ?? "—"}</span>
+              <span className="t-meta">
+                {new Date(u.created_at).toLocaleDateString()}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     </main>
   );

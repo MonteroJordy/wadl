@@ -1,8 +1,7 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOwnerContext } from "@/lib/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Avatar, Chip } from "@/components/wadl";
+import { Breadcrumb, PageHeader, EventSubNav } from "@/components/v5";
 import CoOwnerInviteForm from "./invite-form";
 
 export const dynamic = "force-dynamic";
@@ -21,18 +20,30 @@ interface InviteRow {
   created_at: string;
 }
 
-function permissionTone(p: string): "ok" | "warn" | "acc" | "ghost" {
+function permissionTone(p: string): "ok" | "warn" | "info" | "ghost" {
   if (p === "admin") return "warn";
-  if (p === "edit") return "acc";
+  if (p === "edit") return "info";
   if (p === "read_only") return "ok";
   return "ghost";
 }
 
 function permissionLabel(p: string) {
-  if (p === "admin") return "ADMIN";
-  if (p === "edit") return "EDIT";
-  if (p === "read_only") return "VIEW-ONLY";
-  return p.toUpperCase();
+  if (p === "admin") return "Admin";
+  if (p === "edit") return "Edit";
+  if (p === "read_only") return "View-only";
+  return p;
+}
+
+function initials(name: string) {
+  return (
+    name
+      .trim()
+      .split(/\s+/)
+      .map((x) => x[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "?"
+  );
 }
 
 export default async function CoOwnersPage({
@@ -74,184 +85,119 @@ export default async function CoOwnersPage({
   return (
     <main
       id="main-content"
-      className="w-app"
-      style={{
-        minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
-      }}
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
     >
-      <div style={{ maxWidth: 800, margin: "0 auto" }}>
-        <Link
-          href={`/owner/events/${event.id}`}
-          className="w-type-meta"
-          style={{ textDecoration: "none" }}
-        >
-          ← {event.name.toUpperCase()}
-        </Link>
+      <Breadcrumb
+        items={[
+          ["Events", "/owner"],
+          [event.name, `/owner/events/${event.id}`],
+          "Co-owners",
+        ]}
+      />
+      <PageHeader
+        eyebrow="Co-owners · brand × venue"
+        title="Share the keys"
+        sub={`${coOwners.length} on · ${invites.length} pending`}
+      />
+      <EventSubNav active="settings" eventId={event.id} />
 
-        <div
-          style={{
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            marginTop: 16,
-          }}
-        >
-          <div className="w-type-meta">CO-OWNERS · BRAND × VENUE</div>
-          <div className="w-type-display-md" style={{ marginTop: 8 }}>
-            Share the keys
-          </div>
-          <p
-            className="w-type-body-sm"
-            style={{
-              color: "var(--w-fg-muted)",
-              marginTop: 8,
-            }}
-          >
-            {coOwners.length} on · {invites.length} pending
-          </p>
-        </div>
-
-        <div style={{ marginTop: 24 }}>
+      <div style={{ padding: "var(--s-8)" }}>
+        <div style={{ maxWidth: 720 }}>
           <CoOwnerInviteForm eventId={event.id} />
         </div>
 
-        <section style={{ marginTop: 32 }}>
-          <div className="w-type-meta" style={{ marginBottom: 12 }}>
-            ACTIVE CO-OWNERS · {coOwners.length}
+        <section style={{ marginTop: "var(--s-10)" }}>
+          <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+            Active co-owners · {coOwners.length}
           </div>
           {coOwners.length === 0 ? (
             <div
-              className="w-card"
-              style={{
-                padding: "48px 32px",
-                textAlign: "center",
-              }}
+              className="card"
+              style={{ padding: "var(--s-12) var(--s-8)", textAlign: "center" }}
             >
-              <div className="w-type-h2">None yet</div>
-              <p
-                className="w-type-body-sm"
+              <div className="t-h1">None yet</div>
+              <div
+                className="t-body-2"
                 style={{
-                  color: "var(--w-fg-muted)",
-                  marginTop: 12,
+                  marginTop: "var(--s-3)",
                   maxWidth: 420,
                   marginInline: "auto",
                 }}
               >
                 Invite another account above. They&apos;ll see this event in
                 their dashboard once they accept.
-              </p>
+              </div>
             </div>
           ) : (
-            <ul
-              style={{
-                listStyle: "none",
-                padding: 0,
-                margin: 0,
-                display: "flex",
-                flexDirection: "column",
-                gap: 6,
-              }}
-            >
+            <div className="card">
               {coOwners.map((c) => (
-                <li key={c.account_id}>
+                <div
+                  key={c.account_id}
+                  className="row"
+                  style={{ gridTemplateColumns: "36px 1fr 120px 120px" }}
+                >
                   <div
-                    className="w-card"
                     style={{
-                      padding: 14,
+                      width: 28,
+                      height: 28,
+                      borderRadius: "var(--r-pill)",
+                      background: "var(--bg-3)",
                       display: "flex",
                       alignItems: "center",
-                      gap: 12,
+                      justifyContent: "center",
+                      fontSize: 11,
+                      fontWeight: 500,
                     }}
                   >
-                    <Avatar name={c.account.display_name} size={36} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div
-                        style={{
-                          fontWeight: 600,
-                          fontSize: 14,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {c.account.display_name}
-                      </div>
-                      <div className="w-type-meta" style={{ marginTop: 2 }}>
-                        {c.account.account_type.toUpperCase()}
-                      </div>
-                    </div>
-                    <Chip tone={permissionTone(c.permission)}>
-                      {permissionLabel(c.permission)}
-                    </Chip>
+                    {initials(c.account.display_name)}
                   </div>
-                </li>
+                  <span className="t-h1 truncate">
+                    {c.account.display_name}
+                  </span>
+                  <span className="t-meta">{c.account.account_type}</span>
+                  <span className={`chip chip--${permissionTone(c.permission)}`}>
+                    {permissionLabel(c.permission)}
+                  </span>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
         </section>
 
         {invites.length > 0 && (
-          <section style={{ marginTop: 32 }}>
-            <div className="w-type-meta" style={{ marginBottom: 12 }}>
-              PENDING INVITES · {invites.length}
+          <section style={{ marginTop: "var(--s-10)" }}>
+            <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+              Pending invites · {invites.length}
             </div>
-            <ul
-              style={{
-                listStyle: "none",
-                padding: 0,
-                margin: 0,
-                display: "flex",
-                flexDirection: "column",
-                gap: 6,
-              }}
-            >
+            <div className="card">
               {invites.map((i) => (
-                <li key={i.id}>
-                  <div
-                    className="w-card"
-                    style={{
-                      padding: 14,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                      borderColor: "var(--w-warn)",
-                      background: "oklch(0.86 0.16 85 / 0.06)",
-                    }}
+                <div
+                  key={i.id}
+                  className="row"
+                  style={{ gridTemplateColumns: "100px 1fr 200px 120px" }}
+                >
+                  <span className="chip chip--warn">Pending</span>
+                  <span
+                    className="t-body truncate"
+                    style={{ fontFamily: "var(--mono)" }}
                   >
-                    <Chip tone="warn">PENDING</Chip>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div
-                        style={{
-                          fontFamily: "var(--w-mono)",
-                          fontSize: 14,
-                          fontWeight: 500,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {i.invitee_phone || i.invitee_email}
-                      </div>
-                      <div className="w-type-meta" style={{ marginTop: 2 }}>
-                        SENT{" "}
-                        {new Date(i.created_at)
-                          .toLocaleString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            hour: "numeric",
-                            minute: "2-digit",
-                          })
-                          .toUpperCase()}
-                      </div>
-                    </div>
-                    <Chip tone={permissionTone(i.permission)}>
-                      {permissionLabel(i.permission)}
-                    </Chip>
-                  </div>
-                </li>
+                    {i.invitee_phone || i.invitee_email}
+                  </span>
+                  <span className="t-meta">
+                    Sent{" "}
+                    {new Date(i.created_at).toLocaleString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                  <span className={`chip chip--${permissionTone(i.permission)}`}>
+                    {permissionLabel(i.permission)}
+                  </span>
+                </div>
               ))}
-            </ul>
+            </div>
           </section>
         )}
       </div>

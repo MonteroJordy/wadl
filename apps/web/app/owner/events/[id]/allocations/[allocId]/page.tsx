@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { requireOwnerContext } from "@/lib/owner";
 import { fmtDate } from "@/lib/format";
 import { getAppUrl } from "@/lib/app-url";
-import { Chip } from "@/components/wadl";
+import { Breadcrumb, PageHeader, EventSubNav } from "@/components/v5";
 import AllocationControls from "./controls";
 
 export const dynamic = "force-dynamic";
@@ -82,53 +82,24 @@ export default async function AllocationDetailPage({
   return (
     <main
       id="main-content"
-      className="w-app"
-      style={{
-        minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
-      }}
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
     >
-      <div style={{ maxWidth: 720, margin: "0 auto" }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 16,
-          }}
-        >
-          <Link
-            href={`/owner/events/${event.id}/allocations`}
-            className="w-type-meta"
-            style={{ color: "var(--w-fg-muted)", textDecoration: "none" }}
-          >
-            ← BACK
-          </Link>
-          <div className="w-type-meta">ALLOCATION</div>
-        </div>
+      <Breadcrumb
+        items={[
+          ["Events", "/owner"],
+          [event.name, `/owner/events/${event.id}`],
+          ["Allocations", `/owner/events/${event.id}/allocations`],
+          alloc.holder_name,
+        ]}
+      />
+      <PageHeader
+        eyebrow={`${event.name} · ${fmtDate(night.night_date)}`}
+        title={alloc.holder_name}
+        sub={`${used} / ${alloc.cap} used`}
+      />
+      <EventSubNav active="guests" eventId={event.id} />
 
-        <div
-          style={{
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            marginBottom: 24,
-          }}
-        >
-          <div className="w-type-display-md">{alloc.holder_name}</div>
-          <p
-            className="w-type-meta"
-            style={{ marginTop: 8, color: "var(--w-fg-muted)" }}
-          >
-            {event.name.toUpperCase()} ·{" "}
-            {fmtDate(night.night_date).toUpperCase()}
-          </p>
-          <p className="w-type-meta" style={{ marginTop: 6 }}>
-            <span style={{ color: "var(--w-fg)" }}>{used}</span>/{alloc.cap}{" "}
-            USED
-          </p>
-        </div>
-
+      <div style={{ padding: "var(--s-8)", maxWidth: 720 }}>
         <AllocationControls
           eventId={event.id}
           allocId={alloc.id}
@@ -141,55 +112,39 @@ export default async function AllocationDetailPage({
           holderUrl={holderUrl}
         />
 
-        <div style={{ marginTop: 32 }}>
-          <div className="w-type-meta" style={{ marginBottom: 12 }}>
-            GUESTS ON THIS LIST
+        <div style={{ marginTop: "var(--s-10)" }}>
+          <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+            Guests on this list
           </div>
           {guestsList.length === 0 ? (
-            <p
-              className="w-type-meta"
-              style={{ textAlign: "center", color: "var(--w-ok)" }}
-            >
-              NONE YET — SHARE THE MAGIC LINK AND NAMES WILL LAND HERE.
-            </p>
-          ) : (
             <div
-              style={{ display: "flex", flexDirection: "column", gap: 8 }}
+              className="card"
+              style={{ padding: "var(--s-10)", textAlign: "center" }}
             >
+              <div className="t-body-2">
+                None yet — share the magic link and names will land here.
+              </div>
+            </div>
+          ) : (
+            <div className="card">
               {guestsList.map((g) => (
                 <Link
                   key={g.id}
                   href={`/owner/events/${event.id}/guests/${g.id}`}
-                  className="w-card"
+                  className="row"
                   style={{
-                    padding: 14,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
+                    gridTemplateColumns: "1fr 80px 120px",
                     textDecoration: "none",
                     color: "inherit",
                   }}
                 >
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <p
-                      style={{
-                        color: "var(--w-fg)",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      {g.full_name}
-                    </p>
-                    {g.plus_ones > 0 && (
-                      <div className="w-type-meta" style={{ marginTop: 2 }}>
-                        +{g.plus_ones}
-                      </div>
-                    )}
-                  </div>
-                  <Chip tone={STATUS_TONE[g.status] ?? "ghost"}>
-                    {g.status.toUpperCase()}
-                  </Chip>
+                  <span className="t-h1 truncate">{g.full_name}</span>
+                  <span className="t-meta">
+                    {g.plus_ones > 0 ? `+${g.plus_ones}` : ""}
+                  </span>
+                  <span className={`chip chip--${STATUS_TONE[g.status] ?? "ghost"}`}>
+                    {g.status}
+                  </span>
                 </Link>
               ))}
             </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Button, Chip } from "@/components/wadl";
 import { addHolderGuestAction } from "./actions";
 
 export default function HolderAddForm({
@@ -43,17 +42,11 @@ export default function HolderAddForm({
   if (!listOpen) {
     return (
       <div
-        className="w-card"
-        style={{ padding: 18, textAlign: "center" }}
+        className="card"
+        style={{ padding: "var(--s-5)", textAlign: "center" }}
       >
-        <Chip tone="ghost">LIST CLOSED</Chip>
-        <p
-          className="w-type-body-sm"
-          style={{
-            color: "var(--w-fg-muted)",
-            marginTop: 10,
-          }}
-        >
+        <span className="chip chip--ghost">List closed</span>
+        <p className="t-body-2" style={{ marginTop: "var(--s-3)" }}>
           The host has closed this list for now.
         </p>
       </div>
@@ -61,27 +54,31 @@ export default function HolderAddForm({
   }
 
   return (
-    <div className="w-card" style={{ padding: 18 }}>
-      <div className="w-type-meta">ADD A NAME</div>
+    <div className="card" style={{ padding: "var(--s-5)" }}>
+      <div className="t-meta">Add a name</div>
       <form
         onSubmit={onSubmit}
         style={{
           display: "flex",
           flexDirection: "column",
-          gap: 10,
-          marginTop: 12,
+          gap: "var(--s-3)",
+          marginTop: "var(--s-3)",
         }}
       >
         <div>
-          <label htmlFor="fullName" className="w-label">
-            FULL NAME
+          <label
+            htmlFor="fullName"
+            className="t-meta"
+            style={{ display: "block", marginBottom: "var(--s-2)" }}
+          >
+            Full name
           </label>
           <input
             id="fullName"
             type="text"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            className="w-input"
+            className="input"
             placeholder="Guest full name"
             required
           />
@@ -89,8 +86,12 @@ export default function HolderAddForm({
 
         {plusOnesAllowed && (
           <div>
-            <label htmlFor="plusOnes" className="w-label">
-              +1S
+            <label
+              htmlFor="plusOnes"
+              className="t-meta"
+              style={{ display: "block", marginBottom: "var(--s-2)" }}
+            >
+              +1s
             </label>
             <input
               id="plusOnes"
@@ -99,15 +100,15 @@ export default function HolderAddForm({
               max={10}
               value={plusOnes}
               onChange={(e) => setPlusOnes(e.target.value)}
-              className="w-input"
+              className="input"
             />
           </div>
         )}
 
         {error ? (
           <p
-            className="w-type-body-sm"
-            style={{ color: "var(--w-err)" }}
+            className="t-body-2"
+            style={{ color: "var(--err)" }}
             role="alert"
           >
             {error}
@@ -115,24 +116,22 @@ export default function HolderAddForm({
         ) : null}
         {added ? (
           <p
-            className="w-type-body-sm"
-            style={{ color: "var(--w-ok)" }}
+            className="t-body-2"
+            style={{ color: "var(--ok)" }}
             role="status"
           >
             Added{" "}
-            <strong style={{ color: "var(--w-fg)" }}>{added}</strong>.
+            <strong style={{ color: "var(--fg)" }}>{added}</strong>.
           </p>
         ) : null}
 
-        <Button
+        <button
           type="submit"
-          variant="primary"
-          size="lg"
-          block
+          className="btn btn--lg btn--block"
           disabled={pending}
         >
           {pending ? "Adding…" : "Add to list"}
-        </Button>
+        </button>
       </form>
     </div>
   );

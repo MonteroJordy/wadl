@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import AdminTabs from "@/components/admin-tabs";
+import { Logo } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 
@@ -29,14 +30,11 @@ export default async function AdminLayout({
   }
 
   return (
-    <div
-      className="w-app"
-      style={{ minHeight: "100vh", background: "var(--w-bg)" }}
-    >
+    <div className="v5" style={{ minHeight: "100vh", background: "var(--bg)" }}>
       <header
         style={{
-          borderBottom: "1px solid var(--w-line)",
-          background: "var(--w-surface-1)",
+          borderBottom: "1px solid var(--line)",
+          background: "var(--bg)",
           position: "sticky",
           top: 0,
           zIndex: 30,
@@ -44,34 +42,41 @@ export default async function AdminLayout({
       >
         <div
           style={{
-            padding: "12px 24px",
+            padding: "var(--s-3) var(--s-6)",
             display: "flex",
             alignItems: "center",
-            gap: 16,
+            gap: "var(--s-4)",
           }}
         >
-          <p
+          <div
             style={{
-              fontFamily: "var(--w-display)",
-              fontSize: 18,
-              fontWeight: 700,
-              letterSpacing: "0.02em",
-              color: "var(--w-acc)",
-              margin: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: "var(--s-3)",
             }}
           >
-            WADL · ADMIN
-          </p>
+            <Logo size={18} />
+            <span
+              className="t-meta"
+              style={{
+                paddingLeft: "var(--s-2)",
+                marginLeft: "var(--s-2)",
+                borderLeft: "1px solid var(--line)",
+              }}
+            >
+              Admin
+            </span>
+          </div>
           <Link
             href="/owner"
-            className="w-type-meta"
+            className="t-meta"
             style={{
               marginLeft: "auto",
-              color: "var(--w-fg-muted)",
+              color: "var(--fg-3)",
               textDecoration: "none",
             }}
           >
-            ← MY OWNER VIEW
+            ← My owner view
           </Link>
         </div>
         <AdminTabs />

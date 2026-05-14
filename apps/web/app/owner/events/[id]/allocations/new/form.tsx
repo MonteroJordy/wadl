@@ -1,16 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useTransition } from "react";
 import { createAllocationAction } from "./actions";
 import { fmtDate } from "@/lib/format";
-import {
-  Button,
-  Chip,
-  CredPill,
-  WFrame,
-  Wordmark,
-} from "@/components/wadl";
+import { Breadcrumb, PageHeader, EventSubNav } from "@/components/v5";
 import { useFormSaveShortcut } from "@/components/use-form-save-shortcut";
 
 interface NightOption {
@@ -73,197 +66,171 @@ export default function NewAllocationForm({
   }
 
   return (
-    <main id="main-content">
-      <WFrame wide maxWidth={760} style={{ paddingBottom: 48 }}>
+    <main
+      id="main-content"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
+    >
+      <Breadcrumb
+        items={[
+          ["Events", "/owner"],
+          [eventName, `/owner/events/${eventId}`],
+          ["Allocations", `/owner/events/${eventId}/allocations`],
+          "New",
+        ]}
+      />
+      <PageHeader
+        eyebrow="New allocation"
+        title="Hand a holder the keys"
+        sub="They add names up to their cap — every name gets attributed back."
+      />
+      <EventSubNav active="guests" eventId={eventId} />
+
+      <form
+        ref={formRef}
+        onSubmit={onSubmit}
+        style={{
+          padding: "var(--s-8)",
+          maxWidth: 720,
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-5)",
+        }}
+      >
+        {nights.length > 1 && (
+          <div>
+            <label htmlFor="night" className="t-meta">
+              Night
+            </label>
+            <select
+              id="night"
+              value={nightId}
+              onChange={(e) => setNightId(e.target.value)}
+              className="input"
+              style={{ marginTop: "var(--s-2)" }}
+            >
+              {nights.map((n) => (
+                <option key={n.id} value={n.id}>
+                  {fmtDate(n.night_date)}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <div>
+          <label htmlFor="holderName" className="t-meta">
+            Holder name
+          </label>
+          <input
+            id="holderName"
+            type="text"
+            value={holderName}
+            onChange={(e) => setHolderName(e.target.value)}
+            className="input"
+            style={{ marginTop: "var(--s-2)" }}
+            placeholder="Diplo / Kiko / Mainframe Promo"
+            required
+            autoFocus
+          />
+        </div>
+
         <div
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "20px 24px 0",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "var(--s-3)",
           }}
         >
-          <Link
-            href={`/owner/events/${eventId}/allocations`}
-            className="w-type-meta"
-            style={{ textDecoration: "none" }}
-          >
-            ← BACK
-          </Link>
-          <Wordmark variant="monogrid" size={16} />
-          <span className="w-type-meta">NEW ALLOCATION</span>
-        </div>
-
-        <div style={{ padding: "32px 24px 0" }}>
-          <div className="w-type-meta">{eventName.toUpperCase()}</div>
-          <div
-            className="w-type-display-md"
-            style={{ marginTop: 6, lineHeight: 1.0 }}
-          >
-            Hand a holder
-            <br />
-            the keys.
-          </div>
-        </div>
-
-        <form
-          ref={formRef}
-          onSubmit={onSubmit}
-          style={{
-            padding: "32px 24px 0",
-            display: "flex",
-            flexDirection: "column",
-            gap: 16,
-          }}
-        >
-          {nights.length > 1 && (
-            <div>
-              <label htmlFor="night" className="w-label">
-                NIGHT
-              </label>
-              <select
-                id="night"
-                value={nightId}
-                onChange={(e) => setNightId(e.target.value)}
-                className="w-input"
-              >
-                {nights.map((n) => (
-                  <option key={n.id} value={n.id}>
-                    {fmtDate(n.night_date)}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
           <div>
-            <label htmlFor="holderName" className="w-label">
-              HOLDER NAME
+            <label htmlFor="holderPhone" className="t-meta">
+              Phone (for magic-link SMS)
             </label>
             <input
-              id="holderName"
-              type="text"
-              value={holderName}
-              onChange={(e) => setHolderName(e.target.value)}
-              className="w-input"
-              placeholder="Diplo / Kiko / Mainframe Promo"
-              required
-              autoFocus
+              id="holderPhone"
+              type="tel"
+              value={holderPhone}
+              onChange={(e) => setHolderPhone(e.target.value)}
+              className="input"
+              style={{ marginTop: "var(--s-2)" }}
+              placeholder="+1 ···"
             />
           </div>
+          <div>
+            <label htmlFor="holderEmail" className="t-meta">
+              Email (optional)
+            </label>
+            <input
+              id="holderEmail"
+              type="email"
+              value={holderEmail}
+              onChange={(e) => setHolderEmail(e.target.value)}
+              className="input"
+              style={{ marginTop: "var(--s-2)" }}
+              placeholder="holder@label.com"
+            />
+          </div>
+        </div>
 
+        {/* Per-tier caps — Day 50 wedge feature */}
+        <div>
+          <div className="t-meta">Caps per tier · total {total}</div>
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 10,
+              gridTemplateColumns: "1fr 1fr 1fr",
+              gap: "var(--s-2)",
+              marginTop: "var(--s-2)",
             }}
           >
-            <div>
-              <label htmlFor="holderPhone" className="w-label">
-                PHONE (FOR MAGIC-LINK SMS)
-              </label>
-              <input
-                id="holderPhone"
-                type="tel"
-                value={holderPhone}
-                onChange={(e) => setHolderPhone(e.target.value)}
-                className="w-input"
-                placeholder="+1 ···"
-              />
-            </div>
-            <div>
-              <label htmlFor="holderEmail" className="w-label">
-                EMAIL (OPTIONAL)
-              </label>
-              <input
-                id="holderEmail"
-                type="email"
-                value={holderEmail}
-                onChange={(e) => setHolderEmail(e.target.value)}
-                className="w-input"
-                placeholder="holder@label.com"
-              />
-            </div>
+            <TierCapInput tier="GA" value={gaCap} onChange={setGaCap} />
+            <TierCapInput tier="VIP" value={vipCap} onChange={setVipCap} />
+            <TierCapInput tier="AAA" value={aaaCap} onChange={setAaaCap} />
           </div>
-
-          {/* Per-tier caps — Day 50 wedge feature */}
-          <div>
-            <label className="w-label">
-              CAPS PER TIER · TOTAL {total}
-            </label>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr 1fr",
-                gap: 8,
-              }}
-            >
-              <TierCapInput
-                tier="GA"
-                value={gaCap}
-                onChange={setGaCap}
-              />
-              <TierCapInput
-                tier="VIP"
-                value={vipCap}
-                onChange={setVipCap}
-              />
-              <TierCapInput
-                tier="AAA"
-                value={aaaCap}
-                onChange={setAaaCap}
-              />
-            </div>
-            <p className="w-type-meta" style={{ marginTop: 8 }}>
-              EACH TIER GETS ITS OWN SHARE LINK · HOLDER COPIES 3 URLS
-            </p>
+          <div className="t-meta" style={{ marginTop: "var(--s-2)" }}>
+            Each tier gets its own share link · holder copies 3 URLs
           </div>
+        </div>
 
-          {/* Toggles */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 10,
-              marginTop: 4,
-            }}
+        {/* Toggles */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "var(--s-2)",
+          }}
+        >
+          <ToggleRow
+            label="Auto-approve"
+            hint="Skip the queue for this holder."
+            checked={autoApprove}
+            onChange={setAutoApprove}
+          />
+          <ToggleRow
+            label="Allow +1s"
+            hint="Holder can add a +1 count per name."
+            checked={plusOnes}
+            onChange={setPlusOnes}
+          />
+        </div>
+
+        {error ? (
+          <p
+            className="t-body-2"
+            style={{ color: "var(--err)" }}
+            role="alert"
           >
-            <ToggleRow
-              label="Auto-approve"
-              hint="Skip the queue for this holder."
-              checked={autoApprove}
-              onChange={setAutoApprove}
-            />
-            <ToggleRow
-              label="Allow +1s"
-              hint="Holder can add a +1 count per name."
-              checked={plusOnes}
-              onChange={setPlusOnes}
-            />
-          </div>
+            {error}
+          </p>
+        ) : null}
 
-          {error ? (
-            <p
-              className="w-type-body-sm"
-              style={{ color: "var(--w-err)" }}
-              role="alert"
-            >
-              {error}
-            </p>
-          ) : null}
-
-          <Button
-            type="submit"
-            variant="primary"
-            size="lg"
-            block
-            disabled={pending || total < 1}
-          >
-            {pending ? "Creating…" : `Create allocation · ${total} total`}
-          </Button>
-        </form>
-      </WFrame>
+        <button
+          type="submit"
+          className="btn btn--lg btn--block"
+          disabled={pending || total < 1}
+        >
+          {pending ? "Creating…" : `Create allocation · ${total} total`}
+        </button>
+      </form>
     </main>
   );
 }
@@ -279,15 +246,8 @@ function TierCapInput({
 }) {
   return (
     <div>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          marginBottom: 6,
-        }}
-      >
-        <CredPill tier={tier} />
+      <div style={{ marginBottom: "var(--s-2)" }}>
+        <span className="chip">{tier}</span>
       </div>
       <input
         type="number"
@@ -295,8 +255,7 @@ function TierCapInput({
         min={0}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-input"
-        style={{ height: 48 }}
+        className="input"
         aria-label={`${tier} cap`}
       />
     </div>
@@ -319,11 +278,12 @@ function ToggleRow({
       style={{
         display: "flex",
         alignItems: "flex-start",
-        gap: 12,
-        padding: 14,
+        gap: "var(--s-3)",
+        padding: "var(--s-4)",
         border: "1px solid",
-        borderColor: checked ? "var(--w-acc)" : "var(--w-line)",
-        background: checked ? "var(--w-acc-soft)" : "transparent",
+        borderColor: checked ? "var(--fg)" : "var(--line-2)",
+        borderRadius: "var(--r-md)",
+        background: checked ? "var(--bg-3)" : "transparent",
         cursor: "pointer",
         transition: "border-color 0.12s, background 0.12s",
       }}
@@ -336,27 +296,28 @@ function ToggleRow({
           marginTop: 3,
           width: 16,
           height: 16,
-          accentColor: "var(--w-acc)",
+          accentColor: "var(--fg)",
         }}
       />
       <span style={{ flex: 1 }}>
         <span
+          className="t-body"
           style={{
             display: "block",
-            fontWeight: 600,
-            fontSize: 14,
+            fontWeight: 500,
+            color: checked ? "var(--fg)" : "var(--fg-3)",
           }}
         >
           {label}
         </span>
         <span
-          className="w-type-meta"
-          style={{ marginTop: 4, display: "block" }}
+          className="t-meta"
+          style={{ marginTop: "var(--s-1)", display: "block" }}
         >
-          {hint.toUpperCase()}
+          {hint}
         </span>
       </span>
-      {checked ? <Chip tone="acc">ON</Chip> : null}
+      {checked ? <span className="chip chip--solid">On</span> : null}
     </label>
   );
 }

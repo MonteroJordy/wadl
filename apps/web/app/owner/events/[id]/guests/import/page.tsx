@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOwnerContext } from "@/lib/owner";
 import { fmtDate } from "@/lib/format";
+import { Breadcrumb, PageHeader, EventSubNav } from "@/components/v5";
 import CsvImportForm from "./import-form";
 
 export const dynamic = "force-dynamic";
@@ -50,46 +50,23 @@ export default async function ImportCsvPage({
   return (
     <main
       id="main-content"
-      className="w-app"
-      style={{
-        minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
-      }}
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
     >
-      <div style={{ maxWidth: 720, margin: "0 auto" }}>
-        <Link
-          href={`/owner/events/${event.id}`}
-          className="w-type-meta"
-          style={{
-            color: "var(--w-fg-muted)",
-            textDecoration: "none",
-            display: "inline-block",
-            marginBottom: 12,
-          }}
-        >
-          ← BACK
-        </Link>
-        <div
-          style={{
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            marginBottom: 24,
-          }}
-        >
-          <div className="w-type-meta">IMPORT</div>
-          <div className="w-type-display-md" style={{ marginTop: 8 }}>
-            Import CSV
-          </div>
-          <p
-            className="w-type-body-sm"
-            style={{ color: "var(--w-fg-muted)", marginTop: 8 }}
-          >
-            Bulk-add guests to {event.name}. Phones validated to E.164.
-            Duplicates by phone skipped.
-          </p>
-        </div>
+      <Breadcrumb
+        items={[
+          ["Events", "/owner"],
+          [event.name, `/owner/events/${event.id}`],
+          "Import CSV",
+        ]}
+      />
+      <PageHeader
+        eyebrow="Import"
+        title="Import CSV"
+        sub={`Bulk-add guests to ${event.name}. Phones validated to E.164. Duplicates by phone skipped.`}
+      />
+      <EventSubNav active="guests" eventId={event.id} />
 
+      <div style={{ padding: "var(--s-8)", maxWidth: 720 }}>
         <CsvImportForm
           eventId={event.id}
           nights={nights}

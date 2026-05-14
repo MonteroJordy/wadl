@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Button, Chip, WFrame, Wordmark } from "@/components/wadl";
+import { Logo } from "@/components/v5";
 import FeedbackForm from "./form";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +13,18 @@ interface EventRow {
   flyer_url: string | null;
   event_nights: Array<{ doors_at: string }>;
 }
+
+const SHELL_STYLE: React.CSSProperties = {
+  marginInline: "auto",
+  width: "100%",
+  maxWidth: 420,
+  minHeight: "100vh",
+  background: "var(--bg)",
+  display: "flex",
+  flexDirection: "column",
+  position: "relative",
+  paddingBottom: "var(--s-12)",
+};
 
 export default async function FeedbackPage({
   params,
@@ -36,35 +48,32 @@ export default async function FeedbackPage({
 
   if (!isPast) {
     return (
-      <main id="main-content">
-        <WFrame style={{ paddingBottom: 48 }}>
-          <div style={{ padding: "20px 24px 0" }}>
-            <Wordmark variant="monogrid" size={18} />
+      <main id="main-content" className="v5">
+        <div style={SHELL_STYLE}>
+          <div style={{ padding: "var(--s-5) var(--s-6) 0" }}>
+            <Logo size={18} />
           </div>
-          <div style={{ padding: "32px 24px 0" }}>
-            <div className="w-type-meta">FEEDBACK</div>
+          <div style={{ padding: "var(--s-8) var(--s-6) 0" }}>
+            <div className="t-meta">Feedback</div>
             <div
-              className="w-type-display-md"
-              style={{ marginTop: 6, lineHeight: 1.0 }}
+              className="t-display-md"
+              style={{ marginTop: "var(--s-2)", lineHeight: 1.0 }}
             >
               {ev.name}
             </div>
           </div>
-          <div style={{ padding: "24px 24px 0" }}>
-            <div className="w-card" style={{ padding: 18 }}>
-              <Chip tone="ghost">EVENT NOT YET</Chip>
+          <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
+            <div className="card" style={{ padding: "var(--s-5)" }}>
+              <span className="chip">Event not yet</span>
               <p
-                className="w-type-body-sm"
-                style={{
-                  color: "var(--w-fg-muted)",
-                  marginTop: 12,
-                }}
+                className="t-body-2"
+                style={{ marginTop: "var(--s-3)" }}
               >
                 Come back after the night to share how it went.
               </p>
             </div>
           </div>
-        </WFrame>
+        </div>
       </main>
     );
   }
@@ -94,96 +103,83 @@ export default async function FeedbackPage({
 
   if (searchParams.submitted === "1" || alreadySubmitted) {
     return (
-      <main id="main-content">
-        <WFrame style={{ paddingBottom: 48 }}>
-          <div style={{ padding: "20px 24px 0" }}>
-            <Wordmark variant="monogrid" size={18} />
+      <main id="main-content" className="v5">
+        <div style={SHELL_STYLE}>
+          <div style={{ padding: "var(--s-5) var(--s-6) 0" }}>
+            <Logo size={18} />
           </div>
-          <div style={{ padding: "32px 24px 0" }}>
-            <div className="w-type-meta">FEEDBACK</div>
+          <div style={{ padding: "var(--s-8) var(--s-6) 0" }}>
+            <div className="t-meta">Feedback</div>
             <div
-              className="w-type-display-md"
-              style={{ marginTop: 6, lineHeight: 1.0 }}
+              className="t-display-md"
+              style={{ marginTop: "var(--s-2)", lineHeight: 1.0 }}
             >
               {ev.name}
             </div>
           </div>
-          <div style={{ padding: "24px 24px 0" }}>
+          <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
             <div
-              className="w-card"
-              style={{
-                padding: 18,
-                borderColor: "var(--w-ok)",
-                background: "oklch(0.86 0.18 145 / 0.06)",
-              }}
+              className="card"
+              style={{ padding: "var(--s-5)", borderColor: "var(--ok)" }}
             >
-              <Chip tone="ok">✓ THANKS FOR LETTING US KNOW</Chip>
-              <p
-                className="w-type-body-sm"
-                style={{ marginTop: 12 }}
-              >
+              <span className="chip chip--ok">Thanks for letting us know</span>
+              <p className="t-body-2" style={{ marginTop: "var(--s-3)" }}>
                 Your rating helps the venue book better nights. See you next
                 time.
               </p>
             </div>
             <Link
               href="/discover"
+              className="btn btn--ghost btn--lg btn--block"
               style={{
                 textDecoration: "none",
-                marginTop: 16,
-                display: "inline-flex",
-                width: "100%",
+                marginTop: "var(--s-4)",
               }}
             >
-              <Button variant="ghost" size="lg" block>
-                Browse upcoming events
-              </Button>
+              Browse upcoming events
             </Link>
           </div>
-        </WFrame>
+        </div>
       </main>
     );
   }
 
   return (
-    <main id="main-content">
-      <WFrame style={{ paddingBottom: 48 }}>
-        <div style={{ padding: "20px 24px 0" }}>
-          <Wordmark variant="monogrid" size={18} />
+    <main id="main-content" className="v5">
+      <div style={SHELL_STYLE}>
+        <div style={{ padding: "var(--s-5) var(--s-6) 0" }}>
+          <Logo size={18} />
         </div>
-        <div style={{ padding: "32px 24px 0" }}>
-          <div className="w-type-meta">HOW WAS YOUR NIGHT?</div>
+        <div style={{ padding: "var(--s-8) var(--s-6) 0" }}>
+          <div className="t-meta">How was your night?</div>
           <div
-            className="w-type-display-md"
-            style={{ marginTop: 6, lineHeight: 1.0 }}
+            className="t-display-md"
+            style={{ marginTop: "var(--s-2)", lineHeight: 1.0 }}
           >
             {ev.name}
           </div>
           {guestName && (
-            <div
-              className="w-type-meta"
-              style={{ marginTop: 8 }}
-            >
-              FOR {guestName.toUpperCase()}
+            <div className="t-meta" style={{ marginTop: "var(--s-2)" }}>
+              For {guestName}
             </div>
           )}
         </div>
-        <div style={{ padding: "24px 24px 0" }}>
+        <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
           <FeedbackForm eventId={ev.id} guestId={guestId} token={token} />
         </div>
         <div
-          className="w-type-meta"
+          className="t-meta"
           style={{
             marginTop: "auto",
-            paddingTop: 24,
-            paddingBottom: 16,
+            paddingTop: "var(--s-6)",
+            paddingBottom: "var(--s-4)",
             textAlign: "center",
-            color: "var(--w-fg-dim)",
+            color: "var(--fg-4)",
           }}
         >
-          ONE RATING PER GUEST · STAYS PRIVATE
+          One rating per guest · stays private
         </div>
-      </WFrame>
+      </div>
     </main>
   );
 }

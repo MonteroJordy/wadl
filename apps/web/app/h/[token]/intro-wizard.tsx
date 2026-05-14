@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "@/components/wadl";
 
 interface Props {
   holderName: string;
@@ -93,16 +92,15 @@ export default function HolderIntroWizard({
         display: "flex",
         alignItems: "flex-end",
         justifyContent: "center",
-        padding: 16,
+        padding: "var(--s-4)",
       }}
     >
       <div
+        className="card"
         style={{
-          background: "var(--w-surface-1)",
-          border: "1px solid var(--w-line)",
           width: "100%",
           maxWidth: 440,
-          padding: "24px 24px 28px",
+          padding: "var(--s-6)",
         }}
       >
         <div
@@ -110,33 +108,33 @@ export default function HolderIntroWizard({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            marginBottom: 12,
+            marginBottom: "var(--s-3)",
           }}
         >
-          <div className="w-type-meta">
-            {step + 1} OF {CARDS.length}
+          <div className="t-meta">
+            {step + 1} of {CARDS.length}
           </div>
           <button
             onClick={dismiss}
             type="button"
-            className="w-type-meta"
+            className="t-meta"
             style={{
               background: "transparent",
               border: "none",
               cursor: "pointer",
-              color: "var(--w-fg-muted)",
+              color: "var(--fg-3)",
               padding: 0,
             }}
           >
-            SKIP
+            Skip
           </button>
         </div>
 
         <div
           style={{
             display: "flex",
-            gap: 4,
-            marginBottom: 20,
+            gap: "var(--s-1)",
+            marginBottom: "var(--s-5)",
           }}
         >
           {CARDS.map((_, i) => (
@@ -145,8 +143,8 @@ export default function HolderIntroWizard({
               style={{
                 flex: 1,
                 height: 4,
-                background:
-                  i <= step ? "var(--w-acc)" : "var(--w-surface-3)",
+                borderRadius: "var(--r-pill)",
+                background: i <= step ? "var(--fg)" : "var(--bg-4)",
               }}
             />
           ))}
@@ -154,59 +152,47 @@ export default function HolderIntroWizard({
 
         <h2
           id="hwiz-title"
-          style={{
-            fontFamily: "var(--w-display)",
-            fontWeight: 700,
-            fontSize: 30,
-            color: "var(--w-fg)",
-            letterSpacing: "-0.02em",
-            lineHeight: 0.95,
-            marginBottom: 12,
-          }}
+          className="t-display-sm"
+          style={{ marginBottom: "var(--s-3)" }}
         >
           {card.title}
         </h2>
         <p
-          style={{
-            color: "var(--w-fg)",
-            opacity: 0.85,
-            fontSize: 14,
-            lineHeight: 1.5,
-            marginBottom: 24,
-          }}
+          className="t-body-2"
+          style={{ marginBottom: "var(--s-6)" }}
         >
           {isFirst ? firstBody : card.body}
         </p>
 
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: "var(--s-2)" }}>
           {step > 0 && (
-            <Button
-              variant="ghost"
+            <button
+              className="btn btn--ghost"
               type="button"
               onClick={() => setStep(step - 1)}
               style={{ flex: 1 }}
             >
               Back
-            </Button>
+            </button>
           )}
           {!isLast ? (
-            <Button
-              variant="primary"
+            <button
+              className="btn"
               type="button"
               onClick={() => setStep(step + 1)}
               style={{ flex: 1 }}
             >
               Next
-            </Button>
+            </button>
           ) : (
-            <Button
-              variant="primary"
+            <button
+              className="btn"
               type="button"
               onClick={dismiss}
               style={{ flex: 1 }}
             >
               Start adding names
-            </Button>
+            </button>
           )}
         </div>
       </div>

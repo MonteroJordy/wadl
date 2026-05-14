@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { BrowserQRCodeReader, type IScannerControls } from "@zxing/browser";
-import { Button } from "@/components/wadl";
 import { scanTokenAction, type ScanResult } from "./actions";
 
 interface Props {
@@ -13,7 +12,17 @@ interface Props {
   backHref: string;
 }
 
-type UiResult = ScanResult & { at: number; offline?: boolean };
+/**
+ * UI-only result state. `sync_conflict` is surfaced when an offline-queued
+ * scan we approved on THIS device comes back from /api/door/sync as
+ * `already_used` — i.e. another device admitted the same guest while both
+ * were offline.
+ */
+type SyncConflict = {
+  state: "sync_conflict";
+  guestName: string | null;
+};
+type UiResult = (ScanResult | SyncConflict) & { at: number; offline?: boolean };
 
 interface ManifestGuest {
   id: string;
@@ -34,8 +43,17 @@ interface QueuedScan {
   night_id: string;
 }
 
+interface SyncResultRow {
+  token: string;
+  scanned_at_ms: number;
+  ok: boolean;
+  state?: string;
+  reason?: string;
+}
+
 const DEDUPE_MS = 2500;
 const RESULT_HOLD_MS = 1600;
+const CONFLICT_HOLD_MS = 6000;
 
 function manifestKey(nightId: string) {
   return `wadl.manifest.${nightId}`;
@@ -78,56 +96,41 @@ function saveQueue(q: QueuedScan[]) {
   }
 }
 
-function stateColors(state: ScanResult["state"]): {
-  bg: string;
-  fg: string;
-  border: string;
-} {
+/** Maps a result state → v5 token color used for the full-bleed result card. */
+function stateColor(state: UiResult["state"]): string {
   switch (state) {
     case "approved":
-      return { bg: "var(--w-ok)", fg: "var(--w-bg)", border: "var(--w-ok)" };
+      return "var(--ok)";
     case "already_used":
-      return { bg: "var(--w-warn)", fg: "var(--w-bg)", border: "var(--w-warn)" };
+    case "sync_conflict":
+      return "var(--warn)";
     case "do_not_admit":
-      return { bg: "#7a0f14", fg: "var(--w-fg)", border: "#7a0f14" };
-    case "not_found":
-    case "wrong_event":
-    case "wrong_night":
-    case "error":
-      return { bg: "var(--w-err)", fg: "var(--w-bg)", border: "var(--w-err)" };
+      return "var(--err)";
+    default:
+      return "var(--err)";
   }
 }
 
-function stateTitle(state: ScanResult["state"]): string {
+function stateTitle(state: UiResult["state"]): string {
   switch (state) {
     case "approved":
-      return "APPROVED";
+      return "Approved";
     case "already_used":
-      return "ALREADY IN";
+      return "Already in";
+    case "sync_conflict":
+      return "Already in elsewhere";
     case "not_found":
-      return "NOT ON LIST";
+      return "Not on list";
     case "wrong_event":
-      return "WRONG EVENT";
+      return "Wrong event";
     case "wrong_night":
-      return "WRONG NIGHT";
+      return "Wrong night";
     case "do_not_admit":
-      return "⚠  DO NOT ADMIT";
+      return "Do not admit";
     case "error":
-      return "ERROR";
+      return "Error";
   }
 }
-
-const PILL = (color: string): React.CSSProperties => ({
-  display: "inline-flex",
-  alignItems: "center",
-  padding: "2px 10px",
-  border: `1px solid ${color}`,
-  color,
-  fontFamily: "var(--w-mono)",
-  fontSize: 11,
-  letterSpacing: "0.08em",
-  textTransform: "uppercase",
-});
 
 export default function Scanner({
   eventId,
@@ -153,6 +156,12 @@ export default function Scanner({
   const [syncing, setSyncing] = useState(false);
 
   const localScannedRef = useRef<Set<string>>(new Set());
+  /**
+   * Tokens this device approved while offline. Used to detect a cross-device
+   * double-admit: if sync later reports one of these as `already_used`, this
+   * device lost the race and the guest was admitted on another scanner.
+   */
+  const offlineApprovedRef = useRef<Map<string, string | null>>(new Map());
 
   useEffect(() => {
     setOnline(typeof navigator !== "undefined" ? navigator.onLine : true);
@@ -216,6 +225,14 @@ export default function Scanner({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online]);
 
+  function showResult(res: UiResult, holdMs: number) {
+    setResult(res);
+    if (resultTimerRef.current) clearTimeout(resultTimerRef.current);
+    resultTimerRef.current = setTimeout(() => {
+      setResult(null);
+    }, holdMs);
+  }
+
   async function flushQueue() {
     const q = loadQueue();
     if (q.length === 0) return;
@@ -227,6 +244,25 @@ export default function Scanner({
         body: JSON.stringify({ scans: q }),
       });
       if (res.ok) {
+        const body = (await res.json()) as {
+          results?: SyncResultRow[];
+        };
+        // Detect cross-device double-admit: a scan we approved offline came
+        // back as already_used — another device won the race.
+        const conflict = (body.results ?? []).find(
+          (r) =>
+            r.state === "already_used" &&
+            offlineApprovedRef.current.has(r.token),
+        );
+        if (conflict) {
+          const guestName =
+            offlineApprovedRef.current.get(conflict.token) ?? null;
+          showResult(
+            { state: "sync_conflict", guestName, at: Date.now() },
+            CONFLICT_HOLD_MS,
+          );
+        }
+        offlineApprovedRef.current.clear();
         saveQueue([]);
         setQueueDepth(0);
       }
@@ -285,6 +321,8 @@ export default function Scanner({
       };
     }
     localScannedRef.current.add(token);
+    // Track this token so a later sync can report a cross-device conflict.
+    offlineApprovedRef.current.set(token, g.full_name);
     const q = loadQueue();
     q.push({ token, scanned_at: at, event_id: eventId, night_id: nightId });
     saveQueue(q);
@@ -324,11 +362,7 @@ export default function Scanner({
     } else {
       res = await offlineDecode(text);
     }
-    setResult(res);
-    if (resultTimerRef.current) clearTimeout(resultTimerRef.current);
-    resultTimerRef.current = setTimeout(() => {
-      setResult(null);
-    }, RESULT_HOLD_MS);
+    showResult(res, RESULT_HOLD_MS);
   }
 
   async function start() {
@@ -357,304 +391,368 @@ export default function Scanner({
   return (
     <main
       id="main-content"
-      className="w-app"
-      style={{
-        minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
-      }}
+      className="v5"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
     >
       <div style={{ maxWidth: 540, margin: "0 auto" }}>
+        {/* ── Header ── */}
         <div
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 16,
+            padding: "var(--s-6) var(--s-8)",
+            borderBottom: "1px solid var(--line)",
           }}
         >
-          <Link
-            href={backHref}
-            className="w-type-meta"
-            style={{ color: "var(--w-fg-muted)", textDecoration: "none" }}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: "var(--s-2)",
+            }}
           >
-            ← BACK
-          </Link>
-          <div className="w-type-meta" style={{ color: "var(--w-ok)" }}>
-            SCAN
-          </div>
-        </div>
-
-        <div className="w-type-display-md" style={{ marginBottom: 12 }}>
-          {eventName}
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            marginBottom: 16,
-            flexWrap: "wrap",
-          }}
-        >
-          <span
-            style={PILL(
-              online ? "var(--w-ok)" : "var(--w-err)",
-            )}
-          >
-            {online ? "● ONLINE" : "● OFFLINE"}
-          </span>
-          <span
-            style={PILL(
-              manifestStatus === "ready"
-                ? "var(--w-ok)"
-                : manifestStatus === "stale"
-                  ? "var(--w-warn)"
-                  : "var(--w-fg-muted)",
-            )}
-          >
-            {manifestStatus === "ready"
-              ? "MANIFEST CACHED"
-              : manifestStatus === "stale"
-                ? "STALE CACHE"
-                : manifestStatus === "loading"
-                  ? "CACHING…"
-                  : "NO CACHE"}
-          </span>
-          {queueDepth > 0 && (
-            <button
-              type="button"
-              onClick={() => void flushQueue()}
-              disabled={!online || syncing}
-              style={{
-                ...PILL("var(--w-err)"),
-                background: "transparent",
-                cursor: "pointer",
-              }}
+            <Link
+              href={backHref}
+              className="t-meta"
+              style={{ color: "var(--fg-3)", textDecoration: "none" }}
             >
-              {syncing ? "SYNCING…" : `SYNC ${queueDepth}`}
-            </button>
-          )}
-        </div>
-
-        <div
-          style={{
-            position: "relative",
-            width: "100%",
-            overflow: "hidden",
-            border: "2px solid var(--w-ok)",
-            background: "var(--w-bg)",
-            marginBottom: 16,
-            aspectRatio: "1 / 1",
-          }}
-        >
-          <video
-            ref={videoRef}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            playsInline
-            muted
-          />
-
-          {!started && (
+              ← Back
+            </Link>
             <div
               style={{
-                position: "absolute",
-                inset: 0,
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
-                background: "rgba(20,20,20,0.92)",
-                backdropFilter: "blur(4px)",
+                gap: "var(--s-2)",
               }}
             >
-              <div style={{ textAlign: "center", padding: "0 24px" }}>
+              <div
+                className={online ? "pulse" : "dot"}
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: "var(--r-pill)",
+                  background: online ? "var(--ok)" : "var(--err)",
+                }}
+              />
+              <span className="t-meta">
+                {online ? "Scanning" : "Offline"}
+              </span>
+            </div>
+          </div>
+          <div className="t-display-md">{eventName}</div>
+        </div>
+
+        <div
+          style={{
+            padding: "var(--s-8)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "var(--s-4)",
+          }}
+        >
+          {/* ── Status chips ── */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "var(--s-2)",
+              flexWrap: "wrap",
+            }}
+          >
+            <span
+              className={"chip " + (online ? "chip--ok" : "chip--err")}
+            >
+              {online ? "Online" : "Offline"}
+            </span>
+            <span
+              className={
+                "chip " +
+                (manifestStatus === "ready"
+                  ? "chip--ok"
+                  : manifestStatus === "stale"
+                    ? "chip--warn"
+                    : "")
+              }
+            >
+              {manifestStatus === "ready"
+                ? "Manifest cached"
+                : manifestStatus === "stale"
+                  ? "Stale cache"
+                  : manifestStatus === "loading"
+                    ? "Caching…"
+                    : "No cache"}
+            </span>
+            {queueDepth > 0 && (
+              <button
+                type="button"
+                onClick={() => void flushQueue()}
+                disabled={!online || syncing}
+                className="chip chip--warn"
+                style={{ cursor: "pointer", border: 0 }}
+              >
+                {syncing ? "Syncing…" : `Sync ${queueDepth}`}
+              </button>
+            )}
+          </div>
+
+          {/* ── Camera / result viewport ── */}
+          <div
+            style={{
+              position: "relative",
+              width: "100%",
+              overflow: "hidden",
+              borderRadius: "var(--r-lg)",
+              border: "1px solid var(--line-2)",
+              background: "var(--bg-2)",
+              aspectRatio: "1 / 1",
+            }}
+          >
+            <video
+              ref={videoRef}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              playsInline
+              muted
+            />
+
+            {!started && (
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "rgba(10,10,10,0.92)",
+                  backdropFilter: "blur(4px)",
+                }}
+              >
                 <div
                   style={{
-                    fontFamily: "var(--w-display)",
-                    fontWeight: 700,
-                    fontSize: 36,
-                    color: "var(--w-ok)",
-                    marginBottom: 12,
+                    textAlign: "center",
+                    padding: "0 var(--s-8)",
                   }}
                 >
-                  Camera off
-                </div>
-                <p
-                  className="w-type-body-sm"
-                  style={{
-                    color: "var(--w-fg-muted)",
-                    marginBottom: 16,
-                  }}
-                >
-                  Grant access to start scanning QRs.
-                </p>
-                <Button
-                  variant="primary"
-                  type="button"
-                  onClick={start}
-                  style={{
-                    background: "var(--w-ok)",
-                    color: "var(--w-bg)",
-                    borderColor: "var(--w-ok)",
-                  }}
-                >
-                  Start scanner
-                </Button>
-                {startError && (
+                  <div className="t-display-sm">Camera off</div>
                   <p
+                    className="t-body-2"
                     style={{
-                      color: "var(--w-err)",
-                      fontSize: 12,
-                      marginTop: 12,
+                      marginTop: "var(--s-2)",
+                      marginBottom: "var(--s-6)",
                     }}
                   >
-                    {startError}
+                    Grant access to start scanning QRs.
                   </p>
-                )}
+                  <button
+                    type="button"
+                    className="btn btn--lg"
+                    onClick={start}
+                  >
+                    Start scanner
+                  </button>
+                  {startError && (
+                    <p
+                      className="t-meta"
+                      style={{
+                        color: "var(--err)",
+                        marginTop: "var(--s-3)",
+                      }}
+                    >
+                      {startError}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {result &&
-            (() => {
-              const c = stateColors(result.state);
-              return (
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    border: `4px solid ${c.border}`,
-                    background: c.bg,
-                    color: c.fg,
-                  }}
-                >
+            {result &&
+              (() => {
+                const color = stateColor(result.state);
+                const onColor =
+                  result.state === "approved" ? "var(--bg)" : "var(--fg)";
+                return (
                   <div
                     style={{
-                      textAlign: "center",
-                      padding: "16px",
-                      width: "100%",
+                      position: "absolute",
+                      inset: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background:
+                        result.state === "approved"
+                          ? "var(--ok)"
+                          : "var(--bg)",
+                      border: `2px solid ${color}`,
                     }}
                   >
                     <div
                       style={{
-                        fontFamily: "var(--w-display)",
-                        fontWeight: 700,
-                        fontSize: 44,
-                        lineHeight: 1,
-                        marginBottom: 12,
+                        textAlign: "center",
+                        padding: "var(--s-6)",
+                        width: "100%",
+                        color: onColor,
                       }}
                     >
-                      {stateTitle(result.state)}
-                    </div>
-                    {"guest" in result && result.guest && (
-                      <>
-                        <p
+                      <div
+                        style={{
+                          fontFamily: "var(--display)",
+                          fontWeight: 700,
+                          fontSize: 40,
+                          lineHeight: 1.05,
+                          letterSpacing: "-0.02em",
+                          color:
+                            result.state === "approved" ? onColor : color,
+                        }}
+                      >
+                        {stateTitle(result.state)}
+                      </div>
+
+                      {"guest" in result && result.guest && (
+                        <>
+                          <div
+                            className="t-h1"
+                            style={{ marginTop: "var(--s-3)" }}
+                          >
+                            {result.guest.full_name}
+                            {result.guest.plus_ones > 0 && (
+                              <span style={{ opacity: 0.65 }}>
+                                {" "}
+                                +{result.guest.plus_ones}
+                              </span>
+                            )}
+                          </div>
+                          <div
+                            className="t-meta"
+                            style={{
+                              marginTop: "var(--s-1)",
+                              opacity: 0.8,
+                            }}
+                          >
+                            {result.guest.tier
+                              .replace(/_/g, " ")
+                              .toUpperCase()}
+                          </div>
+                        </>
+                      )}
+
+                      {result.state === "sync_conflict" && (
+                        <>
+                          {result.guestName && (
+                            <div
+                              className="t-h1"
+                              style={{ marginTop: "var(--s-3)" }}
+                            >
+                              {result.guestName}
+                            </div>
+                          )}
+                          <div
+                            className="t-body-2"
+                            style={{ marginTop: "var(--s-2)" }}
+                          >
+                            Already admitted on another device. Do not
+                            re-admit.
+                          </div>
+                        </>
+                      )}
+
+                      {result.state === "already_used" && (
+                        <div
+                          className="t-meta"
                           style={{
-                            fontSize: 22,
-                            fontWeight: 600,
+                            marginTop: "var(--s-2)",
+                            opacity: 0.8,
                           }}
                         >
-                          {result.guest.full_name}
-                          {result.guest.plus_ones > 0 && (
-                            <span style={{ opacity: 0.75 }}>
-                              {" "}
-                              +{result.guest.plus_ones}
-                            </span>
-                          )}
-                        </p>
-                        <div
-                          className="w-type-meta"
-                          style={{ marginTop: 4, opacity: 0.8 }}
-                        >
-                          {result.guest.tier.toUpperCase()}
+                          In at{" "}
+                          {new Date(
+                            result.scannedAt,
+                          ).toLocaleTimeString()}
+                          {result.scannedByName
+                            ? ` · by ${result.scannedByName}`
+                            : ""}
                         </div>
-                      </>
-                    )}
-                    {result.state === "already_used" && (
-                      <div
-                        className="w-type-meta"
-                        style={{ marginTop: 8, opacity: 0.8 }}
-                      >
-                        IN AT{" "}
-                        {new Date(result.scannedAt).toLocaleTimeString()}
-                        {result.scannedByName
-                          ? ` · BY ${result.scannedByName.toUpperCase()}`
-                          : ""}
-                      </div>
-                    )}
-                    {result.state === "wrong_event" && (
-                      <div
-                        className="w-type-meta"
-                        style={{ marginTop: 8 }}
-                      >
-                        QR IS FOR{" "}
-                        <span style={{ fontWeight: 600 }}>
-                          {result.actualEventName.toUpperCase()}
-                        </span>
-                      </div>
-                    )}
-                    {result.state === "wrong_night" && (
-                      <div
-                        className="w-type-meta"
-                        style={{ marginTop: 8 }}
-                      >
-                        QR IS FOR{" "}
-                        {new Date(result.actualNightDate)
-                          .toLocaleDateString("en-US", {
+                      )}
+                      {result.state === "wrong_event" && (
+                        <div
+                          className="t-meta"
+                          style={{ marginTop: "var(--s-2)" }}
+                        >
+                          QR is for {result.actualEventName}
+                        </div>
+                      )}
+                      {result.state === "wrong_night" && (
+                        <div
+                          className="t-meta"
+                          style={{ marginTop: "var(--s-2)" }}
+                        >
+                          QR is for{" "}
+                          {new Date(
+                            result.actualNightDate,
+                          ).toLocaleDateString("en-US", {
                             weekday: "short",
                             month: "short",
                             day: "numeric",
-                          })
-                          .toUpperCase()}
-                      </div>
-                    )}
-                    {result.state === "do_not_admit" && result.reason && (
-                      <div
-                        className="w-type-meta"
-                        style={{ marginTop: 8, opacity: 0.8 }}
-                      >
-                        {result.reason}
-                      </div>
-                    )}
-                    {result.state === "error" && (
-                      <div
-                        className="w-type-meta"
-                        style={{ marginTop: 8, opacity: 0.8 }}
-                      >
-                        {result.error}
-                      </div>
-                    )}
-                    {result.offline && (
-                      <div
-                        className="w-type-meta"
-                        style={{ marginTop: 8, opacity: 0.6 }}
-                      >
-                        OFFLINE · QUEUED
-                      </div>
-                    )}
+                          })}
+                        </div>
+                      )}
+                      {result.state === "do_not_admit" &&
+                        result.reason && (
+                          <div
+                            className="t-meta"
+                            style={{
+                              marginTop: "var(--s-2)",
+                              opacity: 0.8,
+                            }}
+                          >
+                            {result.reason}
+                          </div>
+                        )}
+                      {result.state === "error" && (
+                        <div
+                          className="t-meta"
+                          style={{
+                            marginTop: "var(--s-2)",
+                            opacity: 0.8,
+                          }}
+                        >
+                          {result.error}
+                        </div>
+                      )}
+                      {"offline" in result && result.offline && (
+                        <div
+                          className="t-meta"
+                          style={{
+                            marginTop: "var(--s-2)",
+                            opacity: 0.6,
+                          }}
+                        >
+                          Offline · queued
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })()}
-        </div>
+                );
+              })()}
+          </div>
 
-        <div
-          className="w-type-meta"
-          style={{ textAlign: "center", lineHeight: 1.6 }}
-        >
-          {online
-            ? "HOLD STEADY. AUTO-CONTINUES AFTER EACH SCAN."
-            : `OFFLINE MODE — QUEUEING SCANS (${queueDepth} PENDING). RECONNECT TO SYNC.`}
-          {manifestCachedAt && (
-            <div style={{ marginTop: 4, color: "var(--w-fg-muted)" }}>
-              CACHE FROM{" "}
-              {new Date(manifestCachedAt).toLocaleTimeString().toUpperCase()}
-            </div>
-          )}
+          {/* ── Footer hint ── */}
+          <div
+            className="t-meta"
+            style={{ textAlign: "center", lineHeight: 1.6 }}
+          >
+            {online
+              ? "Hold steady. Auto-continues after each scan."
+              : `Offline mode — queueing scans (${queueDepth} pending). Reconnect to sync.`}
+            {manifestCachedAt && (
+              <div
+                style={{
+                  marginTop: "var(--s-1)",
+                  color: "var(--fg-4)",
+                }}
+              >
+                Cache from{" "}
+                {new Date(manifestCachedAt).toLocaleTimeString()}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </main>

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { requireOwnerContext } from "@/lib/owner";
 import { computeRecap, computeFeedback, fmtHour } from "@/lib/recap";
 import { fmtDate } from "@/lib/format";
-import { Button, Chip } from "@/components/wadl";
+import { Breadcrumb, PageHeader, EventSubNav } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 
@@ -57,65 +57,44 @@ export default async function RecapPage({
   return (
     <main
       id="main-content"
-      className="w-app"
-      style={{
-        minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
-      }}
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
     >
-      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 16,
-          }}
-        >
-          <Link
-            href={`/owner/events/${event.id}`}
-            className="w-type-meta"
-            style={{ color: "var(--w-fg-muted)", textDecoration: "none" }}
-          >
-            ← BACK
-          </Link>
-          <div className="w-type-meta">RECAP</div>
-        </div>
+      <Breadcrumb
+        items={[
+          ["Events", "/owner"],
+          [event.name, `/owner/events/${event.id}`],
+          "Recap",
+        ]}
+      />
+      <PageHeader
+        eyebrow={`Recap · ${scopeLabel}`}
+        title={event.name}
+        sub="Post-event numbers — show rate, tiers, peak hour, top holders."
+      />
+      <EventSubNav active="overview" eventId={event.id} />
 
-        <div
-          style={{
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            marginBottom: 24,
-          }}
-        >
-          <div className="w-type-display-md">{event.name}</div>
-          <p
-            className="w-type-meta"
-            style={{ marginTop: 8, color: "var(--w-fg-muted)" }}
-          >
-            {scopeLabel.toUpperCase()}
-          </p>
-        </div>
-
+      <div style={{ padding: "var(--s-8)" }}>
         {nights.length > 1 && (
           <div
             style={{
               display: "flex",
-              gap: 8,
+              gap: "var(--s-1)",
               overflowX: "auto",
-              marginBottom: 16,
-              paddingBottom: 4,
+              marginBottom: "var(--s-4)",
+              paddingBottom: "var(--s-1)",
             }}
           >
             <Link
               href={`/owner/events/${event.id}/recap`}
               style={{ textDecoration: "none", flexShrink: 0 }}
             >
-              <Chip tone={activeNight === null ? "acc" : "ghost"}>
-                ALL NIGHTS
-              </Chip>
+              <span
+                className={`chip ${
+                  activeNight === null ? "chip--solid" : "chip--ghost"
+                }`}
+              >
+                All nights
+              </span>
             </Link>
             {nights.map((n) => (
               <Link
@@ -123,9 +102,13 @@ export default async function RecapPage({
                 href={`/owner/events/${event.id}/recap?night=${n.id}`}
                 style={{ textDecoration: "none", flexShrink: 0 }}
               >
-                <Chip tone={activeNight?.id === n.id ? "acc" : "ghost"}>
-                  {fmtDate(n.night_date).toUpperCase()}
-                </Chip>
+                <span
+                  className={`chip ${
+                    activeNight?.id === n.id ? "chip--solid" : "chip--ghost"
+                  }`}
+                >
+                  {fmtDate(n.night_date)}
+                </span>
               </Link>
             ))}
           </div>
@@ -133,64 +116,50 @@ export default async function RecapPage({
 
         {recap.totalApproved === 0 ? (
           <div
-            className="w-card"
-            style={{
-              padding: "64px 32px",
-              textAlign: "center",
-            }}
+            className="card"
+            style={{ padding: "var(--s-16) var(--s-8)", textAlign: "center" }}
           >
-            <div className="w-type-h1">No data yet</div>
-            <p
-              className="w-type-body-sm"
+            <div className="t-h1">No data yet</div>
+            <div
+              className="t-body-2"
               style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 12,
+                marginTop: "var(--s-3)",
                 maxWidth: 460,
                 marginInline: "auto",
-                lineHeight: 1.5,
               }}
             >
               Recap fills in once guests are approved and scanned at the door.
-            </p>
+            </div>
           </div>
         ) : (
           <div
-            style={{ display: "flex", flexDirection: "column", gap: 12 }}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "var(--s-3)",
+            }}
           >
-            <section
-              className="w-card"
-              style={{
-                padding: 24,
-                borderColor: "var(--w-acc)",
-                background: "var(--w-acc-soft)",
-              }}
-            >
-              <div className="w-type-meta">SHOW RATE</div>
+            <section className="card" style={{ padding: "var(--s-6)" }}>
+              <div className="t-meta">Show rate</div>
               <div
-                style={{
-                  fontFamily: "var(--w-display)",
-                  fontWeight: 700,
-                  fontSize: 72,
-                  letterSpacing: "-0.04em",
-                  lineHeight: 1,
-                  marginTop: 8,
-                  color: "var(--w-acc-ink)",
-                }}
+                className="t-display-lg t-num"
+                style={{ marginTop: "var(--s-2)" }}
               >
                 {pct(recap.showRate)}
               </div>
               <div
                 style={{
                   height: 8,
-                  background: "var(--w-surface-3)",
-                  marginTop: 16,
+                  background: "var(--bg-3)",
+                  borderRadius: "var(--r-pill)",
+                  marginTop: "var(--s-4)",
                   overflow: "hidden",
                 }}
               >
                 <div
                   style={{
                     height: "100%",
-                    background: "var(--w-acc-ink)",
+                    background: "var(--fg)",
                     width: `${Math.min(100, recap.showRate * 100)}%`,
                   }}
                 />
@@ -199,18 +168,18 @@ export default async function RecapPage({
                 style={{
                   display: "grid",
                   gridTemplateColumns: "repeat(3, 1fr)",
-                  gap: 12,
-                  marginTop: 18,
+                  gap: "var(--s-3)",
+                  marginTop: "var(--s-5)",
                 }}
               >
-                <RecapStat label="APPROVED" value={recap.totalApproved} />
+                <RecapStat label="Approved" value={recap.totalApproved} />
                 <RecapStat
-                  label="SCANNED IN"
+                  label="Scanned in"
                   value={recap.totalCheckedIn}
                   tone="ok"
                 />
                 <RecapStat
-                  label="CAP"
+                  label="Cap"
                   value={recap.capacity || "—"}
                   tone="muted"
                 />
@@ -218,11 +187,17 @@ export default async function RecapPage({
             </section>
 
             {recap.tiers.length > 0 && (
-              <section className="w-card" style={{ padding: 20 }}>
-                <div className="w-type-meta" style={{ marginBottom: 14 }}>
-                  TIER BREAKDOWN
+              <section className="card" style={{ padding: "var(--s-5)" }}>
+                <div className="t-meta" style={{ marginBottom: "var(--s-4)" }}>
+                  Tier breakdown
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "var(--s-4)",
+                  }}
+                >
                   {recap.tiers.map((t) => (
                     <div key={t.tier}>
                       <div
@@ -230,34 +205,31 @@ export default async function RecapPage({
                           display: "flex",
                           alignItems: "baseline",
                           justifyContent: "space-between",
-                          marginBottom: 6,
+                          marginBottom: "var(--s-2)",
                         }}
                       >
-                        <p style={{ color: "var(--w-fg)" }}>
-                          {t.tier.replace("_", " ").toUpperCase()}
-                        </p>
-                        <div className="w-type-meta">
-                          <span style={{ color: "var(--w-ok)" }}>
+                        <span className="t-body">
+                          {t.tier.replace("_", " ")}
+                        </span>
+                        <span className="t-meta">
+                          <span style={{ color: "var(--ok)" }}>
                             {t.checkedIn}
                           </span>{" "}
-                          / {t.approved}
-                          <span style={{ color: "var(--w-acc)" }}>
-                            {" · "}
-                            {pct(t.showRate)}
-                          </span>
-                        </div>
+                          / {t.approved} · {pct(t.showRate)}
+                        </span>
                       </div>
                       <div
                         style={{
                           height: 6,
-                          background: "var(--w-surface-3)",
+                          background: "var(--bg-3)",
+                          borderRadius: "var(--r-pill)",
                           overflow: "hidden",
                         }}
                       >
                         <div
                           style={{
                             height: "100%",
-                            background: "var(--w-ok)",
+                            background: "var(--ok)",
                             width: `${Math.min(100, t.showRate * 100)}%`,
                           }}
                         />
@@ -269,16 +241,13 @@ export default async function RecapPage({
             )}
 
             {recap.hourBuckets.length > 0 && (
-              <section className="w-card" style={{ padding: 20 }}>
-                <div className="w-type-meta" style={{ marginBottom: 14 }}>
-                  CHECK-INS BY HOUR
+              <section className="card" style={{ padding: "var(--s-5)" }}>
+                <div className="t-meta" style={{ marginBottom: "var(--s-4)" }}>
+                  Check-ins by hour
                   {recap.peakHour && (
                     <>
-                      {" · PEAK "}
-                      <span style={{ color: "var(--w-acc)" }}>
-                        {fmtHour(recap.peakHour.hour).toUpperCase()}
-                      </span>{" "}
-                      ({recap.peakHour.count})
+                      {" · peak "}
+                      {fmtHour(recap.peakHour.hour)} ({recap.peakHour.count})
                     </>
                   )}
                 </div>
@@ -291,7 +260,8 @@ export default async function RecapPage({
                   }}
                 >
                   {recap.hourBuckets.map((b) => {
-                    const h = peakCount === 0 ? 0 : (b.count / peakCount) * 100;
+                    const h =
+                      peakCount === 0 ? 0 : (b.count / peakCount) * 100;
                     const isPeak = b.hour === recap.peakHour?.hour;
                     return (
                       <div
@@ -319,17 +289,14 @@ export default async function RecapPage({
                               width: "100%",
                               height: `${Math.max(4, h)}%`,
                               background: isPeak
-                                ? "var(--w-acc)"
-                                : "var(--w-ok)",
-                              opacity: isPeak ? 1 : 0.6,
+                                ? "var(--fg)"
+                                : "var(--fg-3)",
+                              borderRadius: "var(--r-sm)",
                             }}
                           />
                         </div>
-                        <div
-                          className="w-type-meta"
-                          style={{ fontSize: 9 }}
-                        >
-                          {fmtHour(b.hour).toUpperCase()}
+                        <div className="t-meta" style={{ fontSize: 9 }}>
+                          {fmtHour(b.hour)}
                         </div>
                       </div>
                     );
@@ -339,9 +306,9 @@ export default async function RecapPage({
             )}
 
             {recap.topHolders.length > 0 && (
-              <section className="w-card" style={{ padding: 20 }}>
-                <div className="w-type-meta" style={{ marginBottom: 14 }}>
-                  TOP PROMOTERS / HOLDERS
+              <section className="card" style={{ padding: "var(--s-5)" }}>
+                <div className="t-meta" style={{ marginBottom: "var(--s-4)" }}>
+                  Top promoters / holders
                 </div>
                 <div style={{ display: "flex", flexDirection: "column" }}>
                   {recap.topHolders.slice(0, 5).map((h, i) => (
@@ -351,67 +318,51 @@ export default async function RecapPage({
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
-                        padding: "10px 0",
+                        padding: "var(--s-3) 0",
                         borderTop:
-                          i === 0 ? "none" : "1px solid var(--w-line)",
+                          i === 0 ? "none" : "1px solid var(--line)",
                       }}
                     >
-                      <p
-                        style={{
-                          color: "var(--w-fg)",
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          flex: 1,
-                          minWidth: 0,
-                        }}
-                      >
+                      <span className="t-body truncate" style={{ flex: 1 }}>
                         <span
+                          className="t-num"
                           style={{
-                            color: "var(--w-fg-dim)",
-                            fontFamily: "var(--w-mono)",
-                            fontSize: 12,
-                            marginRight: 8,
+                            color: "var(--fg-4)",
+                            fontFamily: "var(--mono)",
+                            fontSize: "var(--ts-sm)",
+                            marginRight: "var(--s-2)",
                           }}
                         >
                           {i + 1}.
                         </span>
                         {h.holder_name}
-                      </p>
-                      <div
-                        className="w-type-meta"
-                        style={{ flexShrink: 0, marginLeft: 12 }}
+                      </span>
+                      <span
+                        className="t-meta"
+                        style={{
+                          flexShrink: 0,
+                          marginLeft: "var(--s-3)",
+                        }}
                       >
-                        <span style={{ color: "var(--w-ok)" }}>
+                        <span style={{ color: "var(--ok)" }}>
                           {h.scanned}
                         </span>{" "}
-                        / {h.approved}
-                        <span style={{ color: "var(--w-fg-muted)" }}>
-                          {" · "}
-                          {pct(h.showRate)}
-                        </span>
-                      </div>
+                        / {h.approved} · {pct(h.showRate)}
+                      </span>
                     </div>
                   ))}
                 </div>
               </section>
             )}
 
-            <section className="w-card" style={{ padding: 20 }}>
-              <div className="w-type-meta" style={{ marginBottom: 12 }}>
-                NO-SHOWS
-                <span style={{ color: "var(--w-fg-muted)" }}>
-                  {" · "}
-                  {recap.noShows.length}
-                </span>
+            <section className="card" style={{ padding: "var(--s-5)" }}>
+              <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+                No-shows · {recap.noShows.length}
               </div>
               {recap.noShows.length === 0 ? (
-                <p
-                  className="w-type-body-sm"
-                  style={{ color: "var(--w-fg-muted)" }}
-                >
+                <div className="t-body-2">
                   Everyone approved scanned in.
-                </p>
+                </div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column" }}>
                   {recap.noShows.slice(0, 40).map((g) => (
@@ -422,92 +373,74 @@ export default async function RecapPage({
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
-                        padding: "10px 0",
-                        borderTop: "1px solid var(--w-line)",
+                        padding: "var(--s-3) 0",
+                        borderTop: "1px solid var(--line)",
                         textDecoration: "none",
                         color: "inherit",
                       }}
                     >
-                      <p
-                        style={{
-                          color: "var(--w-fg)",
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          flex: 1,
-                          minWidth: 0,
-                        }}
-                      >
+                      <span className="t-body truncate" style={{ flex: 1 }}>
                         {g.full_name}
                         {g.plus_ones > 0 && (
-                          <span style={{ color: "var(--w-fg-muted)" }}>
+                          <span style={{ color: "var(--fg-3)" }}>
                             {" "}
                             +{g.plus_ones}
                           </span>
                         )}
-                      </p>
-                      <div
-                        className="w-type-meta"
-                        style={{ flexShrink: 0, marginLeft: 12 }}
+                      </span>
+                      <span
+                        className="t-meta"
+                        style={{
+                          flexShrink: 0,
+                          marginLeft: "var(--s-3)",
+                        }}
                       >
-                        {g.tier.toUpperCase()}
+                        {g.tier}
                         {g.allocation_name && <> · {g.allocation_name}</>}
-                      </div>
+                      </span>
                     </Link>
                   ))}
                   {recap.noShows.length > 40 && (
-                    <p
-                      className="w-type-meta"
-                      style={{
-                        marginTop: 12,
-                        color: "var(--w-fg-muted)",
-                      }}
+                    <div
+                      className="t-meta"
+                      style={{ marginTop: "var(--s-3)" }}
                     >
-                      + {recap.noShows.length - 40} MORE — SEE FULL LIST IN
-                      EXPORT
-                    </p>
+                      + {recap.noShows.length - 40} more — see full list in
+                      export
+                    </div>
                   )}
                 </div>
               )}
             </section>
 
             {feedback && feedback.responseCount > 0 && (
-              <section className="w-card" style={{ padding: 20 }}>
-                <div className="w-type-meta" style={{ marginBottom: 14 }}>
-                  GUEST FEEDBACK
-                  <span style={{ color: "var(--w-fg-muted)" }}>
-                    {" · "}
-                    {feedback.responseCount} RESPONSE
-                    {feedback.responseCount === 1 ? "" : "S"}
-                  </span>
+              <section className="card" style={{ padding: "var(--s-5)" }}>
+                <div
+                  className="t-meta"
+                  style={{ marginBottom: "var(--s-4)" }}
+                >
+                  Guest feedback · {feedback.responseCount} response
+                  {feedback.responseCount === 1 ? "" : "s"}
                 </div>
                 <div
                   style={{
                     display: "flex",
                     alignItems: "baseline",
-                    gap: 12,
-                    marginBottom: 16,
+                    gap: "var(--s-3)",
+                    marginBottom: "var(--s-4)",
                   }}
                 >
-                  <div
-                    style={{
-                      fontFamily: "var(--w-display)",
-                      fontWeight: 700,
-                      fontSize: 36,
-                      lineHeight: 1,
-                      color: "var(--w-acc)",
-                    }}
-                  >
+                  <div className="t-display-md t-num">
                     {feedback.averageRating.toFixed(1)}
                   </div>
-                  <div className="w-type-meta">/ 5 AVERAGE</div>
+                  <div className="t-meta">/ 5 average</div>
                 </div>
                 <div
                   style={{
                     display: "flex",
                     flexDirection: "column",
                     gap: 4,
-                    marginBottom: 18,
+                    marginBottom: "var(--s-5)",
                   }}
                 >
                   {([5, 4, 3, 2, 1] as const).map((stars) => {
@@ -522,11 +455,11 @@ export default async function RecapPage({
                         style={{
                           display: "flex",
                           alignItems: "center",
-                          gap: 8,
+                          gap: "var(--s-2)",
                         }}
                       >
                         <div
-                          className="w-type-meta"
+                          className="t-meta"
                           style={{ width: 28, flexShrink: 0 }}
                         >
                           {stars}★
@@ -535,20 +468,21 @@ export default async function RecapPage({
                           style={{
                             flex: 1,
                             height: 8,
-                            background: "var(--w-surface-2)",
+                            background: "var(--bg-3)",
+                            borderRadius: "var(--r-pill)",
                             overflow: "hidden",
                           }}
                         >
                           <div
                             style={{
                               height: "100%",
-                              background: "var(--w-acc)",
+                              background: "var(--fg)",
                               width: `${pctVal}%`,
                             }}
                           />
                         </div>
                         <div
-                          className="w-type-meta"
+                          className="t-meta"
                           style={{
                             width: 32,
                             textAlign: "right",
@@ -564,23 +498,23 @@ export default async function RecapPage({
                 {feedback.topTags.length > 0 && (
                   <>
                     <div
-                      className="w-type-meta"
-                      style={{ marginBottom: 8 }}
+                      className="t-meta"
+                      style={{ marginBottom: "var(--s-2)" }}
                     >
-                      TOP TAGS
+                      Top tags
                     </div>
                     <div
                       style={{
                         display: "flex",
                         flexWrap: "wrap",
-                        gap: 6,
-                        marginBottom: 18,
+                        gap: "var(--s-1)",
+                        marginBottom: "var(--s-5)",
                       }}
                     >
                       {feedback.topTags.map((t) => (
-                        <Chip key={t.tag} tone="ghost">
-                          {t.tag.toUpperCase()} · {t.count}
-                        </Chip>
+                        <span key={t.tag} className="chip chip--ghost">
+                          {t.tag} · {t.count}
+                        </span>
                       ))}
                     </div>
                   </>
@@ -588,43 +522,41 @@ export default async function RecapPage({
                 {feedback.recentComments.length > 0 && (
                   <>
                     <div
-                      className="w-type-meta"
-                      style={{ marginBottom: 8 }}
+                      className="t-meta"
+                      style={{ marginBottom: "var(--s-2)" }}
                     >
-                      RECENT COMMENTS
+                      Recent comments
                     </div>
                     <div
                       style={{
                         display: "flex",
                         flexDirection: "column",
-                        gap: 10,
+                        gap: "var(--s-3)",
                       }}
                     >
                       {feedback.recentComments.map((c) => (
                         <div
                           key={c.id}
                           style={{
-                            borderLeft: "2px solid var(--w-acc)",
-                            paddingLeft: 12,
-                            paddingTop: 4,
-                            paddingBottom: 4,
+                            borderLeft: "2px solid var(--line-2)",
+                            paddingLeft: "var(--s-3)",
+                            paddingTop: "var(--s-1)",
+                            paddingBottom: "var(--s-1)",
                           }}
                         >
                           <div
-                            className="w-type-meta"
-                            style={{ marginBottom: 4 }}
+                            className="t-meta"
+                            style={{ marginBottom: "var(--s-1)" }}
                           >
                             {"★".repeat(c.rating)}
-                            <span style={{ color: "var(--w-fg-muted)" }}>
+                            <span style={{ color: "var(--fg-4)" }}>
                               {"★".repeat(5 - c.rating)}
                             </span>
                           </div>
                           <p
+                            className="t-body-2"
                             style={{
-                              color: "var(--w-fg)",
-                              opacity: 0.85,
-                              fontSize: 14,
-                              lineHeight: 1.5,
+                              color: "var(--fg-2)",
                               whiteSpace: "pre-wrap",
                             }}
                           >
@@ -638,28 +570,20 @@ export default async function RecapPage({
               </section>
             )}
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 8,
-              }}
-            >
+            <div style={{ display: "flex", gap: "var(--s-2)" }}>
               <Link
                 href={`/owner/events/${event.id}/export`}
-                style={{ textDecoration: "none" }}
+                className="btn btn--ghost"
+                style={{ textDecoration: "none", flex: 1 }}
               >
-                <Button variant="ghost" style={{ width: "100%" }}>
-                  Export CSV
-                </Button>
+                Export CSV
               </Link>
               <Link
                 href={`/owner/events/${event.id}/print`}
-                style={{ textDecoration: "none" }}
+                className="btn btn--ghost"
+                style={{ textDecoration: "none", flex: 1 }}
               >
-                <Button variant="ghost" style={{ width: "100%" }}>
-                  Print roster
-                </Button>
+                Print roster
               </Link>
             </div>
           </div>
@@ -680,23 +604,16 @@ function RecapStat({
 }) {
   const color =
     tone === "ok"
-      ? "var(--w-ok)"
+      ? "var(--ok)"
       : tone === "muted"
-        ? "var(--w-fg-muted)"
-        : "var(--w-fg)";
+        ? "var(--fg-3)"
+        : "var(--fg)";
   return (
     <div>
-      <div className="w-type-meta">{label}</div>
+      <div className="t-meta">{label}</div>
       <div
-        style={{
-          fontFamily: "var(--w-display)",
-          fontWeight: 700,
-          fontSize: 24,
-          letterSpacing: "-0.025em",
-          lineHeight: 1,
-          marginTop: 6,
-          color,
-        }}
+        className="t-h1 t-num"
+        style={{ marginTop: "var(--s-1)", color }}
       >
         {value}
       </div>

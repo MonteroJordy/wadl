@@ -6,13 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { normalizePhone } from "@/lib/routing";
 import type { AccountType } from "@/lib/types";
-import {
-  Button,
-  Chip,
-  IconArrow,
-  IconBack,
-  Wordmark,
-} from "@/components/wadl";
+import { Logo } from "@/components/v5";
 
 // ════════════════════════════════════════════════════════════════════
 // Single-page onboarding wizard. Replaces the old chain
@@ -314,17 +308,17 @@ function SignupWizard() {
   return (
     <main
       id="main-content"
-      className="w-app"
+      className="v5"
       style={{
         minHeight: "100vh",
-        background: "var(--w-bg)",
+        background: "var(--bg)",
         display: "flex",
         flexDirection: "column",
       }}
     >
       <Header step={step} onBack={() => setStep(Math.max(0, step - 1) as Step)} />
 
-      <div style={{ flex: 1, padding: "24px" }}>
+      <div style={{ flex: 1, padding: "var(--s-6)" }}>
         <div style={{ maxWidth: 540, margin: "0 auto" }}>
           {step === 0 && (
             <Step0
@@ -378,20 +372,17 @@ function SignupWizard() {
 
       <footer
         style={{
-          padding: "20px 24px 24px",
+          padding: "var(--s-5) var(--s-6) var(--s-6)",
           textAlign: "center",
         }}
       >
-        <span
-          className="w-type-meta"
-          style={{ color: "var(--w-fg-dim)" }}
-        >
-          ALREADY HAVE AN ACCOUNT?{" "}
+        <span className="t-meta">
+          Already have an account?{" "}
           <Link
             href="/login"
-            style={{ color: "var(--w-acc)", textDecoration: "none" }}
+            style={{ color: "var(--fg)", textDecoration: "none" }}
           >
-            SIGN IN
+            Sign in
           </Link>
         </span>
       </footer>
@@ -400,61 +391,52 @@ function SignupWizard() {
 }
 
 function Header({ step, onBack }: { step: Step; onBack: () => void }) {
-  const labels = ["ROLE", "IDENTITY", "VERIFY", "VENUE"];
+  const labels = ["Role", "Identity", "Verify", "Venue"];
   return (
     <header
       style={{
-        padding: "20px 24px",
+        padding: "var(--s-5) var(--s-6)",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        borderBottom: "1px solid var(--w-line)",
-        gap: 16,
+        borderBottom: "1px solid var(--line)",
+        gap: "var(--s-4)",
         flexWrap: "wrap",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <div
+        style={{ display: "flex", alignItems: "center", gap: "var(--s-3)" }}
+      >
         {step > 0 ? (
           <button
             type="button"
             onClick={onBack}
             aria-label="Back"
-            style={{
-              background: "transparent",
-              border: 0,
-              color: "var(--w-fg-muted)",
-              cursor: "pointer",
-              width: 32,
-              height: 32,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
+            className="btn btn--ghost btn--sm"
+            style={{ width: 32, padding: 0 }}
           >
-            <IconBack size={20} />
+            ←
           </button>
         ) : null}
-        <Wordmark variant="monogrid" size={18} />
+        <Logo size={18} />
       </div>
       <div
         style={{
           display: "flex",
           alignItems: "center",
-          gap: 10,
-          fontFamily: "var(--w-mono)",
-          fontSize: 11,
-          letterSpacing: "0.06em",
+          gap: "var(--s-2)",
           flexWrap: "wrap",
         }}
       >
         {labels.map((l, i) => (
           <span
             key={l}
+            className="t-meta"
             style={{
               display: "inline-flex",
               alignItems: "center",
-              gap: 8,
-              color: i <= step ? "var(--w-acc)" : "var(--w-fg-dim)",
+              gap: "var(--s-2)",
+              color: i <= step ? "var(--fg)" : "var(--fg-4)",
             }}
           >
             <span style={{ fontWeight: 600 }}>0{i + 1}</span>
@@ -464,19 +446,15 @@ function Header({ step, onBack }: { step: Step; onBack: () => void }) {
                 style={{
                   width: 16,
                   height: 1,
-                  background: "var(--w-line-2)",
+                  background: "var(--line-2)",
                 }}
               />
             )}
           </span>
         ))}
       </div>
-      <Link
-        href="/"
-        className="w-type-meta"
-        style={{ textDecoration: "none" }}
-      >
-        EXIT
+      <Link href="/" className="t-meta" style={{ textDecoration: "none" }}>
+        Exit
       </Link>
     </header>
   );
@@ -491,27 +469,21 @@ function Step0({
 }) {
   return (
     <div>
-      <div className="w-type-meta">01 / ROLE</div>
-      <div
-        className="w-type-display-lg"
-        style={{ marginTop: 12, lineHeight: 0.94 }}
-      >
+      <div className="t-meta">01 / Role</div>
+      <div className="t-display-lg" style={{ marginTop: "var(--s-3)" }}>
         Who are you?
       </div>
-      <p
-        className="w-type-body"
-        style={{ color: "var(--w-fg-muted)", marginTop: 16 }}
-      >
+      <p className="t-body-2" style={{ marginTop: "var(--s-4)" }}>
         Pick the one that fits. You can always switch contexts later — same
         login, different hat.
       </p>
 
       <div
         style={{
-          marginTop: 28,
+          marginTop: "var(--s-7)",
           display: "flex",
           flexDirection: "column",
-          gap: 10,
+          gap: "var(--s-3)",
         }}
       >
         {ROLES.map((r) => (
@@ -519,55 +491,28 @@ function Step0({
             key={r.id}
             type="button"
             onClick={() => onPick(r.id)}
+            className="card card--hover"
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 14,
-              padding: 18,
-              background: "transparent",
-              border: "1px solid var(--w-line-2)",
-              color: "var(--w-fg)",
+              gap: "var(--s-4)",
+              padding: "var(--s-5)",
               textAlign: "left",
               cursor: "pointer",
-              transition: "background 0.12s, border-color 0.12s",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.background =
-                "var(--w-acc-soft)";
-              (e.currentTarget as HTMLElement).style.borderColor =
-                "var(--w-acc)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.background =
-                "transparent";
-              (e.currentTarget as HTMLElement).style.borderColor =
-                "var(--w-line-2)";
+              color: "var(--fg)",
             }}
           >
             <div style={{ flex: 1 }}>
-              <div
-                style={{
-                  fontWeight: 600,
-                  fontSize: 17,
-                }}
-              >
-                {r.label}
-              </div>
-              <div
-                className="w-type-body-sm"
-                style={{
-                  color: "var(--w-fg-muted)",
-                  marginTop: 4,
-                }}
-              >
+              <div className="t-h1">{r.label}</div>
+              <div className="t-body-2" style={{ marginTop: "var(--s-1)" }}>
                 {r.blurb}
               </div>
             </div>
-            <IconArrow />
+            <span style={{ color: "var(--fg-3)" }}>→</span>
           </button>
         ))}
 
-        <hr className="w-rule" style={{ margin: "12px 0" }} />
+        <div className="hr" style={{ margin: "var(--s-3) 0" }} />
 
         <button
           type="button"
@@ -575,25 +520,22 @@ function Step0({
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 14,
-            padding: 14,
+            gap: "var(--s-4)",
+            padding: "var(--s-4)",
             background: "transparent",
             border: 0,
-            color: "var(--w-fg-muted)",
+            color: "var(--fg-2)",
             textAlign: "left",
             cursor: "pointer",
           }}
         >
           <div style={{ flex: 1 }}>
-            <div className="w-type-meta">JUST HERE TO RSVP TO AN EVENT?</div>
-            <div
-              className="w-type-body-sm"
-              style={{ marginTop: 2 }}
-            >
+            <div className="t-meta">Just here to RSVP to an event?</div>
+            <div className="t-body-2" style={{ marginTop: "var(--s-1)" }}>
               No account needed. Browse events →
             </div>
           </div>
-          <IconArrow />
+          <span style={{ color: "var(--fg-3)" }}>→</span>
         </button>
       </div>
     </div>
@@ -626,30 +568,27 @@ function Step1Identity({
   const role = ROLES.find((r) => r.id === accountType)!;
   return (
     <div>
-      <div className="w-type-meta">
-        02 / IDENTITY · {role.label.toUpperCase()}
-      </div>
-      <div
-        className="w-type-display-lg"
-        style={{ marginTop: 12, lineHeight: 0.94 }}
-      >
-        Tell us
-        <br />
-        about you.
+      <div className="t-meta">02 / Identity · {role.label}</div>
+      <div className="t-display-lg" style={{ marginTop: "var(--s-3)" }}>
+        Tell us about you.
       </div>
 
       <form
         onSubmit={onSubmit}
         style={{
-          marginTop: 28,
+          marginTop: "var(--s-7)",
           display: "flex",
           flexDirection: "column",
-          gap: 14,
+          gap: "var(--s-4)",
         }}
       >
         <div>
-          <label htmlFor="fullName" className="w-label">
-            YOUR NAME
+          <label
+            htmlFor="fullName"
+            className="t-meta"
+            style={{ display: "block", marginBottom: "var(--s-2)" }}
+          >
+            Your name
           </label>
           <input
             id="fullName"
@@ -657,7 +596,7 @@ function Step1Identity({
             autoComplete="name"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            className="w-input"
+            className="input"
             placeholder="Jordy Montero"
             required
             autoFocus
@@ -665,23 +604,31 @@ function Step1Identity({
         </div>
 
         <div>
-          <label htmlFor="orgName" className="w-label">
-            {role.orgLabel.toUpperCase()}
+          <label
+            htmlFor="orgName"
+            className="t-meta"
+            style={{ display: "block", marginBottom: "var(--s-2)" }}
+          >
+            {role.orgLabel}
           </label>
           <input
             id="orgName"
             type="text"
             value={orgName}
             onChange={(e) => setOrgName(e.target.value)}
-            className="w-input"
+            className="input"
             placeholder={role.orgPlaceholder}
             required={accountType !== "individual"}
           />
         </div>
 
         <div>
-          <label htmlFor="phone" className="w-label">
-            PHONE
+          <label
+            htmlFor="phone"
+            className="t-meta"
+            style={{ display: "block", marginBottom: "var(--s-2)" }}
+          >
+            Phone
           </label>
           <input
             id="phone"
@@ -690,37 +637,27 @@ function Step1Identity({
             autoComplete="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="w-input"
+            className="input"
             placeholder="(305) 555 1234"
             required
           />
           <p
-            className="w-type-meta"
-            style={{ marginTop: 8 }}
+            className="t-meta"
+            style={{ marginTop: "var(--s-2)", color: "var(--fg-4)" }}
           >
-            WE&apos;LL TEXT YOU A 6-DIGIT CODE · NEVER SHARED · NEVER SPAMMED
+            We&apos;ll text you a 6-digit code · never shared · never spammed
           </p>
         </div>
 
-        {error ? (
-          <p
-            className="w-type-body-sm"
-            style={{ color: "var(--w-err)" }}
-            role="alert"
-          >
-            {error}
-          </p>
-        ) : null}
+        {error ? <ErrorLine>{error}</ErrorLine> : null}
 
-        <Button
+        <button
           type="submit"
-          variant="primary"
-          size="lg"
-          block
+          className="btn btn--lg btn--block"
           disabled={pending}
         >
-          {pending ? "Sending code…" : "Send code → "}
-        </Button>
+          {pending ? "Sending code…" : "Send code →"}
+        </button>
       </form>
     </div>
   );
@@ -747,34 +684,22 @@ function Step2Verify({
 }) {
   return (
     <div>
-      <div className="w-type-meta">03 / VERIFY</div>
-      <div
-        className="w-type-display-lg"
-        style={{ marginTop: 12, lineHeight: 0.94 }}
-      >
-        Enter
-        <br />
-        the code.
+      <div className="t-meta">03 / Verify</div>
+      <div className="t-display-lg" style={{ marginTop: "var(--s-3)" }}>
+        Enter the code.
       </div>
-      <p
-        className="w-type-body"
-        style={{ color: "var(--w-fg-muted)", marginTop: 16 }}
-      >
-        Sent to <span style={{ color: "var(--w-fg)" }}>{phone}</span>.{" "}
+      <p className="t-body-2" style={{ marginTop: "var(--s-4)" }}>
+        Sent to <span style={{ color: "var(--fg)" }}>{phone}</span>.{" "}
         <button
           type="button"
           onClick={onChangePhone}
-          className="w-type-meta"
           style={{
             background: "transparent",
             border: 0,
-            color: "var(--w-acc)",
+            color: "var(--fg)",
             cursor: "pointer",
             padding: 0,
-            textTransform: "none",
-            fontFamily: "var(--w-sans)",
-            fontSize: 15,
-            letterSpacing: "-0.005em",
+            fontSize: "inherit",
             textDecoration: "underline",
           }}
         >
@@ -785,15 +710,19 @@ function Step2Verify({
       <form
         onSubmit={onVerify}
         style={{
-          marginTop: 28,
+          marginTop: "var(--s-7)",
           display: "flex",
           flexDirection: "column",
-          gap: 14,
+          gap: "var(--s-4)",
         }}
       >
         <div>
-          <label htmlFor="code" className="w-label">
-            6-DIGIT CODE
+          <label
+            htmlFor="code"
+            className="t-meta"
+            style={{ display: "block", marginBottom: "var(--s-2)" }}
+          >
+            6-digit code
           </label>
           <input
             id="code"
@@ -806,13 +735,13 @@ function Step2Verify({
             onChange={(e) =>
               setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
             }
-            className="w-input"
+            className="input"
             style={{
               height: 64,
               fontSize: 28,
               textAlign: "center",
               letterSpacing: "0.5em",
-              fontFamily: "var(--w-mono)",
+              fontFamily: "var(--mono)",
               paddingInlineStart: "0.5em",
             }}
             placeholder="••••••"
@@ -821,34 +750,23 @@ function Step2Verify({
           />
         </div>
 
-        {error ? (
-          <p
-            className="w-type-body-sm"
-            style={{ color: "var(--w-err)" }}
-            role="alert"
-          >
-            {error}
-          </p>
-        ) : null}
+        {error ? <ErrorLine>{error}</ErrorLine> : null}
 
-        <Button
+        <button
           type="submit"
-          variant="primary"
-          size="lg"
-          block
+          className="btn btn--lg btn--block"
           disabled={pending}
         >
           {pending ? "Verifying…" : "Verify & continue"}
-        </Button>
-        <Button
+        </button>
+        <button
           type="button"
-          variant="ghost"
-          block
+          className="btn btn--ghost btn--block"
           onClick={onResend}
           disabled={pending}
         >
           Resend code
-        </Button>
+        </button>
       </form>
     </div>
   );
@@ -881,40 +799,38 @@ function Step3Venue({
 }) {
   return (
     <div>
-      <div className="w-type-meta">04 / VENUE</div>
-      <div
-        className="w-type-display-lg"
-        style={{ marginTop: 12, lineHeight: 0.94 }}
-      >
+      <div className="t-meta">04 / Venue</div>
+      <div className="t-display-lg" style={{ marginTop: "var(--s-3)" }}>
         Your room.
       </div>
-      <p
-        className="w-type-body"
-        style={{ color: "var(--w-fg-muted)", marginTop: 16 }}
-      >
-        Basics for <span style={{ color: "var(--w-fg)" }}>{orgName}</span>.
-        Skip and add later if you&apos;re in a hurry.
+      <p className="t-body-2" style={{ marginTop: "var(--s-4)" }}>
+        Basics for <span style={{ color: "var(--fg)" }}>{orgName}</span>. Skip
+        and add later if you&apos;re in a hurry.
       </p>
 
       <form
         onSubmit={onSubmit}
         style={{
-          marginTop: 28,
+          marginTop: "var(--s-7)",
           display: "flex",
           flexDirection: "column",
-          gap: 14,
+          gap: "var(--s-4)",
         }}
       >
         <div>
-          <label htmlFor="addr" className="w-label">
-            ADDRESS
+          <label
+            htmlFor="addr"
+            className="t-meta"
+            style={{ display: "block", marginBottom: "var(--s-2)" }}
+          >
+            Address
           </label>
           <input
             id="addr"
             type="text"
             value={venueAddr}
             onChange={(e) => setVenueAddr(e.target.value)}
-            className="w-input"
+            className="input"
             placeholder="34 NE 11th St"
           />
         </div>
@@ -922,25 +838,33 @@ function Step3Venue({
           style={{
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
-            gap: 10,
+            gap: "var(--s-3)",
           }}
         >
           <div>
-            <label htmlFor="city" className="w-label">
-              CITY
+            <label
+              htmlFor="city"
+              className="t-meta"
+              style={{ display: "block", marginBottom: "var(--s-2)" }}
+            >
+              City
             </label>
             <input
               id="city"
               type="text"
               value={venueCity}
               onChange={(e) => setVenueCity(e.target.value)}
-              className="w-input"
+              className="input"
               placeholder="Miami"
             />
           </div>
           <div>
-            <label htmlFor="cap" className="w-label">
-              CAPACITY
+            <label
+              htmlFor="cap"
+              className="t-meta"
+              style={{ display: "block", marginBottom: "var(--s-2)" }}
+            >
+              Capacity
             </label>
             <input
               id="cap"
@@ -949,53 +873,59 @@ function Step3Venue({
               min={1}
               value={venueCap}
               onChange={(e) => setVenueCap(e.target.value)}
-              className="w-input"
+              className="input"
               placeholder="400"
             />
           </div>
         </div>
 
-        {error ? (
-          <p
-            className="w-type-body-sm"
-            style={{ color: "var(--w-err)" }}
-            role="alert"
-          >
-            {error}
-          </p>
-        ) : null}
+        {error ? <ErrorLine>{error}</ErrorLine> : null}
 
-        <Button
+        <button
           type="submit"
-          variant="primary"
-          size="lg"
-          block
+          className="btn btn--lg btn--block"
           disabled={pending}
         >
           {pending ? "Saving…" : "Finish — open dashboard →"}
-        </Button>
-        <Button
+        </button>
+        <button
           type="button"
-          variant="ghost"
-          block
+          className="btn btn--ghost btn--block"
           onClick={onSkip}
           disabled={pending}
         >
           Skip — I&apos;ll add this later
-        </Button>
+        </button>
 
-        <Chip tone="ghost" style={{ alignSelf: "center", marginTop: 8 }}>
-          ✓ ROLE   ✓ IDENTITY   ✓ VERIFY   · VENUE
-        </Chip>
+        <span
+          className="chip"
+          style={{ alignSelf: "center", marginTop: "var(--s-2)" }}
+        >
+          ✓ Role · ✓ Identity · ✓ Verify · Venue
+        </span>
       </form>
     </div>
+  );
+}
+
+function ErrorLine({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="t-body-2" style={{ color: "var(--err)" }} role="alert">
+      {children}
+    </p>
   );
 }
 
 export default function SignupPage() {
   return (
     <Suspense
-      fallback={<main id="main-content" className="w-app w-frame" />}
+      fallback={
+        <main
+          id="main-content"
+          className="v5"
+          style={{ minHeight: "100vh", background: "var(--bg)" }}
+        />
+      }
     >
       <SignupWizard />
     </Suspense>

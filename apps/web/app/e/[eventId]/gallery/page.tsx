@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Wordmark } from "@/components/wadl";
+import { Logo } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 
@@ -41,11 +41,11 @@ export default async function PublicGalleryPage({
   return (
     <main
       id="main-content"
-      className="w-app"
+      className="v5"
       style={{
         minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 64px",
+        background: "var(--bg)",
+        padding: "var(--s-8) var(--s-6) var(--s-16)",
       }}
     >
       <div style={{ maxWidth: 960, margin: "0 auto" }}>
@@ -54,40 +54,37 @@ export default async function PublicGalleryPage({
             display: "flex",
             alignItems: "flex-end",
             justifyContent: "space-between",
-            paddingBottom: 24,
-            borderBottom: "1px solid var(--w-line)",
-            marginBottom: 24,
+            paddingBottom: "var(--s-6)",
+            borderBottom: "1px solid var(--line)",
+            marginBottom: "var(--s-6)",
           }}
         >
           <div>
-            <div className="w-type-meta">GALLERY</div>
+            <div className="t-meta">Gallery</div>
             <div
-              className="w-type-display-md"
-              style={{ marginTop: 6, lineHeight: 1.0 }}
+              className="t-display-md"
+              style={{ marginTop: "var(--s-2)", lineHeight: 1.0 }}
             >
               {event.name}
             </div>
           </div>
           <Link href="/discover" style={{ textDecoration: "none" }}>
-            <Wordmark variant="monogrid" size={18} />
+            <Logo size={18} />
           </Link>
         </header>
 
         {photos.length === 0 ? (
           <div
-            className="w-card"
+            className="card"
             style={{
-              padding: "64px 32px",
+              padding: "var(--s-16) var(--s-8)",
               textAlign: "center",
             }}
           >
-            <div className="w-type-h2">Photos coming soon</div>
+            <div className="t-h2">Photos coming soon</div>
             <p
-              className="w-type-body-sm"
-              style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 12,
-              }}
+              className="t-body-2"
+              style={{ marginTop: "var(--s-3)" }}
             >
               The photographer hasn&apos;t uploaded yet. Check back later.
             </p>
@@ -111,7 +108,7 @@ export default async function PublicGalleryPage({
                 <figure
                   key={p.id}
                   style={{
-                    background: "var(--w-surface-2)",
+                    background: "var(--bg-3)",
                     position: "relative",
                     margin: 0,
                   }}
@@ -134,16 +131,16 @@ export default async function PublicGalleryPage({
                         position: "absolute",
                         inset: "auto 0 0 0",
                         background:
-                          "linear-gradient(to top, rgba(15,15,16,0.85), transparent)",
-                        color: "var(--w-fg)",
-                        padding: "16px 12px 10px",
-                        fontSize: 12,
+                          "linear-gradient(to top, rgba(10,10,10,0.85), transparent)",
+                        color: "var(--fg)",
+                        padding: "var(--s-4) var(--s-3) var(--s-2)",
+                        fontSize: "var(--ts-sm)",
                       }}
                     >
                       {p.caption}
                       {names.length > 0 && (
                         <div
-                          className="w-type-meta"
+                          className="t-meta"
                           style={{ marginTop: 2 }}
                         >
                           {names.join(" · ")}
@@ -158,18 +155,18 @@ export default async function PublicGalleryPage({
         )}
 
         <div
-          className="w-type-meta"
+          className="t-meta"
           style={{
-            marginTop: 40,
+            marginTop: "var(--s-10)",
             textAlign: "center",
-            color: "var(--w-fg-dim)",
+            color: "var(--fg-4)",
           }}
         >
           <Link
             href="/discover"
-            style={{ color: "var(--w-acc)", textDecoration: "none" }}
+            style={{ color: "var(--fg)", textDecoration: "none" }}
           >
-            MORE EVENTS →
+            More events →
           </Link>
         </div>
       </div>

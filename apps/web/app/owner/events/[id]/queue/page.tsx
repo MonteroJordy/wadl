@@ -1,7 +1,6 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOwnerContext, fmtDate } from "@/lib/owner";
-import { Chip } from "@/components/wadl";
+import { Breadcrumb, PageHeader, EventSubNav } from "@/components/v5";
 import QueueRow from "./row";
 import BulkActions from "./bulk";
 
@@ -81,103 +80,60 @@ export default async function QueuePage({
   return (
     <main
       id="main-content"
-      className="w-app"
-      style={{
-        minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
-      }}
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
     >
-      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-        <Link
-          href={`/owner/events/${event.id}`}
-          className="w-type-meta"
-          style={{ textDecoration: "none" }}
-        >
-          ← {event.name.toUpperCase()}
-        </Link>
+      <Breadcrumb
+        items={[
+          ["Events", "/owner"],
+          [event.name, `/owner/events/${event.id}`],
+          "Queue",
+        ]}
+      />
+      <PageHeader
+        eyebrow="Approval queue"
+        title="Pending review"
+        sub={
+          pending.length === 0
+            ? "Nothing pending — auto-approved allocations bypass this view."
+            : `${pending.length} pending · approve or reject below.`
+        }
+      />
+      <EventSubNav active="guests" eventId={event.id} />
 
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-end",
-            justifyContent: "space-between",
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            marginTop: 16,
-            gap: 16,
-            flexWrap: "wrap",
-          }}
-        >
-          <div>
-            <div className="w-type-meta">APPROVAL QUEUE</div>
-            <div className="w-type-display-md" style={{ marginTop: 8 }}>
-              Pending review
-            </div>
-            <p
-              className="w-type-body-sm"
-              style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 8,
-              }}
-            >
-              {pending.length === 0
-                ? "Nothing pending — auto-approved allocations bypass this view."
-                : `${pending.length} pending · approve or reject below.`}
-            </p>
-          </div>
-          {pending.length > 0 && (
-            <Chip tone="warn">{pending.length} PENDING</Chip>
-          )}
-        </div>
-
+      <div style={{ padding: "var(--s-8)" }}>
         {pending.length === 0 ? (
           <div
-            className="w-card"
-            style={{
-              padding: "64px 32px",
-              textAlign: "center",
-              marginTop: 24,
-            }}
+            className="card"
+            style={{ padding: "var(--s-16) var(--s-8)", textAlign: "center" }}
           >
             <div
               style={{
-                width: 64,
-                height: 64,
-                background: "oklch(0.86 0.18 145 / 0.18)",
-                color: "var(--w-ok)",
-                margin: "0 auto 16px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 32,
-                fontWeight: 700,
+                width: 56,
+                height: 56,
+                borderRadius: "var(--r-lg)",
+                background: "var(--bg-3)",
+                margin: "0 auto var(--s-5)",
               }}
-            >
-              ✓
-            </div>
-            <div className="w-type-h1">Queue empty</div>
-            <p
-              className="w-type-body-sm"
+            />
+            <div className="t-display-md">Queue empty</div>
+            <div
+              className="t-body-2"
               style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 12,
+                marginTop: "var(--s-3)",
                 maxWidth: 420,
                 marginInline: "auto",
               }}
             >
-              Nothing waiting for review. Auto-approved allocations bypass
-              this view — you only see RSVPs from holders who require host
-              approval.
-            </p>
+              Nothing waiting for review. Auto-approved allocations bypass this
+              view — you only see RSVPs from holders who require host approval.
+            </div>
           </div>
         ) : (
           <div
             style={{
-              marginTop: 28,
               display: "flex",
               flexDirection: "column",
-              gap: 32,
+              gap: "var(--s-10)",
             }}
           >
             {nights.map((n) => {
@@ -188,30 +144,36 @@ export default async function QueuePage({
                   <div
                     style={{
                       display: "flex",
-                      alignItems: "baseline",
+                      alignItems: "center",
                       justifyContent: "space-between",
-                      marginBottom: 12,
+                      marginBottom: "var(--s-3)",
+                      gap: "var(--s-3)",
+                      flexWrap: "wrap",
                     }}
                   >
-                    <span className="w-type-meta">
-                      {fmtDate(n.night_date).toUpperCase()} · {list.length}{" "}
-                      PENDING
+                    <span className="t-meta">
+                      {fmtDate(n.night_date)} · {list.length} pending
                     </span>
-                  </div>
-                  <div style={{ marginBottom: 12 }}>
                     <BulkActions
                       eventId={event.id}
                       nightId={n.id}
                       count={list.length}
                     />
                   </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 6,
-                    }}
-                  >
+                  <div className="card">
+                    <div
+                      className="row"
+                      style={{
+                        gridTemplateColumns: "1fr 160px 100px 200px",
+                        background: "var(--bg)",
+                      }}
+                    >
+                      {["Name", "Holder", "Added", ""].map((h, i) => (
+                        <span key={i} className="t-meta">
+                          {h}
+                        </span>
+                      ))}
+                    </div>
                     {list.map((g) => (
                       <QueueRow
                         key={g.id}

@@ -6,8 +6,8 @@ import {
   type NotificationKind,
 } from "@/lib/notifications";
 import { markAllReadAction } from "./actions";
-import { Button, Chip } from "@/components/wadl";
-import FormSubmit from "@/components/form-submit";
+import { PageHeader } from "@/components/v5";
+import { InlineFormSubmit } from "@/components/form-submit";
 import { fmtRelative } from "@wadl/shared/format";
 
 export const dynamic = "force-dynamic";
@@ -38,67 +38,35 @@ export default async function NotificationsPage() {
   const unread = rows.filter((r) => !r.read_at).length;
 
   return (
-    <main
-      id="main-content"
-      className="w-app"
-      style={{
-        minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
-      }}
-    >
-      <div style={{ maxWidth: 800, margin: "0 auto" }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-end",
-            justifyContent: "space-between",
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            gap: 16,
-            flexWrap: "wrap",
-          }}
-        >
-          <div>
-            <div className="w-type-meta">INBOX</div>
-            <div className="w-type-display-md" style={{ marginTop: 8 }}>
-              Notifications
-            </div>
-            <p
-              className="w-type-body-sm"
-              style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 8,
-              }}
-            >
-              {rows.length} total
-              {unread > 0 ? ` · ${unread} unread` : " · all read"}
-            </p>
-          </div>
-          {unread > 0 && (
+    <main id="main-content" style={{ minHeight: "100vh", background: "var(--bg)" }}>
+      <PageHeader
+        eyebrow="Inbox"
+        title="Notifications"
+        sub={`${rows.length} total${
+          unread > 0 ? ` · ${unread} unread` : " · all read"
+        }`}
+        actions={
+          unread > 0 ? (
             <form action={markAllReadAction}>
-              <FormSubmit variant="ghost" pendingLabel="Marking…">
+              <InlineFormSubmit className="btn btn--ghost" pendingLabel="Marking…">
                 Mark all read
-              </FormSubmit>
+              </InlineFormSubmit>
             </form>
-          )}
-        </div>
+          ) : undefined
+        }
+      />
 
+      <div style={{ padding: "var(--s-8)", maxWidth: 800 }}>
         {rows.length === 0 ? (
           <div
-            className="w-card"
-            style={{
-              padding: "64px 32px",
-              textAlign: "center",
-              marginTop: 24,
-            }}
+            className="card"
+            style={{ padding: "var(--s-16) var(--s-8)", textAlign: "center" }}
           >
-            <div className="w-type-h1">Inbox zero</div>
+            <div className="t-display-sm">Inbox zero</div>
             <p
-              className="w-type-body-sm"
+              className="t-body-2"
               style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 12,
+                marginTop: "var(--s-3)",
                 maxWidth: 460,
                 marginInline: "auto",
               }}
@@ -112,68 +80,56 @@ export default async function NotificationsPage() {
             style={{
               listStyle: "none",
               padding: 0,
-              margin: "20px 0 0",
+              margin: 0,
               display: "flex",
               flexDirection: "column",
-              gap: 6,
+              gap: "var(--s-2)",
             }}
           >
             {rows.map((r) => {
               const kind = r.kind as NotificationKind;
               const label = KIND_LABEL[kind] ?? r.kind;
               const tone = KIND_TONE[kind] ?? "coral";
-              const chipTone =
+              const chipClass =
                 tone === "mint"
-                  ? "ok"
+                  ? "chip chip--ok"
                   : tone === "gold"
-                    ? "warn"
-                    : "acc";
+                    ? "chip chip--warn"
+                    : "chip chip--info";
               const message =
                 (r.payload?.message as string | undefined) ?? label;
               const href = (r.payload?.href as string | undefined) ?? null;
               const isUnread = !r.read_at;
               const inner = (
                 <div
-                  className="w-card"
+                  className="card"
                   style={{
-                    padding: 14,
+                    padding: "var(--s-4)",
                     display: "flex",
                     alignItems: "flex-start",
-                    gap: 12,
-                    borderColor: isUnread
-                      ? "var(--w-acc)"
-                      : "var(--w-line)",
-                    background: isUnread
-                      ? "var(--w-acc-soft)"
-                      : "var(--w-surface-2)",
+                    gap: "var(--s-3)",
+                    borderColor: isUnread ? "var(--line-2)" : "var(--line)",
                   }}
                 >
-                  <Chip tone={chipTone}>{label}</Chip>
+                  <span className={chipClass}>{label}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p
-                      style={{
-                        fontSize: 14,
-                        fontWeight: 500,
-                      }}
+                      className="t-body"
+                      style={{ fontWeight: isUnread ? 500 : 400 }}
                     >
                       {message}
                     </p>
                     <p
-                      className="w-type-meta"
-                      style={{ marginTop: 4 }}
+                      className="t-meta"
+                      style={{ marginTop: "var(--s-1)" }}
                     >
-                      {ago(r.created_at).toUpperCase()}
+                      {ago(r.created_at)}
                     </p>
                   </div>
                   {isUnread && (
                     <span
-                      style={{
-                        flexShrink: 0,
-                        width: 8,
-                        height: 8,
-                        background: "var(--w-acc)",
-                        marginTop: 4,
-                      }}
+                      className="dot dot--ok"
+                      style={{ flexShrink: 0, marginTop: 6 }}
                       aria-label="unread"
                     />
                   )}
@@ -184,10 +140,7 @@ export default async function NotificationsPage() {
                   {href ? (
                     <Link
                       href={href}
-                      style={{
-                        textDecoration: "none",
-                        color: "inherit",
-                      }}
+                      style={{ textDecoration: "none", color: "inherit" }}
                     >
                       {inner}
                     </Link>

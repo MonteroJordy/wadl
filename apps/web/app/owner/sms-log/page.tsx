@@ -1,6 +1,6 @@
 import { requireOwnerContext } from "@/lib/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Chip } from "@/components/wadl";
+import { PageHeader } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "SMS log — WADL" };
@@ -24,19 +24,16 @@ interface LogRow {
   guest: { id: string; full_name: string } | null;
 }
 
-const STATUS_CHIP: Record<
-  string,
-  "ok" | "warn" | "err" | "ghost" | "neutral"
-> = {
-  delivered: "ok",
-  sent: "ok",
-  failed: "err",
-  undelivered: "err",
-  opted_out: "err",
-  config_error: "err",
-  queued: "ghost",
-  sending: "ghost",
-  accepted: "ghost",
+const STATUS_CHIP: Record<string, string> = {
+  delivered: "chip chip--ok",
+  sent: "chip chip--ok",
+  failed: "chip chip--err",
+  undelivered: "chip chip--err",
+  opted_out: "chip chip--err",
+  config_error: "chip chip--err",
+  queued: "chip chip--ghost",
+  sending: "chip chip--ghost",
+  accepted: "chip chip--ghost",
 };
 
 function effectiveStatus(r: LogRow): string {
@@ -44,13 +41,13 @@ function effectiveStatus(r: LogRow): string {
 }
 
 const FILTERS = [
-  ["", "all"],
-  ["delivered", "delivered"],
-  ["failed", "failed"],
-  ["undelivered", "undelivered"],
-  ["sent", "sent"],
-  ["opted_out", "opted out"],
-  ["config_error", "config error"],
+  ["", "All"],
+  ["delivered", "Delivered"],
+  ["failed", "Failed"],
+  ["undelivered", "Undelivered"],
+  ["sent", "Sent"],
+  ["opted_out", "Opted out"],
+  ["config_error", "Config error"],
 ] as const;
 
 export default async function SmsLogPage({
@@ -92,101 +89,63 @@ export default async function SmsLogPage({
   );
 
   return (
-    <main
-      id="main-content"
-      className="w-app"
-      style={{
-        minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
-      }}
-    >
-      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-end",
-            justifyContent: "space-between",
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            gap: 16,
-            flexWrap: "wrap",
-          }}
-        >
-          <div>
-            <div className="w-type-meta">OUTBOUND SMS</div>
-            <div className="w-type-display-md" style={{ marginTop: 8 }}>
-              Message log
-            </div>
-            <p
-              className="w-type-body-sm"
-              style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 8,
-              }}
+    <main id="main-content" style={{ minHeight: "100vh", background: "var(--bg)" }}>
+      <PageHeader
+        eyebrow="Outbound SMS"
+        title="Message log"
+        sub={`Last 200 sends · est $${totalCost.toFixed(2)}`}
+        actions={
+          <>
+            <span className="chip chip--ok">{deliveredCount} delivered</span>
+            {failedCount > 0 && (
+              <span className="chip chip--err">{failedCount} failed</span>
+            )}
+          </>
+        }
+      />
+
+      {/* Filter chips */}
+      <div
+        style={{
+          padding: "var(--s-4) var(--s-8)",
+          borderBottom: "1px solid var(--line)",
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "var(--s-1)",
+        }}
+      >
+        {FILTERS.map(([s, label]) => {
+          const active = status === s;
+          return (
+            <a
+              key={s || "all"}
+              href={s ? `/owner/sms-log?status=${s}` : "/owner/sms-log"}
+              className={"nav-item" + (active ? " nav-item--active" : "")}
+              style={{ fontSize: "var(--ts-sm)", textDecoration: "none" }}
             >
-              Last 200 sends · est ${totalCost.toFixed(2)}
-            </p>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              gap: 6,
-              flexWrap: "wrap",
-            }}
-          >
-            <Chip tone="ok">{deliveredCount} DELIVERED</Chip>
-            {failedCount > 0 && <Chip tone="err">{failedCount} FAILED</Chip>}
-          </div>
-        </div>
+              {label}
+            </a>
+          );
+        })}
+      </div>
 
-        {/* Filter chips */}
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 6,
-            marginTop: 20,
-          }}
-        >
-          {FILTERS.map(([s, label]) => {
-            const active = status === s;
-            return (
-              <a
-                key={s || "all"}
-                href={s ? `/owner/sms-log?status=${s}` : "/owner/sms-log"}
-                style={{ textDecoration: "none" }}
-              >
-                <Chip tone={active ? "neutral" : "ghost"}>
-                  {label.toUpperCase()}
-                </Chip>
-              </a>
-            );
-          })}
-        </div>
-
+      <div style={{ padding: "var(--s-8)" }}>
         {rows.length === 0 ? (
           <div
-            className="w-card"
-            style={{
-              padding: "64px 32px",
-              textAlign: "center",
-              marginTop: 24,
-            }}
+            className="card"
+            style={{ padding: "var(--s-16) var(--s-8)", textAlign: "center" }}
           >
-            <div className="w-type-h1">Quiet line</div>
+            <div className="t-display-sm">Quiet line</div>
             <p
-              className="w-type-body-sm"
+              className="t-body-2"
               style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 12,
+                marginTop: "var(--s-3)",
                 maxWidth: 480,
                 marginInline: "auto",
               }}
             >
-              Every text WADL fires — RSVP QRs, broadcasts, tier upgrades,
-              staff invites — lands here. Quiet means nothing&apos;s going
-              out.
+              Every text WADL fires — RSVP QRs, broadcasts, tier upgrades, staff
+              invites — lands here. Quiet means nothing&apos;s going out.
             </p>
           </div>
         ) : (
@@ -194,97 +153,84 @@ export default async function SmsLogPage({
             style={{
               listStyle: "none",
               padding: 0,
-              margin: "20px 0 0",
+              margin: 0,
               display: "flex",
               flexDirection: "column",
-              gap: 6,
+              gap: "var(--s-2)",
             }}
           >
             {rows.map((r) => {
               const effStatus = effectiveStatus(r);
-              const tone = STATUS_CHIP[effStatus] ?? "ghost";
+              const chipClass = STATUS_CHIP[effStatus] ?? "chip chip--ghost";
               return (
                 <li key={r.id}>
-                  <div
-                    className="w-card"
-                    style={{ padding: 14 }}
-                  >
+                  <div className="card" style={{ padding: "var(--s-4)" }}>
                     <div
                       style={{
                         display: "flex",
                         alignItems: "baseline",
                         justifyContent: "space-between",
-                        gap: 12,
-                        marginBottom: 8,
+                        gap: "var(--s-3)",
+                        marginBottom: "var(--s-2)",
                       }}
                     >
                       <div
-                        style={{
-                          fontFamily: "var(--w-mono)",
-                          fontSize: 14,
-                          fontWeight: 500,
-                        }}
+                        className="t-body t-num"
+                        style={{ fontFamily: "var(--mono)", fontWeight: 500 }}
                       >
                         {r.to_phone}
                       </div>
-                      <Chip
-                        tone={tone}
+                      <span
+                        className={chipClass}
                         title={
                           r.status_updated_at
                             ? `Updated ${new Date(r.status_updated_at).toLocaleString()}`
                             : undefined
                         }
                       >
-                        {effStatus.replace(/_/g, " ").toUpperCase()}
-                      </Chip>
+                        {effStatus.replace(/_/g, " ")}
+                      </span>
                     </div>
                     <p
-                      style={{
-                        fontSize: 14,
-                        lineHeight: 1.5,
-                        color: "var(--w-fg)",
-                        marginBottom: 8,
-                      }}
+                      className="t-body"
+                      style={{ marginBottom: "var(--s-2)" }}
                     >
                       {r.body}
                     </p>
                     <div
-                      className="w-type-meta"
-                      style={{ display: "flex", gap: 8, flexWrap: "wrap" }}
+                      className="t-meta"
+                      style={{
+                        display: "flex",
+                        gap: "var(--s-2)",
+                        flexWrap: "wrap",
+                      }}
                     >
                       <span>
-                        {new Date(r.created_at).toLocaleString().toUpperCase()}
+                        {new Date(r.created_at).toLocaleString()}
                       </span>
-                      <span>· {r.provider.toUpperCase()}</span>
-                      {r.template_key && (
-                        <span>· {r.template_key.toUpperCase()}</span>
-                      )}
-                      <span>· {r.segments ?? 1} SEG</span>
-                      <span>
-                        · ${(r.cost_estimate_usd ?? 0).toFixed(4)}
-                      </span>
+                      <span>· {r.provider}</span>
+                      {r.template_key && <span>· {r.template_key}</span>}
+                      <span>· {r.segments ?? 1} seg</span>
+                      <span>· ${(r.cost_estimate_usd ?? 0).toFixed(4)}</span>
                     </div>
                     {r.event && (
                       <div
-                        className="w-type-meta"
+                        className="t-meta truncate"
                         style={{
-                          marginTop: 6,
-                          color: "var(--w-fg)",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
+                          marginTop: "var(--s-1)",
+                          color: "var(--fg-2)",
                         }}
                       >
-                        {r.event.name.toUpperCase()}
-                        {r.guest ? ` · ${r.guest.full_name.toUpperCase()}` : ""}
+                        {r.event.name}
+                        {r.guest ? ` · ${r.guest.full_name}` : ""}
                       </div>
                     )}
                     {r.error && (
                       <div
-                        className="w-type-body-sm"
+                        className="t-body-2"
                         style={{
-                          marginTop: 6,
-                          color: "var(--w-err)",
+                          marginTop: "var(--s-1)",
+                          color: "var(--err)",
                         }}
                       >
                         {r.error}

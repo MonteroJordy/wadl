@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { Button } from "@/components/wadl";
+import { Breadcrumb, PageHeader, EventSubNav } from "@/components/v5";
 import { parseChatAction, commitChatAction } from "./actions";
 import type { ParsedLine } from "@/lib/chathub";
 
@@ -21,26 +21,6 @@ const TIERS: Array<{ id: "ga" | "vip" | "all_access"; label: string }> = [
   { id: "vip", label: "VIP" },
   { id: "all_access", label: "All access" },
 ];
-
-const FRAME_STYLE: React.CSSProperties = {
-  minHeight: "100vh",
-  background: "var(--w-bg)",
-  padding: "32px 24px 96px",
-};
-const INNER_STYLE: React.CSSProperties = {
-  maxWidth: 720,
-  margin: "0 auto",
-};
-
-const INPUT_STYLE: React.CSSProperties = {
-  width: "100%",
-  background: "var(--w-surface-1)",
-  border: "1px solid var(--w-line)",
-  color: "var(--w-fg)",
-  padding: "10px 12px",
-  fontFamily: "var(--w-sans)",
-  fontSize: 14,
-};
 
 export default function ChatHubFlow({
   eventId,
@@ -123,41 +103,39 @@ export default function ChatHubFlow({
 
   const total = rows.reduce((s, r) => s + 1 + r.plus_ones, 0);
 
+  const crumbs: Array<string | [string, string]> = [
+    ["Events", "/owner"],
+    [eventName, `/owner/events/${eventId}`],
+    "Chat hub",
+  ];
+
   if (step === "done") {
     return (
-      <main id="main-content" className="w-app" style={FRAME_STYLE}>
-        <div style={INNER_STYLE}>
-          <div className="w-type-meta" style={{ marginBottom: 8 }}>
-            CHAT HUB
-          </div>
-          <div className="w-type-display-md" style={{ marginBottom: 8 }}>
-            Committed.
-          </div>
-          <p
-            className="w-type-body-sm"
-            style={{ color: "var(--w-fg-muted)", marginBottom: 24 }}
-          >
-            {committedCount} guest{committedCount === 1 ? "" : "s"} added to
-            the list.
-          </p>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 8,
-            }}
-          >
+      <main
+        id="main-content"
+        style={{ minHeight: "100vh", background: "var(--bg)" }}
+      >
+        <Breadcrumb items={crumbs} />
+        <PageHeader
+          eyebrow="Chat hub"
+          title="Committed"
+          sub={`${committedCount} guest${
+            committedCount === 1 ? "" : "s"
+          } added to the list.`}
+        />
+        <EventSubNav active="guests" eventId={eventId} />
+        <div style={{ padding: "var(--s-8)", maxWidth: 720 }}>
+          <div style={{ display: "flex", gap: "var(--s-2)" }}>
             <Link
               href={`/owner/events/${eventId}/queue`}
+              className="btn"
               style={{ textDecoration: "none" }}
             >
-              <Button variant="primary" style={{ width: "100%" }}>
-                Review queue
-              </Button>
+              Review queue
             </Link>
-            <Button
-              variant="ghost"
+            <button
               type="button"
+              className="btn btn--ghost"
               onClick={() => {
                 setStep("input");
                 setText("");
@@ -166,7 +144,7 @@ export default function ChatHubFlow({
               }}
             >
               Add more
-            </Button>
+            </button>
           </div>
         </div>
       </main>
@@ -175,70 +153,43 @@ export default function ChatHubFlow({
 
   if (step === "review") {
     return (
-      <main id="main-content" className="w-app" style={FRAME_STYLE}>
-        <div style={{ ...INNER_STYLE, maxWidth: 880 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: 16,
-            }}
-          >
+      <main
+        id="main-content"
+        style={{ minHeight: "100vh", background: "var(--bg)" }}
+      >
+        <Breadcrumb items={crumbs} />
+        <PageHeader
+          eyebrow={`Chat hub · parsed by ${backend ?? ""}`}
+          title="Review & commit"
+          sub={`${rows.length} rows · ${total} heads incl. +1s`}
+          actions={
             <button
               type="button"
+              className="btn btn--ghost"
               onClick={() => setStep("input")}
-              className="w-type-meta"
-              style={{
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                color: "var(--w-fg-muted)",
-                padding: 0,
-              }}
             >
-              ← EDIT INPUT
+              Edit input
             </button>
-            <div className="w-type-meta">
-              PARSED BY{" "}
-              <span
-                style={{
-                  color:
-                    backend === "claude"
-                      ? "var(--w-acc)"
-                      : "var(--w-ok)",
-                }}
-              >
-                {backend?.toUpperCase()}
-              </span>
-            </div>
-          </div>
+          }
+        />
+        <EventSubNav active="guests" eventId={eventId} />
 
-          <div className="w-type-display-md" style={{ marginBottom: 8 }}>
-            Review &amp; commit.
-          </div>
-          <p
-            className="w-type-meta"
-            style={{ color: "var(--w-fg-muted)", marginBottom: 16 }}
-          >
-            {rows.length} ROWS · {total} HEADS INCL. +1S
-          </p>
-
+        <div style={{ padding: "var(--s-8)", maxWidth: 880 }}>
           <div
             style={{
               display: "flex",
               flexDirection: "column",
-              gap: 8,
-              marginBottom: 16,
+              gap: "var(--s-2)",
+              marginBottom: "var(--s-4)",
             }}
           >
             {rows.map((r, i) => (
-              <div key={i} className="w-card" style={{ padding: 14 }}>
+              <div key={i} className="card" style={{ padding: "var(--s-4)" }}>
                 <div
                   style={{
                     display: "flex",
                     alignItems: "flex-start",
-                    gap: 12,
+                    gap: "var(--s-3)",
                   }}
                 >
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -248,18 +199,12 @@ export default function ChatHubFlow({
                       onChange={(e) =>
                         updateRow(i, { name: e.target.value })
                       }
-                      style={{ ...INPUT_STYLE, fontSize: 14 }}
+                      className="input"
                       placeholder="Name"
                     />
                     <div
-                      className="w-type-meta"
-                      style={{
-                        marginTop: 6,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        color: "var(--w-fg-muted)",
-                      }}
+                      className="t-meta truncate"
+                      style={{ marginTop: "var(--s-2)" }}
                     >
                       {r.raw_line}
                     </div>
@@ -267,17 +212,17 @@ export default function ChatHubFlow({
                   <button
                     type="button"
                     onClick={() => removeRow(i)}
-                    className="w-type-meta"
+                    className="t-meta"
                     style={{
                       flexShrink: 0,
                       background: "transparent",
                       border: "none",
                       cursor: "pointer",
-                      color: "var(--w-err)",
+                      color: "var(--err)",
                       padding: 0,
                     }}
                   >
-                    REMOVE
+                    Remove
                   </button>
                 </div>
 
@@ -285,8 +230,8 @@ export default function ChatHubFlow({
                   style={{
                     display: "grid",
                     gridTemplateColumns: "1fr 80px 1fr",
-                    gap: 6,
-                    marginTop: 12,
+                    gap: "var(--s-2)",
+                    marginTop: "var(--s-3)",
                   }}
                 >
                   <select
@@ -299,7 +244,7 @@ export default function ChatHubFlow({
                           | "all_access",
                       })
                     }
-                    style={{ ...INPUT_STYLE, fontSize: 12, padding: "8px 10px" }}
+                    className="input"
                   >
                     {TIERS.map((t) => (
                       <option key={t.id} value={t.id}>
@@ -317,7 +262,7 @@ export default function ChatHubFlow({
                         plus_ones: parseInt(e.target.value, 10) || 0,
                       })
                     }
-                    style={{ ...INPUT_STYLE, fontSize: 12, padding: "8px 10px" }}
+                    className="input"
                     title="+1s"
                   />
                   <input
@@ -329,19 +274,19 @@ export default function ChatHubFlow({
                         attributed_to_holder_name: e.target.value || null,
                       })
                     }
-                    style={{ ...INPUT_STYLE, fontSize: 12, padding: "8px 10px" }}
+                    className="input"
                   />
                 </div>
-                <div className="w-type-meta" style={{ marginTop: 8 }}>
-                  CONFIDENCE:{" "}
+                <div className="t-meta" style={{ marginTop: "var(--s-2)" }}>
+                  Confidence:{" "}
                   <span
                     style={{
                       color:
                         r.confidence > 0.8
-                          ? "var(--w-ok)"
+                          ? "var(--ok)"
                           : r.confidence > 0.5
-                            ? "var(--w-warn)"
-                            : "var(--w-err)",
+                            ? "var(--warn)"
+                            : "var(--err)",
                     }}
                   >
                     {Math.round(r.confidence * 100)}%
@@ -353,144 +298,131 @@ export default function ChatHubFlow({
 
           {error && (
             <p
-              className="w-type-body-sm"
-              style={{ color: "var(--w-err)", marginBottom: 12 }}
+              className="t-body-2"
+              style={{ color: "var(--err)", marginBottom: "var(--s-3)" }}
             >
               {error}
             </p>
           )}
 
-          <Button
-            variant="primary"
+          <button
             type="button"
+            className="btn"
             onClick={onCommit}
             disabled={pending || rows.length === 0}
           >
-            {pending ? "Committing…" : `Commit ${rows.length} to ${eventName}`}
-          </Button>
+            {pending
+              ? "Committing…"
+              : `Commit ${rows.length} to ${eventName}`}
+          </button>
         </div>
       </main>
     );
   }
 
   return (
-    <main id="main-content" className="w-app" style={FRAME_STYLE}>
-      <div style={INNER_STYLE}>
-        <div className="w-type-meta" style={{ marginBottom: 8 }}>
-          CHAT HUB
-        </div>
-        <div className="w-type-display-md" style={{ marginBottom: 8 }}>
-          Paste the names.
-        </div>
-        <p
-          className="w-type-body-sm"
-          style={{
-            color: "var(--w-fg-muted)",
-            marginBottom: 24,
-            lineHeight: 1.5,
-          }}
-        >
-          Drop in plain text from WhatsApp, Slack, or anywhere. We&apos;ll
-          parse names, tiers, +1s, and who they&apos;re w/.
-        </p>
+    <main
+      id="main-content"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
+    >
+      <Breadcrumb items={crumbs} />
+      <PageHeader
+        eyebrow="Chat hub"
+        title="Paste the names"
+        sub="Drop in plain text from WhatsApp, Slack, or anywhere. We'll parse names, tiers, +1s, and who they're w/."
+      />
+      <EventSubNav active="guests" eventId={eventId} />
 
-        <form
-          onSubmit={onParse}
-          style={{ display: "flex", flexDirection: "column", gap: 16 }}
-        >
-          {nights.length > 1 && (
-            <div>
-              <label
-                htmlFor="night"
-                className="w-type-meta"
-                style={{ display: "block", marginBottom: 6 }}
-              >
-                NIGHT
-              </label>
-              <select
-                id="night"
-                value={nightId}
-                onChange={(e) => setNightId(e.target.value)}
-                style={INPUT_STYLE}
-              >
-                {nights.map((n) => (
-                  <option key={n.id} value={n.id}>
-                    {new Date(n.night_date).toLocaleDateString("en-US", {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {allocations.length > 0 && (
-            <div>
-              <label
-                htmlFor="alloc"
-                className="w-type-meta"
-                style={{ display: "block", marginBottom: 6 }}
-              >
-                DEFAULT HOLDER (WHEN A LINE DOESN&apos;T SPECIFY ONE)
-              </label>
-              <select
-                id="alloc"
-                value={fallbackAlloc}
-                onChange={(e) => {
-                  setFallbackAlloc(e.target.value);
-                  const m = allocations.find((a) => a.id === e.target.value);
-                  setDefaultHolder(m?.holder_name ?? "");
-                }}
-                style={INPUT_STYLE}
-              >
-                {allocations.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.holder_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
+      <form
+        onSubmit={onParse}
+        style={{
+          padding: "var(--s-8)",
+          maxWidth: 720,
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-5)",
+        }}
+      >
+        {nights.length > 1 && (
           <div>
-            <label
-              htmlFor="paste"
-              className="w-type-meta"
-              style={{ display: "block", marginBottom: 6 }}
-            >
-              PASTE NAMES (ONE PER LINE)
+            <label htmlFor="night" className="t-meta">
+              Night
             </label>
-            <textarea
-              id="paste"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              style={{
-                ...INPUT_STYLE,
-                minHeight: 260,
-                fontFamily: "var(--w-mono)",
-                fontSize: 12,
-              }}
-              placeholder={`Diplo VIP\nAlice +2\nBob w/ Kiko VIP\nCarol Smith all access`}
-              required
-            />
-          </div>
-
-          {error && (
-            <p
-              className="w-type-body-sm"
-              style={{ color: "var(--w-err)" }}
+            <select
+              id="night"
+              value={nightId}
+              onChange={(e) => setNightId(e.target.value)}
+              className="input"
+              style={{ marginTop: "var(--s-2)" }}
             >
-              {error}
-            </p>
-          )}
+              {nights.map((n) => (
+                <option key={n.id} value={n.id}>
+                  {new Date(n.night_date).toLocaleDateString("en-US", {
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
-          <Button variant="primary" type="submit" disabled={pending}>
-            {pending ? "Parsing…" : "Parse"}
-          </Button>
-        </form>
-      </div>
+        {allocations.length > 0 && (
+          <div>
+            <label htmlFor="alloc" className="t-meta">
+              Default holder (when a line doesn&apos;t specify one)
+            </label>
+            <select
+              id="alloc"
+              value={fallbackAlloc}
+              onChange={(e) => {
+                setFallbackAlloc(e.target.value);
+                const m = allocations.find((a) => a.id === e.target.value);
+                setDefaultHolder(m?.holder_name ?? "");
+              }}
+              className="input"
+              style={{ marginTop: "var(--s-2)" }}
+            >
+              {allocations.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.holder_name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <div>
+          <label htmlFor="paste" className="t-meta">
+            Paste names (one per line)
+          </label>
+          <textarea
+            id="paste"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            className="input"
+            style={{
+              marginTop: "var(--s-2)",
+              minHeight: 260,
+              fontFamily: "var(--mono)",
+              fontSize: "var(--ts-sm)",
+            }}
+            placeholder={`Diplo VIP\nAlice +2\nBob w/ Kiko VIP\nCarol Smith all access`}
+            required
+          />
+        </div>
+
+        {error && (
+          <p className="t-body-2" style={{ color: "var(--err)" }}>
+            {error}
+          </p>
+        )}
+
+        <button type="submit" className="btn" disabled={pending}>
+          {pending ? "Parsing…" : "Parse"}
+        </button>
+      </form>
     </main>
   );
 }

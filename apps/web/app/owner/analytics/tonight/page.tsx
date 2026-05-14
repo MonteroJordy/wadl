@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireOwnerContext } from "@/lib/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
 import RealtimeCounters from "@/components/realtime-counters";
-import { Button, CapacityMeter, Chip, CredPill } from "@/components/wadl";
+import { Stat } from "@/components/v5";
 import { fmtTime } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -53,26 +53,21 @@ export default async function TonightLivePage() {
   if (nights.length === 0) {
     return (
       <div
-        className="w-card"
-        style={{
-          padding: "64px 32px",
-          textAlign: "center",
-        }}
+        className="card"
+        style={{ padding: "var(--s-16) var(--s-8)", textAlign: "center" }}
       >
-        <div className="w-type-h1">Quiet tonight</div>
+        <div className="t-display-sm">Quiet tonight</div>
         <p
-          className="w-type-body-sm"
+          className="t-body-2"
           style={{
-            color: "var(--w-fg-muted)",
-            marginTop: 12,
+            marginTop: "var(--s-3)",
             maxWidth: 480,
             marginInline: "auto",
-            lineHeight: 1.5,
           }}
         >
-          No doors within an 8h-ago to 18h-ahead window. Live counters,
-          hour velocity, real-time tier mix — they&apos;ll all be here when
-          a night opens.
+          No doors within an 8h-ago to 18h-ahead window. Live counters, hour
+          velocity, real-time tier mix — they&apos;ll all be here when a night
+          opens.
         </p>
       </div>
     );
@@ -153,6 +148,7 @@ export default async function TonightLivePage() {
 
   const cap = active.capacity_cap ?? 0;
   const pctFull = cap > 0 ? Math.round((scannedTotal / cap) * 100) : 0;
+  const showRate = approved > 0 ? Math.round((scannedTotal / approved) * 100) : 0;
 
   const startHour = new Date(active.doors_at).getHours();
   const nowHour = new Date().getHours();
@@ -164,89 +160,121 @@ export default async function TonightLivePage() {
   const peakBucket = Math.max(1, ...hours.map((h) => h.count));
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
       <header
         style={{
           display: "flex",
           alignItems: "flex-end",
           justifyContent: "space-between",
-          gap: 16,
+          gap: "var(--s-4)",
           flexWrap: "wrap",
         }}
       >
         <div>
           <div
-            className="w-type-meta"
+            className="t-meta"
             style={{
-              color: "var(--w-acc)",
               display: "flex",
               alignItems: "center",
-              gap: 6,
+              gap: "var(--s-1)",
+              color: "var(--ok)",
             }}
           >
             <span
-              className="w-pulse"
-              style={{
-                display: "inline-block",
-                width: 6,
-                height: 6,
-                background: "currentColor",
-              }}
+              className="dot dot--ok pulse"
+              style={{ display: "inline-block" }}
             />
-            LIVE
+            Live
           </div>
-          <div className="w-type-display-md" style={{ marginTop: 6 }}>
+          <div className="t-display-sm" style={{ marginTop: "var(--s-2)" }}>
             {active.event.name}
           </div>
-          <div className="w-type-meta" style={{ marginTop: 6 }}>
-            DOORS {fmtTime(active.doors_at).toUpperCase()}
+          <div className="t-meta" style={{ marginTop: "var(--s-2)" }}>
+            Doors {fmtTime(active.doors_at)}
           </div>
         </div>
         <RealtimeCounters nightId={active.id} />
       </header>
 
-      {/* KPI strip */}
-      <section
+      {/* KPI strip — show rate gets primary prominence */}
+      <div
+        className="card"
         style={{
+          padding: 0,
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-          gap: 12,
+          gridTemplateColumns: "repeat(4, 1fr)",
         }}
       >
-        <KPI label="SCANNED IN" value={scannedTotal} sub={cap ? `/ ${cap}` : ""} />
-        <KPI label="APPROVED" value={approved} tone="ok" />
-        <KPI label="PENDING" value={pending} tone="warn" />
-        <KPI label="CAPACITY" value={`${pctFull}%`} accent />
-      </section>
+        <Stat
+          label="Show rate"
+          value={`${showRate}%`}
+          sub={`${scannedTotal} in of ${approved} approved`}
+        />
+        <Stat
+          label="Scanned in"
+          value={scannedTotal}
+          sub={cap ? `of ${cap} cap` : "no cap set"}
+        />
+        <Stat label="Pending" value={pending} sub="awaiting approval" />
+        <Stat
+          label="Capacity"
+          value={`${pctFull}%`}
+          sub="of the room filled"
+          last
+        />
+      </div>
 
       {cap > 0 && (
-        <section className="w-card" style={{ padding: 18 }}>
-          <CapacityMeter
-            current={scannedTotal}
-            total={cap}
-            accent
-            label="DOOR FILL"
-          />
-        </section>
+        <div className="card" style={{ padding: "var(--s-6)" }}>
+          <div
+            className="t-meta"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: "var(--s-2)",
+            }}
+          >
+            <span>Door fill</span>
+            <span className="t-num">
+              {scannedTotal} / {cap}
+            </span>
+          </div>
+          <div
+            style={{
+              height: 8,
+              background: "var(--bg-3)",
+              borderRadius: "var(--r-pill)",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                width: `${Math.min(100, pctFull)}%`,
+                height: "100%",
+                background: "var(--fg)",
+              }}
+            />
+          </div>
+        </div>
       )}
 
       {/* Velocity + Tier mix */}
-      <section
+      <div
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-          gap: 12,
+          gap: "var(--s-4)",
         }}
       >
-        <div className="w-card" style={{ padding: 20 }}>
-          <div className="w-type-meta" style={{ marginBottom: 14 }}>
-            VELOCITY BY HOUR · TONIGHT
+        <div className="card" style={{ padding: "var(--s-6)" }}>
+          <div className="t-meta" style={{ marginBottom: "var(--s-4)" }}>
+            Velocity by hour · tonight
           </div>
           <div
             style={{
               display: "flex",
               alignItems: "flex-end",
-              gap: 4,
+              gap: "var(--s-1)",
               height: 96,
             }}
           >
@@ -260,7 +288,7 @@ export default async function TonightLivePage() {
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
-                    gap: 4,
+                    gap: "var(--s-1)",
                     minWidth: 12,
                   }}
                   title={`${fmtHourLabel(h.hour)}: ${h.count}`}
@@ -269,15 +297,10 @@ export default async function TonightLivePage() {
                     style={{
                       width: "100%",
                       height: `${(h.count / peakBucket) * 100}%`,
-                      background: isPeak
-                        ? "var(--w-acc)"
-                        : "oklch(0.86 0.18 145 / 0.6)",
+                      background: isPeak ? "var(--fg)" : "var(--fg-4)",
                     }}
                   />
-                  <div
-                    className="w-type-meta"
-                    style={{ fontSize: 9 }}
-                  >
+                  <div className="t-meta" style={{ fontSize: 9 }}>
                     {fmtHourLabel(h.hour).replace(":00", "").toUpperCase()}
                   </div>
                 </div>
@@ -286,91 +309,104 @@ export default async function TonightLivePage() {
           </div>
         </div>
 
-        <div className="w-card" style={{ padding: 20 }}>
+        <div className="card" style={{ padding: "var(--s-6)" }}>
           <div
             style={{
               display: "flex",
               alignItems: "baseline",
               justifyContent: "space-between",
-              marginBottom: 14,
-              gap: 12,
+              marginBottom: "var(--s-4)",
+              gap: "var(--s-3)",
             }}
           >
-            <div className="w-type-meta">TIER SPLIT TONIGHT</div>
-            <div style={{ display: "flex", gap: 6 }}>
-              <CredPill tier="GA" />
-              <CredPill tier="VIP" />
-              <CredPill tier="AAA" />
+            <div className="t-meta">Tier split tonight</div>
+            <div style={{ display: "flex", gap: "var(--s-1)" }}>
+              <span className="chip">GA</span>
+              <span className="chip">VIP</span>
+              <span className="chip">AAA</span>
             </div>
           </div>
           {(["ga", "vip", "all_access"] as const).map((t) => {
-            const tierLabel =
-              t === "all_access" ? "AAA" : t.toUpperCase();
+            const tierLabel = t === "all_access" ? "AAA" : t.toUpperCase();
             const pct =
               tierCounts[t].rsvp === 0
                 ? 0
                 : (tierCounts[t].in / tierCounts[t].rsvp) * 100;
             return (
-              <div key={t} style={{ marginBottom: 12 }}>
+              <div key={t} style={{ marginBottom: "var(--s-3)" }}>
                 <div
-                  className="w-type-meta"
+                  className="t-meta"
                   style={{
                     display: "flex",
                     justifyContent: "space-between",
-                    marginBottom: 4,
+                    marginBottom: "var(--s-1)",
                   }}
                 >
                   <span>{tierLabel}</span>
                   <span>
-                    <span style={{ color: "var(--w-ok)" }}>
+                    <span style={{ color: "var(--ok)" }}>
                       {tierCounts[t].in}
                     </span>{" "}
-                    IN / {tierCounts[t].rsvp} RSVP
+                    in / {tierCounts[t].rsvp} rsvp
                   </span>
                 </div>
                 <div
-                  className="w-meter w-meter--acc"
-                  style={{ height: 6 }}
+                  style={{
+                    height: 6,
+                    background: "var(--bg-3)",
+                    borderRadius: "var(--r-pill)",
+                    overflow: "hidden",
+                  }}
                 >
-                  <i style={{ width: `${pct}%` }} />
+                  <div
+                    style={{
+                      width: `${pct}%`,
+                      height: "100%",
+                      background: "var(--fg)",
+                    }}
+                  />
                 </div>
               </div>
             );
           })}
         </div>
-      </section>
+      </div>
 
       {/* Promoter perf */}
-      <section className="w-card" style={{ padding: 20 }}>
-        <div className="w-type-meta" style={{ marginBottom: 14 }}>
-          PROMOTER PERFORMANCE · TONIGHT
+      <div className="card" style={{ padding: "var(--s-6)" }}>
+        <div className="t-meta" style={{ marginBottom: "var(--s-4)" }}>
+          Promoter performance · tonight
         </div>
         <div
-          style={{ overflowX: "auto", margin: "0 -20px", padding: "0 20px" }}
+          style={{
+            overflowX: "auto",
+            margin: "0 calc(-1 * var(--s-6))",
+            padding: "0 var(--s-6)",
+          }}
         >
           <table
             style={{
               width: "100%",
-              fontSize: 14,
+              fontSize: "var(--ts-md)",
               borderCollapse: "collapse",
             }}
           >
             <thead>
               <tr>
                 {[
-                  ["HOLDER", "left"],
-                  ["SUBMITTED", "right"],
-                  ["APPROVED", "right"],
-                  ["IN", "right"],
-                  ["SHOW", "right"],
-                  ["PENDING", "right"],
+                  ["Holder", "left"],
+                  ["Submitted", "right"],
+                  ["Approved", "right"],
+                  ["In", "right"],
+                  ["Show", "right"],
+                  ["Pending", "right"],
                 ].map(([h, align]) => (
                   <th
                     key={h}
-                    className="w-type-meta"
+                    className="t-meta"
                     style={{
                       textAlign: align as "left" | "right",
-                      paddingBottom: 8,
+                      paddingBottom: "var(--s-2)",
                     }}
                   >
                     {h}
@@ -389,51 +425,58 @@ export default async function TonightLivePage() {
                   return (
                     <tr
                       key={name}
-                      style={{ borderTop: "1px solid var(--w-line)" }}
+                      style={{ borderTop: "1px solid var(--line)" }}
                     >
                       <td
-                        style={{
-                          padding: "10px 0",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          maxWidth: 240,
-                        }}
+                        className="t-body truncate"
+                        style={{ padding: "var(--s-3) 0", maxWidth: 240 }}
                       >
                         {name}
                       </td>
-                      <td style={{ padding: "10px 0", textAlign: "right" }}>
+                      <td
+                        className="t-body t-num"
+                        style={{
+                          padding: "var(--s-3) 0",
+                          textAlign: "right",
+                        }}
+                      >
                         {v.submitted}
                       </td>
-                      <td style={{ padding: "10px 0", textAlign: "right" }}>
+                      <td
+                        className="t-body t-num"
+                        style={{
+                          padding: "var(--s-3) 0",
+                          textAlign: "right",
+                        }}
+                      >
                         {v.approved}
                       </td>
                       <td
+                        className="t-body t-num"
                         style={{
-                          padding: "10px 0",
+                          padding: "var(--s-3) 0",
                           textAlign: "right",
-                          color: "var(--w-ok)",
+                          color: "var(--ok)",
                         }}
                       >
                         {v.in}
                       </td>
                       <td
+                        className="t-body t-num"
                         style={{
-                          padding: "10px 0",
+                          padding: "var(--s-3) 0",
                           textAlign: "right",
-                          fontFamily: "var(--w-mono)",
                         }}
                       >
                         {show}%
                       </td>
                       <td
+                        className="t-body t-num"
                         style={{
-                          padding: "10px 0",
+                          padding: "var(--s-3) 0",
                           textAlign: "right",
                           color:
-                            v.pending > 0
-                              ? "var(--w-warn)"
-                              : "var(--w-fg-muted)",
+                            v.pending > 0 ? "var(--warn)" : "var(--fg-3)",
                         }}
                       >
                         {v.pending}
@@ -444,20 +487,15 @@ export default async function TonightLivePage() {
             </tbody>
           </table>
         </div>
-      </section>
+      </div>
 
       {/* Live feed */}
-      <section className="w-card" style={{ padding: 20 }}>
-        <div className="w-type-meta" style={{ marginBottom: 14 }}>
-          LIVE CHECK-IN FEED
+      <div className="card" style={{ padding: "var(--s-6)" }}>
+        <div className="t-meta" style={{ marginBottom: "var(--s-4)" }}>
+          Live check-in feed
         </div>
         {scans.length === 0 ? (
-          <p
-            className="w-type-body-sm"
-            style={{ color: "var(--w-fg-muted)" }}
-          >
-            No scans yet tonight.
-          </p>
+          <p className="t-body-2">No scans yet tonight.</p>
         ) : (
           <ul
             style={{
@@ -466,7 +504,6 @@ export default async function TonightLivePage() {
               margin: 0,
               display: "flex",
               flexDirection: "column",
-              gap: 0,
             }}
           >
             {scans.slice(0, 25).map((s, i) => (
@@ -475,117 +512,41 @@ export default async function TonightLivePage() {
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 12,
-                  padding: "8px 0",
-                  borderTop:
-                    i === 0 ? "none" : "1px solid var(--w-line)",
-                  fontSize: 14,
+                  gap: "var(--s-3)",
+                  padding: "var(--s-2) 0",
+                  borderTop: i === 0 ? "none" : "1px solid var(--line)",
                 }}
               >
-                <span
-                  className="w-type-meta"
-                  style={{ flexShrink: 0 }}
-                >
+                <span className="t-meta" style={{ flexShrink: 0 }}>
                   {new Date(s.scanned_at).toLocaleTimeString("en-US", {
                     hour: "numeric",
                     minute: "2-digit",
                   })}
                 </span>
-                <span
-                  style={{
-                    flex: 1,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
+                <span className="t-body truncate" style={{ flex: 1 }}>
                   {s.guest?.full_name ?? "—"}
                 </span>
-                <Chip tone="ghost">
+                <span className="chip">
                   {(s.guest?.tier ?? "—").toUpperCase()}
-                </Chip>
+                </span>
                 <span
-                  className="w-type-meta"
-                  style={{
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    maxWidth: 160,
-                  }}
+                  className="t-meta truncate"
+                  style={{ maxWidth: 160 }}
                 >
-                  {(s.guest?.allocation?.holder_name ?? "Walk-up").toUpperCase()}
+                  {s.guest?.allocation?.holder_name ?? "Walk-up"}
                 </span>
               </li>
             ))}
           </ul>
         )}
-      </section>
+      </div>
 
       <Link
         href={`/owner/events/${active.event.id}`}
-        style={{ textDecoration: "none" }}
+        className="btn btn--ghost btn--block"
       >
-        <Button variant="ghost" block>
-          Open event daydash →
-        </Button>
+        Open event daydash →
       </Link>
-    </div>
-  );
-}
-
-function KPI({
-  label,
-  value,
-  sub,
-  tone,
-  accent,
-}: {
-  label: string;
-  value: number | string;
-  sub?: string;
-  tone?: "ok" | "warn";
-  accent?: boolean;
-}) {
-  const valueColor =
-    tone === "ok"
-      ? "var(--w-ok)"
-      : tone === "warn"
-        ? "var(--w-warn)"
-        : "var(--w-fg)";
-  return (
-    <div
-      className="w-card"
-      style={{
-        padding: 18,
-        borderColor: accent ? "var(--w-acc)" : "var(--w-line)",
-        background: accent ? "var(--w-acc-soft)" : "var(--w-surface-2)",
-      }}
-    >
-      <div className="w-type-meta">{label}</div>
-      <div
-        style={{
-          fontFamily: "var(--w-display)",
-          fontWeight: 700,
-          fontSize: 32,
-          letterSpacing: "-0.025em",
-          lineHeight: 1,
-          marginTop: 8,
-          color: valueColor,
-        }}
-      >
-        {value}
-        {sub && (
-          <span
-            style={{
-              color: "var(--w-fg-dim)",
-              fontSize: 18,
-              marginLeft: 4,
-            }}
-          >
-            {sub}
-          </span>
-        )}
-      </div>
     </div>
   );
 }

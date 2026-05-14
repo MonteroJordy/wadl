@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Button, Wordmark } from "@/components/wadl";
+import { Logo } from "@/components/v5";
 
 function VerifyEmailInner() {
   const router = useRouter();
@@ -39,104 +39,110 @@ function VerifyEmailInner() {
   return (
     <main
       id="main-content"
-      className="w-app"
+      className="v5"
       style={{
         minHeight: "100vh",
-        background: "var(--w-bg)",
+        background: "var(--bg)",
         position: "relative",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        padding: 32,
+        padding: "var(--s-8)",
         textAlign: "center",
       }}
     >
-      <div style={{ position: "absolute", top: 24, left: 32 }}>
-        <Wordmark variant="monogrid" size={18} />
+      <div
+        style={{ position: "absolute", top: "var(--s-6)", left: "var(--s-8)" }}
+      >
+        <Logo size={20} />
       </div>
 
-      <div
-        style={{
-          width: 64,
-          height: 64,
-          background: "var(--w-acc)",
-          color: "var(--w-acc-ink)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 28,
-        }}
-      >
-        ✉
-      </div>
-      <div
-        style={{
-          fontFamily: "var(--w-display)",
-          fontWeight: 700,
-          fontSize: "clamp(40px, 6vw, 56px)",
-          letterSpacing: "-0.03em",
-          marginTop: 28,
-          lineHeight: 1,
-        }}
-      >
-        Check your email.
-      </div>
-      <p
-        className="w-type-body"
-        style={{
-          color: "var(--w-fg-muted)",
-          marginTop: 14,
-          maxWidth: 520,
-          fontSize: 17,
-          lineHeight: 1.55,
-        }}
-      >
-        We sent a sign-in link
-        {email ? (
-          <>
-            {" "}to{" "}
-            <strong style={{ color: "var(--w-fg)" }}>{email}</strong>
-          </>
-        ) : null}
-        . The link works for 15 minutes, on this device or any other.
-      </p>
+      <div style={{ width: 420, maxWidth: "100%" }}>
+        <div
+          style={{
+            width: 56,
+            height: 56,
+            margin: "0 auto",
+            borderRadius: "var(--r-md)",
+            background: "var(--fg)",
+            color: "var(--bg)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 24,
+          }}
+        >
+          ✉
+        </div>
+        <div className="t-display-md" style={{ marginTop: "var(--s-8)" }}>
+          Check your email.
+        </div>
+        <p
+          className="t-body-2"
+          style={{
+            marginTop: "var(--s-3)",
+            marginInline: "auto",
+            maxWidth: 420,
+          }}
+        >
+          We sent a sign-in link
+          {email ? (
+            <>
+              {" "}
+              to <span style={{ color: "var(--fg)" }}>{email}</span>
+            </>
+          ) : null}
+          . The link works for 15 minutes, on this device or any other.
+        </p>
 
-      <div style={{ display: "flex", gap: 8, marginTop: 32, flexWrap: "wrap" }}>
-        <Button
-          variant="ghost"
-          size="lg"
-          disabled={seconds > 0 || resending || !email}
-          onClick={onResend}
+        <div
+          style={{
+            display: "flex",
+            gap: "var(--s-2)",
+            marginTop: "var(--s-8)",
+            justifyContent: "center",
+            flexWrap: "wrap",
+          }}
         >
-          {resending
-            ? "Resending…"
-            : seconds > 0
-              ? `Resend in ${fmt(seconds)}`
-              : resent
-                ? "Resent ✓"
-                : "Resend now"}
-        </Button>
-        <Button
-          variant="ghost"
-          size="lg"
-          onClick={() => router.push("/login")}
-        >
-          Use different email
-        </Button>
-      </div>
+          <button
+            type="button"
+            className="btn btn--ghost btn--lg"
+            disabled={seconds > 0 || resending || !email}
+            onClick={onResend}
+          >
+            {resending
+              ? "Resending…"
+              : seconds > 0
+                ? `Resend in ${fmt(seconds)}`
+                : resent
+                  ? "Resent ✓"
+                  : "Resend now"}
+          </button>
+          <button
+            type="button"
+            className="btn btn--ghost btn--lg"
+            onClick={() => router.push("/login")}
+          >
+            Use different email
+          </button>
+        </div>
 
-      <div
-        className="w-type-meta"
-        style={{ marginTop: 40, color: "var(--w-fg-dim)", maxWidth: 520 }}
-      >
-        NO EMAIL? CHECK SPAM · GMAIL PROMOTIONS · OR{" "}
-        <Link
-          href="/contact"
-          style={{ color: "var(--w-acc)", textDecoration: "none" }}
+        <div
+          className="t-meta"
+          style={{
+            marginTop: "var(--s-10)",
+            color: "var(--fg-4)",
+          }}
         >
-          EMAIL US
-        </Link>
+          No email? Check spam · Gmail Promotions · or{" "}
+          <Link
+            href="/contact"
+            style={{ color: "var(--fg-3)", textDecoration: "none" }}
+          >
+            email us
+          </Link>
+        </div>
       </div>
     </main>
   );
@@ -145,7 +151,13 @@ function VerifyEmailInner() {
 export default function VerifyEmailPage() {
   return (
     <Suspense
-      fallback={<main id="main-content" className="w-app w-frame" />}
+      fallback={
+        <main
+          id="main-content"
+          className="v5"
+          style={{ minHeight: "100vh", background: "var(--bg)" }}
+        />
+      }
     >
       <VerifyEmailInner />
     </Suspense>

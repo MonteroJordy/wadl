@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Button, Chip, WFrame, Wordmark } from "@/components/wadl";
+import { Logo } from "@/components/v5";
 import CoOwnerAcceptForm from "./form";
 
 export const dynamic = "force-dynamic";
@@ -16,30 +16,36 @@ interface InviteLookup {
 
 function Shell({ title, body }: { title: string; body: string }) {
   return (
-    <main id="main-content">
-      <WFrame style={{ paddingBottom: 48 }}>
-        <div style={{ padding: "20px 24px 0" }}>
-          <Wordmark variant="monogrid" size={18} />
+    <main
+      id="main-content"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
+    >
+      <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
+        <Logo size={18} />
+      </div>
+      <div
+        style={{
+          padding: "var(--s-24) var(--s-6) 0",
+          textAlign: "center",
+          maxWidth: 420,
+          margin: "0 auto",
+        }}
+      >
+        <div className="t-meta">Co-owner invite</div>
+        <div className="t-display-md" style={{ marginTop: "var(--s-3)" }}>
+          {title}
         </div>
-        <div style={{ padding: "96px 24px 0", textAlign: "center" }}>
-          <div className="w-type-meta">CO-OWNER INVITE</div>
-          <div className="w-type-display-md" style={{ marginTop: 12 }}>
-            {title}
-          </div>
-          <p
-            className="w-type-body-sm"
-            style={{ color: "var(--w-fg-muted)", marginTop: 12 }}
-          >
-            {body}
-          </p>
-          <Link
-            href="/discover"
-            style={{ textDecoration: "none", marginTop: 24, display: "inline-flex" }}
-          >
-            <Button variant="ghost">WADL home</Button>
-          </Link>
-        </div>
-      </WFrame>
+        <p className="t-body-2" style={{ marginTop: "var(--s-3)" }}>
+          {body}
+        </p>
+        <Link
+          href="/discover"
+          className="btn btn--ghost"
+          style={{ marginTop: "var(--s-6)", textDecoration: "none" }}
+        >
+          WADL home
+        </Link>
+      </div>
     </main>
   );
 }
@@ -91,84 +97,70 @@ export default async function CoOwnerAcceptPage({
         : "View-only · read access";
 
   return (
-    <main id="main-content">
-      <WFrame style={{ paddingBottom: 48 }}>
+    <main
+      id="main-content"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
+    >
+      <div
+        style={{
+          padding: "var(--s-6) var(--s-6) 0",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <Logo size={18} />
+        <span className="chip chip--solid">Co-owner invite</span>
+      </div>
+
+      <div style={{ padding: "var(--s-8) var(--s-6) 0" }}>
+        <div className="t-meta">{invite.event.name}</div>
+        <div className="t-display-md" style={{ marginTop: "var(--s-2)" }}>
+          Join the event.
+        </div>
+      </div>
+
+      <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
         <div
-          style={{
-            padding: "20px 24px 0",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
+          className="card"
+          style={{ padding: "var(--s-5)", borderColor: "var(--fg)" }}
         >
-          <Wordmark variant="monogrid" size={18} />
-          <Chip tone="acc">CO-OWNER INVITE</Chip>
-        </div>
-
-        <div style={{ padding: "32px 24px 0" }}>
-          <div className="w-type-meta">{invite.event.name.toUpperCase()}</div>
-          <div
-            className="w-type-display-md"
-            style={{ marginTop: 6, lineHeight: 1.0 }}
-          >
-            Join the event.
+          <div className="t-meta">Your access</div>
+          <div className="t-h1" style={{ marginTop: "var(--s-2)" }}>
+            {permLabel}
           </div>
+          <p className="t-body-2" style={{ marginTop: "var(--s-2)" }}>
+            {invite.permission === "read_only"
+              ? "You'll see the event, allocations, and guest list. Edits stay with the account owner."
+              : invite.permission === "edit"
+                ? "Approve guests, manage allocations, edit night details. Billing stays with the account owner."
+                : "Same edit access as the account owner, including settings and staff."}
+          </p>
         </div>
+      </div>
 
-        <div style={{ padding: "24px 24px 0" }}>
-          <div
-            className="w-card"
-            style={{
-              padding: 18,
-              borderColor: "var(--w-acc)",
-              background: "var(--w-acc-soft)",
-            }}
-          >
-            <div className="w-type-meta">YOUR ACCESS</div>
-            <div
-              style={{
-                fontWeight: 600,
-                fontSize: 17,
-                marginTop: 6,
-              }}
-            >
-              {permLabel}
-            </div>
-            <p
-              className="w-type-body-sm"
-              style={{ marginTop: 8 }}
-            >
-              {invite.permission === "read_only"
-                ? "You'll see the event, allocations, and guest list. Edits stay with the account owner."
-                : invite.permission === "edit"
-                  ? "Approve guests, manage allocations, edit night details. Billing stays with the account owner."
-                  : "Same edit access as the account owner, including settings and staff."}
-            </p>
-          </div>
-        </div>
+      <div style={{ padding: "var(--s-8) var(--s-6) 0" }}>
+        <CoOwnerAcceptForm
+          token={params.token}
+          eventName={invite.event.name}
+          permission={invite.permission}
+          alreadyAuthed={!!user}
+        />
+      </div>
 
-        <div style={{ padding: "32px 24px 0" }}>
-          <CoOwnerAcceptForm
-            token={params.token}
-            eventName={invite.event.name}
-            permission={invite.permission}
-            alreadyAuthed={!!user}
-          />
-        </div>
-
-        <div
-          className="w-type-meta"
-          style={{
-            marginTop: "auto",
-            paddingTop: 32,
-            paddingBottom: 16,
-            textAlign: "center",
-            color: "var(--w-fg-dim)",
-          }}
-        >
-          POWERED BY <Wordmark variant="slash" size={11} />
-        </div>
-      </WFrame>
+      <div
+        style={{
+          paddingTop: "var(--s-8)",
+          paddingBottom: "var(--s-4)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "var(--s-2)",
+        }}
+      >
+        <span className="t-meta">Powered by</span>
+        <Logo size={11} />
+      </div>
     </main>
   );
 }

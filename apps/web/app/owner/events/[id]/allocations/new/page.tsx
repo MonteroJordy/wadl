@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { requireOwnerContext } from "@/lib/owner";
+import { Breadcrumb, PageHeader, EventSubNav } from "@/components/v5";
 import NewAllocationForm from "./form";
 
 export const dynamic = "force-dynamic";
@@ -19,37 +20,43 @@ export default async function NewAllocationPage({
     .maybeSingle();
   if (!event) notFound();
 
-  const nights = ((event.event_nights ?? []) as Array<{
-    id: string;
-    night_date: string;
-    doors_at: string;
-  }>).sort((a, b) => (a.doors_at < b.doors_at ? -1 : 1));
+  const nights = (
+    (event.event_nights ?? []) as Array<{
+      id: string;
+      night_date: string;
+      doors_at: string;
+    }>
+  ).sort((a, b) => (a.doors_at < b.doors_at ? -1 : 1));
 
   if (nights.length === 0) {
     return (
       <main
         id="main-content"
-        className="w-app"
-        style={{
-          minHeight: "100vh",
-          background: "var(--w-bg)",
-          padding: "32px 24px 96px",
-        }}
+        style={{ minHeight: "100vh", background: "var(--bg)" }}
       >
-        <div style={{ maxWidth: 720, margin: "0 auto" }}>
-          <div className="w-type-display-md" style={{ marginBottom: 12 }}>
-            No nights yet
-          </div>
-          <p
-            className="w-type-body-sm"
-            style={{ color: "var(--w-fg-muted)" }}
-          >
-            Add a night before creating an allocation.
-          </p>
-        </div>
+        <Breadcrumb
+          items={[
+            ["Events", "/owner"],
+            [event.name, `/owner/events/${event.id}`],
+            ["Allocations", `/owner/events/${event.id}/allocations`],
+            "New",
+          ]}
+        />
+        <PageHeader
+          eyebrow="New allocation"
+          title="No nights yet"
+          sub="Add a night before creating an allocation."
+        />
+        <EventSubNav active="guests" eventId={event.id} />
       </main>
     );
   }
 
-  return <NewAllocationForm eventId={event.id} eventName={event.name} nights={nights} />;
+  return (
+    <NewAllocationForm
+      eventId={event.id}
+      eventName={event.name}
+      nights={nights}
+    />
+  );
 }

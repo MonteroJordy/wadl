@@ -1,7 +1,9 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import Link from "next/link";
+import { PageHeader } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
+
+const COLS = "1.6fr 1.2fr 1fr 80px 120px";
 
 interface Row {
   id: string;
@@ -24,92 +26,49 @@ export default async function AdminEventsPage() {
   const rows = (data ?? []) as unknown as Row[];
 
   return (
-    <main id="main-content" style={{ padding: "32px 24px 96px" }}>
-      <div style={{ maxWidth: 1080, margin: "0 auto" }}>
-        <div
-          style={{
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            marginBottom: 24,
-          }}
-        >
-          <div className="w-type-meta">PLATFORM</div>
-          <div className="w-type-display-md" style={{ marginTop: 8 }}>
-            Events
-          </div>
-          <p
-            className="w-type-meta"
-            style={{ marginTop: 8, color: "var(--w-fg-muted)" }}
-          >
-            MOST RECENT 200
-          </p>
-        </div>
-        <section
-          className="w-card"
-          style={{ padding: 20, overflowX: "auto" }}
-        >
-          <table
+    <main id="main-content">
+      <PageHeader
+        eyebrow="Platform"
+        title="Events"
+        sub="Most recent 200"
+      />
+      <div style={{ padding: "var(--s-8)" }}>
+        <div className="card" style={{ overflowX: "auto" }}>
+          <div
+            className="row"
             style={{
-              width: "100%",
-              fontSize: 14,
-              borderCollapse: "collapse",
+              gridTemplateColumns: COLS,
+              padding: "var(--s-3) var(--s-5)",
+              background: "var(--bg)",
             }}
           >
-            <thead>
-              <tr>
-                {["NAME", "ACCOUNT", "VENUE", "NIGHTS", "CREATED"].map((h) => (
-                  <th
-                    key={h}
-                    className="w-type-meta"
-                    style={{ textAlign: "left", paddingBottom: 8 }}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr
-                  key={r.id}
-                  style={{ borderTop: "1px solid var(--w-line)" }}
-                >
-                  <td style={{ padding: "10px 0", color: "var(--w-fg)" }}>
-                    {r.name}
-                  </td>
-                  <td style={{ padding: "10px 0" }}>
-                    {r.account?.display_name}
-                  </td>
-                  <td
-                    className="w-type-meta"
-                    style={{ padding: "10px 0" }}
-                  >
-                    {(r.venue?.name ?? "—").toUpperCase()}
-                  </td>
-                  <td style={{ padding: "10px 0" }}>
-                    {r.event_nights.length}
-                  </td>
-                  <td
-                    className="w-type-meta"
-                    style={{ padding: "10px 0" }}
-                  >
-                    {new Date(r.created_at)
-                      .toLocaleDateString()
-                      .toUpperCase()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
-        <p className="w-type-meta" style={{ marginTop: 24 }}>
-          <Link
-            href="/admin"
-            style={{ color: "var(--w-acc)", textDecoration: "none" }}
-          >
-            ← BACK
-          </Link>
-        </p>
+            {["Name", "Account", "Venue", "Nights", "Created"].map((h) => (
+              <span key={h} className="t-meta">
+                {h}
+              </span>
+            ))}
+          </div>
+          {rows.map((r) => (
+            <div
+              key={r.id}
+              className="row"
+              style={{
+                gridTemplateColumns: COLS,
+                padding: "var(--s-4) var(--s-5)",
+              }}
+            >
+              <span className="t-body" style={{ color: "var(--fg)" }}>
+                {r.name}
+              </span>
+              <span className="t-body-2">{r.account?.display_name}</span>
+              <span className="t-body-2">{r.venue?.name ?? "—"}</span>
+              <span className="t-body-2 t-num">{r.event_nights.length}</span>
+              <span className="t-meta">
+                {new Date(r.created_at).toLocaleDateString()}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     </main>
   );

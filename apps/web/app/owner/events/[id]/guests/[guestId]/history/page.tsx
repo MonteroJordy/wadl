@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOwnerContext } from "@/lib/owner";
 import { fmtDate } from "@/lib/format";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { Breadcrumb, PageHeader, EventSubNav } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Tier history — WADL" };
@@ -22,7 +22,7 @@ const TIER_LABEL: Record<string, string> = {
 };
 
 function tierLabel(t?: string) {
-  return TIER_LABEL[t ?? ""] ?? (t ?? "—").toUpperCase();
+  return TIER_LABEL[t ?? ""] ?? (t ?? "—");
 }
 
 export default async function GuestHistoryPage({
@@ -73,117 +73,84 @@ export default async function GuestHistoryPage({
   return (
     <main
       id="main-content"
-      className="w-app"
-      style={{
-        minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
-      }}
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
     >
-      <div style={{ maxWidth: 720, margin: "0 auto" }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 16,
-          }}
-        >
-          <Link
-            href={`/owner/events/${params.id}/guests/${params.guestId}`}
-            className="w-type-meta"
-            style={{ color: "var(--w-fg-muted)", textDecoration: "none" }}
-          >
-            ← BACK
-          </Link>
-          <div className="w-type-meta">HISTORY</div>
-        </div>
+      <Breadcrumb
+        items={[
+          ["Events", "/owner"],
+          [guest.night.event.name, `/owner/events/${params.id}`],
+          [
+            guest.full_name,
+            `/owner/events/${params.id}/guests/${params.guestId}`,
+          ],
+          "History",
+        ]}
+      />
+      <PageHeader
+        eyebrow={`History · current tier ${tierLabel(guest.tier)}`}
+        title={guest.full_name}
+        sub="Tier changes, flags, and merges over time."
+      />
+      <EventSubNav active="guests" eventId={params.id} />
 
-        <div
-          style={{
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            marginBottom: 24,
-          }}
-        >
-          <div className="w-type-display-md">{guest.full_name}</div>
-          <p
-            className="w-type-meta"
-            style={{ marginTop: 8, color: "var(--w-fg-muted)" }}
-          >
-            {guest.night.event.name.toUpperCase()} · CURRENT TIER{" "}
-            <span style={{ color: "var(--w-fg)" }}>
-              {tierLabel(guest.tier)}
-            </span>
-          </p>
-        </div>
-
+      <div style={{ padding: "var(--s-8)", maxWidth: 720 }}>
         <section
-          className="w-card"
-          style={{ padding: 20, marginBottom: 16 }}
+          className="card"
+          style={{ padding: "var(--s-5)", marginBottom: "var(--s-4)" }}
         >
-          <div className="w-type-meta" style={{ marginBottom: 12 }}>
-            SNAPSHOT
+          <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+            Snapshot
           </div>
           <div
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
-              gap: 12,
+              gap: "var(--s-3)",
             }}
           >
             <div>
-              <div className="w-type-meta">RSVP&apos;D</div>
-              <p style={{ color: "var(--w-fg)", marginTop: 4 }}>
+              <div className="t-meta">RSVP&apos;d</div>
+              <div className="t-body" style={{ marginTop: "var(--s-1)" }}>
                 {fmtDate(guest.created_at)}
-              </p>
+              </div>
             </div>
             <div>
-              <div className="w-type-meta">LAST UPGRADE</div>
-              <p style={{ color: "var(--w-fg)", marginTop: 4 }}>
+              <div className="t-meta">Last upgrade</div>
+              <div className="t-body" style={{ marginTop: "var(--s-1)" }}>
                 {guest.tier_upgraded_at
                   ? fmtDate(guest.tier_upgraded_at)
                   : "—"}
-              </p>
+              </div>
             </div>
           </div>
         </section>
 
-        <div className="w-type-meta" style={{ marginBottom: 8 }}>
-          TIMELINE
+        <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+          Timeline
         </div>
         {rows.length === 0 ? (
           <div
-            className="w-card"
-            style={{
-              padding: "48px 32px",
-              textAlign: "center",
-            }}
+            className="card"
+            style={{ padding: "var(--s-12) var(--s-8)", textAlign: "center" }}
           >
-            <div className="w-type-h1">No history yet</div>
-            <p
-              className="w-type-body-sm"
+            <div className="t-h1">No history yet</div>
+            <div
+              className="t-body-2"
               style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 12,
+                marginTop: "var(--s-3)",
                 maxWidth: 460,
                 marginInline: "auto",
-                lineHeight: 1.5,
               }}
             >
-              Tier changes, flags, and merges will show up here as they
-              happen.
-            </p>
+              Tier changes, flags, and merges will show up here as they happen.
+            </div>
           </div>
         ) : (
-          <ul
+          <div
             style={{
               display: "flex",
               flexDirection: "column",
-              gap: 8,
-              listStyle: "none",
-              padding: 0,
-              margin: 0,
+              gap: "var(--s-2)",
             }}
           >
             {rows.map((r) => {
@@ -206,28 +173,24 @@ export default async function GuestHistoryPage({
               }
               const borderColor =
                 action === "guest.tier_upgraded"
-                  ? "var(--w-ok)"
+                  ? "var(--ok)"
                   : action === "guest.flag_dna"
-                    ? "var(--w-err)"
-                    : "var(--w-line)";
+                    ? "var(--err)"
+                    : "var(--line)";
               return (
-                <li
+                <div
                   key={r.id}
-                  className="w-card"
-                  style={{
-                    padding: 14,
-                    borderColor,
-                  }}
+                  className="card"
+                  style={{ padding: "var(--s-4)", borderColor }}
                 >
-                  <p style={{ color: "var(--w-fg)", fontSize: 14 }}>{line}</p>
-                  <div className="w-type-meta" style={{ marginTop: 4 }}>
-                    {new Date(r.created_at).toLocaleString().toUpperCase()} ·{" "}
-                    {actor.toUpperCase()}
+                  <div className="t-body">{line}</div>
+                  <div className="t-meta" style={{ marginTop: "var(--s-1)" }}>
+                    {new Date(r.created_at).toLocaleString()} · {actor}
                   </div>
-                </li>
+                </div>
               );
             })}
-          </ul>
+          </div>
         )}
       </div>
     </main>

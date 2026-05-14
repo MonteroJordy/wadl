@@ -1,7 +1,6 @@
 "use client";
 
 import { useTransition } from "react";
-import { Button } from "@/components/wadl";
 import { approveGuestAction, rejectGuestAction } from "./actions";
 
 export default function QueueRow({
@@ -33,75 +32,44 @@ export default function QueueRow({
   }
 
   return (
-    <div className="w-card" style={{ padding: 14 }}>
+    <div
+      className="row"
+      style={{ gridTemplateColumns: "1fr 160px 100px 200px" }}
+    >
+      <span className="t-h1 truncate">
+        {fullName}
+        {plusOnes > 0 && (
+          <span style={{ color: "var(--fg-3)", fontWeight: 400 }}>
+            {" "}
+            +{plusOnes}
+          </span>
+        )}
+      </span>
+      <span className="t-body-2 truncate">{holderLabel}</span>
+      <span className="t-meta">{addedAgo}</span>
       <div
         style={{
           display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          gap: 12,
+          gap: "var(--s-2)",
+          justifyContent: "flex-end",
         }}
       >
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <p
-            style={{
-              color: "var(--w-fg)",
-              fontWeight: 600,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
-          >
-            {fullName}
-            {plusOnes > 0 && (
-              <span
-                style={{
-                  color: "var(--w-fg-muted)",
-                  fontWeight: 400,
-                }}
-              >
-                {" "}
-                +{plusOnes}
-              </span>
-            )}
-          </p>
-          <div
-            className="w-type-meta"
-            style={{
-              marginTop: 4,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
-          >
-            {holderLabel} · {addedAgo}
-          </div>
-        </div>
-      </div>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 8,
-          marginTop: 12,
-        }}
-      >
-        <Button
-          variant="ghost"
+        <button
           type="button"
+          className="btn btn--ghost btn--sm"
           onClick={reject}
           disabled={pending}
         >
           Deny
-        </Button>
-        <Button
-          variant="primary"
+        </button>
+        <button
           type="button"
+          className="btn btn--sm"
           onClick={approve}
           disabled={pending}
         >
           Approve
-        </Button>
+        </button>
       </div>
     </div>
   );

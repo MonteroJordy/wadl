@@ -1,18 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Button } from "@/components/wadl";
 import { createCoOwnerInviteAction } from "./actions";
-
-const INPUT_STYLE: React.CSSProperties = {
-  width: "100%",
-  background: "var(--w-surface-1)",
-  border: "1px solid var(--w-line)",
-  color: "var(--w-fg)",
-  padding: "10px 12px",
-  fontFamily: "var(--w-sans)",
-  fontSize: 14,
-};
 
 export default function CoOwnerInviteForm({ eventId }: { eventId: string }) {
   const [phone, setPhone] = useState("");
@@ -62,23 +51,19 @@ export default function CoOwnerInviteForm({ eventId }: { eventId: string }) {
   return (
     <form
       onSubmit={onSubmit}
-      className="w-card"
+      className="card"
       style={{
-        padding: 18,
+        padding: "var(--s-5)",
         display: "flex",
         flexDirection: "column",
-        gap: 16,
+        gap: "var(--s-4)",
       }}
     >
-      <div className="w-type-meta">INVITE A CO-OWNER ACCOUNT</div>
+      <div className="t-h1">Invite a co-owner account</div>
 
       <div>
-        <label
-          htmlFor="co-phone"
-          className="w-type-meta"
-          style={{ display: "block", marginBottom: 6 }}
-        >
-          PHONE (OPTIONAL, FOR SMS)
+        <label htmlFor="co-phone" className="t-meta">
+          Phone (optional, for SMS)
         </label>
         <input
           id="co-phone"
@@ -86,103 +71,87 @@ export default function CoOwnerInviteForm({ eventId }: { eventId: string }) {
           inputMode="tel"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          style={INPUT_STYLE}
+          className="input"
+          style={{ marginTop: "var(--s-2)" }}
           placeholder="(305) 555 1234"
         />
       </div>
 
       <div>
-        <label
-          htmlFor="co-email"
-          className="w-type-meta"
-          style={{ display: "block", marginBottom: 6 }}
-        >
-          EMAIL (OPTIONAL, COPY LINK TO SEND)
+        <label htmlFor="co-email" className="t-meta">
+          Email (optional, copy link to send)
         </label>
         <input
           id="co-email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          style={INPUT_STYLE}
+          className="input"
+          style={{ marginTop: "var(--s-2)" }}
           placeholder="they@brand.com"
         />
       </div>
 
       <div>
-        <div className="w-type-meta" style={{ marginBottom: 8 }}>
-          PERMISSION
+        <div className="t-meta" style={{ marginBottom: "var(--s-2)" }}>
+          Permission
         </div>
-        <div className="w-card" style={{ padding: 12 }}>
-          <div className="w-type-meta" style={{ marginBottom: 4 }}>
-            VIEW-ONLY
+        <div
+          className="card"
+          style={{ padding: "var(--s-3)", background: "var(--bg-3)" }}
+        >
+          <div className="t-body" style={{ fontWeight: 500 }}>
+            View-only
           </div>
-          <p
-            style={{
-              color: "var(--w-fg-muted)",
-              fontSize: 12,
-              lineHeight: 1.5,
-            }}
-          >
+          <div className="t-body-2" style={{ marginTop: "var(--s-1)" }}>
             Co-owners can see the event, allocations, and guest list. Editable
             tiers are coming — for now everything writeable stays with the
             account owner.
-          </p>
+          </div>
         </div>
       </div>
 
       {error && (
-        <p
-          className="w-type-body-sm"
-          style={{ color: "var(--w-err)" }}
-        >
+        <p className="t-body-2" style={{ color: "var(--err)" }}>
           {error}
         </p>
       )}
 
       {result && (
-        <div
-          style={{
-            background: "var(--w-surface-2)",
-            border: "1px solid var(--w-line)",
-            padding: 12,
-          }}
-        >
-          <div className="w-type-meta" style={{ marginBottom: 8 }}>
-            INVITE CREATED
+        <div className="card" style={{ padding: "var(--s-3)" }}>
+          <div className="t-meta">
+            Invite created
             {result.provider === "dev" && (
-              <span style={{ color: "var(--w-warn)" }}>
+              <span style={{ color: "var(--warn)" }}>
                 {" "}
-                (DEV — CONSOLE LOG)
+                (dev — console log)
               </span>
             )}
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div
+            style={{
+              display: "flex",
+              gap: "var(--s-2)",
+              marginTop: "var(--s-2)",
+            }}
+          >
             <input
               value={result.url}
               readOnly
               onFocus={(e) => e.currentTarget.select()}
-              style={{
-                ...INPUT_STYLE,
-                fontSize: 12,
-                fontFamily: "var(--w-mono)",
-              }}
+              className="input"
+              style={{ fontSize: "var(--ts-sm)", fontFamily: "var(--mono)" }}
             />
-            <Button
-              variant="ghost"
-              type="button"
-              onClick={copy}
-              style={{ padding: "0 18px" }}
-            >
+            <button type="button" className="btn btn--ghost" onClick={copy}>
               {copied ? "Copied" : "Copy"}
-            </Button>
+            </button>
           </div>
         </div>
       )}
 
-      <Button variant="primary" type="submit" disabled={pending}>
+      <button type="submit" className="btn" disabled={pending}>
         {pending ? "Sending…" : "Send invite"}
-      </Button>
+      </button>
     </form>
   );
 }

@@ -4,7 +4,6 @@ import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fmtDate, fmtTime } from "@/lib/format";
-import { Button } from "@/components/wadl";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Your tickets — WADL" };
@@ -68,11 +67,11 @@ export default async function MultiNightTicketsPage({
   return (
     <main
       id="main-content"
-      className="w-app"
+      className="v5"
       style={{
         minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
+        background: "var(--bg)",
+        padding: "var(--s-8) var(--s-6) var(--s-24)",
       }}
     >
       <div style={{ maxWidth: 540, margin: "0 auto" }}>
@@ -81,27 +80,27 @@ export default async function MultiNightTicketsPage({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            marginBottom: 16,
+            marginBottom: "var(--s-4)",
           }}
         >
           <Link
             href="/mytickets"
-            className="w-type-meta"
-            style={{ color: "var(--w-fg-muted)", textDecoration: "none" }}
+            className="t-meta"
+            style={{ color: "var(--fg-3)", textDecoration: "none" }}
           >
-            ← TICKETS
+            ← Tickets
           </Link>
-          <div className="w-type-meta">{tickets.length} NIGHTS</div>
+          <div className="t-meta">{tickets.length} nights</div>
         </div>
 
-        <div className="w-type-display-md" style={{ marginBottom: 4 }}>
+        <div className="t-display-md" style={{ marginBottom: "var(--s-1)" }}>
           {event.name}
         </div>
         <div
-          className="w-type-meta"
-          style={{ color: "var(--w-fg-muted)", marginBottom: 24 }}
+          className="t-meta"
+          style={{ marginBottom: "var(--s-6)" }}
         >
-          MULTI-NIGHT PASS
+          Multi-night pass
         </div>
 
         {event.flyer_url && (
@@ -109,8 +108,9 @@ export default async function MultiNightTicketsPage({
             style={{
               width: "100%",
               overflow: "hidden",
-              border: "1px solid var(--w-line)",
-              marginBottom: 20,
+              border: "1px solid var(--line)",
+              borderRadius: "var(--r-lg)",
+              marginBottom: "var(--s-5)",
               aspectRatio: "4 / 5",
             }}
           >
@@ -131,7 +131,7 @@ export default async function MultiNightTicketsPage({
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: 16,
+            gap: "var(--s-4)",
             listStyle: "none",
             padding: 0,
             margin: 0,
@@ -139,51 +139,44 @@ export default async function MultiNightTicketsPage({
         >
           {tickets.map((t, i) => {
             const active = t.status === "approved";
-            const statusColor = active
-              ? "var(--w-ok)"
+            const chipClass = active
+              ? "chip chip--ok"
               : t.status === "pending"
-                ? "var(--w-warn)"
-                : "var(--w-fg-muted)";
+                ? "chip chip--warn"
+                : "chip";
             return (
-              <li key={t.id} className="w-card" style={{ padding: 16 }}>
+              <li
+                key={t.id}
+                className="card"
+                style={{ padding: "var(--s-4)" }}
+              >
                 <div
                   style={{
                     display: "flex",
                     alignItems: "baseline",
                     justifyContent: "space-between",
-                    marginBottom: 8,
+                    marginBottom: "var(--s-2)",
                   }}
                 >
-                  <p
-                    style={{ color: "var(--w-fg)", fontWeight: 600 }}
-                  >
-                    {fmtDate(t.night.night_date)}
-                  </p>
-                  <div
-                    className="w-type-meta"
-                    style={{ color: statusColor }}
-                  >
-                    {t.status.toUpperCase()}
-                  </div>
+                  <p className="t-h2">{fmtDate(t.night.night_date)}</p>
+                  <span className={chipClass}>{t.status}</span>
                 </div>
                 <div
-                  className="w-type-meta"
-                  style={{ marginBottom: 12 }}
+                  className="t-meta"
+                  style={{ marginBottom: "var(--s-3)" }}
                 >
-                  DOORS {fmtTime(t.night.doors_at).toUpperCase()} ·{" "}
-                  {t.tier.toUpperCase()}
+                  Doors {fmtTime(t.night.doors_at)} · {t.tier.toUpperCase()}
                   {t.plus_ones > 0 && ` · +${t.plus_ones}`}
                 </div>
                 <div
                   style={{
-                    padding: 12,
+                    padding: "var(--s-3)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    background: active
-                      ? "var(--w-fg)"
-                      : "var(--w-surface-2)",
-                    border: active ? "none" : "1px solid var(--w-line)",
+                    background: active ? "#f3f1ec" : "var(--bg-3)",
+                    border: active ? "none" : "1px solid var(--line)",
+                    borderRadius: "var(--r-md)",
                     aspectRatio: "1 / 1",
                     maxWidth: 240,
                     margin: "0 auto",
@@ -196,31 +189,22 @@ export default async function MultiNightTicketsPage({
                     />
                   ) : (
                     <div
-                      style={{
-                        fontFamily: "var(--w-display)",
-                        fontWeight: 700,
-                        fontSize: 30,
-                        color: "var(--w-warn)",
-                      }}
+                      className="t-display-sm"
+                      style={{ color: "var(--warn)" }}
                     >
-                      PENDING
+                      Pending
                     </div>
                   )}
                 </div>
                 <Link
                   href={`/t/${t.check_in_token}`}
+                  className="btn btn--ghost btn--block"
                   style={{
                     textDecoration: "none",
-                    display: "block",
-                    marginTop: 12,
+                    marginTop: "var(--s-3)",
                   }}
                 >
-                  <Button
-                    variant="ghost"
-                    style={{ width: "100%", fontSize: 12 }}
-                  >
-                    Open standalone
-                  </Button>
+                  Open standalone
                 </Link>
               </li>
             );
@@ -228,14 +212,14 @@ export default async function MultiNightTicketsPage({
         </ul>
 
         <div
-          className="w-type-meta"
+          className="t-meta"
           style={{
-            marginTop: 32,
+            marginTop: "var(--s-8)",
             textAlign: "center",
-            color: "var(--w-fg-muted)",
+            color: "var(--fg-3)",
           }}
         >
-          SHOW THE RIGHT NIGHT&apos;S QR AT THE DOOR.
+          Show the right night&apos;s QR at the door.
         </div>
       </div>
     </main>

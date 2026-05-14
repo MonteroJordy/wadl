@@ -16,9 +16,7 @@ export default function ForceFlagButton({
   const [err, setErr] = useState<string | null>(null);
 
   if (alreadyFlagged) {
-    return (
-      <span style={{ color: "var(--w-err)", fontSize: 12 }}>⚠ flagged</span>
-    );
+    return <span className="chip chip--err">Flagged</span>;
   }
 
   function go() {
@@ -37,21 +35,15 @@ export default function ForceFlagButton({
         type="button"
         onClick={go}
         disabled={pending}
-        style={{
-          background: "transparent",
-          border: "none",
-          cursor: "pointer",
-          padding: 0,
-          color: "var(--w-err)",
-          fontSize: 12,
-          opacity: pending ? 0.5 : 1,
-        }}
+        className="btn btn--danger btn--sm"
+        style={{ opacity: pending ? 0.5 : 1 }}
       >
-        {pending ? "…" : "force-flag"}
+        {pending ? "…" : "Force-flag"}
       </button>
       {err && (
         <p
-          style={{ color: "var(--w-err)", fontSize: 10, marginTop: 4 }}
+          className="t-meta"
+          style={{ color: "var(--err)", marginTop: "var(--s-1)" }}
         >
           {err}
         </p>

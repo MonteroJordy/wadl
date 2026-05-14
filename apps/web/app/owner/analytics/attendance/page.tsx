@@ -1,7 +1,6 @@
 import { requireOwnerContext } from "@/lib/owner";
 import { computeAccountAnalytics } from "@/lib/analytics";
 import { computeExtraAnalytics } from "@/lib/analytics-extra";
-import { CredPill } from "@/components/wadl";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Attendance — WADL" };
@@ -22,25 +21,20 @@ export default async function AttendancePage() {
   if (a.trend.length === 0) {
     return (
       <div
-        className="w-card"
-        style={{
-          padding: "64px 32px",
-          textAlign: "center",
-        }}
+        className="card"
+        style={{ padding: "var(--s-16) var(--s-8)", textAlign: "center" }}
       >
-        <div className="w-type-h1">Nothing to plot</div>
+        <div className="t-display-sm">Nothing to plot</div>
         <p
-          className="w-type-body-sm"
+          className="t-body-2"
           style={{
-            color: "var(--w-fg-muted)",
-            marginTop: 12,
+            marginTop: "var(--s-3)",
             maxWidth: 480,
             marginInline: "auto",
-            lineHeight: 1.5,
           }}
         >
-          Run a night in the last 90 days. Attendance, show rate, tier mix
-          all show up here once a door&apos;s been open.
+          Run a night in the last 90 days. Attendance, show rate, tier mix all
+          show up here once a door&apos;s been open.
         </p>
       </div>
     );
@@ -60,23 +54,17 @@ export default async function AttendancePage() {
   const tierMix = { ga: 68, vip: 25, all_access: 7 };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 12,
-      }}
-    >
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
       {/* Monthly bars */}
-      <section className="w-card" style={{ padding: 20 }}>
-        <div className="w-type-meta" style={{ marginBottom: 14 }}>
-          MONTHLY ATTENDANCE
+      <div className="card" style={{ padding: "var(--s-6)" }}>
+        <div className="t-meta" style={{ marginBottom: "var(--s-4)" }}>
+          Monthly attendance
         </div>
         <div
           style={{
             display: "flex",
             alignItems: "flex-end",
-            gap: 12,
+            gap: "var(--s-3)",
             height: 128,
           }}
         >
@@ -88,15 +76,12 @@ export default async function AttendancePage() {
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                gap: 4,
+                gap: "var(--s-1)",
                 minWidth: 40,
               }}
               title={`${m.month}: ${m.scanned}`}
             >
-              <div
-                className="w-type-meta"
-                style={{ color: "var(--w-fg)" }}
-              >
+              <div className="t-meta" style={{ color: "var(--fg)" }}>
                 {m.scanned}
               </div>
               <div
@@ -104,34 +89,32 @@ export default async function AttendancePage() {
                   width: "100%",
                   height: `${(m.scanned / peakMonth) * 100}%`,
                   background:
-                    m.scanned === peakMonth
-                      ? "var(--w-acc)"
-                      : "oklch(0.7 0.24 260 / 0.4)",
+                    m.scanned === peakMonth ? "var(--fg)" : "var(--fg-4)",
                 }}
               />
-              <div className="w-type-meta">{m.month}</div>
+              <div className="t-meta">{m.month}</div>
             </div>
           ))}
         </div>
-      </section>
+      </div>
 
       {/* DOW + hour velocity */}
-      <section
+      <div
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-          gap: 12,
+          gap: "var(--s-4)",
         }}
       >
-        <div className="w-card" style={{ padding: 20 }}>
-          <div className="w-type-meta" style={{ marginBottom: 14 }}>
-            DAY-OF-WEEK PERFORMANCE
+        <div className="card" style={{ padding: "var(--s-6)" }}>
+          <div className="t-meta" style={{ marginBottom: "var(--s-4)" }}>
+            Day-of-week performance
           </div>
           <div
             style={{
               display: "flex",
               alignItems: "flex-end",
-              gap: 8,
+              gap: "var(--s-2)",
               height: 96,
             }}
           >
@@ -146,7 +129,7 @@ export default async function AttendancePage() {
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
-                    gap: 4,
+                    gap: "var(--s-1)",
                   }}
                   title={`${d.label}: ${d.scanned} scanned across ${d.events} event${d.events === 1 ? "" : "s"}`}
                 >
@@ -154,15 +137,10 @@ export default async function AttendancePage() {
                     style={{
                       width: "100%",
                       height: `${Math.max(4, (d.scanned / peak) * 100)}%`,
-                      background: isBest
-                        ? "var(--w-acc)"
-                        : "oklch(0.86 0.18 145 / 0.6)",
+                      background: isBest ? "var(--fg)" : "var(--fg-4)",
                     }}
                   />
-                  <div
-                    className="w-type-meta"
-                    style={{ fontSize: 9 }}
-                  >
+                  <div className="t-meta" style={{ fontSize: 9 }}>
                     {d.label.toUpperCase()}
                   </div>
                 </div>
@@ -170,36 +148,31 @@ export default async function AttendancePage() {
             })}
           </div>
           {a.bestDow && a.bestDow.events > 0 && (
-            <div className="w-type-meta" style={{ marginTop: 12 }}>
-              BEST:{" "}
-              <span style={{ color: "var(--w-fg)" }}>
+            <div className="t-meta" style={{ marginTop: "var(--s-3)" }}>
+              Best:{" "}
+              <span style={{ color: "var(--fg)" }}>
                 {a.bestDow.label.toUpperCase()}
               </span>{" "}
-              · AVG{" "}
-              {Math.round(
-                a.bestDow.scanned / Math.max(1, a.bestDow.events),
-              )}
+              · avg{" "}
+              {Math.round(a.bestDow.scanned / Math.max(1, a.bestDow.events))}
             </div>
           )}
         </div>
 
-        <div className="w-card" style={{ padding: 20 }}>
-          <div className="w-type-meta" style={{ marginBottom: 14 }}>
-            CHECK-IN VELOCITY BY HOUR
+        <div className="card" style={{ padding: "var(--s-6)" }}>
+          <div className="t-meta" style={{ marginBottom: "var(--s-4)" }}>
+            Check-in velocity by hour
           </div>
           <div
             style={{
               display: "flex",
               alignItems: "flex-end",
-              gap: 4,
+              gap: "var(--s-1)",
               height: 96,
             }}
           >
             {x.hourVelocity.map((h) => {
-              const peak = Math.max(
-                1,
-                ...x.hourVelocity.map((p) => p.count),
-              );
+              const peak = Math.max(1, ...x.hourVelocity.map((p) => p.count));
               const isPeak = h.count === peak && h.count > 0;
               return (
                 <div
@@ -209,7 +182,7 @@ export default async function AttendancePage() {
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
-                    gap: 4,
+                    gap: "var(--s-1)",
                     minWidth: 10,
                   }}
                   title={`${fmtHourLabel(h.hour)}: ${h.count}`}
@@ -218,9 +191,7 @@ export default async function AttendancePage() {
                     style={{
                       width: "100%",
                       height: `${(h.count / peak) * 100}%`,
-                      background: isPeak
-                        ? "var(--w-acc)"
-                        : "oklch(0.86 0.18 145 / 0.4)",
+                      background: isPeak ? "var(--fg)" : "var(--fg-4)",
                     }}
                   />
                 </div>
@@ -228,33 +199,33 @@ export default async function AttendancePage() {
             })}
           </div>
           {x.peakHour && (
-            <div className="w-type-meta" style={{ marginTop: 12 }}>
-              PEAK{" "}
-              <span style={{ color: "var(--w-fg)" }}>
+            <div className="t-meta" style={{ marginTop: "var(--s-3)" }}>
+              Peak{" "}
+              <span style={{ color: "var(--fg)" }}>
                 {fmtHourLabel(x.peakHour.hour).toUpperCase()}
               </span>{" "}
-              · {Math.round(x.peakHour.pct * 100)}% OF CHECK-INS
+              · {Math.round(x.peakHour.pct * 100)}% of check-ins
             </div>
           )}
         </div>
-      </section>
+      </div>
 
       {/* Tier breakdown */}
-      <section className="w-card" style={{ padding: 20 }}>
+      <div className="card" style={{ padding: "var(--s-6)" }}>
         <div
           style={{
             display: "flex",
             alignItems: "baseline",
             justifyContent: "space-between",
-            marginBottom: 14,
-            gap: 12,
+            marginBottom: "var(--s-4)",
+            gap: "var(--s-3)",
           }}
         >
-          <div className="w-type-meta">TIER BREAKDOWN · ESTIMATE</div>
-          <div style={{ display: "flex", gap: 6 }}>
-            <CredPill tier="GA" />
-            <CredPill tier="VIP" />
-            <CredPill tier="AAA" />
+          <div className="t-meta">Tier breakdown · estimate</div>
+          <div style={{ display: "flex", gap: "var(--s-1)" }}>
+            <span className="chip">GA</span>
+            <span className="chip">VIP</span>
+            <span className="chip">AAA</span>
           </div>
         </div>
         <div
@@ -262,88 +233,80 @@ export default async function AttendancePage() {
             display: "flex",
             height: 32,
             overflow: "hidden",
-            marginBottom: 12,
+            marginBottom: "var(--s-3)",
+            borderRadius: "var(--r-sm)",
           }}
         >
           <div
-            style={{
-              width: `${tierMix.ga}%`,
-              background: "var(--w-fg)",
-            }}
+            style={{ width: `${tierMix.ga}%`, background: "var(--fg)" }}
             title={`GA ${tierMix.ga}%`}
           />
           <div
-            style={{
-              width: `${tierMix.vip}%`,
-              background: "var(--w-acc)",
-            }}
+            style={{ width: `${tierMix.vip}%`, background: "var(--fg-3)" }}
             title={`VIP ${tierMix.vip}%`}
           />
           <div
-            className="w-hatch"
             style={{
               width: `${tierMix.all_access}%`,
+              background: "var(--bg-4)",
             }}
             title={`AAA ${tierMix.all_access}%`}
           />
         </div>
         <div
-          className="w-type-meta"
-          style={{ display: "flex", flexWrap: "wrap", gap: 12 }}
+          className="t-meta"
+          style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-3)" }}
         >
           <span>
-            <span style={{ color: "var(--w-fg)" }}>GA</span> {tierMix.ga}%
+            <span style={{ color: "var(--fg)" }}>GA</span> {tierMix.ga}%
           </span>
           <span>
-            <span style={{ color: "var(--w-acc)" }}>VIP</span> {tierMix.vip}%
+            <span style={{ color: "var(--fg-2)" }}>VIP</span> {tierMix.vip}%
           </span>
           <span>AAA {tierMix.all_access}%</span>
         </div>
         <div
-          className="w-type-meta"
-          style={{
-            marginTop: 8,
-            color: "var(--w-fg-dim)",
-          }}
+          className="t-meta"
+          style={{ marginTop: "var(--s-2)", color: "var(--fg-4)" }}
         >
-          (PER-EVENT TIER MIX LIVES ON EACH EVENT RECAP)
+          (Per-event tier mix lives on each event recap)
         </div>
-      </section>
+      </div>
 
       {/* Per-event table */}
-      <section className="w-card" style={{ padding: 20 }}>
-        <div className="w-type-meta" style={{ marginBottom: 14 }}>
-          PER-EVENT BREAKDOWN · LAST 30
+      <div className="card" style={{ padding: "var(--s-6)" }}>
+        <div className="t-meta" style={{ marginBottom: "var(--s-4)" }}>
+          Per-event breakdown · last 30
         </div>
         <div
           style={{
             overflowX: "auto",
-            margin: "0 -20px",
-            padding: "0 20px",
+            margin: "0 calc(-1 * var(--s-6))",
+            padding: "0 var(--s-6)",
           }}
         >
           <table
             style={{
               width: "100%",
-              fontSize: 14,
+              fontSize: "var(--ts-md)",
               borderCollapse: "collapse",
             }}
           >
             <thead>
               <tr>
                 {[
-                  ["DATE", "left"],
-                  ["EVENT", "left"],
-                  ["APPROVED", "right"],
-                  ["SCANNED", "right"],
-                  ["SHOW", "right"],
+                  ["Date", "left"],
+                  ["Event", "left"],
+                  ["Approved", "right"],
+                  ["Scanned", "right"],
+                  ["Show", "right"],
                 ].map(([h, align]) => (
                   <th
                     key={h}
-                    className="w-type-meta"
+                    className="t-meta"
                     style={{
                       textAlign: align as "left" | "right",
-                      paddingBottom: 8,
+                      paddingBottom: "var(--s-2)",
                     }}
                   >
                     {h}
@@ -358,33 +321,36 @@ export default async function AttendancePage() {
                 .map((t) => (
                   <tr
                     key={t.date}
-                    style={{ borderTop: "1px solid var(--w-line)" }}
+                    style={{ borderTop: "1px solid var(--line)" }}
                   >
-                    <td
-                      className="w-type-meta"
-                      style={{ padding: "10px 0" }}
-                    >
+                    <td className="t-meta" style={{ padding: "var(--s-3) 0" }}>
                       {t.date}
                     </td>
-                    <td style={{ padding: "10px 0" }}>all events</td>
-                    <td style={{ padding: "10px 0", textAlign: "right" }}>
+                    <td
+                      className="t-body-2"
+                      style={{ padding: "var(--s-3) 0" }}
+                    >
+                      all events
+                    </td>
+                    <td
+                      className="t-body t-num"
+                      style={{ padding: "var(--s-3) 0", textAlign: "right" }}
+                    >
                       {t.approved}
                     </td>
                     <td
+                      className="t-body t-num"
                       style={{
-                        padding: "10px 0",
+                        padding: "var(--s-3) 0",
                         textAlign: "right",
-                        color: "var(--w-ok)",
+                        color: "var(--ok)",
                       }}
                     >
                       {t.scanned}
                     </td>
                     <td
-                      style={{
-                        padding: "10px 0",
-                        textAlign: "right",
-                        fontFamily: "var(--w-mono)",
-                      }}
+                      className="t-body t-num"
+                      style={{ padding: "var(--s-3) 0", textAlign: "right" }}
                     >
                       {t.approved > 0
                         ? Math.round((t.scanned / t.approved) * 100)
@@ -396,7 +362,7 @@ export default async function AttendancePage() {
             </tbody>
           </table>
         </div>
-      </section>
+      </div>
     </div>
   );
 }

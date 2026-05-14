@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useTransition } from "react";
-import { Button } from "@/components/wadl";
 import {
   managerApproveGuestAction,
   managerRejectGuestAction,
@@ -24,9 +23,9 @@ interface Props {
 }
 
 const STATUS_COLOR: Record<string, string> = {
-  approved: "var(--w-ok)",
-  pending: "var(--w-warn)",
-  rejected: "var(--w-err)",
+  approved: "var(--ok)",
+  pending: "var(--warn)",
+  rejected: "var(--err)",
 };
 
 export default function GuestRow({ eventId, guest }: Props) {
@@ -51,10 +50,10 @@ export default function GuestRow({ eventId, guest }: Props) {
 
   return (
     <div
-      className="w-card"
+      className="card"
       style={{
-        padding: 14,
-        borderColor: guest.flag_dna ? "var(--w-err)" : undefined,
+        padding: "var(--s-4)",
+        borderColor: guest.flag_dna ? "var(--err)" : undefined,
         opacity: checkedIn ? 0.6 : 1,
       }}
     >
@@ -71,65 +70,49 @@ export default function GuestRow({ eventId, guest }: Props) {
             display: "flex",
             alignItems: "flex-start",
             justifyContent: "space-between",
-            gap: 12,
+            gap: "var(--s-3)",
           }}
         >
           <div style={{ minWidth: 0, flex: 1 }}>
             <p
-              style={{
-                color: "var(--w-fg)",
-                fontWeight: 600,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
+              className="t-h2 truncate"
+              style={{ color: "var(--fg)" }}
             >
               {guest.full_name}
               {guest.plus_ones > 0 && (
-                <span
-                  style={{
-                    color: "var(--w-fg-muted)",
-                    fontWeight: 400,
-                  }}
-                >
+                <span style={{ color: "var(--fg-3)", fontWeight: 400 }}>
                   {" "}
                   +{guest.plus_ones}
                 </span>
               )}
               {guest.flag_dna && (
                 <span
-                  className="w-type-meta"
-                  style={{ marginLeft: 8, color: "var(--w-err)" }}
+                  className="t-meta"
+                  style={{ marginLeft: "var(--s-2)", color: "var(--err)" }}
                 >
                   ⚠ DNA
                 </span>
               )}
             </p>
             <div
-              className="w-type-meta"
-              style={{
-                marginTop: 4,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
+              className="t-meta truncate"
+              style={{ marginTop: "var(--s-1)" }}
             >
               <span
                 style={{
-                  color:
-                    STATUS_COLOR[guest.status] ?? "var(--w-fg-muted)",
+                  color: STATUS_COLOR[guest.status] ?? "var(--fg-3)",
                 }}
               >
-                {guest.status.toUpperCase()}
+                {guest.status}
               </span>
               {" · "}
-              {guest.tier.toUpperCase()}
+              {guest.tier}
               {guest.allocation_name && <> · {guest.allocation_name}</>}
               {checkedIn && (
                 <>
                   {" · "}
-                  <span style={{ color: "var(--w-ok)" }}>
-                    IN {new Date(guest.checked_in_at!).toLocaleTimeString()}
+                  <span style={{ color: "var(--ok)" }}>
+                    In {new Date(guest.checked_in_at!).toLocaleTimeString()}
                   </span>
                 </>
               )}
@@ -143,39 +126,39 @@ export default function GuestRow({ eventId, guest }: Props) {
           style={{
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
-            gap: 8,
-            marginTop: 12,
+            gap: "var(--s-2)",
+            marginTop: "var(--s-3)",
           }}
         >
           {guest.status === "pending" ? (
             <>
-              <Button
-                variant="ghost"
+              <button
+                className="btn btn--ghost"
                 type="button"
                 onClick={reject}
                 disabled={pending}
               >
                 Deny
-              </Button>
-              <Button
-                variant="primary"
+              </button>
+              <button
+                className="btn"
                 type="button"
                 onClick={approve}
                 disabled={pending}
               >
                 Approve
-              </Button>
+              </button>
             </>
           ) : guest.status === "approved" ? (
-            <Button
-              variant="primary"
+            <button
+              className="btn"
               type="button"
               onClick={checkIn}
               disabled={pending || guest.flag_dna}
               style={{ gridColumn: "1 / -1" }}
             >
               Check in
-            </Button>
+            </button>
           ) : null}
         </div>
       )}

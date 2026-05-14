@@ -1,7 +1,5 @@
 import Link from "next/link";
-import PublicShell from "@/components/public-shell";
-import MarketingFooter from "@/components/marketing-footer";
-import { Button, IconArrow } from "@/components/wadl";
+import { Logo } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -45,26 +43,139 @@ const FAQS = [
   },
 ];
 
+function PublicHeader() {
+  return (
+    <header
+      style={{
+        position: "sticky",
+        top: 0,
+        zIndex: 30,
+        backdropFilter: "blur(12px)",
+        background: "rgba(10,10,10,0.78)",
+        borderBottom: "1px solid var(--line)",
+      }}
+    >
+      <div
+        style={{
+          maxWidth: 960,
+          margin: "0 auto",
+          padding: "var(--s-3) var(--s-6)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "var(--s-4)",
+        }}
+      >
+        <Link href="/" aria-label="WADL home" style={{ textDecoration: "none" }}>
+          <Logo size={20} />
+        </Link>
+        <nav
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "var(--s-4)",
+          }}
+        >
+          <Link
+            href="/discover"
+            className="t-meta"
+            style={{ textDecoration: "none" }}
+          >
+            Tonight
+          </Link>
+          <Link
+            href="/login"
+            className="btn btn--ghost btn--sm"
+            style={{ textDecoration: "none" }}
+          >
+            Sign in
+          </Link>
+        </nav>
+      </div>
+    </header>
+  );
+}
+
+function PublicFooter() {
+  return (
+    <footer
+      style={{
+        borderTop: "1px solid var(--line)",
+        padding: "var(--s-10) var(--s-6)",
+      }}
+    >
+      <div
+        style={{
+          maxWidth: 960,
+          margin: "0 auto",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-end",
+          gap: "var(--s-6)",
+          flexWrap: "wrap",
+        }}
+      >
+        <div>
+          <Logo size={22} />
+          <div className="t-meta" style={{ marginTop: "var(--s-3)" }}>
+            One door · one list · one truth
+          </div>
+          <div
+            className="t-meta"
+            style={{ marginTop: "var(--s-2)", color: "var(--fg-4)" }}
+          >
+            © {new Date().getFullYear()} WADL · Built in Miami
+          </div>
+        </div>
+        <nav
+          style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-6)" }}
+        >
+          {[
+            ["Pricing", "/pricing"],
+            ["Tonight", "/discover"],
+            ["Embed widget", "/docs/embed"],
+            ["Privacy", "/privacy"],
+            ["Terms", "/terms"],
+            ["Contact", "/contact"],
+          ].map(([label, href]) => (
+            <Link
+              key={href}
+              href={href}
+              className="t-meta"
+              style={{ textDecoration: "none" }}
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
+      </div>
+    </footer>
+  );
+}
+
 export default async function HelpPage() {
   return (
-    <>
-      <PublicShell maxWidth="4xl" ambient>
-        <header style={{ marginBottom: 40 }}>
-          <div className="w-type-meta">HELP</div>
-          <h1
-            className="w-type-display-lg"
-            style={{ marginTop: 12, lineHeight: 0.94 }}
-          >
-            Stuck at the door
-            <span style={{ color: "var(--w-acc)" }}>?</span>
+    <main
+      id="main-content"
+      className="v5"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
+    >
+      <PublicHeader />
+      <div
+        style={{
+          maxWidth: 960,
+          margin: "0 auto",
+          padding: "var(--s-12) var(--s-6) var(--s-16)",
+        }}
+      >
+        <header style={{ marginBottom: "var(--s-10)" }}>
+          <div className="t-meta">Help</div>
+          <h1 className="t-display-lg" style={{ marginTop: "var(--s-3)" }}>
+            Stuck at the door?
           </h1>
           <p
-            className="w-type-body"
-            style={{
-              color: "var(--w-fg-muted)",
-              marginTop: 16,
-              maxWidth: 640,
-            }}
+            className="t-body-2"
+            style={{ marginTop: "var(--s-4)", maxWidth: 640 }}
           >
             Eight things that fix 90% of door problems. Anything else, the
             founder reads every email — see Contact below.
@@ -75,18 +186,15 @@ export default async function HelpPage() {
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: 10,
-            marginBottom: 56,
+            gap: "var(--s-3)",
+            marginBottom: "var(--s-14)",
           }}
         >
           {FAQS.map((f, i) => (
             <details
               key={i}
-              className="w-card"
-              style={{
-                padding: 18,
-                cursor: "pointer",
-              }}
+              className="card"
+              style={{ padding: "var(--s-5)", cursor: "pointer" }}
             >
               <summary
                 style={{
@@ -94,38 +202,23 @@ export default async function HelpPage() {
                   display: "flex",
                   alignItems: "flex-start",
                   justifyContent: "space-between",
-                  gap: 16,
+                  gap: "var(--s-4)",
                   listStyle: "none",
                 }}
               >
-                <span
-                  style={{
-                    fontWeight: 600,
-                    fontSize: 15,
-                    paddingRight: 8,
-                  }}
-                >
+                <span className="t-h2" style={{ paddingRight: "var(--s-2)" }}>
                   {f.q}
                 </span>
                 <span
-                  style={{
-                    fontFamily: "var(--w-display)",
-                    fontSize: 22,
-                    color: "var(--w-acc)",
-                    flexShrink: 0,
-                    fontWeight: 600,
-                  }}
+                  className="t-display-sm"
+                  style={{ color: "var(--fg-3)", flexShrink: 0 }}
                 >
                   +
                 </span>
               </summary>
               <p
-                className="w-type-body-sm"
-                style={{
-                  color: "var(--w-fg-muted)",
-                  marginTop: 12,
-                  lineHeight: 1.5,
-                }}
+                className="t-body-2"
+                style={{ marginTop: "var(--s-3)" }}
               >
                 {f.a}
               </p>
@@ -134,31 +227,21 @@ export default async function HelpPage() {
         </section>
 
         <section
-          className="w-card"
+          className="card"
           style={{
-            padding: 24,
+            padding: "var(--s-6)",
             textAlign: "center",
-            borderColor: "var(--w-acc)",
-            background: "var(--w-acc-soft)",
+            borderColor: "var(--line-3)",
           }}
         >
-          <div
-            className="w-type-meta"
-            style={{ color: "var(--w-acc)" }}
-          >
-            STILL STUCK
-          </div>
-          <h2
-            className="w-type-h1"
-            style={{ marginTop: 8 }}
-          >
+          <div className="t-meta">Still stuck</div>
+          <h2 className="t-display-sm" style={{ marginTop: "var(--s-2)" }}>
             Email the founder.
           </h2>
           <p
-            className="w-type-body-sm"
+            className="t-body-2"
             style={{
-              color: "var(--w-fg-muted)",
-              marginTop: 8,
+              marginTop: "var(--s-2)",
               maxWidth: 420,
               marginInline: "auto",
             }}
@@ -168,19 +251,17 @@ export default async function HelpPage() {
           </p>
           <Link
             href="/contact"
+            className="btn"
             style={{
-              display: "inline-flex",
-              marginTop: 20,
+              marginTop: "var(--s-5)",
               textDecoration: "none",
             }}
           >
-            <Button variant="primary">
-              Contact <IconArrow size={14} />
-            </Button>
+            Contact →
           </Link>
         </section>
-      </PublicShell>
-      <MarketingFooter />
-    </>
+      </div>
+      <PublicFooter />
+    </main>
   );
 }

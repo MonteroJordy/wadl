@@ -2,7 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { WFrame } from "@/components/wadl";
+
+const SHELL_STYLE: React.CSSProperties = {
+  marginInline: "auto",
+  width: "100%",
+  maxWidth: 420,
+  minHeight: "100vh",
+  background: "var(--bg)",
+  display: "flex",
+  flexDirection: "column",
+  position: "relative",
+  paddingBottom: "var(--s-12)",
+};
 
 export default function AddPlusOnePage() {
   const router = useRouter();
@@ -22,67 +33,54 @@ export default function AddPlusOnePage() {
   const valid = first.trim().length > 0;
 
   return (
-    <main id="main-content">
-      <WFrame style={{ paddingBottom: 48 }}>
+    <main id="main-content" className="v5">
+      <div style={SHELL_STYLE}>
         <div
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "16px 20px 0",
+            padding: "var(--s-4) var(--s-5) 0",
           }}
         >
           <button
             type="button"
             onClick={() => router.back()}
-            className="w-type-meta"
+            className="t-meta"
             style={{
               background: "transparent",
               border: 0,
-              color: "var(--w-fg-muted)",
+              color: "var(--fg-3)",
               cursor: "pointer",
               padding: 0,
             }}
           >
-            CANCEL
+            Cancel
           </button>
-          <span className="w-type-meta">ADD +1</span>
+          <span className="t-meta">Add +1</span>
           <button
             type="button"
             onClick={onAdd}
             disabled={!valid || pending}
-            className="w-type-meta"
+            className="t-meta"
             style={{
               background: "transparent",
               border: 0,
-              color: valid && !pending ? "var(--w-acc)" : "var(--w-fg-dim)",
+              color: valid && !pending ? "var(--fg)" : "var(--fg-4)",
               fontWeight: 600,
               cursor: valid && !pending ? "pointer" : "not-allowed",
               padding: 0,
             }}
           >
-            {pending ? "ADDING…" : "ADD"}
+            {pending ? "Adding…" : "Add"}
           </button>
         </div>
 
-        <div style={{ padding: "20px" }}>
-          <div
-            style={{
-              fontFamily: "var(--w-display)",
-              fontWeight: 700,
-              fontSize: 28,
-              letterSpacing: "-0.02em",
-              lineHeight: 1.05,
-            }}
-          >
-            Who&apos;s coming with you?
-          </div>
+        <div style={{ padding: "var(--s-5)" }}>
+          <div className="t-display-sm">Who&apos;s coming with you?</div>
           <p
-            className="w-type-body-sm"
-            style={{
-              color: "var(--w-fg-muted)",
-              marginTop: 6,
-            }}
+            className="t-body-2"
+            style={{ marginTop: "var(--s-2)" }}
           >
             They&apos;ll get their own credential. Phone optional but speeds up
             door check-in.
@@ -91,15 +89,19 @@ export default function AddPlusOnePage() {
 
         <div
           style={{
-            padding: "8px 20px",
+            padding: "var(--s-2) var(--s-5)",
             display: "flex",
             flexDirection: "column",
-            gap: 14,
+            gap: "var(--s-4)",
           }}
         >
           <div>
-            <label htmlFor="first" className="w-label">
-              FIRST NAME
+            <label
+              htmlFor="first"
+              className="t-meta"
+              style={{ display: "block", marginBottom: "var(--s-2)" }}
+            >
+              First name
             </label>
             <input
               id="first"
@@ -107,14 +109,18 @@ export default function AddPlusOnePage() {
               autoComplete="given-name"
               value={first}
               onChange={(e) => setFirst(e.target.value)}
-              className="w-input"
+              className="input"
               autoFocus
               required
             />
           </div>
           <div>
-            <label htmlFor="last" className="w-label">
-              LAST NAME
+            <label
+              htmlFor="last"
+              className="t-meta"
+              style={{ display: "block", marginBottom: "var(--s-2)" }}
+            >
+              Last name
             </label>
             <input
               id="last"
@@ -122,12 +128,16 @@ export default function AddPlusOnePage() {
               autoComplete="family-name"
               value={last}
               onChange={(e) => setLast(e.target.value)}
-              className="w-input"
+              className="input"
             />
           </div>
           <div>
-            <label htmlFor="phone" className="w-label">
-              PHONE (OPTIONAL)
+            <label
+              htmlFor="phone"
+              className="t-meta"
+              style={{ display: "block", marginBottom: "var(--s-2)" }}
+            >
+              Phone (optional)
             </label>
             <input
               id="phone"
@@ -136,26 +146,21 @@ export default function AddPlusOnePage() {
               autoComplete="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="w-input"
+              className="input"
               placeholder="+1 ···"
             />
           </div>
         </div>
 
-        <div style={{ padding: "24px 20px 8px" }}>
-          <span className="w-type-meta">PLUS-ONES SO FAR</span>
+        <div style={{ padding: "var(--s-6) var(--s-5) var(--s-2)" }}>
+          <span className="t-meta">Plus-ones so far</span>
         </div>
-        <div className="w-card" style={{ margin: "0 20px" }}>
-          <div style={{ padding: "14px 16px" }}>
-            <p
-              className="w-type-body-sm"
-              style={{ color: "var(--w-fg-muted)" }}
-            >
-              Empty · 0 of 1 used
-            </p>
+        <div className="card" style={{ margin: "0 var(--s-5)" }}>
+          <div style={{ padding: "var(--s-4)" }}>
+            <p className="t-body-2">Empty · 0 of 1 used</p>
           </div>
         </div>
-      </WFrame>
+      </div>
     </main>
   );
 }

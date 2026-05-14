@@ -6,14 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { normalizePhone } from "@/lib/routing";
 import { completeRsvpAction } from "./actions";
 import { fmtDate, fmtTime } from "@/lib/format";
-import {
-  Avatar,
-  Button,
-  Chip,
-  CredentialCard,
-  WFrame,
-  Wordmark,
-} from "@/components/wadl";
+import { Cover, Logo } from "@/components/v5";
 
 interface Props {
   eventId: string;
@@ -28,6 +21,18 @@ interface Props {
 }
 
 type Step = "form" | "otp" | "success";
+
+const SHELL_STYLE: React.CSSProperties = {
+  marginInline: "auto",
+  width: "100%",
+  maxWidth: 420,
+  minHeight: "100vh",
+  background: "var(--bg)",
+  display: "flex",
+  flexDirection: "column",
+  position: "relative",
+  paddingBottom: "var(--s-12)",
+};
 
 export default function RsvpForm({
   eventId,
@@ -57,6 +62,8 @@ export default function RsvpForm({
   >(null);
   const [pending, startTransition] = useTransition();
 
+  const tierLabel = (tier ?? "ga").toUpperCase();
+
   async function onSendCode(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -64,9 +71,7 @@ export default function RsvpForm({
     const normalized = normalizePhone(phoneInput);
     if (!normalized) return setError("Enter a valid phone number.");
     if (!smsConsent)
-      return setError(
-        "SMS consent is required to receive your QR ticket.",
-      );
+      return setError("SMS consent is required to receive your QR ticket.");
 
     setE164Phone(normalized);
     const supabase = createClient();
@@ -124,40 +129,33 @@ export default function RsvpForm({
     });
   }
 
-  // Progress strip — 3 steps, accent fills as you advance
-  const stepIdx = step === "form" ? 0 : step === "otp" ? 1 : 2;
-
   // ─────────── SUCCESS ───────────
   if (step === "success" && success) {
     return (
-      <main id="main-content">
-        <WFrame style={{ paddingBottom: 48 }}>
+      <main id="main-content" className="v5">
+        <div style={SHELL_STYLE}>
           <ProgressStrip step={2} />
           <div
             style={{
-              padding: "24px 20px 0",
+              padding: "var(--s-6) var(--s-5) 0",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
             }}
           >
-            <Wordmark variant="monogrid" size={18} />
-            <Chip tone="acc">YOU&apos;RE IN</Chip>
+            <Logo size={18} />
+            <span className="chip chip--ok">You&apos;re in</span>
           </div>
-          <div style={{ padding: "32px 20px 0" }}>
-            <div className="w-type-meta">CREDENTIAL · GA</div>
-            <div className="w-type-h1" style={{ marginTop: 6 }}>
+          <div style={{ padding: "var(--s-8) var(--s-5) 0" }}>
+            <div className="t-meta">Credential · {tierLabel}</div>
+            <div className="t-h1" style={{ marginTop: "var(--s-2)" }}>
               {success.status === "approved"
                 ? "Show this at the door."
                 : "Sent for review."}
             </div>
             <p
-              className="w-type-body-sm"
-              style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 10,
-                lineHeight: 1.5,
-              }}
+              className="t-body-2"
+              style={{ marginTop: "var(--s-2)" }}
             >
               {success.status === "approved"
                 ? "You're locked in. We texted your QR — show it at the door."
@@ -165,34 +163,59 @@ export default function RsvpForm({
             </p>
           </div>
 
-          <div style={{ padding: "20px 20px 0" }}>
-            <CredentialCard
-              variant="mono"
-              tier="GA"
-              name={fullName.trim() || "Guest"}
-              event={eventName}
-              date={fmtDate(night.night_date)
-                .toUpperCase()
-                .replace(/[\.,]/g, "")}
-            />
+          <div style={{ padding: "var(--s-5) var(--s-5) 0" }}>
+            <div className="card" style={{ borderColor: "var(--fg)" }}>
+              <Cover seed={eventName} height={140}>
+                <div
+                  style={{
+                    position: "absolute",
+                    left: "var(--s-4)",
+                    right: "var(--s-4)",
+                    bottom: "var(--s-4)",
+                  }}
+                >
+                  <div
+                    className="t-meta"
+                    style={{ color: "rgba(255,255,255,0.7)" }}
+                  >
+                    {fmtDate(night.night_date)} · doors{" "}
+                    {fmtTime(night.doors_at)}
+                  </div>
+                  <div
+                    className="t-h1"
+                    style={{ color: "#fff", marginTop: "var(--s-1)" }}
+                  >
+                    {eventName}
+                  </div>
+                </div>
+              </Cover>
+              <div
+                style={{
+                  padding: "var(--s-4)",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <span className="t-h2">{fullName.trim() || "Guest"}</span>
+                <span className="chip chip--solid">{tierLabel}</span>
+              </div>
+            </div>
           </div>
 
           {success.smsProvider === "dev" && (
-            <div style={{ padding: "16px 20px 0" }}>
+            <div style={{ padding: "var(--s-4) var(--s-5) 0" }}>
               <div
-                className="w-card"
+                className="card"
                 style={{
-                  padding: 14,
-                  borderColor: "var(--w-warn)",
+                  padding: "var(--s-4)",
+                  borderColor: "var(--warn)",
                 }}
               >
-                <Chip tone="warn">DEV MODE</Chip>
+                <span className="chip chip--warn">Dev mode</span>
                 <p
-                  className="w-type-body-sm"
-                  style={{
-                    color: "var(--w-fg-muted)",
-                    marginTop: 8,
-                  }}
+                  className="t-body-2"
+                  style={{ marginTop: "var(--s-2)" }}
                 >
                   SMS logged to server console, not sent. Tap See your QR or
                   check /mytickets.
@@ -203,10 +226,10 @@ export default function RsvpForm({
 
           <div
             style={{
-              padding: "20px 20px 0",
+              padding: "var(--s-5) var(--s-5) 0",
               display: "flex",
               flexDirection: "column",
-              gap: 8,
+              gap: "var(--s-2)",
             }}
           >
             <Link
@@ -214,19 +237,20 @@ export default function RsvpForm({
                 typeof window !== "undefined" ? window.location.origin : "",
                 "",
               )}
+              className="btn btn--lg btn--block"
               style={{ textDecoration: "none" }}
             >
-              <Button variant="primary" size="lg" block>
-                See your QR
-              </Button>
+              See your QR
             </Link>
-            <Link href="/mytickets" style={{ textDecoration: "none" }}>
-              <Button variant="ghost" size="lg" block>
-                My tickets
-              </Button>
+            <Link
+              href="/mytickets"
+              className="btn btn--ghost btn--lg btn--block"
+              style={{ textDecoration: "none" }}
+            >
+              My tickets
             </Link>
           </div>
-        </WFrame>
+        </div>
       </main>
     );
   }
@@ -234,12 +258,12 @@ export default function RsvpForm({
   // ─────────── OTP ───────────
   if (step === "otp") {
     return (
-      <main id="main-content">
-        <WFrame style={{ paddingBottom: 48 }}>
+      <main id="main-content" className="v5">
+        <div style={SHELL_STYLE}>
           <ProgressStrip step={1} />
           <div
             style={{
-              padding: "24px 20px 0",
+              padding: "var(--s-6) var(--s-5) 0",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
@@ -248,53 +272,54 @@ export default function RsvpForm({
             <button
               type="button"
               onClick={() => setStep("form")}
-              className="w-type-meta"
+              className="t-meta"
               style={{
                 background: "transparent",
                 border: 0,
-                color: "var(--w-fg-muted)",
+                color: "var(--fg-3)",
                 cursor: "pointer",
                 padding: 0,
               }}
             >
-              ← BACK
+              ← Back
             </button>
-            <Wordmark variant="monogrid" size={18} />
-            <span className="w-type-meta">VERIFY</span>
+            <Logo size={18} />
+            <span className="t-meta">Verify</span>
           </div>
 
-          <div style={{ padding: "32px 20px 0" }}>
-            <div className="w-type-meta">VERIFY</div>
+          <div style={{ padding: "var(--s-8) var(--s-5) 0" }}>
+            <div className="t-meta">Verify</div>
             <div
-              className="w-type-display-md"
-              style={{ marginTop: 6, lineHeight: 1.0 }}
+              className="t-display-md"
+              style={{ marginTop: "var(--s-2)", lineHeight: 1.0 }}
             >
               Enter code.
             </div>
             <p
-              className="w-type-body"
-              style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 12,
-              }}
+              className="t-body"
+              style={{ marginTop: "var(--s-3)", color: "var(--fg-2)" }}
             >
               Sent to{" "}
-              <span style={{ color: "var(--w-fg)" }}>{e164Phone}</span>.
+              <span style={{ color: "var(--fg)" }}>{e164Phone}</span>.
             </p>
           </div>
 
           <form
             onSubmit={onVerify}
             style={{
-              padding: "32px 20px 0",
+              padding: "var(--s-8) var(--s-5) 0",
               display: "flex",
               flexDirection: "column",
-              gap: 12,
+              gap: "var(--s-3)",
             }}
           >
             <div>
-              <label htmlFor="code" className="w-label">
-                6-DIGIT CODE
+              <label
+                htmlFor="code"
+                className="t-meta"
+                style={{ display: "block", marginBottom: "var(--s-2)" }}
+              >
+                6-digit code
               </label>
               <input
                 id="code"
@@ -307,13 +332,13 @@ export default function RsvpForm({
                 onChange={(e) =>
                   setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
                 }
-                className="w-input"
+                className="input"
                 style={{
                   height: 64,
                   fontSize: 28,
                   textAlign: "center",
                   letterSpacing: "0.5em",
-                  fontFamily: "var(--w-mono)",
+                  fontFamily: "var(--mono)",
                   paddingInlineStart: "0.5em",
                 }}
                 placeholder="••••••"
@@ -324,37 +349,35 @@ export default function RsvpForm({
 
             {error ? (
               <p
-                className="w-type-body-sm"
-                style={{ color: "var(--w-err)" }}
+                className="t-body-2"
+                style={{ color: "var(--err)" }}
                 role="alert"
               >
                 {error}
               </p>
             ) : null}
 
-            <Button
+            <button
               type="submit"
-              variant="primary"
-              size="lg"
-              block
+              className="btn btn--lg btn--block"
               disabled={pending}
             >
               {pending ? "Locking you in…" : "Verify & RSVP"}
-            </Button>
+            </button>
           </form>
-        </WFrame>
+        </div>
       </main>
     );
   }
 
   // ─────────── FORM ───────────
   return (
-    <main id="main-content">
-      <WFrame style={{ paddingBottom: 48 }}>
+    <main id="main-content" className="v5">
+      <div style={SHELL_STYLE}>
         <ProgressStrip step={0} />
         <div
           style={{
-            padding: "24px 20px 0",
+            padding: "var(--s-6) var(--s-5) 0",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -362,49 +385,38 @@ export default function RsvpForm({
         >
           <Link
             href={`/e/${eventId}`}
-            className="w-type-meta"
-            style={{ textDecoration: "none" }}
+            className="t-meta"
+            style={{ textDecoration: "none", color: "var(--fg-3)" }}
           >
-            ← BACK
+            ← Back
           </Link>
-          <Wordmark variant="monogrid" size={18} />
-          <Chip tone="ghost">VIA INVITE</Chip>
+          <Logo size={18} />
+          <span className="chip">Via invite</span>
         </div>
 
-        <div style={{ padding: "24px 20px 0" }}>
-          <div className="w-type-meta">
-            {fmtDate(night.night_date).toUpperCase()} · DOORS{" "}
-            {fmtTime(night.doors_at).toUpperCase()}
+        <div style={{ padding: "var(--s-6) var(--s-5) 0" }}>
+          <div className="t-meta">
+            {fmtDate(night.night_date)} · doors {fmtTime(night.doors_at)}
           </div>
           <div
-            className="w-type-display-md"
-            style={{ marginTop: 6 }}
+            className="t-display-md"
+            style={{ marginTop: "var(--s-2)" }}
           >
             {eventName}
           </div>
           <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              marginTop: 10,
-            }}
+            className="t-body-2"
+            style={{ marginTop: "var(--s-2)" }}
           >
-            <Avatar name="WL" size={22} />
-            <span
-              className="w-type-body-sm"
-              style={{ color: "var(--w-fg-muted)" }}
-            >
-              Public list · GA credential
-            </span>
+            Public list · {tierLabel} credential
           </div>
         </div>
 
-        <div style={{ padding: "32px 20px 0" }}>
-          <div className="w-type-h1">
+        <div style={{ padding: "var(--s-8) var(--s-5) 0" }}>
+          <div className="t-h1">
             You&apos;re on the list.
             <br />
-            <span style={{ color: "var(--w-fg-muted)" }}>
+            <span style={{ color: "var(--fg-3)" }}>
               Just need four things.
             </span>
           </div>
@@ -413,15 +425,19 @@ export default function RsvpForm({
         <form
           onSubmit={onSendCode}
           style={{
-            padding: "20px 20px 0",
+            padding: "var(--s-5) var(--s-5) 0",
             display: "flex",
             flexDirection: "column",
-            gap: 12,
+            gap: "var(--s-3)",
           }}
         >
           <div>
-            <label htmlFor="fullName" className="w-label">
-              FULL NAME
+            <label
+              htmlFor="fullName"
+              className="t-meta"
+              style={{ display: "block", marginBottom: "var(--s-2)" }}
+            >
+              Full name
             </label>
             <input
               id="fullName"
@@ -429,14 +445,18 @@ export default function RsvpForm({
               autoComplete="name"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="w-input"
+              className="input"
               required
             />
           </div>
 
           <div>
-            <label htmlFor="phone" className="w-label">
-              PHONE (FOR YOUR TICKET)
+            <label
+              htmlFor="phone"
+              className="t-meta"
+              style={{ display: "block", marginBottom: "var(--s-2)" }}
+            >
+              Phone (for your ticket)
             </label>
             <input
               id="phone"
@@ -445,15 +465,19 @@ export default function RsvpForm({
               autoComplete="tel"
               value={phoneInput}
               onChange={(e) => setPhoneInput(e.target.value)}
-              className="w-input"
+              className="input"
               placeholder="(305) 555 1234"
               required
             />
           </div>
 
           <div>
-            <label htmlFor="email" className="w-label">
-              EMAIL (OPTIONAL)
+            <label
+              htmlFor="email"
+              className="t-meta"
+              style={{ display: "block", marginBottom: "var(--s-2)" }}
+            >
+              Email (optional)
             </label>
             <input
               id="email"
@@ -461,28 +485,46 @@ export default function RsvpForm({
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-input"
+              className="input"
             />
           </div>
 
           <div>
-            <label htmlFor="plusOnes" className="w-label">
-              +1S
-            </label>
-            <select
-              id="plusOnes"
-              value={plusOnes}
-              onChange={(e) => setPlusOnes(parseInt(e.target.value, 10))}
-              className="w-input"
+            <label
+              className="t-meta"
+              style={{ display: "block", marginBottom: "var(--s-2)" }}
             >
-              {[0, 1, 2, 3].map((n) => (
-                <option key={n} value={n}>
-                  {n === 0 ? "Just me" : `+${n}`}
-                </option>
-              ))}
-            </select>
-            <p className="w-type-meta" style={{ marginTop: 8 }}>
-              +1S APPROVED BY THE HOST · SUBJECT TO AVAILABILITY
+              Party of
+            </label>
+            <div style={{ display: "flex", gap: "var(--s-2)" }}>
+              {[0, 1, 2, 3].map((n) => {
+                const active = plusOnes === n;
+                return (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setPlusOnes(n)}
+                    style={{
+                      flex: 1,
+                      height: 40,
+                      borderRadius: "var(--r-md)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: `1px solid ${active ? "var(--fg)" : "var(--line-2)"}`,
+                      background: active ? "var(--fg)" : "transparent",
+                      color: active ? "var(--bg)" : "var(--fg)",
+                      fontWeight: 500,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {n + 1}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="t-meta" style={{ marginTop: "var(--s-2)" }}>
+              +1s approved by the host · subject to availability
             </p>
           </div>
 
@@ -490,9 +532,9 @@ export default function RsvpForm({
             style={{
               display: "flex",
               alignItems: "flex-start",
-              gap: 10,
+              gap: "var(--s-3)",
               cursor: "pointer",
-              marginTop: 4,
+              marginTop: "var(--s-1)",
             }}
           >
             <input
@@ -503,22 +545,19 @@ export default function RsvpForm({
                 marginTop: 3,
                 width: 16,
                 height: 16,
-                accentColor: "var(--w-acc)",
+                accentColor: "var(--fg)",
               }}
             />
             <span
-              className="w-type-body-sm"
-              style={{
-                color: "var(--w-fg-muted)",
-                lineHeight: 1.5,
-              }}
+              className="t-body-2"
+              style={{ lineHeight: 1.5 }}
             >
               I consent to receive SMS messages from WADL about my ticket and
               event updates. Reply STOP any time. Standard message rates
               apply.{" "}
               <Link
                 href="/privacy"
-                style={{ color: "var(--w-acc)", textDecoration: "underline" }}
+                style={{ color: "var(--fg)", textDecoration: "underline" }}
               >
                 Privacy
               </Link>
@@ -528,35 +567,33 @@ export default function RsvpForm({
 
           {error ? (
             <p
-              className="w-type-body-sm"
-              style={{ color: "var(--w-err)" }}
+              className="t-body-2"
+              style={{ color: "var(--err)" }}
               role="alert"
             >
               {error}
             </p>
           ) : null}
 
-          <Button
+          <button
             type="submit"
-            variant="primary"
-            size="lg"
-            block
+            className="btn btn--lg btn--block"
             disabled={pending}
           >
             {pending ? "Sending…" : "Text me the code"}
-          </Button>
+          </button>
           <p
-            className="w-type-meta"
+            className="t-meta"
             style={{
               textAlign: "center",
-              color: "var(--w-fg-dim)",
-              marginTop: 4,
+              color: "var(--fg-4)",
+              marginTop: "var(--s-1)",
             }}
           >
-            NO ACCOUNT NEEDED · WE TEXT YOU THE QR
+            No account needed · we text you the QR
           </p>
         </form>
-      </WFrame>
+      </div>
     </main>
   );
 }
@@ -567,9 +604,8 @@ function ProgressStrip({ step }: { step: 0 | 1 | 2 }) {
       style={{
         display: "flex",
         gap: 4,
-        padding: "0 20px",
+        padding: "0 var(--s-5)",
         height: 2,
-        marginTop: 0,
       }}
     >
       {[0, 1, 2].map((i) => (
@@ -578,7 +614,7 @@ function ProgressStrip({ step }: { step: 0 | 1 | 2 }) {
           style={{
             flex: 1,
             height: 2,
-            background: i <= step ? "var(--w-acc)" : "#ffffff10",
+            background: i <= step ? "var(--fg)" : "var(--line-2)",
           }}
         />
       ))}

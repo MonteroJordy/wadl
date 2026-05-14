@@ -2,18 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Chip } from "@/components/wadl";
 
 const TABS = [
-  { href: "/admin", label: "STATS", exact: true },
-  { href: "/admin/accounts", label: "ACCOUNTS" },
-  { href: "/admin/events", label: "EVENTS" },
-  { href: "/admin/guests", label: "GUESTS" },
-  { href: "/admin/billing", label: "BILLING" },
-  { href: "/admin/operations", label: "OPS" },
-  { href: "/admin/support", label: "SUPPORT" },
-  { href: "/admin/feature-flags", label: "FLAGS" },
-  { href: "/admin/activity", label: "ACTIVITY" },
+  { href: "/admin", label: "Stats", exact: true },
+  { href: "/admin/accounts", label: "Accounts" },
+  { href: "/admin/events", label: "Events" },
+  { href: "/admin/guests", label: "Guests" },
+  { href: "/admin/billing", label: "Billing" },
+  { href: "/admin/operations", label: "Ops" },
+  { href: "/admin/support", label: "Support" },
+  { href: "/admin/feature-flags", label: "Flags" },
+  { href: "/admin/activity", label: "Activity" },
 ];
 
 export default function AdminTabs() {
@@ -23,9 +22,9 @@ export default function AdminTabs() {
       aria-label="Admin sections"
       style={{
         display: "flex",
-        gap: 6,
+        gap: "var(--s-1)",
         overflowX: "auto",
-        padding: "0 24px 12px",
+        padding: "0 var(--s-6) var(--s-2)",
       }}
     >
       {TABS.map((t) => {
@@ -36,7 +35,9 @@ export default function AdminTabs() {
             href={t.href}
             style={{ textDecoration: "none", flexShrink: 0 }}
           >
-            <Chip tone={active ? "acc" : "ghost"}>{t.label}</Chip>
+            <span className={"nav-item" + (active ? " nav-item--active" : "")}>
+              {t.label}
+            </span>
           </Link>
         );
       })}

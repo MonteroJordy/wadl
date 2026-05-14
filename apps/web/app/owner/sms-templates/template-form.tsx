@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Button } from "@/components/wadl";
 import ConfirmDialog from "@/components/confirm-dialog";
 import {
   upsertTemplateAction,
@@ -15,24 +14,14 @@ interface Template {
   body: string;
 }
 
-const INPUT_STYLE: React.CSSProperties = {
-  width: "100%",
-  background: "var(--w-surface-1)",
-  border: "1px solid var(--w-line)",
-  color: "var(--w-fg)",
-  padding: "10px 12px",
-  fontFamily: "var(--w-sans)",
-  fontSize: 14,
-};
-
 const INLINE_BTN: React.CSSProperties = {
   background: "transparent",
   border: "none",
   cursor: "pointer",
   padding: 0,
-  fontFamily: "var(--w-mono)",
+  fontFamily: "var(--mono)",
   fontSize: 11,
-  letterSpacing: "0.08em",
+  letterSpacing: "0.04em",
   textTransform: "uppercase",
 };
 
@@ -100,25 +89,25 @@ export default function TemplateManager({
           e.preventDefault();
           save(editing);
         }}
-        className="w-card"
+        className="card"
         style={{
-          padding: 18,
+          padding: "var(--s-6)",
           display: "flex",
           flexDirection: "column",
-          gap: 16,
+          gap: "var(--s-4)",
         }}
       >
-        <div className="w-type-meta">
-          {templates.find((t) => t.key === editing.key) ? "EDIT" : "NEW"}{" "}
-          TEMPLATE
+        <div className="t-meta">
+          {templates.find((t) => t.key === editing.key) ? "Edit" : "New"}{" "}
+          template
         </div>
         <div>
           <label
             htmlFor="key"
-            className="w-type-meta"
-            style={{ display: "block", marginBottom: 4 }}
+            className="t-meta"
+            style={{ display: "block", marginBottom: "var(--s-1)" }}
           >
-            KEY (E.G. DOORS_OPEN)
+            Key (e.g. doors_open)
           </label>
           <input
             id="key"
@@ -130,68 +119,59 @@ export default function TemplateManager({
                 key: e.target.value.replace(/\s+/g, "_").toLowerCase(),
               })
             }
-            style={INPUT_STYLE}
+            className="input"
             required
           />
         </div>
         <div>
           <label
             htmlFor="label"
-            className="w-type-meta"
-            style={{ display: "block", marginBottom: 4 }}
+            className="t-meta"
+            style={{ display: "block", marginBottom: "var(--s-1)" }}
           >
-            LABEL
+            Label
           </label>
           <input
             id="label"
             type="text"
             value={editing.label}
             onChange={(e) => setEditing({ ...editing, label: e.target.value })}
-            style={INPUT_STYLE}
+            className="input"
             required
           />
         </div>
         <div>
           <label
             htmlFor="body"
-            className="w-type-meta"
-            style={{ display: "block", marginBottom: 4 }}
+            className="t-meta"
+            style={{ display: "block", marginBottom: "var(--s-1)" }}
           >
-            BODY
+            Body
           </label>
           <textarea
             id="body"
             value={editing.body}
             onChange={(e) => setEditing({ ...editing, body: e.target.value })}
+            className="input"
             style={{
-              ...INPUT_STYLE,
               minHeight: 120,
-              fontFamily: "var(--w-mono)",
+              height: "auto",
+              padding: "var(--s-3) var(--s-4)",
+              fontFamily: "var(--mono)",
               fontSize: 12,
+              lineHeight: 1.5,
             }}
             required
           />
-          <div className="w-type-meta" style={{ marginTop: 8 }}>
-            VARIABLES:{" "}
-            <code style={{ fontFamily: "var(--w-mono)" }}>
-              {`{{guest.name}}`}
-            </code>{" "}
-            <code style={{ fontFamily: "var(--w-mono)" }}>
-              {`{{event.name}}`}
-            </code>{" "}
-            <code style={{ fontFamily: "var(--w-mono)" }}>
-              {`{{event.date}}`}
-            </code>{" "}
-            <code style={{ fontFamily: "var(--w-mono)" }}>
-              {`{{venue.name}}`}
-            </code>
+          <div className="t-meta" style={{ marginTop: "var(--s-2)" }}>
+            Variables: <code className="kbd">{`{{guest.name}}`}</code>{" "}
+            <code className="kbd">{`{{event.name}}`}</code>{" "}
+            <code className="kbd">{`{{event.date}}`}</code>{" "}
+            <code className="kbd">{`{{venue.name}}`}</code>
           </div>
         </div>
         {error && (
-          <p
-            className="w-type-body-sm"
-            style={{ color: "var(--w-err)" }}
-          >
+          <p className="t-body-2" style={{ color: "var(--err)" }}>
             {error}
           </p>
         )}
@@ -199,19 +179,19 @@ export default function TemplateManager({
           style={{
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
-            gap: 8,
+            gap: "var(--s-2)",
           }}
         >
-          <Button
-            variant="ghost"
+          <button
             type="button"
+            className="btn btn--ghost"
             onClick={() => setEditing(null)}
           >
             Cancel
-          </Button>
-          <Button variant="primary" type="submit" disabled={pending}>
+          </button>
+          <button type="submit" className="btn" disabled={pending}>
             {pending ? "Saving…" : "Save"}
-          </Button>
+          </button>
         </div>
       </form>
     );
@@ -223,27 +203,27 @@ export default function TemplateManager({
         style={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
-          gap: 8,
-          marginBottom: 24,
+          gap: "var(--s-2)",
+          marginBottom: "var(--s-6)",
         }}
       >
-        <Button variant="primary" type="button" onClick={startNew}>
+        <button type="button" className="btn" onClick={startNew}>
           + New template
-        </Button>
-        <Button
-          variant="ghost"
+        </button>
+        <button
           type="button"
+          className="btn btn--ghost"
           onClick={seed}
           disabled={pending}
         >
           Seed defaults
-        </Button>
+        </button>
       </div>
 
       {error && (
         <p
-          className="w-type-body-sm"
-          style={{ color: "var(--w-err)", marginBottom: 12 }}
+          className="t-body-2"
+          style={{ color: "var(--err)", marginBottom: "var(--s-3)" }}
         >
           {error}
         </p>
@@ -251,60 +231,54 @@ export default function TemplateManager({
 
       {templates.length === 0 ? (
         <div
-          className="w-type-meta"
-          style={{ textAlign: "center", color: "var(--w-ok)" }}
+          className="t-body-2"
+          style={{ textAlign: "center", padding: "var(--s-8)" }}
         >
-          NO TEMPLATES YET. TAP &quot;SEED DEFAULTS&quot; TO INSTALL THE FOUR
-          STARTER MESSAGES, OR BUILD YOUR OWN.
+          No templates yet. Tap &quot;Seed defaults&quot; to install the four
+          starter messages, or build your own.
         </div>
       ) : (
         <div
-          style={{ display: "flex", flexDirection: "column", gap: 8 }}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "var(--s-2)",
+          }}
         >
           {templates.map((t) => (
-            <div key={t.key} className="w-card" style={{ padding: 16 }}>
+            <div key={t.key} className="card" style={{ padding: "var(--s-4)" }}>
               <div
                 style={{
                   display: "flex",
                   alignItems: "baseline",
                   justifyContent: "space-between",
-                  gap: 12,
+                  gap: "var(--s-3)",
                 }}
               >
                 <div style={{ minWidth: 0, flex: 1 }}>
-                  <p
-                    style={{
-                      color: "var(--w-fg)",
-                      fontWeight: 600,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    {t.label}
-                  </p>
-                  <div className="w-type-meta" style={{ marginTop: 4 }}>
+                  <p className="t-h2 truncate">{t.label}</p>
+                  <div className="t-meta" style={{ marginTop: "var(--s-1)" }}>
                     {t.key}
                   </div>
                 </div>
                 <div
                   style={{
                     display: "flex",
-                    gap: 12,
+                    gap: "var(--s-3)",
                     flexShrink: 0,
                   }}
                 >
                   <button
                     type="button"
                     onClick={() => setEditing(t)}
-                    style={{ ...INLINE_BTN, color: "var(--w-fg-muted)" }}
+                    style={{ ...INLINE_BTN, color: "var(--fg-3)" }}
                   >
                     Edit
                   </button>
                   <button
                     type="button"
                     onClick={() => del(t.key)}
-                    style={{ ...INLINE_BTN, color: "var(--w-err)" }}
+                    style={{ ...INLINE_BTN, color: "var(--err)" }}
                   >
                     Delete
                   </button>
@@ -312,11 +286,12 @@ export default function TemplateManager({
               </div>
               <p
                 style={{
-                  color: "var(--w-fg)",
+                  color: "var(--fg-2)",
                   fontSize: 12,
-                  marginTop: 12,
+                  marginTop: "var(--s-3)",
                   whiteSpace: "pre-wrap",
-                  fontFamily: "var(--w-mono)",
+                  fontFamily: "var(--mono)",
+                  lineHeight: 1.5,
                 }}
               >
                 {t.body}

@@ -11,19 +11,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fmtDate, fmtTime } from "@/lib/format";
-import {
-  Avatar,
-  Button,
-  CapacityMeter,
-  Chip,
-  CredPill,
-  IconArrow,
-  WFrame,
-  Wordmark,
-} from "@/components/wadl";
-import type { Tier } from "@/components/wadl";
+import { Cover, Logo } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
+
+type Tier = "GA" | "VIP" | "AAA";
 
 interface TierData {
   id: string;
@@ -122,242 +114,209 @@ export default async function TierSubLinkPage({
 
   const remaining = Math.max(0, tierRow.cap - tierUsed);
   const filled = remaining === 0;
+  const tierPct =
+    tierRow.cap > 0
+      ? Math.min(100, Math.round((tierUsed / tierRow.cap) * 100))
+      : 0;
 
   const tier = tierFromString(tierRow.tier);
-  const initials = alloc.holder_name
-    .split(" ")
-    .map((s) => s[0] ?? "")
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
 
   // RSVP route — the existing flow at /e/[eventId]/rsvp picks up tier
   // from query param and applies it to the new guest row.
   const rsvpHref = `/e/${night.event.id}/rsvp?night=${night.id}&tier=${tier.toLowerCase()}&allocation=${alloc.id}&sub=${tierRow.sub_token}`;
 
   return (
-    <main id="main-content">
-      <WFrame style={{ paddingBottom: 48 }}>
-        <div
-          style={{
-            padding: "20px 24px 0",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <Wordmark variant="monogrid" size={18} />
-          <Chip tone="ghost">VIA INVITE</Chip>
-        </div>
+    <main
+      id="main-content"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
+    >
+      <div
+        style={{
+          padding: "var(--s-6) var(--s-6) 0",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <Logo size={18} />
+        <span className="chip chip--ghost">Via invite</span>
+      </div>
 
-        <div style={{ padding: "32px 24px 0" }}>
+      <div style={{ padding: "var(--s-8) var(--s-6) 0" }}>
+        <div className="t-body-2" style={{ marginBottom: "var(--s-3)" }}>
+          <strong style={{ color: "var(--fg)" }}>{alloc.holder_name}</strong>{" "}
+          invited you
+        </div>
+        <div className="t-meta">
+          {fmtDate(night.night_date)} · Doors {fmtTime(night.doors_at)}
+        </div>
+        <div className="t-display-md" style={{ marginTop: "var(--s-2)" }}>
+          {night.event.name}
+        </div>
+      </div>
+
+      {night.event.flyer_url && (
+        <div style={{ padding: "var(--s-5) var(--s-6) 0" }}>
+          <div
+            style={{
+              width: "100%",
+              aspectRatio: "4 / 5",
+              borderRadius: "var(--r-lg)",
+              border: "1px solid var(--line)",
+              background: "var(--bg-3)",
+              overflow: "hidden",
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={night.event.flyer_url}
+              alt={night.event.name}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Tier card */}
+      <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
+        <div
+          className="card"
+          style={{ padding: "var(--s-5)", borderColor: "var(--fg)" }}
+        >
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 10,
-              marginBottom: 12,
+              justifyContent: "space-between",
+              gap: "var(--s-3)",
             }}
           >
-            <Avatar name={initials || "WL"} size={28} accent />
-            <span
-              className="w-type-body-sm"
-              style={{ color: "var(--w-fg-muted)" }}
-            >
-              <strong style={{ color: "var(--w-fg)" }}>
-                {alloc.holder_name}
-              </strong>{" "}
-              invited you
-            </span>
-          </div>
-          <div className="w-type-meta">
-            {fmtDate(night.night_date).toUpperCase()} · DOORS{" "}
-            {fmtTime(night.doors_at).toUpperCase()}
-          </div>
-          <div
-            className="w-type-display-md"
-            style={{ marginTop: 6, lineHeight: 1.0 }}
-          >
-            {night.event.name}
-          </div>
-        </div>
-
-        {night.event.flyer_url && (
-          <div style={{ padding: "20px 24px 0" }}>
-            <div
-              style={{
-                width: "100%",
-                aspectRatio: "4 / 5",
-                border: "1px solid var(--w-line)",
-                background: "var(--w-surface-2)",
-                overflow: "hidden",
-              }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={night.event.flyer_url}
-                alt={night.event.name}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Tier card */}
-        <div style={{ padding: "24px 24px 0" }}>
-          <div
-            className="w-card"
-            style={{
-              padding: 18,
-              borderColor: "var(--w-acc)",
-              background: "var(--w-acc-soft)",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 12,
-              }}
-            >
-              <div>
-                <div
-                  className="w-type-meta"
-                  style={{ color: "var(--w-acc-ink)" }}
-                >
-                  YOUR CREDENTIAL
-                </div>
-                <div
-                  style={{
-                    fontFamily: "var(--w-display)",
-                    fontWeight: 700,
-                    fontSize: 32,
-                    letterSpacing: "-0.025em",
-                    marginTop: 4,
-                    lineHeight: 1,
-                  }}
-                >
-                  {tier} pass
-                </div>
+            <div>
+              <div className="t-meta">You&apos;re invited as</div>
+              <div
+                className="t-display-sm"
+                style={{ marginTop: "var(--s-1)" }}
+              >
+                {tier} pass
               </div>
-              <CredPill tier={tier} />
             </div>
-            <div style={{ marginTop: 14 }}>
-              <CapacityMeter
-                current={tierUsed}
-                total={tierRow.cap}
-                accent
-                label={`${tier} CAPACITY · ${remaining} LEFT`}
-              />
-            </div>
+            <span className="chip chip--solid">{tier}</span>
           </div>
-        </div>
-
-        {filled || night.is_frozen ? (
-          <div style={{ padding: "20px 24px 0" }}>
+          <div
+            style={{
+              marginTop: "var(--s-4)",
+              height: 4,
+              background: "var(--line)",
+              borderRadius: "var(--r-pill)",
+              overflow: "hidden",
+            }}
+          >
             <div
-              className="w-card"
               style={{
-                padding: 16,
-                borderColor: "var(--w-warn)",
-                background: "oklch(0.86 0.16 85 / 0.06)",
+                height: "100%",
+                width: `${tierPct}%`,
+                background: "var(--fg)",
               }}
-            >
-              <Chip tone="warn">
-                ⚠ {filled ? "TIER FULL" : "CAPACITY LOCKDOWN"}
-              </Chip>
-              <p
-                className="w-type-body-sm"
-                style={{ marginTop: 10, color: "var(--w-fg-muted)" }}
-              >
-                {filled
-                  ? `${tier} is at cap. Ask the host for a different tier or a fresh slot.`
-                  : "The night hit its capacity threshold. No new RSVPs."}
-              </p>
-            </div>
+            />
           </div>
-        ) : (
-          <>
-            <div style={{ padding: "32px 24px 0" }}>
-              <div className="w-type-h3">Get on the list — 30 seconds.</div>
-              <p
-                className="w-type-body-sm"
-                style={{
-                  color: "var(--w-fg-muted)",
-                  marginTop: 6,
-                  lineHeight: 1.5,
-                }}
-              >
-                No account, no password. We text you a credential.
-              </p>
-            </div>
-            <div style={{ padding: "20px 24px 0" }}>
-              <Link href={rsvpHref} style={{ textDecoration: "none" }}>
-                <Button variant="primary" size="lg" block>
-                  Continue to RSVP <IconArrow size={14} />
-                </Button>
-              </Link>
-            </div>
-          </>
-        )}
-
-        <div
-          className="w-type-meta"
-          style={{
-            marginTop: "auto",
-            paddingTop: 32,
-            paddingBottom: 16,
-            textAlign: "center",
-            color: "var(--w-fg-dim)",
-          }}
-        >
-          POWERED BY{" "}
-          <Wordmark variant="slash" size={11} />
+          <div className="t-meta" style={{ marginTop: "var(--s-2)" }}>
+            {tier} capacity · {remaining} left
+          </div>
         </div>
-      </WFrame>
+      </div>
+
+      {filled || night.is_frozen ? (
+        <div style={{ padding: "var(--s-5) var(--s-6) 0" }}>
+          <div
+            className="card"
+            style={{ padding: "var(--s-4)", borderColor: "var(--warn)" }}
+          >
+            <span className="chip chip--warn">
+              {filled ? "Tier full" : "Capacity lockdown"}
+            </span>
+            <p className="t-body-2" style={{ marginTop: "var(--s-3)" }}>
+              {filled
+                ? `${tier} is at cap. Ask the host for a different tier or a fresh slot.`
+                : "The night hit its capacity threshold. No new RSVPs."}
+            </p>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div style={{ padding: "var(--s-8) var(--s-6) 0" }}>
+            <div className="t-h1">Get on the list — 30 seconds.</div>
+            <p className="t-body-2" style={{ marginTop: "var(--s-2)" }}>
+              No account, no password. We text you a credential.
+            </p>
+          </div>
+          <div style={{ padding: "var(--s-5) var(--s-6) 0" }}>
+            <Link
+              href={rsvpHref}
+              className="btn btn--lg btn--block"
+              style={{ textDecoration: "none" }}
+            >
+              Continue to RSVP
+            </Link>
+          </div>
+        </>
+      )}
+
+      <div
+        style={{
+          paddingTop: "var(--s-8)",
+          paddingBottom: "var(--s-12)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "var(--s-2)",
+        }}
+      >
+        <span className="t-meta">Powered by</span>
+        <Logo size={11} />
+      </div>
     </main>
   );
 }
 
 function ErrorFrame({ title, body }: { title: string; body: string }) {
   return (
-    <main id="main-content">
-      <WFrame style={{ paddingBottom: 48 }}>
-        <div style={{ padding: "20px 24px 0" }}>
-          <Wordmark variant="monogrid" size={18} />
+    <main
+      id="main-content"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
+    >
+      <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
+        <Logo size={18} />
+      </div>
+      <div
+        style={{
+          padding: "var(--s-24) var(--s-6) 0",
+          textAlign: "center",
+          maxWidth: 420,
+          margin: "0 auto",
+        }}
+      >
+        <div className="t-meta">Sub-link</div>
+        <div className="t-display-md" style={{ marginTop: "var(--s-3)" }}>
+          {title}
         </div>
-        <div style={{ padding: "96px 24px 0", textAlign: "center" }}>
-          <div className="w-type-meta">SUB-LINK</div>
-          <div className="w-type-display-md" style={{ marginTop: 12 }}>
-            {title}
-          </div>
-          <p
-            className="w-type-body-sm"
-            style={{
-              color: "var(--w-fg-muted)",
-              marginTop: 16,
-            }}
-          >
-            {body}
-          </p>
-          <Link
-            href="/discover"
-            className="w-btn w-btn--ghost"
-            style={{
-              marginTop: 24,
-              textDecoration: "none",
-              display: "inline-flex",
-            }}
-          >
-            Browse other events
-          </Link>
-        </div>
-      </WFrame>
+        <p className="t-body-2" style={{ marginTop: "var(--s-4)" }}>
+          {body}
+        </p>
+        <Link
+          href="/discover"
+          className="btn btn--ghost"
+          style={{
+            marginTop: "var(--s-6)",
+            textDecoration: "none",
+          }}
+        >
+          Browse other events
+        </Link>
+      </div>
     </main>
   );
 }

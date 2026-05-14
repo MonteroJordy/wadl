@@ -1,12 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fmtDate, fmtTime } from "@/lib/format";
-import {
-  Avatar,
-  CapacityMeter,
-  Chip,
-  WFrame,
-  Wordmark,
-} from "@/components/wadl";
+import { Logo } from "@/components/v5";
 import ReferralForm from "./form";
 
 export const dynamic = "force-dynamic";
@@ -50,18 +44,26 @@ export default async function ReferralPage({
 
   if (!ref) {
     return (
-      <main id="main-content">
-        <WFrame style={{ paddingBottom: 48 }}>
-          <div style={{ padding: "20px 24px 0" }}>
-            <Wordmark variant="monogrid" size={18} />
+      <main
+        id="main-content"
+        style={{ minHeight: "100vh", background: "var(--bg)" }}
+      >
+        <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
+          <Logo size={18} />
+        </div>
+        <div
+          style={{
+            padding: "var(--s-24) var(--s-6) 0",
+            textAlign: "center",
+            maxWidth: 420,
+            margin: "0 auto",
+          }}
+        >
+          <div className="t-meta">Referral</div>
+          <div className="t-display-md" style={{ marginTop: "var(--s-3)" }}>
+            Link not found.
           </div>
-          <div style={{ padding: "96px 24px 0", textAlign: "center" }}>
-            <div className="w-type-meta">REFERRAL</div>
-            <div className="w-type-display-md" style={{ marginTop: 12 }}>
-              Link not found.
-            </div>
-          </div>
-        </WFrame>
+        </div>
       </main>
     );
   }
@@ -90,121 +92,134 @@ export default async function ReferralPage({
     remaining > 0 &&
     ref.status !== "cancelled" &&
     ref.status !== "rejected";
+  const capPct =
+    alloc && alloc.cap > 0
+      ? Math.min(100, Math.round((used / alloc.cap) * 100))
+      : 0;
 
   return (
-    <main id="main-content">
-      <WFrame style={{ paddingBottom: 48 }}>
-        <div
-          style={{
-            padding: "20px 24px 0",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <Wordmark variant="monogrid" size={18} />
-          <Chip tone="acc">BRING A FRIEND</Chip>
-        </div>
+    <main
+      id="main-content"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
+    >
+      <div
+        style={{
+          padding: "var(--s-6) var(--s-6) 0",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <Logo size={18} />
+        <span className="chip chip--solid">Bring a friend</span>
+      </div>
 
-        <div style={{ padding: "32px 24px 0" }}>
-          <div className="w-type-meta">
-            {fmtDate(ref.night.night_date).toUpperCase()} · DOORS{" "}
-            {fmtTime(ref.night.doors_at).toUpperCase()}
-          </div>
+      <div style={{ padding: "var(--s-8) var(--s-6) 0" }}>
+        <div className="t-meta">
+          {fmtDate(ref.night.night_date)} · Doors{" "}
+          {fmtTime(ref.night.doors_at)}
+        </div>
+        <div className="t-display-md" style={{ marginTop: "var(--s-2)" }}>
+          {ref.night.event.name}
+        </div>
+      </div>
+
+      {ref.night.event.flyer_url ? (
+        <div style={{ padding: "var(--s-5) var(--s-6) 0" }}>
           <div
-            className="w-type-display-md"
-            style={{ marginTop: 6, lineHeight: 1.0 }}
+            style={{
+              width: "100%",
+              aspectRatio: "4 / 5",
+              borderRadius: "var(--r-lg)",
+              border: "1px solid var(--line)",
+              background: "var(--bg-3)",
+              overflow: "hidden",
+            }}
           >
-            {ref.night.event.name}
-          </div>
-        </div>
-
-        {ref.night.event.flyer_url ? (
-          <div style={{ padding: "20px 24px 0" }}>
-            <div
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={ref.night.event.flyer_url}
+              alt={ref.night.event.name}
               style={{
                 width: "100%",
-                aspectRatio: "4 / 5",
-                border: "1px solid var(--w-line)",
-                background: "var(--w-surface-2)",
-                overflow: "hidden",
+                height: "100%",
+                objectFit: "cover",
               }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={ref.night.event.flyer_url}
-                alt={ref.night.event.name}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                }}
-              />
-            </div>
+            />
           </div>
-        ) : null}
+        </div>
+      ) : null}
 
-        <div style={{ padding: "24px 24px 0" }}>
-          <div className="w-card" style={{ padding: 18 }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                marginBottom: 12,
-              }}
-            >
-              <Avatar name={ref.full_name} size={36} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="w-type-meta">REFERRAL BY</div>
-                <div
-                  style={{
-                    fontWeight: 600,
-                    fontSize: 17,
-                    marginTop: 2,
-                  }}
-                >
-                  {ref.full_name}
-                </div>
+      <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
+        <div className="card" style={{ padding: "var(--s-5)" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "var(--s-3)",
+            }}
+          >
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="t-meta">Referral by</div>
+              <div className="t-h1" style={{ marginTop: "var(--s-1)" }}>
+                {ref.full_name}
               </div>
-              {(brought ?? 0) > 0 && (
-                <Chip tone="ok">{brought} BROUGHT</Chip>
-              )}
             </div>
-            {alloc && alloc.cap > 0 && (
-              <div style={{ marginTop: 8 }}>
-                <CapacityMeter
-                  current={used}
-                  total={alloc.cap}
-                  accent
-                  label={`${remaining} SPOTS LEFT`}
-                />
-              </div>
+            {(brought ?? 0) > 0 && (
+              <span className="chip chip--ok">{brought} brought</span>
             )}
           </div>
+          {alloc && alloc.cap > 0 && (
+            <>
+              <div
+                style={{
+                  marginTop: "var(--s-4)",
+                  height: 4,
+                  background: "var(--line)",
+                  borderRadius: "var(--r-pill)",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    height: "100%",
+                    width: `${capPct}%`,
+                    background: "var(--fg)",
+                  }}
+                />
+              </div>
+              <div
+                className="t-meta"
+                style={{ marginTop: "var(--s-2)" }}
+              >
+                {remaining} spots left
+              </div>
+            </>
+          )}
         </div>
+      </div>
 
-        <div style={{ padding: "24px 24px 0" }}>
-          <ReferralForm
-            guestId={ref.id}
-            plusOnesAllowed={alloc?.plus_ones_allowed ?? false}
-            active={active}
-          />
-        </div>
+      <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
+        <ReferralForm
+          guestId={ref.id}
+          plusOnesAllowed={alloc?.plus_ones_allowed ?? false}
+          active={active}
+        />
+      </div>
 
-        <div
-          className="w-type-meta"
-          style={{
-            marginTop: "auto",
-            paddingTop: 32,
-            paddingBottom: 16,
-            textAlign: "center",
-            color: "var(--w-fg-dim)",
-          }}
-        >
-          POWERED BY <Wordmark variant="slash" size={11} />
-        </div>
-      </WFrame>
+      <div
+        style={{
+          paddingTop: "var(--s-8)",
+          paddingBottom: "var(--s-4)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "var(--s-2)",
+        }}
+      >
+        <span className="t-meta">Powered by</span>
+        <Logo size={11} />
+      </div>
     </main>
   );
 }

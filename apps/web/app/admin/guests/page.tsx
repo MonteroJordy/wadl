@@ -1,8 +1,10 @@
-import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { PageHeader } from "@/components/v5";
 import ForceFlagButton from "./force-flag-button";
 
 export const dynamic = "force-dynamic";
+
+const COLS = "1.4fr 140px 110px 1.4fr 1.2fr 110px";
 
 interface Row {
   id: string;
@@ -36,124 +38,71 @@ export default async function AdminGuestsPage({
   const rows = (data ?? []) as unknown as Row[];
 
   return (
-    <main id="main-content" style={{ padding: "32px 24px 96px" }}>
-      <div style={{ maxWidth: 1080, margin: "0 auto" }}>
-        <div
-          style={{
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            marginBottom: 24,
-          }}
-        >
-          <div className="w-type-meta">PLATFORM</div>
-          <div className="w-type-display-md" style={{ marginTop: 8 }}>
-            Guests
-          </div>
-        </div>
-
-        <form
-          action="/admin/guests"
-          method="get"
-          style={{ marginBottom: 16 }}
-        >
+    <main id="main-content">
+      <PageHeader eyebrow="Platform" title="Guests" />
+      <div
+        style={{
+          padding: "var(--s-4) var(--s-8)",
+          borderBottom: "1px solid var(--line)",
+        }}
+      >
+        <form action="/admin/guests" method="get">
           <input
+            className="input"
             type="text"
             name="q"
             defaultValue={q}
             placeholder="Search by name…"
-            style={{
-              width: "100%",
-              maxWidth: 420,
-              background: "var(--w-surface-1)",
-              border: "1px solid var(--w-line)",
-              color: "var(--w-fg)",
-              padding: "10px 12px",
-              fontFamily: "var(--w-sans)",
-              fontSize: 14,
-            }}
+            style={{ maxWidth: 420 }}
           />
         </form>
+      </div>
 
-        <section
-          className="w-card"
-          style={{ padding: 20, overflowX: "auto" }}
-        >
-          <table
+      <div style={{ padding: "var(--s-8)" }}>
+        <div className="card" style={{ overflowX: "auto" }}>
+          <div
+            className="row"
             style={{
-              width: "100%",
-              fontSize: 14,
-              borderCollapse: "collapse",
+              gridTemplateColumns: COLS,
+              padding: "var(--s-3) var(--s-5)",
+              background: "var(--bg)",
             }}
           >
-            <thead>
-              <tr>
-                {["NAME", "PHONE", "STATUS", "EVENT", "ACCOUNT", "DNA"].map(
-                  (h) => (
-                    <th
-                      key={h}
-                      className="w-type-meta"
-                      style={{ textAlign: "left", paddingBottom: 8 }}
-                    >
-                      {h}
-                    </th>
-                  ),
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr
-                  key={r.id}
-                  style={{ borderTop: "1px solid var(--w-line)" }}
-                >
-                  <td style={{ padding: "10px 0", color: "var(--w-fg)" }}>
-                    {r.full_name}
-                  </td>
-                  <td
-                    style={{
-                      padding: "10px 0",
-                      fontFamily: "var(--w-mono)",
-                      fontSize: 12,
-                    }}
-                  >
-                    {r.phone ?? "—"}
-                  </td>
-                  <td
-                    className="w-type-meta"
-                    style={{ padding: "10px 0" }}
-                  >
-                    {r.status.toUpperCase()}
-                  </td>
-                  <td style={{ padding: "10px 0" }}>{r.night.event.name}</td>
-                  <td
-                    style={{
-                      padding: "10px 0",
-                      color: "var(--w-fg-muted)",
-                      fontSize: 12,
-                    }}
-                  >
-                    {r.night.event.account.display_name}
-                  </td>
-                  <td style={{ padding: "10px 0" }}>
-                    <ForceFlagButton
-                      guestId={r.id}
-                      alreadyFlagged={r.flag_dna}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
-
-        <p className="w-type-meta" style={{ marginTop: 24 }}>
-          <Link
-            href="/admin"
-            style={{ color: "var(--w-acc)", textDecoration: "none" }}
-          >
-            ← BACK
-          </Link>
-        </p>
+            {["Name", "Phone", "Status", "Event", "Account", "DNA"].map((h) => (
+              <span key={h} className="t-meta">
+                {h}
+              </span>
+            ))}
+          </div>
+          {rows.map((r) => (
+            <div
+              key={r.id}
+              className="row"
+              style={{
+                gridTemplateColumns: COLS,
+                padding: "var(--s-4) var(--s-5)",
+              }}
+            >
+              <span className="t-body" style={{ color: "var(--fg)" }}>
+                {r.full_name}
+              </span>
+              <span
+                className="t-body-2"
+                style={{ fontFamily: "var(--mono)", fontSize: "var(--ts-sm)" }}
+              >
+                {r.phone ?? "—"}
+              </span>
+              <span className="chip">{r.status}</span>
+              <span className="t-body-2 truncate">{r.night.event.name}</span>
+              <span className="t-body-2 truncate">
+                {r.night.event.account.display_name}
+              </span>
+              <span>
+                <ForceFlagButton guestId={r.id} alreadyFlagged={r.flag_dna} />
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     </main>
   );

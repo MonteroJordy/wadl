@@ -20,7 +20,7 @@ export default function PromoteButton({
           await manualPromoteAction(eventId, guestId);
         });
       }}
-      className="bg-mint text-bg font-sans font-semibold text-xs uppercase tracking-[0.14em] px-4 py-3 rounded-md disabled:opacity-40 hover:brightness-110 transition shrink-0"
+      className="btn btn--sm"
     >
       {pending ? "…" : "Promote"}
     </button>

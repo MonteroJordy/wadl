@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/wadl";
 import { submitFeedbackAction } from "./actions";
 
 const TAGS = [
@@ -63,13 +62,19 @@ export default function FeedbackForm({
   return (
     <form
       onSubmit={onSubmit}
-      style={{ display: "flex", flexDirection: "column", gap: 16 }}
+      style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}
     >
-      <section className="w-card" style={{ padding: 18 }}>
-        <div className="w-type-meta" style={{ marginBottom: 12 }}>
-          OVERALL RATING
+      <section className="card" style={{ padding: "var(--s-5)" }}>
+        <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+          Overall rating
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: "var(--s-2)",
+          }}
+        >
           {[1, 2, 3, 4, 5].map((n) => {
             const active = rating >= n;
             return (
@@ -80,12 +85,11 @@ export default function FeedbackForm({
                 style={{
                   flex: 1,
                   aspectRatio: "1 / 1",
-                  border: `1px solid ${active ? "var(--w-acc)" : "var(--w-line)"}`,
-                  background: active
-                    ? "var(--w-acc-soft)"
-                    : "var(--w-surface-1)",
-                  color: active ? "var(--w-acc)" : "var(--w-fg-muted)",
-                  fontSize: 30,
+                  borderRadius: "var(--r-md)",
+                  border: `1px solid ${active ? "var(--fg)" : "var(--line-2)"}`,
+                  background: active ? "var(--fg)" : "var(--bg-2)",
+                  color: active ? "var(--bg)" : "var(--fg-3)",
+                  fontSize: 28,
                   cursor: "pointer",
                 }}
                 aria-label={`${n} of 5 stars`}
@@ -97,11 +101,11 @@ export default function FeedbackForm({
         </div>
       </section>
 
-      <section className="w-card" style={{ padding: 18 }}>
-        <div className="w-type-meta" style={{ marginBottom: 12 }}>
-          WHAT STOOD OUT? (OPTIONAL)
+      <section className="card" style={{ padding: "var(--s-5)" }}>
+        <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+          What stood out? (optional)
         </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-2)" }}>
           {TAGS.map((t) => {
             const on = tags.includes(t.key);
             return (
@@ -109,19 +113,8 @@ export default function FeedbackForm({
                 key={t.key}
                 type="button"
                 onClick={() => toggleTag(t.key)}
-                style={{
-                  padding: "4px 12px",
-                  border: `1px solid ${on ? "var(--w-acc)" : "var(--w-line)"}`,
-                  background: on
-                    ? "var(--w-acc-soft)"
-                    : "var(--w-surface-1)",
-                  color: on ? "var(--w-acc-ink)" : "var(--w-fg-muted)",
-                  fontFamily: "var(--w-mono)",
-                  fontSize: 12,
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                  cursor: "pointer",
-                }}
+                className={on ? "chip chip--solid" : "chip"}
+                style={{ cursor: "pointer", border: 0 }}
               >
                 {t.label}
               </button>
@@ -130,13 +123,13 @@ export default function FeedbackForm({
         </div>
       </section>
 
-      <section className="w-card" style={{ padding: 18 }}>
+      <section className="card" style={{ padding: "var(--s-5)" }}>
         <label
           htmlFor="fb-comment"
-          className="w-type-meta"
-          style={{ display: "block", marginBottom: 6 }}
+          className="t-meta"
+          style={{ display: "block", marginBottom: "var(--s-2)" }}
         >
-          ANYTHING ELSE? (OPTIONAL)
+          Anything else? (optional)
         </label>
         <textarea
           id="fb-comment"
@@ -145,44 +138,33 @@ export default function FeedbackForm({
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           placeholder="Stays between you and the venue."
-          style={{
-            width: "100%",
-            background: "var(--w-surface-1)",
-            border: "1px solid var(--w-line)",
-            color: "var(--w-fg)",
-            padding: 12,
-            fontSize: 14,
-            fontFamily: "var(--w-sans)",
-          }}
+          className="input"
+          style={{ height: "auto", padding: "var(--s-3)" }}
         />
         <div
-          className="w-type-meta"
-          style={{ marginTop: 4, textAlign: "right" }}
+          className="t-meta"
+          style={{ marginTop: "var(--s-1)", textAlign: "right" }}
         >
           {comment.length}/1000
         </div>
       </section>
 
       {error && (
-        <div
-          className="w-type-meta"
-          style={{ color: "var(--w-err)" }}
-        >
+        <div className="t-meta" style={{ color: "var(--err)" }}>
           {error}
         </div>
       )}
 
-      <Button
-        variant="primary"
+      <button
         type="submit"
+        className="btn btn--lg btn--block"
         disabled={pending || rating < 1}
-        style={{ width: "100%" }}
       >
         {pending ? "Sending…" : "Submit feedback"}
-      </Button>
+      </button>
       {guestId && (
-        <div className="w-type-meta" style={{ textAlign: "center" }}>
-          LINKED TO YOUR TICKET · COUNTS ONCE
+        <div className="t-meta" style={{ textAlign: "center" }}>
+          Linked to your ticket · counts once
         </div>
       )}
     </form>

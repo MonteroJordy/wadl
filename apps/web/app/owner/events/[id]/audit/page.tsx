@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOwnerContext } from "@/lib/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Chip } from "@/components/wadl";
+import { Breadcrumb, PageHeader, EventSubNav } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 
@@ -155,67 +155,42 @@ export default async function AuditLogPage({
   return (
     <main
       id="main-content"
-      className="w-app"
-      style={{
-        minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
-      }}
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
     >
-      <div style={{ maxWidth: 960, margin: "0 auto" }}>
-        <Link
-          href={`/owner/events/${event.id}`}
-          className="w-type-meta"
-          style={{
-            color: "var(--w-fg-muted)",
-            textDecoration: "none",
-            display: "inline-block",
-            marginBottom: 12,
-          }}
-        >
-          ← {event.name.toUpperCase()}
-        </Link>
-        <div
-          style={{
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            marginBottom: 24,
-          }}
-        >
-          <div className="w-type-meta">AUDIT LOG</div>
-          <div className="w-type-display-md" style={{ marginTop: 8 }}>
-            Audit trail
-          </div>
-          <p
-            className="w-type-body-sm"
-            style={{ color: "var(--w-fg-muted)", marginTop: 8 }}
-          >
-            Every add, approve, reject, override, scan, opt-out — attributed
-            and timestamped.
-          </p>
-          <p
-            className="w-type-meta"
-            style={{ marginTop: 12, color: "var(--w-fg-dim)" }}
-          >
-            {total} ENTRIES
-          </p>
-        </div>
+      <Breadcrumb
+        items={[
+          ["Events", "/owner"],
+          [event.name, `/owner/events/${event.id}`],
+          "Audit",
+        ]}
+      />
+      <PageHeader
+        eyebrow={`Audit log · ${total} entries`}
+        title="Audit trail"
+        sub="Every add, approve, reject, override, scan, opt-out — attributed and timestamped."
+      />
+      <EventSubNav active="overview" eventId={event.id} />
 
+      <div style={{ padding: "var(--s-8)" }}>
         {distinctActions.length > 0 && (
           <div
             style={{
               display: "flex",
-              gap: 6,
+              gap: "var(--s-1)",
               overflowX: "auto",
-              paddingBottom: 6,
-              marginBottom: 16,
+              paddingBottom: "var(--s-2)",
+              marginBottom: "var(--s-4)",
             }}
           >
             <Link
               href={filterHref("")}
               style={{ textDecoration: "none", flexShrink: 0 }}
             >
-              <Chip tone={!actionFilter ? "acc" : "ghost"}>ALL</Chip>
+              <span
+                className={`chip ${!actionFilter ? "chip--solid" : "chip--ghost"}`}
+              >
+                All
+              </span>
             </Link>
             {distinctActions.map((a) => (
               <Link
@@ -223,9 +198,13 @@ export default async function AuditLogPage({
                 href={filterHref(a)}
                 style={{ textDecoration: "none", flexShrink: 0 }}
               >
-                <Chip tone={actionFilter === a ? "acc" : "ghost"}>
-                  {a.toUpperCase()}
-                </Chip>
+                <span
+                  className={`chip ${
+                    actionFilter === a ? "chip--solid" : "chip--ghost"
+                  }`}
+                >
+                  {a}
+                </span>
               </Link>
             ))}
           </div>
@@ -233,35 +212,24 @@ export default async function AuditLogPage({
 
         {rows.length === 0 ? (
           <div
-            className="w-card"
-            style={{
-              padding: "64px 32px",
-              textAlign: "center",
-            }}
+            className="card"
+            style={{ padding: "var(--s-16) var(--s-8)", textAlign: "center" }}
           >
-            <div className="w-type-h1">Nothing to audit yet</div>
-            <p
-              className="w-type-body-sm"
+            <div className="t-h1">Nothing to audit yet</div>
+            <div
+              className="t-body-2"
               style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 12,
+                marginTop: "var(--s-3)",
                 maxWidth: 460,
                 marginInline: "auto",
-                lineHeight: 1.5,
               }}
             >
               Every scan, approve, flag, and manual add shows up here as it
               happens.
-            </p>
+            </div>
           </div>
         ) : (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-            }}
-          >
+          <div className="card">
             {rows.map((r) => {
               const who = r.actor_user_id
                 ? (actorName.get(r.actor_user_id) ?? "User")
@@ -272,67 +240,48 @@ export default async function AuditLogPage({
               return (
                 <div
                   key={r.id}
-                  className="w-card"
-                  style={{ padding: 14 }}
+                  style={{
+                    padding: "var(--s-4)",
+                    borderBottom: "1px solid var(--line)",
+                  }}
                 >
                   <div
                     style={{
                       display: "flex",
-                      alignItems: "flex-start",
+                      alignItems: "baseline",
                       justifyContent: "space-between",
-                      gap: 12,
+                      gap: "var(--s-3)",
+                      flexWrap: "wrap",
                     }}
                   >
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                      <p
-                        style={{
-                          color: "var(--w-fg)",
-                          fontWeight: 600,
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          fontFamily: "var(--w-mono)",
-                          fontSize: 13,
-                        }}
-                      >
-                        {r.action}
-                      </p>
-                      <div
-                        className="w-type-meta"
-                        style={{
-                          marginTop: 4,
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                      >
-                        {who.toUpperCase()} · {fmtTs(r.created_at).toUpperCase()}
-                      </div>
-                      {r.entity_type && (
-                        <div
-                          className="w-type-meta"
-                          style={{
-                            marginTop: 4,
-                            color: "var(--w-fg-dim)",
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                          }}
-                        >
-                          {r.entity_type.toUpperCase()}
-                          {r.entity_id && `:${r.entity_id.slice(0, 8)}`}
-                        </div>
-                      )}
-                    </div>
+                    <span
+                      className="t-num"
+                      style={{
+                        fontFamily: "var(--mono)",
+                        fontSize: "var(--ts-sm)",
+                        color: "var(--fg)",
+                      }}
+                    >
+                      {r.action}
+                    </span>
+                    <span className="t-meta">
+                      {who} · {fmtTs(r.created_at)}
+                    </span>
                   </div>
+                  {r.entity_type && (
+                    <div className="t-meta" style={{ marginTop: "var(--s-1)" }}>
+                      {r.entity_type}
+                      {r.entity_id && `:${r.entity_id.slice(0, 8)}`}
+                    </div>
+                  )}
                   {ctxPreview && (
                     <pre
                       style={{
-                        marginTop: 8,
+                        marginTop: "var(--s-2)",
                         whiteSpace: "pre-wrap",
                         wordBreak: "break-word",
-                        color: "var(--w-fg-muted)",
-                        fontFamily: "var(--w-mono)",
+                        color: "var(--fg-3)",
+                        fontFamily: "var(--mono)",
                         fontSize: 10,
                         lineHeight: 1.4,
                       }}
@@ -352,36 +301,35 @@ export default async function AuditLogPage({
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              marginTop: 24,
+              marginTop: "var(--s-6)",
             }}
           >
             <Link
               aria-disabled={page <= 1}
               href={page > 1 ? pageHref(page - 1) : "#"}
-              className="w-type-meta"
+              className="t-meta"
               style={{
-                color: page <= 1 ? "var(--w-fg-dim)" : "var(--w-fg)",
+                color: page <= 1 ? "var(--fg-4)" : "var(--fg)",
                 textDecoration: "none",
                 pointerEvents: page <= 1 ? "none" : undefined,
               }}
             >
-              ← PREV
+              ← Prev
             </Link>
-            <div className="w-type-meta">
+            <div className="t-meta">
               {page} / {pageCount}
             </div>
             <Link
               aria-disabled={page >= pageCount}
               href={page < pageCount ? pageHref(page + 1) : "#"}
-              className="w-type-meta"
+              className="t-meta"
               style={{
-                color:
-                  page >= pageCount ? "var(--w-fg-dim)" : "var(--w-fg)",
+                color: page >= pageCount ? "var(--fg-4)" : "var(--fg)",
                 textDecoration: "none",
                 pointerEvents: page >= pageCount ? "none" : undefined,
               }}
             >
-              NEXT →
+              Next →
             </Link>
           </nav>
         )}

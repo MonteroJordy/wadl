@@ -4,17 +4,6 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { normalizePhone } from "@/lib/routing";
-import { Button } from "@/components/wadl";
-
-const INPUT_STYLE: React.CSSProperties = {
-  width: "100%",
-  background: "var(--w-surface-1)",
-  border: "1px solid var(--w-line)",
-  color: "var(--w-fg)",
-  padding: "10px 12px",
-  fontFamily: "var(--w-sans)",
-  fontSize: 14,
-};
 
 export default function MyTicketsVerify() {
   const router = useRouter();
@@ -70,15 +59,12 @@ export default function MyTicketsVerify() {
         style={{
           display: "flex",
           flexDirection: "column",
-          gap: 16,
-          marginTop: 24,
+          gap: "var(--s-4)",
+          marginTop: "var(--s-6)",
         }}
       >
-        <p
-          className="w-type-body-sm"
-          style={{ color: "var(--w-fg-muted)" }}
-        >
-          Sent to <span style={{ color: "var(--w-fg)" }}>{e164}</span>.
+        <p className="t-body-2">
+          Sent to <span style={{ color: "var(--fg)" }}>{e164}</span>.
         </p>
         <input
           type="text"
@@ -88,40 +74,42 @@ export default function MyTicketsVerify() {
           maxLength={6}
           value={code}
           onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+          className="input"
           style={{
-            ...INPUT_STYLE,
             letterSpacing: "0.5em",
             textAlign: "center",
             fontSize: 24,
+            height: 56,
           }}
           placeholder="••••••"
           required
         />
         {error && (
-          <p
-            className="w-type-body-sm"
-            style={{ color: "var(--w-err)" }}
-          >
+          <p className="t-body-2" style={{ color: "var(--err)" }}>
             {error}
           </p>
         )}
-        <Button variant="primary" type="submit" disabled={pending}>
+        <button
+          type="submit"
+          className="btn btn--lg btn--block"
+          disabled={pending}
+        >
           {pending ? "Verifying…" : "See my tickets"}
-        </Button>
+        </button>
         <button
           type="button"
           onClick={() => setStep("phone")}
-          className="w-type-meta"
+          className="t-meta"
           style={{
             background: "transparent",
             border: "none",
             cursor: "pointer",
-            color: "var(--w-fg-muted)",
+            color: "var(--fg-3)",
             textAlign: "center",
             padding: 0,
           }}
         >
-          ← WRONG NUMBER
+          ← Wrong number
         </button>
       </form>
     );
@@ -133,17 +121,17 @@ export default function MyTicketsVerify() {
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: 16,
-        marginTop: 24,
+        gap: "var(--s-4)",
+        marginTop: "var(--s-6)",
       }}
     >
       <div>
         <label
           htmlFor="phone"
-          className="w-type-meta"
-          style={{ display: "block", marginBottom: 6 }}
+          className="t-meta"
+          style={{ display: "block", marginBottom: "var(--s-2)" }}
         >
-          PHONE
+          Phone
         </label>
         <input
           id="phone"
@@ -152,22 +140,23 @@ export default function MyTicketsVerify() {
           autoComplete="tel"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          style={INPUT_STYLE}
+          className="input"
           placeholder="(305) 555 1234"
           required
         />
       </div>
       {error && (
-        <p
-          className="w-type-body-sm"
-          style={{ color: "var(--w-err)" }}
-        >
+        <p className="t-body-2" style={{ color: "var(--err)" }}>
           {error}
         </p>
       )}
-      <Button variant="primary" type="submit" disabled={pending}>
+      <button
+        type="submit"
+        className="btn btn--lg btn--block"
+        disabled={pending}
+      >
         {pending ? "Sending…" : "Send code"}
-      </Button>
+      </button>
     </form>
   );
 }

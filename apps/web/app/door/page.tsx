@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireDoorContext, pickActiveEvent } from "@/lib/door";
-import { Chip, IconArrow, WFrame, Wordmark } from "@/components/wadl";
+import { Logo } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 
@@ -15,26 +15,29 @@ export default async function DoorHome() {
   if (active) redirect(`/door/events/${active.event_id}`);
 
   return (
-    <main id="main-content">
-      <WFrame style={{ paddingBottom: 48 }}>
-        <div style={{ padding: "20px 24px 0" }}>
-          <Wordmark variant="monogrid" size={18} />
+    <main
+      id="main-content"
+      className="v5"
+      style={{ background: "var(--bg)", minHeight: "100vh" }}
+    >
+      <div style={{ maxWidth: 540, margin: "0 auto" }}>
+        <div style={{ padding: "var(--s-6) var(--s-8) 0" }}>
+          <Logo size={18} />
         </div>
 
-        <div style={{ padding: "48px 24px 0" }}>
-          <div className="w-type-meta">DOOR · STAFF</div>
-          <div className="w-type-display-lg" style={{ marginTop: 12 }}>
+        <div style={{ padding: "var(--s-12) var(--s-8) 0" }}>
+          <div className="t-meta">Door · staff</div>
+          <div
+            className="t-display-lg"
+            style={{ marginTop: "var(--s-3)", lineHeight: 1.0 }}
+          >
             Pick an
             <br />
             event.
           </div>
           <p
-            className="w-type-body-sm"
-            style={{
-              color: "var(--w-fg-muted)",
-              marginTop: 16,
-              maxWidth: 320,
-            }}
+            className="t-body-2"
+            style={{ marginTop: "var(--s-4)", maxWidth: 320 }}
           >
             You&apos;re scheduled across {staff.length} events. Tap one to
             open the scanner.
@@ -43,10 +46,10 @@ export default async function DoorHome() {
 
         <div
           style={{
-            padding: "32px 24px 0",
+            padding: "var(--s-8)",
             display: "flex",
             flexDirection: "column",
-            gap: 10,
+            gap: "var(--s-2)",
           }}
         >
           {staff.map((s) => (
@@ -56,19 +59,18 @@ export default async function DoorHome() {
               style={{ textDecoration: "none", color: "inherit" }}
             >
               <div
-                className="w-card"
+                className="card card--hover"
                 style={{
-                  padding: 16,
+                  padding: "var(--s-5)",
                   display: "flex",
                   alignItems: "center",
-                  gap: 14,
+                  gap: "var(--s-4)",
                 }}
               >
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div
+                    className="t-h2"
                     style={{
-                      fontWeight: 600,
-                      fontSize: 15,
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
@@ -76,20 +78,26 @@ export default async function DoorHome() {
                   >
                     {s.event.name}
                   </div>
-                  <div className="w-type-meta" style={{ marginTop: 4 }}>
+                  <div
+                    className="t-meta"
+                    style={{ marginTop: "var(--s-1)" }}
+                  >
                     {s.role === "door_manager"
-                      ? "DOOR MANAGER"
-                      : "DOOR STAFF"}
+                      ? "Door manager"
+                      : "Door staff"}
                   </div>
                 </div>
-                <Chip tone="ghost">
-                  <IconArrow size={12} />
-                </Chip>
+                <span
+                  className="t-h2"
+                  style={{ color: "var(--fg-3)", flexShrink: 0 }}
+                >
+                  →
+                </span>
               </div>
             </Link>
           ))}
         </div>
-      </WFrame>
+      </div>
     </main>
   );
 }

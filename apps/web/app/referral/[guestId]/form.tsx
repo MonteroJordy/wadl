@@ -1,18 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Button } from "@/components/wadl";
 import { addReferralAction } from "./actions";
-
-const INPUT_STYLE: React.CSSProperties = {
-  width: "100%",
-  background: "var(--w-surface-1)",
-  border: "1px solid var(--w-line)",
-  color: "var(--w-fg)",
-  padding: "10px 12px",
-  fontFamily: "var(--w-sans)",
-  fontSize: 14,
-};
 
 export default function ReferralForm({
   guestId,
@@ -32,16 +21,11 @@ export default function ReferralForm({
   if (!active) {
     return (
       <div
-        className="w-card"
-        style={{ padding: 16, textAlign: "center" }}
+        className="card"
+        style={{ padding: "var(--s-4)", textAlign: "center" }}
       >
-        <div className="w-type-meta" style={{ marginBottom: 8 }}>
-          CLOSED
-        </div>
-        <p
-          className="w-type-body-sm"
-          style={{ color: "var(--w-fg-muted)" }}
-        >
+        <span className="chip chip--ghost">Closed</span>
+        <p className="t-body-2" style={{ marginTop: "var(--s-3)" }}>
           You can&apos;t add friends right now — list closed or RSVP not
           active.
         </p>
@@ -71,21 +55,21 @@ export default function ReferralForm({
   return (
     <form
       onSubmit={onSubmit}
-      style={{ display: "flex", flexDirection: "column", gap: 16 }}
+      style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}
     >
       <div>
         <label
           htmlFor="rname"
-          className="w-type-meta"
-          style={{ display: "block", marginBottom: 6 }}
+          className="t-meta"
+          style={{ display: "block", marginBottom: "var(--s-2)" }}
         >
-          FRIEND&apos;S FULL NAME
+          Friend&apos;s full name
         </label>
         <input
           id="rname"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          style={INPUT_STYLE}
+          className="input"
           placeholder="Their full name"
           required
         />
@@ -94,10 +78,10 @@ export default function ReferralForm({
         <div>
           <label
             htmlFor="rplus"
-            className="w-type-meta"
-            style={{ display: "block", marginBottom: 6 }}
+            className="t-meta"
+            style={{ display: "block", marginBottom: "var(--s-2)" }}
           >
-            +1S
+            +1s
           </label>
           <input
             id="rplus"
@@ -106,30 +90,24 @@ export default function ReferralForm({
             max={4}
             value={plus}
             onChange={(e) => setPlus(e.target.value)}
-            style={INPUT_STYLE}
+            className="input"
           />
         </div>
       )}
       {error && (
-        <p
-          className="w-type-body-sm"
-          style={{ color: "var(--w-err)" }}
-        >
+        <p className="t-body-2" style={{ color: "var(--err)" }}>
           {error}
         </p>
       )}
       {added && (
-        <p
-          className="w-type-body-sm"
-          style={{ color: "var(--w-ok)" }}
-        >
-          Added <span style={{ color: "var(--w-fg)" }}>{added}</span> to the
+        <p className="t-body-2" style={{ color: "var(--ok)" }}>
+          Added <span style={{ color: "var(--fg)" }}>{added}</span> to the
           list.
         </p>
       )}
-      <Button variant="primary" type="submit" disabled={pending}>
+      <button className="btn" type="submit" disabled={pending}>
         {pending ? "Adding…" : "Add friend"}
-      </Button>
+      </button>
     </form>
   );
 }

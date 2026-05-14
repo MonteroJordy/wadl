@@ -2,13 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Avatar,
-  Button,
-  Chip,
-  IconBack,
-  WFrame,
-} from "@/components/wadl";
 
 // Stub recents — real recents come from a contacts table not yet wired.
 const RECENTS = [
@@ -16,6 +9,28 @@ const RECENTS = [
   { name: "Devin Wu", handle: "@devin" },
   { name: "Ana Cruz", handle: "@ana" },
 ];
+
+const SHELL_STYLE: React.CSSProperties = {
+  marginInline: "auto",
+  width: "100%",
+  maxWidth: 420,
+  minHeight: "100vh",
+  background: "var(--bg)",
+  display: "flex",
+  flexDirection: "column",
+  position: "relative",
+  paddingBottom: "var(--s-12)",
+};
+
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .map((p) => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
 
 export default function TransferSpotPage() {
   const router = useRouter();
@@ -34,65 +49,53 @@ export default function TransferSpotPage() {
     selected ?? (recipient.trim() ? recipient.trim() : null);
 
   return (
-    <main id="main-content">
-      <WFrame style={{ paddingBottom: 48 }}>
+    <main id="main-content" className="v5">
+      <div style={SHELL_STYLE}>
         <div
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "16px 20px 0",
+            padding: "var(--s-4) var(--s-5) 0",
           }}
         >
           <button
             type="button"
             onClick={() => router.back()}
-            aria-label="Back"
+            className="t-meta"
             style={{
               background: "transparent",
               border: 0,
-              color: "var(--w-fg)",
+              color: "var(--fg-3)",
               cursor: "pointer",
-              width: 36,
-              height: 36,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              padding: 0,
             }}
           >
-            <IconBack />
+            ← Back
           </button>
-          <span className="w-type-meta">TRANSFER SPOT</span>
+          <span className="t-meta">Transfer spot</span>
           <div style={{ width: 36 }} />
         </div>
 
-        <div style={{ padding: "20px" }}>
-          <div
-            style={{
-              fontFamily: "var(--w-display)",
-              fontWeight: 700,
-              fontSize: 28,
-              letterSpacing: "-0.02em",
-              lineHeight: 1.05,
-            }}
-          >
-            Send your RSVP to a friend
-          </div>
+        <div style={{ padding: "var(--s-5)" }}>
+          <div className="t-display-sm">Send your RSVP to a friend</div>
           <p
-            className="w-type-body-sm"
-            style={{
-              color: "var(--w-fg-muted)",
-              marginTop: 6,
-            }}
+            className="t-body-2"
+            style={{ marginTop: "var(--s-2)" }}
           >
             They get the credential. You don&apos;t. One transfer per event.
           </p>
         </div>
 
-        <div style={{ padding: "0 20px" }}>
-          <span className="w-label">SEND TO</span>
+        <div style={{ padding: "0 var(--s-5)" }}>
+          <label
+            className="t-meta"
+            style={{ display: "block", marginBottom: "var(--s-2)" }}
+          >
+            Send to
+          </label>
           <input
-            className="w-input"
+            className="input"
             placeholder="Phone or @handle"
             value={recipient}
             onChange={(e) => {
@@ -102,11 +105,11 @@ export default function TransferSpotPage() {
           />
         </div>
 
-        <div style={{ padding: "24px 20px 8px" }}>
-          <span className="w-type-meta">RECENT</span>
+        <div style={{ padding: "var(--s-6) var(--s-5) var(--s-2)" }}>
+          <span className="t-meta">Recent</span>
         </div>
-        <div className="w-card" style={{ margin: "0 20px" }}>
-          {RECENTS.map((r) => {
+        <div className="card" style={{ margin: "0 var(--s-5)" }}>
+          {RECENTS.map((r, i) => {
             const isSelected = selected === r.name;
             return (
               <button
@@ -120,48 +123,63 @@ export default function TransferSpotPage() {
                   width: "100%",
                   display: "flex",
                   alignItems: "center",
-                  gap: 12,
-                  padding: "14px 16px",
-                  borderTop: "1px solid var(--w-line)",
-                  background: isSelected
-                    ? "var(--w-acc-soft)"
-                    : "transparent",
+                  gap: "var(--s-3)",
+                  padding: "var(--s-4)",
+                  borderTop:
+                    i === 0 ? "none" : "1px solid var(--line)",
+                  background: isSelected ? "var(--bg-3)" : "transparent",
                   border: 0,
-                  borderTopWidth: 1,
+                  borderTopWidth: i === 0 ? 0 : 1,
                   borderTopStyle: "solid",
-                  borderTopColor: "var(--w-line)",
+                  borderTopColor: "var(--line)",
                   textAlign: "left",
                   cursor: "pointer",
                   color: "inherit",
                 }}
               >
-                <Avatar name={r.name} size={32} />
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: "var(--r-pill)",
+                    background: "var(--bg-3)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 12,
+                    fontWeight: 500,
+                    flexShrink: 0,
+                  }}
+                >
+                  {initials(r.name)}
+                </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 15 }}>{r.name}</div>
-                  <div className="w-type-meta" style={{ marginTop: 1 }}>
+                  <div className="t-body">{r.name}</div>
+                  <div
+                    className="t-meta"
+                    style={{ marginTop: 1 }}
+                  >
                     {r.handle}
                   </div>
                 </div>
-                {isSelected ? <Chip tone="acc">SELECTED</Chip> : null}
+                {isSelected ? (
+                  <span className="chip chip--solid">Selected</span>
+                ) : null}
               </button>
             );
           })}
         </div>
 
-        <div style={{ padding: "20px" }}>
+        <div style={{ padding: "var(--s-5)" }}>
           <div
-            className="w-card"
+            className="card"
             style={{
-              padding: 14,
-              background: "oklch(0.86 0.16 85 / 0.08)",
-              borderColor: "oklch(0.86 0.16 85 / 0.3)",
+              padding: "var(--s-4)",
+              borderColor: "var(--warn)",
             }}
           >
-            <Chip tone="warn">HEADS UP</Chip>
-            <p
-              className="w-type-body-sm"
-              style={{ marginTop: 6 }}
-            >
+            <span className="chip chip--warn">Heads up</span>
+            <p className="t-body-2" style={{ marginTop: "var(--s-2)" }}>
               They get your credential. Any hold stays until they scan in. One
               transfer per event.
             </p>
@@ -172,15 +190,15 @@ export default function TransferSpotPage() {
           style={{
             position: "sticky",
             bottom: 0,
-            padding: 20,
+            padding: "var(--s-5)",
             background:
-              "linear-gradient(to top, var(--w-bg) 60%, transparent)",
+              "linear-gradient(to top, var(--bg) 60%, transparent)",
             marginTop: "auto",
           }}
         >
-          <Button
-            variant="primary"
-            block
+          <button
+            type="button"
+            className="btn btn--block"
             disabled={!target || pending}
             onClick={onTransfer}
           >
@@ -189,9 +207,9 @@ export default function TransferSpotPage() {
               : target
                 ? `Transfer to ${target}`
                 : "Pick a recipient"}
-          </Button>
+          </button>
         </div>
-      </WFrame>
+      </div>
     </main>
   );
 }

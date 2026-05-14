@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { fmtDate, fmtTime } from "@/lib/format";
 import ShareEventButton from "@/components/share-event-button";
 import { getAppUrl } from "@/lib/app-url";
-import { Button, Chip, IconPin, Wordmark } from "@/components/wadl";
+import { CoverHeader, Logo } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 
@@ -102,236 +102,160 @@ export default async function EventDetailPage({
   const allFrozen = nights.length > 0 && nights.every((n) => n.is_frozen);
   const firstNight = showNights[0];
 
+  const eyebrowParts: string[] = [];
+  if (firstNight) {
+    eyebrowParts.push(fmtDate(firstNight.night_date));
+    eyebrowParts.push(`doors ${fmtTime(firstNight.doors_at)}`);
+  }
+  if (event.venue?.name) {
+    eyebrowParts.push(
+      [event.venue.name, event.venue.city].filter(Boolean).join(" · "),
+    );
+  }
+
+  let heroAction: React.ReactNode = null;
+  if (allPast) heroAction = <span className="chip">Event ended</span>;
+  else if (allFrozen)
+    heroAction = <span className="chip chip--warn">At capacity</span>;
+  else if (nights.length > 1)
+    heroAction = <span className="chip chip--ok">{nights.length} nights</span>;
+  else heroAction = <span className="chip chip--ok">On sale</span>;
+
   return (
     <main
       id="main-content"
-      className="w-app"
-      style={{ minHeight: "100vh", background: "var(--w-bg)" }}
+      className="v5"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
     >
-      {/* tiny nav */}
+      {/* top nav */}
       <div
         style={{
+          height: 56,
+          padding: "0 var(--s-6)",
           display: "flex",
-          justifyContent: "space-between",
           alignItems: "center",
-          padding: "16px 24px",
-          borderBottom: "1px solid var(--w-line)",
+          justifyContent: "space-between",
+          borderBottom: "1px solid var(--line)",
         }}
       >
         <Link href="/discover" style={{ textDecoration: "none" }}>
-          <Wordmark variant="monogrid" size={16} />
+          <Logo size={18} />
         </Link>
-        <span className="w-type-meta">EVENT · {event.name.toUpperCase()}</span>
         <Link
           href="/login"
-          className="w-btn w-btn--ghost"
-          style={{ height: 36, textDecoration: "none" }}
+          className="btn btn--ghost"
+          style={{ textDecoration: "none" }}
         >
           Sign in
         </Link>
       </div>
+
+      <CoverHeader
+        seed={event.name}
+        eyebrow={eyebrowParts.join(" · ")}
+        title={event.name}
+        actions={heroAction}
+        height={500}
+      />
 
       <div
         className="event-grid"
         style={{
           display: "grid",
           gridTemplateColumns: "1fr",
-          minHeight: "calc(100vh - 60px)",
+          gap: "var(--s-12)",
+          padding: "var(--s-12)",
         }}
       >
-        {/* left — cover */}
-        <div
-          style={{
-            position: "relative",
-            background:
-              "linear-gradient(135deg, oklch(0.32 0.06 255), oklch(0.18 0.04 280))",
-            overflow: "hidden",
-            minHeight: 480,
-          }}
-        >
-          {event.flyer_url ? (
-            <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={event.flyer_url}
-                alt={event.name}
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  opacity: 0.5,
-                }}
-              />
-            </>
-          ) : null}
+        {/* left — facts */}
+        <div>
           <div
             style={{
-              position: "absolute",
-              inset: 0,
-              padding: "48px 32px 40px",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "flex-end",
-              background:
-                "linear-gradient(135deg, transparent 0%, rgba(15,15,16,0.65) 100%)",
+              display: "grid",
+              gridTemplateColumns: "repeat(4, 1fr)",
+              borderTop: "1px solid var(--line)",
+              borderBottom: "1px solid var(--line)",
             }}
           >
-            <div className="w-type-meta">
-              {firstNight ? fmtDate(firstNight.night_date).toUpperCase() : ""}
-              {firstNight ? ` · DOORS ${fmtTime(firstNight.doors_at)}` : ""}
-            </div>
-            <div
-              style={{
-                fontSize: "clamp(56px, 9vw, 96px)",
-                fontWeight: 800,
-                letterSpacing: "-0.045em",
-                lineHeight: 0.9,
-                marginTop: 18,
-                fontFamily: "var(--w-display)",
-              }}
-            >
-              {event.name}
-            </div>
-            <div
-              style={{
-                display: "flex",
-                gap: 8,
-                marginTop: 32,
-                flexWrap: "wrap",
-              }}
-            >
-              {event.venue?.name && (
-                <Chip
-                  tone="ghost"
-                  style={{ background: "rgba(0,0,0,0.4)" }}
+            {[
+              ["Date", firstNight ? fmtDate(firstNight.night_date) : "TBA"],
+              ["Doors", firstNight ? fmtTime(firstNight.doors_at) : "TBA"],
+              [
+                "Close",
+                firstNight?.cutoff_at ? fmtTime(firstNight.cutoff_at) : "Late",
+              ],
+              [
+                "Cap",
+                firstNight?.capacity_cap
+                  ? String(firstNight.capacity_cap)
+                  : "—",
+              ],
+            ].map(([k, v], i) => (
+              <div
+                key={k}
+                style={{
+                  padding: "var(--s-5) 0",
+                  borderRight: i < 3 ? "1px solid var(--line)" : "none",
+                  paddingLeft: i === 0 ? 0 : "var(--s-5)",
+                }}
+              >
+                <div className="t-meta">{k}</div>
+                <div
+                  className="t-display-sm"
+                  style={{ marginTop: "var(--s-2)" }}
                 >
-                  <IconPin size={12} /> {event.venue.name}
-                  {event.venue.city ? ` · ${event.venue.city}` : ""}
-                </Chip>
-              )}
-              {firstNight?.capacity_cap && (
-                <Chip
-                  tone="ghost"
-                  style={{ background: "rgba(0,0,0,0.4)" }}
-                >
-                  {firstNight.capacity_cap} CAP
-                </Chip>
-              )}
-              {nights.length > 1 && (
-                <Chip
-                  tone="ghost"
-                  style={{ background: "rgba(0,0,0,0.4)" }}
-                >
-                  {nights.length} NIGHTS
-                </Chip>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* right — RSVP card */}
-        <div
-          style={{
-            padding: "48px 32px",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <div className="w-type-meta">PUBLIC EVENT</div>
-          <div
-            className="w-type-h1"
-            style={{ marginTop: 8 }}
-          >
-            {event.name}
+                  {v}
+                </div>
+              </div>
+            ))}
           </div>
 
-          {event.description && (
-            <p
-              className="w-type-body"
-              style={{
-                color: "var(--w-fg-muted)",
-                marginTop: 12,
-                whiteSpace: "pre-wrap",
-              }}
-            >
-              {event.description}
-            </p>
+          {event.venue?.name && (
+            <div style={{ marginTop: "var(--s-10)" }}>
+              <div className="t-meta">Venue</div>
+              <div
+                className="t-display-sm"
+                style={{ marginTop: "var(--s-2)" }}
+              >
+                {event.venue.name}
+              </div>
+              {(event.venue.address || event.venue.city) && (
+                <div className="t-body-2" style={{ marginTop: "var(--s-1)" }}>
+                  {[event.venue.address, event.venue.city]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </div>
+              )}
+            </div>
           )}
 
-          {allPast ? (
-            <div
-              className="w-card"
-              style={{ padding: 18, marginTop: 24 }}
-            >
-              <Chip tone="ghost">EVENT ENDED</Chip>
+          {event.description && (
+            <div style={{ marginTop: "var(--s-10)" }}>
+              <div className="t-meta">About</div>
               <p
-                className="w-type-body-sm"
+                className="t-body"
                 style={{
-                  color: "var(--w-fg-muted)",
-                  marginTop: 12,
+                  marginTop: "var(--s-2)",
+                  whiteSpace: "pre-wrap",
+                  color: "var(--fg-2)",
                 }}
               >
-                Doors are closed. Tell the venue how it went, or browse what&apos;s
-                next.
-              </p>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: 8,
-                  marginTop: 16,
-                }}
-              >
-                <Link
-                  href={`/e/${event.id}/feedback`}
-                  className="w-btn w-btn--ghost"
-                  style={{ textDecoration: "none" }}
-                >
-                  Leave feedback
-                </Link>
-                <Link
-                  href="/discover"
-                  className="w-btn w-btn--primary"
-                  style={{ textDecoration: "none" }}
-                >
-                  Discover
-                </Link>
-              </div>
-            </div>
-          ) : allFrozen ? (
-            <div
-              className="w-card"
-              style={{
-                padding: 18,
-                marginTop: 24,
-                borderColor: "var(--w-warn)",
-              }}
-            >
-              <Chip tone="warn">⚠ AT CAPACITY</Chip>
-              <p
-                className="w-type-body-sm"
-                style={{
-                  color: "var(--w-fg-muted)",
-                  marginTop: 12,
-                }}
-              >
-                Every night sold out. Want to be next time? Follow the host for
-                the next drop.
+                {event.description}
               </p>
             </div>
-          ) : (
-            <>
-              <div className="w-type-meta" style={{ marginTop: 28 }}>
-                {upcoming.length > 0 ? "UPCOMING NIGHTS" : "ALL NIGHTS"}
+          )}
+
+          {!allPast && !allFrozen && (
+            <div style={{ marginTop: "var(--s-10)" }}>
+              <div className="t-meta">
+                {upcoming.length > 0 ? "Upcoming nights" : "All nights"}
               </div>
               <div
                 style={{
                   display: "flex",
                   flexDirection: "column",
-                  gap: 8,
-                  marginTop: 12,
+                  gap: "var(--s-2)",
+                  marginTop: "var(--s-3)",
                 }}
               >
                 {showNights.map((n) => {
@@ -339,102 +263,150 @@ export default async function EventDetailPage({
                   return (
                     <div
                       key={n.id}
-                      className="w-card"
+                      className="card"
                       style={{
-                        padding: 16,
+                        padding: "var(--s-4)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
-                        gap: 12,
+                        gap: "var(--s-3)",
                       }}
                     >
                       <div>
-                        <div style={{ fontWeight: 600, fontSize: 15 }}>
-                          {fmtDate(n.night_date)}
-                        </div>
+                        <div className="t-h2">{fmtDate(n.night_date)}</div>
                         <div
-                          className="w-type-meta"
-                          style={{ marginTop: 4 }}
+                          className="t-meta"
+                          style={{ marginTop: "var(--s-1)" }}
                         >
-                          DOORS {fmtTime(n.doors_at)}
-                          {n.is_frozen ? " · CLOSED" : ""}
+                          Doors {fmtTime(n.doors_at)}
+                          {n.is_frozen ? " · closed" : ""}
                         </div>
                       </div>
                       {canRsvp ? (
                         <Link
                           href={`/e/${event.id}/rsvp?night=${n.id}`}
-                          className="w-btn w-btn--primary"
+                          className="btn btn--sm"
                           style={{ textDecoration: "none" }}
                         >
-                          RSVP →
+                          RSVP
                         </Link>
                       ) : (
-                        <Chip tone="ghost">CLOSED</Chip>
+                        <span className="chip">Closed</span>
                       )}
                     </div>
                   );
                 })}
               </div>
 
-              <div style={{ marginTop: 24 }}>
+              <div style={{ marginTop: "var(--s-5)" }}>
                 <ShareEventButton
                   url={`${getAppUrl()}/e/${event.id}`}
                   title={event.name}
                   text={`${event.name} on WADL${event.venue?.name ? ` · ${event.venue.name}` : ""}`}
                 />
               </div>
+            </div>
+          )}
+        </div>
 
-              <div
-                style={{ flex: 1, minHeight: 24 }}
-                aria-hidden
-              />
-
-              <div
-                className="w-type-h3"
-                style={{ marginTop: 24 }}
-              >
-                Get on the list — 30 seconds.
-              </div>
+        {/* right — RSVP panel */}
+        <div className="card" style={{ padding: "var(--s-6)", height: "fit-content" }}>
+          {allPast ? (
+            <>
+              <span className="chip">Event ended</span>
               <p
-                className="w-type-body-sm"
+                className="t-body-2"
+                style={{ marginTop: "var(--s-3)" }}
+              >
+                Doors are closed. Tell the venue how it went, or browse
+                what&apos;s next.
+              </p>
+              <div
                 style={{
-                  color: "var(--w-fg-muted)",
-                  marginTop: 6,
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "var(--s-2)",
+                  marginTop: "var(--s-5)",
                 }}
               >
+                <Link
+                  href={`/e/${event.id}/feedback`}
+                  className="btn btn--ghost"
+                  style={{ textDecoration: "none" }}
+                >
+                  Leave feedback
+                </Link>
+                <Link
+                  href="/discover"
+                  className="btn"
+                  style={{ textDecoration: "none" }}
+                >
+                  Discover
+                </Link>
+              </div>
+            </>
+          ) : allFrozen ? (
+            <>
+              <span className="chip chip--warn">At capacity</span>
+              <p
+                className="t-body-2"
+                style={{ marginTop: "var(--s-3)" }}
+              >
+                Every night sold out. Follow the host for the next drop.
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="t-meta">Get on the list</div>
+              <div
+                className="t-display-sm"
+                style={{ marginTop: "var(--s-2)" }}
+              >
+                30 seconds.
+              </div>
+              <p className="t-body-2" style={{ marginTop: "var(--s-1)" }}>
                 No account, no password. We text you a credential.
               </p>
               {firstNight && !firstNight.is_frozen && (
                 <Link
                   href={`/e/${event.id}/rsvp?night=${firstNight.id}`}
-                  style={{ textDecoration: "none", marginTop: 14 }}
+                  className="btn btn--xl btn--block"
+                  style={{
+                    textDecoration: "none",
+                    marginTop: "var(--s-5)",
+                  }}
                 >
-                  <Button variant="primary" size="lg" block>
-                    Continue → RSVP
-                  </Button>
+                  RSVP
                 </Link>
               )}
+              <div
+                className="t-meta"
+                style={{
+                  textAlign: "center",
+                  marginTop: "var(--s-3)",
+                  color: "var(--fg-4)",
+                }}
+              >
+                Free RSVP · no charge
+              </div>
             </>
           )}
 
           <div
-            className="w-type-meta"
+            className="t-meta"
             style={{
-              marginTop: 32,
-              paddingTop: 16,
-              borderTop: "1px solid var(--w-line)",
-              color: "var(--w-fg-dim)",
+              marginTop: "var(--s-6)",
+              paddingTop: "var(--s-4)",
+              borderTop: "1px solid var(--line)",
+              color: "var(--fg-4)",
             }}
           >
-            ALREADY HAVE A TICKET?{" "}
+            Already have a ticket?{" "}
             <Link
               href="/mytickets"
-              style={{
-                color: "var(--w-acc)",
-                textDecoration: "none",
-              }}
+              style={{ color: "var(--fg)", textDecoration: "none" }}
             >
-              MY TICKETS →
+              My tickets →
             </Link>
           </div>
         </div>
@@ -442,23 +414,23 @@ export default async function EventDetailPage({
 
       <div
         style={{
-          padding: "20px 32px",
-          borderTop: "1px solid var(--w-line)",
+          padding: "var(--s-5) var(--s-12)",
+          borderTop: "1px solid var(--line)",
           display: "flex",
           justifyContent: "space-between",
-          fontFamily: "var(--w-mono)",
-          fontSize: 11,
-          color: "var(--w-fg-dim)",
+          fontFamily: "var(--mono)",
+          fontSize: "var(--ts-xs)",
+          color: "var(--fg-4)",
         }}
       >
-        <span>POWERED BY WADL</span>
-        <span>SHARE · /e/{event.id.slice(0, 8)}</span>
+        <span>Powered by WADL</span>
+        <span>Share · /e/{event.id.slice(0, 8)}</span>
       </div>
 
       <style>{`
         @media (min-width: 900px) {
           .event-grid {
-            grid-template-columns: 1.3fr 1fr !important;
+            grid-template-columns: 1.4fr 1fr !important;
           }
         }
       `}</style>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Button } from "@/components/wadl";
 import ConfirmDialog from "@/components/confirm-dialog";
 import { approveAllAction, rejectAllAction } from "./actions";
 
@@ -29,30 +28,23 @@ export default function BulkActions({
 
   return (
     <>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 8,
-          marginBottom: 12,
-        }}
-      >
-        <Button
-          variant="ghost"
+      <div style={{ display: "flex", gap: "var(--s-2)" }}>
+        <button
           type="button"
+          className="btn btn--ghost btn--sm"
           onClick={() => setConfirmKind("deny")}
           disabled={pending}
         >
           Deny all
-        </Button>
-        <Button
-          variant="primary"
+        </button>
+        <button
           type="button"
+          className="btn btn--sm"
           onClick={() => setConfirmKind("approve")}
           disabled={pending}
         >
           Approve all
-        </Button>
+        </button>
       </div>
       <ConfirmDialog
         open={confirmKind !== null}

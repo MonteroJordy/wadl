@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Button } from "@/components/wadl";
+import { Breadcrumb, PageHeader, EventSubNav } from "@/components/v5";
 import { cloneEventAction } from "./actions";
 
 interface Props {
@@ -13,16 +12,6 @@ interface Props {
   sourceAllocCount: number;
   earliestNightIso: string | null;
 }
-
-const INPUT_STYLE: React.CSSProperties = {
-  width: "100%",
-  background: "var(--w-surface-1)",
-  border: "1px solid var(--w-line)",
-  color: "var(--w-fg)",
-  padding: "10px 12px",
-  fontFamily: "var(--w-sans)",
-  fontSize: 14,
-};
 
 export default function CloneForm({
   eventId,
@@ -68,161 +57,115 @@ export default function CloneForm({
   return (
     <main
       id="main-content"
-      className="w-app"
-      style={{
-        minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
-      }}
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
     >
-      <div style={{ maxWidth: 720, margin: "0 auto" }}>
-        <div
+      <Breadcrumb
+        items={[
+          ["Events", "/owner"],
+          [sourceName, `/owner/events/${eventId}`],
+          "Clone",
+        ]}
+      />
+      <PageHeader
+        eyebrow="Clone event"
+        title="Clone & reuse"
+        sub="Copies the event shell (name, type, venue, flyer) and shifts every night forward by N days. Guests, check-ins, and the audit log are NOT copied."
+      />
+      <EventSubNav active="settings" eventId={eventId} />
+
+      <form
+        onSubmit={onSubmit}
+        style={{
+          padding: "var(--s-8)",
+          maxWidth: 720,
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-5)",
+        }}
+      >
+        <div>
+          <label htmlFor="name" className="t-meta">
+            New event name
+          </label>
+          <input
+            id="name"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="input"
+            style={{ marginTop: "var(--s-2)" }}
+            required
+          />
+        </div>
+
+        <div>
+          <label htmlFor="shift" className="t-meta">
+            Shift dates by
+          </label>
+          <select
+            id="shift"
+            value={shiftDays}
+            onChange={(e) => setShiftDays(parseInt(e.target.value, 10))}
+            className="input"
+            style={{ marginTop: "var(--s-2)" }}
+          >
+            <option value={7}>+1 week</option>
+            <option value={14}>+2 weeks</option>
+            <option value={28}>+4 weeks</option>
+            <option value={1}>+1 day</option>
+          </select>
+          {previewLabel && (
+            <div className="t-meta" style={{ marginTop: "var(--s-2)" }}>
+              First night will be{" "}
+              <span style={{ color: "var(--fg)" }}>{previewLabel}</span>
+            </div>
+          )}
+        </div>
+
+        <label
           style={{
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 16,
+            gap: "var(--s-3)",
+            cursor: "pointer",
           }}
         >
-          <Link
-            href={`/owner/events/${eventId}`}
-            className="w-type-meta"
-            style={{ color: "var(--w-fg-muted)", textDecoration: "none" }}
-          >
-            ← BACK
-          </Link>
-          <div className="w-type-meta">CLONE EVENT</div>
-        </div>
-
-        <div
-          style={{
-            borderBottom: "1px solid var(--w-line)",
-            paddingBottom: 24,
-            marginBottom: 24,
-          }}
-        >
-          <div className="w-type-display-md">Clone &amp; reuse.</div>
-          <p
-            className="w-type-body-sm"
-            style={{
-              color: "var(--w-fg-muted)",
-              marginTop: 8,
-              lineHeight: 1.5,
-            }}
-          >
-            Copies the event shell (name, type, venue, flyer) and shifts every
-            night forward by N days. Guests, check-ins, and the audit log are
-            NOT copied.
-          </p>
-        </div>
-
-        <form
-          onSubmit={onSubmit}
-          style={{ display: "flex", flexDirection: "column", gap: 20 }}
-        >
-          <div>
-            <label
-              htmlFor="name"
-              className="w-type-meta"
-              style={{ display: "block", marginBottom: 6 }}
-            >
-              NEW EVENT NAME
-            </label>
-            <input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              style={INPUT_STYLE}
-              required
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="shift"
-              className="w-type-meta"
-              style={{ display: "block", marginBottom: 6 }}
-            >
-              SHIFT DATES BY
-            </label>
-            <select
-              id="shift"
-              value={shiftDays}
-              onChange={(e) => setShiftDays(parseInt(e.target.value, 10))}
-              style={INPUT_STYLE}
-            >
-              <option value={7}>+1 week</option>
-              <option value={14}>+2 weeks</option>
-              <option value={28}>+4 weeks</option>
-              <option value={1}>+1 day</option>
-            </select>
-            {previewLabel && (
-              <div className="w-type-meta" style={{ marginTop: 8 }}>
-                FIRST NIGHT WILL BE{" "}
-                <span style={{ color: "var(--w-fg)" }}>
-                  {previewLabel.toUpperCase()}
-                </span>
-              </div>
-            )}
-          </div>
-
-          <label
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              cursor: "pointer",
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={copyAllocations}
-              onChange={(e) => setCopyAllocations(e.target.checked)}
-              style={{
-                width: 20,
-                height: 20,
-                accentColor: "var(--w-acc)",
-              }}
-            />
-            <span>
-              <span
-                style={{
-                  color: "var(--w-fg)",
-                  fontWeight: 600,
-                  fontSize: 14,
-                }}
-              >
-                Copy allocations
-              </span>
-              <div className="w-type-meta">
-                {sourceAllocCount} HOLDER{sourceAllocCount === 1 ? "" : "S"}{" "}
-                (WITH FRESH MAGIC LINKS)
-              </div>
+          <input
+            type="checkbox"
+            checked={copyAllocations}
+            onChange={(e) => setCopyAllocations(e.target.checked)}
+            style={{ width: 18, height: 18, accentColor: "var(--fg)" }}
+          />
+          <span>
+            <span className="t-body" style={{ fontWeight: 500 }}>
+              Copy allocations
             </span>
-          </label>
+            <div className="t-meta">
+              {sourceAllocCount} holder{sourceAllocCount === 1 ? "" : "s"} (with
+              fresh magic links)
+            </div>
+          </span>
+        </label>
 
-          <div className="w-type-meta">
-            SOURCE: {sourceNightCount} NIGHT
-            {sourceNightCount === 1 ? "" : "S"}
-            {sourceAllocCount > 0 &&
-              ` · ${sourceAllocCount} ALLOCATION${sourceAllocCount === 1 ? "" : "S"}`}
-          </div>
+        <div className="t-meta">
+          Source: {sourceNightCount} night
+          {sourceNightCount === 1 ? "" : "s"}
+          {sourceAllocCount > 0 &&
+            ` · ${sourceAllocCount} allocation${
+              sourceAllocCount === 1 ? "" : "s"
+            }`}
+        </div>
 
-          {error && (
-            <p
-              className="w-type-body-sm"
-              style={{ color: "var(--w-err)" }}
-            >
-              {error}
-            </p>
-          )}
+        {error && (
+          <p className="t-body-2" style={{ color: "var(--err)" }}>
+            {error}
+          </p>
+        )}
 
-          <Button variant="primary" type="submit" disabled={pending}>
-            {pending ? "Cloning…" : "Clone event"}
-          </Button>
-        </form>
-      </div>
+        <button type="submit" className="btn" disabled={pending}>
+          {pending ? "Cloning…" : "Clone event"}
+        </button>
+      </form>
     </main>
   );
 }

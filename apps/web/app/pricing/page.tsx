@@ -35,8 +35,8 @@ const TIERS = [
     sub: "per month · billed monthly",
     highlight: true,
     cta: {
-      label: "Talk to us",
-      href: "mailto:jmontero@mainframeagency.com?subject=WADL%20Pro%20signup",
+      label: "Start Pro",
+      href: "/signup?type=venue",
     },
     features: [
       "Up to 3 venues",
@@ -117,6 +117,12 @@ export default function PricingPage() {
               One venue, free forever. Bigger nights, bigger plan. We
               don&apos;t charge per-guest because that&apos;s the SaaS-bro
               move and you already pay enough for the bar.
+            </p>
+            <p
+              className="t-meta"
+              style={{ marginTop: "var(--s-4)" }}
+            >
+              Free during beta — founding-venue pricing locks in below.
             </p>
           </header>
 

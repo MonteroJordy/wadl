@@ -2,12 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Button,
-  Chip,
-  IconBack,
-  WFrame,
-} from "@/components/wadl";
 
 const REASONS = [
   "Plans changed",
@@ -16,6 +10,18 @@ const REASONS = [
   "Sick",
   "Other",
 ];
+
+const SHELL_STYLE: React.CSSProperties = {
+  marginInline: "auto",
+  width: "100%",
+  maxWidth: 420,
+  minHeight: "100vh",
+  background: "var(--bg)",
+  display: "flex",
+  flexDirection: "column",
+  position: "relative",
+  paddingBottom: "var(--s-12)",
+};
 
 export default function CancelRsvpPage() {
   const router = useRouter();
@@ -32,85 +38,71 @@ export default function CancelRsvpPage() {
   }
 
   return (
-    <main id="main-content">
-      <WFrame style={{ paddingBottom: 48 }}>
+    <main id="main-content" className="v5">
+      <div style={SHELL_STYLE}>
         <div
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "16px 20px 0",
+            padding: "var(--s-4) var(--s-5) 0",
           }}
         >
           <button
             type="button"
             onClick={() => router.back()}
-            aria-label="Back"
+            className="t-meta"
             style={{
               background: "transparent",
               border: 0,
-              color: "var(--w-fg)",
+              color: "var(--fg-3)",
               cursor: "pointer",
-              width: 36,
-              height: 36,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              padding: 0,
             }}
           >
-            <IconBack />
+            ← Back
           </button>
-          <span className="w-type-meta">CANCEL RSVP</span>
+          <span className="t-meta">Cancel RSVP</span>
           <div style={{ width: 36 }} />
         </div>
 
-        <div style={{ padding: "24px 20px 0" }}>
-          <div className="w-type-meta">YOU&apos;RE CANCELLING</div>
-          <div
-            className="w-type-h1"
-            style={{ marginTop: 6 }}
-          >
+        <div style={{ padding: "var(--s-6) var(--s-5) 0" }}>
+          <div className="t-meta">You&apos;re cancelling</div>
+          <div className="t-h1" style={{ marginTop: "var(--s-2)" }}>
             Your spot
           </div>
           <p
-            className="w-type-body-sm"
-            style={{
-              color: "var(--w-fg-muted)",
-              marginTop: 4,
-            }}
+            className="t-body-2"
+            style={{ marginTop: "var(--s-1)" }}
           >
             We&apos;ll release your hold and let the host know.
           </p>
         </div>
 
-        <div style={{ padding: "20px 20px 0" }}>
+        <div style={{ padding: "var(--s-5) var(--s-5) 0" }}>
           <div
-            className="w-card"
+            className="card"
             style={{
-              padding: 16,
-              background: "oklch(0.86 0.18 145 / 0.08)",
-              borderColor: "oklch(0.86 0.18 145 / 0.3)",
+              padding: "var(--s-4)",
+              borderColor: "var(--ok)",
             }}
           >
-            <Chip tone="ok">FREE CANCELLATION WINDOW</Chip>
-            <p
-              className="w-type-body"
-              style={{ marginTop: 8 }}
-            >
+            <span className="chip chip--ok">Free cancellation window</span>
+            <p className="t-body-2" style={{ marginTop: "var(--s-2)" }}>
               You&apos;re ahead of the cutoff. No reputation hit, any hold is
               released in full.
             </p>
           </div>
         </div>
 
-        <div style={{ padding: "24px 20px 0" }}>
-          <div className="w-type-meta">REASON (OPTIONAL)</div>
+        <div style={{ padding: "var(--s-6) var(--s-5) 0" }}>
+          <div className="t-meta">Reason (optional)</div>
           <div
             style={{
               display: "flex",
               flexDirection: "column",
-              gap: 6,
-              marginTop: 12,
+              gap: "var(--s-2)",
+              marginTop: "var(--s-3)",
             }}
           >
             {REASONS.map((r) => {
@@ -121,15 +113,12 @@ export default function CancelRsvpPage() {
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 12,
-                    padding: "14px 16px",
+                    gap: "var(--s-3)",
+                    padding: "var(--s-4)",
                     border: "1px solid",
-                    borderColor: active
-                      ? "var(--w-acc)"
-                      : "var(--w-line)",
-                    background: active
-                      ? "var(--w-acc-soft)"
-                      : "transparent",
+                    borderRadius: "var(--r-md)",
+                    borderColor: active ? "var(--fg)" : "var(--line-2)",
+                    background: active ? "var(--bg-3)" : "transparent",
                     cursor: "pointer",
                   }}
                 >
@@ -139,9 +128,9 @@ export default function CancelRsvpPage() {
                     value={r}
                     checked={active}
                     onChange={() => setReason(r)}
-                    style={{ accentColor: "var(--w-acc)" }}
+                    style={{ accentColor: "var(--fg)" }}
                   />
-                  <span style={{ fontSize: 15 }}>{r}</span>
+                  <span className="t-body">{r}</span>
                 </label>
               );
             })}
@@ -152,12 +141,12 @@ export default function CancelRsvpPage() {
           style={{
             position: "sticky",
             bottom: 0,
-            padding: 20,
+            padding: "var(--s-5)",
             background:
-              "linear-gradient(to top, var(--w-bg) 60%, transparent)",
+              "linear-gradient(to top, var(--bg) 60%, transparent)",
             display: "flex",
             flexDirection: "column",
-            gap: 8,
+            gap: "var(--s-2)",
             marginTop: "auto",
           }}
         >
@@ -165,24 +154,19 @@ export default function CancelRsvpPage() {
             type="button"
             onClick={onCancel}
             disabled={pending}
-            className="w-btn w-btn--block"
-            style={{
-              background: "var(--w-err)",
-              color: "#fff",
-              opacity: pending ? 0.5 : 1,
-            }}
+            className="btn btn--danger btn--block"
           >
             {pending ? "Cancelling…" : "Cancel RSVP"}
           </button>
-          <Button
-            variant="ghost"
-            block
+          <button
+            type="button"
+            className="btn btn--ghost btn--block"
             onClick={() => router.back()}
           >
             Keep my spot
-          </Button>
+          </button>
         </div>
-      </WFrame>
+      </div>
     </main>
   );
 }

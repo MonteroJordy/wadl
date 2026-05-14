@@ -159,7 +159,7 @@ export default function NewEventForm({
             className="btn"
             disabled={pending}
           >
-            {pending ? "Creating…" : "Publish"}
+            {pending ? "Publishing…" : "Publish"}
           </button>
         }
       />
@@ -170,8 +170,10 @@ export default function NewEventForm({
         onSubmit={onSubmit}
         style={{
           padding: "var(--s-8)",
+          margin: "0 auto",
+          maxWidth: 1080,
           display: "grid",
-          gridTemplateColumns: "1fr 380px",
+          gridTemplateColumns: "1fr 360px",
           gap: "var(--s-8)",
           alignItems: "start",
         }}
@@ -289,8 +291,8 @@ export default function NewEventForm({
               />
               <p className="t-meta" style={{ marginTop: "var(--s-2)" }}>
                 {accountType === "brand"
-                  ? "Where the takeover lands · directory ships later"
-                  : "Venue for the night · free text for now"}
+                  ? "The venue hosting this event"
+                  : "Where the night is happening"}
               </p>
             </div>
           )}
@@ -510,12 +512,12 @@ export default function NewEventForm({
             className="btn btn--lg btn--block"
             disabled={pending}
           >
-            {pending ? "Creating…" : "Create event"}
+            {pending ? "Publishing…" : "Publish event"}
           </button>
         </div>
 
         {/* ─── LIVE PREVIEW COLUMN ─── */}
-        <div>
+        <div style={{ position: "sticky", top: "var(--s-6)" }}>
           <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
             Live preview
           </div>

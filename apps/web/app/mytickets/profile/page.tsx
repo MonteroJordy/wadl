@@ -74,11 +74,11 @@ export default async function GuestProfilePage() {
   return (
     <main
       id="main-content"
-      className="w-app"
+      className="v5"
       style={{
         minHeight: "100vh",
-        background: "var(--w-bg)",
-        padding: "32px 24px 96px",
+        background: "var(--bg)",
+        padding: "var(--s-8) var(--s-6) var(--s-24)",
       }}
     >
       <div style={{ maxWidth: 540, margin: "0 auto" }}>
@@ -87,73 +87,72 @@ export default async function GuestProfilePage() {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            marginBottom: 16,
+            marginBottom: "var(--s-4)",
           }}
         >
           <Link
             href="/mytickets"
-            className="w-type-meta"
-            style={{ color: "var(--w-fg-muted)", textDecoration: "none" }}
+            className="t-meta"
+            style={{ color: "var(--fg-3)", textDecoration: "none" }}
           >
-            ← TICKETS
+            ← Tickets
           </Link>
-          <div className="w-type-meta">PROFILE</div>
+          <div className="t-meta">Profile</div>
         </div>
 
-        <div className="w-type-display-md" style={{ marginBottom: 4 }}>
+        <div className="t-display-md" style={{ marginBottom: "var(--s-1)" }}>
           {profileRow?.full_name ?? "Guest"}
         </div>
-        <div className="w-type-meta">{phone}</div>
+        <div className="t-meta">{phone}</div>
         {profileRow?.email && (
-          <div className="w-type-meta" style={{ marginTop: 4 }}>
-            <span style={{ color: "var(--w-fg-muted)" }}>EMAIL</span>{" "}
-            <span style={{ color: "var(--w-fg)" }}>{profileRow.email}</span>
+          <div className="t-meta" style={{ marginTop: "var(--s-1)" }}>
+            <span>Email</span>{" "}
+            <span style={{ color: "var(--fg)" }}>{profileRow.email}</span>
           </div>
         )}
 
         <section
-          className="w-card"
-          style={{ padding: 18, marginTop: 24 }}
+          className="card"
+          style={{ padding: "var(--s-5)", marginTop: "var(--s-6)" }}
         >
-          <div className="w-type-meta" style={{ marginBottom: 12 }}>
-            LIFETIME
+          <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+            Lifetime
           </div>
           <div
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
-              gap: 12,
+              gap: "var(--s-3)",
             }}
           >
-            <Stat label="EVENTS ATTENDED" value={attended} />
+            <Stat label="Events attended" value={attended} />
             <Stat
-              label="NO-SHOW RATE"
+              label="No-show rate"
               value={`${Math.round(noShowRate * 100)}%`}
               tone={noShowRate > 0.3 ? "err" : "ok"}
             />
-            <Stat label="+1S BROUGHT" value={plusOnesBrought} />
-            <Stat label="FRIENDS REFERRED" value={referralsCount ?? 0} />
+            <Stat label="+1s brought" value={plusOnesBrought} />
+            <Stat label="Friends referred" value={referralsCount ?? 0} />
           </div>
         </section>
 
-        <section style={{ marginTop: 24 }}>
-          <div className="w-type-meta" style={{ marginBottom: 8 }}>
-            PAST EVENTS
+        <section style={{ marginTop: "var(--s-6)" }}>
+          <div className="t-meta" style={{ marginBottom: "var(--s-2)" }}>
+            Past events
           </div>
           {past.length === 0 ? (
             <div
-              className="w-card"
+              className="card"
               style={{
-                padding: "48px 32px",
+                padding: "var(--s-12) var(--s-8)",
                 textAlign: "center",
               }}
             >
-              <div className="w-type-h1">No history yet</div>
+              <div className="t-h1">No history yet</div>
               <p
-                className="w-type-body-sm"
+                className="t-body-2"
                 style={{
-                  color: "var(--w-fg-muted)",
-                  marginTop: 12,
+                  marginTop: "var(--s-3)",
                   maxWidth: 380,
                   marginInline: "auto",
                   lineHeight: 1.5,
@@ -167,7 +166,7 @@ export default async function GuestProfilePage() {
               style={{
                 display: "flex",
                 flexDirection: "column",
-                gap: 8,
+                gap: "var(--s-2)",
                 listStyle: "none",
                 padding: 0,
                 margin: 0,
@@ -177,51 +176,38 @@ export default async function GuestProfilePage() {
                 const scanned = r.check_ins.some(
                   (c) => c.state === "approved",
                 );
-                const tone = scanned
-                  ? "var(--w-ok)"
+                const chipClass = scanned
+                  ? "chip chip--ok"
                   : r.status === "cancelled"
-                    ? "var(--w-fg-muted)"
-                    : "var(--w-warn)";
+                    ? "chip"
+                    : "chip chip--warn";
                 return (
-                  <li key={r.id} className="w-card" style={{ padding: 14 }}>
+                  <li
+                    key={r.id}
+                    className="card"
+                    style={{ padding: "var(--s-4)" }}
+                  >
                     <div
                       style={{
                         display: "flex",
                         alignItems: "baseline",
                         justifyContent: "space-between",
-                        gap: 12,
+                        gap: "var(--s-3)",
                       }}
                     >
                       <div style={{ minWidth: 0, flex: 1 }}>
-                        <p
-                          style={{
-                            color: "var(--w-fg)",
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                          }}
-                        >
+                        <p className="t-body truncate">
                           {r.night.event.name}
                         </p>
                         <div
-                          className="w-type-meta"
-                          style={{ marginTop: 4 }}
+                          className="t-meta"
+                          style={{ marginTop: "var(--s-1)" }}
                         >
-                          {fmtDate(r.night.night_date).toUpperCase()}
+                          {fmtDate(r.night.night_date)}
                         </div>
                       </div>
-                      <span
-                        style={{
-                          padding: "2px 10px",
-                          border: `1px solid ${tone}`,
-                          color: tone,
-                          fontFamily: "var(--w-mono)",
-                          fontSize: 11,
-                          letterSpacing: "0.08em",
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        {scanned ? "ATTENDED" : r.status.toUpperCase()}
+                      <span className={chipClass}>
+                        {scanned ? "Attended" : r.status}
                       </span>
                     </div>
                   </li>
@@ -232,14 +218,14 @@ export default async function GuestProfilePage() {
         </section>
 
         <div
-          className="w-type-meta"
-          style={{ marginTop: 32, textAlign: "center" }}
+          className="t-meta"
+          style={{ marginTop: "var(--s-8)", textAlign: "center" }}
         >
           <a
             href="/api/auth/signout"
-            style={{ color: "var(--w-fg-muted)", textDecoration: "none" }}
+            style={{ color: "var(--fg-3)", textDecoration: "none" }}
           >
-            SIGN OUT
+            Sign out
           </a>
         </div>
       </div>
@@ -258,23 +244,16 @@ function Stat({
 }) {
   const color =
     tone === "ok"
-      ? "var(--w-ok)"
+      ? "var(--ok)"
       : tone === "err"
-        ? "var(--w-err)"
-        : "var(--w-fg)";
+        ? "var(--err)"
+        : "var(--fg)";
   return (
     <div>
-      <div className="w-type-meta">{label}</div>
+      <div className="t-meta">{label}</div>
       <div
-        style={{
-          fontFamily: "var(--w-display)",
-          fontWeight: 700,
-          fontSize: 28,
-          letterSpacing: "-0.025em",
-          lineHeight: 1,
-          marginTop: 6,
-          color,
-        }}
+        className="t-display-sm t-num"
+        style={{ marginTop: "var(--s-1)", color }}
       >
         {value}
       </div>
