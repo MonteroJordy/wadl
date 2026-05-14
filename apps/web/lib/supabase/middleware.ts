@@ -40,6 +40,11 @@ const PUBLIC_PATHS = [
   "/icon.svg",
   "/service-worker.js",
   "/dev",
+  // Preview-mode role dispatcher. The page + API route each enforce
+  // their own NEXT_PUBLIC_PREVIEW_MODE gate (404 when disabled), so
+  // it's safe to let unauthenticated visitors reach them.
+  "/preview",
+  "/api/preview",
 ];
 
 type CookieToSet = { name: string; value: string; options: CookieOptions };
