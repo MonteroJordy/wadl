@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { QRBlock } from "@/components/wadl";
+import { QRBlock } from "@/components/v5/qr-block";
 
 export const metadata = { title: "Security — WADL" };
 

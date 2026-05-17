@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { fmtDate, fmtTime } from "@/lib/format";
-import { Button } from "@/components/wadl";
 import FlagDnaForm from "@/components/flag-dna-form";
 import GuestCancelButton from "@/components/guest-cancel-button";
 import GuestNotesTags from "@/components/guest-notes-tags";
@@ -315,9 +314,9 @@ export default function GuestDetail({
             href={`/t/${guest.check_in_token}`}
             style={{ textDecoration: "none", display: "block" }}
           >
-            <Button variant="ghost" style={{ width: "100%" }}>
+            <button type="button" className="btn btn--ghost" style={{ width: "100%" }}>
               Open guest QR
-            </Button>
+            </button>
           </Link>
         )}
 

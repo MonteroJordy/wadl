@@ -2,12 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { Profile } from "@/lib/types";
 import MarketingFooter from "@/components/marketing-footer";
-import { Cover, CoverHeader } from "@/components/v5";
-import {
-  Avatar,
-  IconArrow,
-  Wordmark,
-} from "@/components/wadl";
+import { Cover, CoverHeader, Logo } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -65,8 +60,7 @@ export default async function RootPage() {
     <>
       <main
         id="main-content"
-        className="w-app"
-        style={{ minHeight: "100vh", background: "var(--w-bg)" }}
+        style={{ minHeight: "100vh", background: "var(--bg)" }}
       >
         {/* Top nav — auth-aware */}
         <header
@@ -81,64 +75,69 @@ export default async function RootPage() {
           }}
         >
           <Link href="/" aria-label="WADL home" style={{ textDecoration: "none" }}>
-            <Wordmark variant="monogrid" size={22} />
+            <Logo size={22} />
           </Link>
           <nav
-            style={{ display: "flex", alignItems: "center", gap: 18 }}
+            style={{ display: "flex", alignItems: "center", gap: "var(--s-5)" }}
           >
             <Link
               href="/pricing"
-              className="w-type-meta hidden sm:inline"
-              style={{ textDecoration: "none" }}
+              className="t-meta hidden sm:inline"
+              style={{ textDecoration: "none", color: "var(--fg-2)" }}
             >
               PRICING
             </Link>
             <Link
               href="/discover"
-              className="w-type-meta hidden sm:inline"
-              style={{ textDecoration: "none" }}
+              className="t-meta hidden sm:inline"
+              style={{ textDecoration: "none", color: "var(--fg-2)" }}
             >
               TONIGHT
             </Link>
             {user ? (
               <Link
                 href={dashboardHref}
+                className="btn btn--sm"
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: 8,
-                  height: 36,
-                  padding: "0 14px",
-                  background: "var(--w-acc)",
-                  color: "var(--w-acc-ink)",
-                  fontFamily: "var(--w-sans)",
-                  fontWeight: 600,
-                  fontSize: 13,
+                  gap: "var(--s-2)",
                   textDecoration: "none",
-                  letterSpacing: "-0.005em",
                 }}
               >
-                <Avatar name={initials} size={20} />
-                Dashboard
-                <IconArrow size={12} />
+                <span
+                  aria-hidden
+                  style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: "var(--r-pill)",
+                    background: "var(--bg-3)",
+                    color: "var(--fg)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 10,
+                    fontWeight: 600,
+                    letterSpacing: 0,
+                  }}
+                >
+                  {initials}
+                </span>
+                Dashboard →
               </Link>
             ) : (
               <>
                 <Link
                   href="/login"
-                  className="w-type-meta"
-                  style={{ textDecoration: "none" }}
+                  className="t-meta"
+                  style={{ textDecoration: "none", color: "var(--fg-2)" }}
                 >
                   SIGN IN
                 </Link>
                 <Link
                   href="/signup"
-                  className="w-btn w-btn--primary"
-                  style={{
-                    height: 36,
-                    fontSize: 13,
-                    textDecoration: "none",
-                  }}
+                  className="btn btn--sm"
+                  style={{ textDecoration: "none" }}
                 >
                   Start free
                 </Link>

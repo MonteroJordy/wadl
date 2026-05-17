@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Button } from "@/components/wadl";
 import { upgradeTierAction, type Tier } from "@/lib/guest-extras";
 
 const TIERS: Tier[] = ["ga", "vip", "all_access"];
@@ -35,9 +34,9 @@ export default function TierUpgradeButton({
   if (!open) {
     return (
       <div>
-        <Button variant="ghost" type="button" onClick={() => setOpen(true)}>
+        <button type="button" className="btn btn--ghost" onClick={() => setOpen(true)}>
           Change tier
-        </Button>
+        </button>
         {saved && (
           <p
             className="w-type-body-sm"

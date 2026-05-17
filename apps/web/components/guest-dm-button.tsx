@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Button } from "@/components/wadl";
 import { sendGuestDmAction } from "@/lib/guest-dm";
 import { useToast } from "@/components/toast";
 
@@ -50,9 +49,9 @@ export default function GuestDmButton({
 
   if (!open) {
     return (
-      <Button variant="ghost" type="button" onClick={() => setOpen(true)}>
+      <button type="button" className="btn btn--ghost" onClick={() => setOpen(true)}>
         Message {guestName.split(" ")[0]} via SMS
-      </Button>
+      </button>
     );
   }
 
@@ -91,17 +90,17 @@ export default function GuestDmButton({
           marginTop: 12,
         }}
       >
-        <Button variant="ghost" type="button" onClick={() => setOpen(false)}>
+        <button type="button" className="btn btn--ghost" onClick={() => setOpen(false)}>
           Cancel
-        </Button>
-        <Button
-          variant="primary"
+        </button>
+        <button
           type="button"
+          className="btn"
           onClick={send}
           disabled={pending || !body.trim()}
         >
           {pending ? "Sending…" : "Send"}
-        </Button>
+        </button>
       </div>
     </div>
   );

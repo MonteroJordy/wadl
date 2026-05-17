@@ -2,7 +2,6 @@
 
 import { useFormStatus } from "react-dom";
 import * as React from "react";
-import { Button } from "@/components/wadl";
 
 /**
  * Submit button that auto-disables and swaps its label while the
@@ -34,21 +33,29 @@ export default function FormSubmit({
   variant = "primary",
   size,
   block,
+  className,
   ...rest
 }: FormSubmitProps) {
   const { pending } = useFormStatus();
+  const cls = [
+    "btn",
+    variant === "ghost" ? "btn--ghost" : "",
+    size === "lg" ? "btn--lg" : "",
+    block ? "btn--block" : "",
+    className ?? "",
+  ]
+    .filter(Boolean)
+    .join(" ");
   return (
-    <Button
+    <button
       {...rest}
       type="submit"
-      variant={variant}
-      size={size}
-      block={block}
+      className={cls}
       disabled={disabled || pending}
       aria-busy={pending || undefined}
     >
       {pending && pendingLabel ? pendingLabel : children}
-    </Button>
+    </button>
   );
 }
 

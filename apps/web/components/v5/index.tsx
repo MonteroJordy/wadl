@@ -357,9 +357,9 @@ export function Logo({
 }) {
   return (
     <svg
-      width={size * (mark ? 1 : 2.4)}
+      width={size * (mark ? 1 : 3.5)}
       height={size}
-      viewBox={mark ? "0 0 24 24" : "0 0 58 24"}
+      viewBox={mark ? "0 0 24 24" : "0 0 84 24"}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-label="WADL"

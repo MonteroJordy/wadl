@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Button } from "@/components/wadl";
 
 interface ConfirmDialogProps {
   /** Controls visibility — parent owns this state. */
@@ -150,18 +149,18 @@ export default function ConfirmDialog({
             gap: 8,
           }}
         >
-          <Button
+          <button
             type="button"
-            variant="ghost"
+            className="btn btn--ghost"
             onClick={onCancel}
             disabled={pending}
           >
             {cancelLabel}
-          </Button>
-          <Button
+          </button>
+          <button
             ref={confirmRef}
             type="button"
-            variant={danger ? "solid" : "primary"}
+            className="btn"
             onClick={() => void onConfirm()}
             disabled={pending}
             aria-busy={pending || undefined}
@@ -175,7 +174,7 @@ export default function ConfirmDialog({
             }
           >
             {pending ? "Working…" : confirmLabel}
-          </Button>
+          </button>
         </div>
       </div>
     </div>

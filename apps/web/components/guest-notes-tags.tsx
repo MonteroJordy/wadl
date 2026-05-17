@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Button } from "@/components/wadl";
 import {
   updateGuestNotesAction,
   updateGuestTagsAction,
@@ -131,15 +130,15 @@ export default function GuestNotesTags({
           placeholder="Add custom tag…"
           style={{ ...INPUT_STYLE, fontSize: 14 }}
         />
-        <Button
-          variant="ghost"
+        <button
           type="button"
+          className="btn btn--ghost"
           onClick={commitAddCustom}
           disabled={pending || !customTag.trim()}
           style={{ padding: "0 18px" }}
         >
           Add
-        </Button>
+        </button>
       </div>
 
       <div className="w-type-meta" style={{ marginBottom: 6 }}>

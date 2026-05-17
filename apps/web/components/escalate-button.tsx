@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/wadl";
 
 const PRESET_REASONS = [
   "ID dispute",
@@ -197,9 +196,9 @@ export default function EscalateButton({ eventId }: { eventId: string }) {
           style={INPUT_STYLE}
           disabled={pending}
         />
-        <Button
-          variant="primary"
+        <button
           type="button"
+          className="btn"
           onClick={() => send(reason)}
           disabled={pending}
           style={{
@@ -210,7 +209,7 @@ export default function EscalateButton({ eventId }: { eventId: string }) {
           }}
         >
           Send
-        </Button>
+        </button>
       </div>
       {error && (
         <div

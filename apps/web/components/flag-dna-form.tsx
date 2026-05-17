@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Button } from "@/components/wadl";
 import ConfirmDialog from "@/components/confirm-dialog";
 import { toggleFlagDnaAction } from "@/lib/flag";
 
@@ -86,14 +85,14 @@ export default function FlagDnaForm({
             {initialReason}
           </p>
         )}
-        <Button
-          variant="ghost"
+        <button
           type="button"
+          className="btn btn--ghost"
           onClick={onUnflag}
           disabled={pending}
         >
           {pending ? "Working…" : "Remove flag"}
-        </Button>
+        </button>
         {error && (
           <p
             className="w-type-body-sm"
@@ -126,9 +125,9 @@ export default function FlagDnaForm({
   if (!showConfirm) {
     return (
       <div>
-        <Button
-          variant="ghost"
+        <button
           type="button"
+          className="btn btn--ghost"
           onClick={() => setShowConfirm(true)}
           style={{
             borderColor: "var(--w-err)",
@@ -136,7 +135,7 @@ export default function FlagDnaForm({
           }}
         >
           ⚠ Flag Do Not Admit
-        </Button>
+        </button>
         {saved && (
           <p
             className="w-type-body-sm"
@@ -217,16 +216,16 @@ export default function FlagDnaForm({
           gap: 8,
         }}
       >
-        <Button
-          variant="ghost"
+        <button
           type="button"
+          className="btn btn--ghost"
           onClick={() => setShowConfirm(false)}
         >
           Cancel
-        </Button>
-        <Button
-          variant="primary"
+        </button>
+        <button
           type="submit"
+          className="btn"
           disabled={pending || !reason.trim()}
           style={{
             background: "var(--w-err)",
@@ -235,7 +234,7 @@ export default function FlagDnaForm({
           }}
         >
           {pending ? "Flagging…" : "Flag DNA"}
-        </Button>
+        </button>
       </div>
     </form>
   );

@@ -8,7 +8,6 @@ import {
   dismissTourAction,
   seedDemoFromTourAction,
 } from "@/app/owner/tour/actions";
-import { Button, Chip, IconArrow } from "@/components/wadl";
 
 const STEPS = [
   {
@@ -116,9 +115,9 @@ export default function OnboardingTour({
             marginBottom: 12,
           }}
         >
-          <Chip tone="acc">
+          <span className="chip">
             TOUR · {step + 1} / {STEPS.length}
-          </Chip>
+          </span>
           <button
             type="button"
             onClick={dismiss}
@@ -171,14 +170,14 @@ export default function OnboardingTour({
               Load demo data: 1 venue, 1 event with 2 nights, 3 allocations,
               25 guests.
             </p>
-            <Button
+            <button
               type="button"
-              variant="ghost"
+              className="btn btn--ghost"
               onClick={seed}
               disabled={pending}
             >
               {pending ? "Seeding…" : "Load demo data"}
-            </Button>
+            </button>
             {err && (
               <p
                 className="w-type-body-sm"
@@ -200,13 +199,14 @@ export default function OnboardingTour({
 
         <div style={{ display: "flex", gap: 8 }}>
           {step > 0 && (
-            <Button
-              variant="ghost"
+            <button
+              type="button"
+              className="btn btn--ghost"
               onClick={() => setStep((s) => s - 1)}
               style={{ flex: 1 }}
             >
               Back
-            </Button>
+            </button>
           )}
           {cur.href ? (
             <Link
@@ -222,19 +222,20 @@ export default function OnboardingTour({
                 textDecoration: "none",
               }}
             >
-              <Button variant="primary" block>
-                {cur.cta} <IconArrow size={12} />
-              </Button>
+              <button type="button" className="btn btn--block">
+                {cur.cta} →
+              </button>
             </Link>
           ) : (
-            <Button
-              variant="primary"
+            <button
+              type="button"
+              className="btn"
               onClick={next}
               disabled={pending}
               style={{ flex: 1 }}
             >
               {cur.cta}
-            </Button>
+            </button>
           )}
         </div>
       </div>

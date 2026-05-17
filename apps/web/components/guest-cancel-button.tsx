@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Button } from "@/components/wadl";
 import ConfirmDialog from "@/components/confirm-dialog";
 import { cancelGuestAction } from "@/app/owner/events/[id]/waitlist/actions";
 
@@ -40,9 +39,9 @@ export default function GuestCancelButton({
 
   return (
     <>
-      <Button
-        variant="ghost"
+      <button
         type="button"
+        className="btn btn--ghost"
         onClick={() => setOpen(true)}
         disabled={pending}
         style={{
@@ -51,7 +50,7 @@ export default function GuestCancelButton({
         }}
       >
         {pending ? "Cancelling…" : "Cancel guest"}
-      </Button>
+      </button>
       <ConfirmDialog
         open={open}
         title="Cancel this guest?"

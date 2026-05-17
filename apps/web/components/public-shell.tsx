@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { Wordmark } from "@/components/wadl";
+import { Logo } from "@/components/v5";
 
 interface Props {
   children: React.ReactNode;
@@ -68,7 +68,7 @@ export default async function PublicShell({
             }}
           >
             <Link href="/" aria-label="WADL home" style={{ textDecoration: "none", flexShrink: 0 }}>
-              <Wordmark variant="monogrid" size={20} />
+              <Logo size={20} />
             </Link>
             {leftSlot && (
               <div

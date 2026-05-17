@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "@/components/wadl";
 
 interface Props {
   /** VAPID public key from server. null = push not configured. */
@@ -163,14 +162,14 @@ export default function PushSubscribeButton({ vapidPublicKey }: Props) {
           >
             Active on this device.
           </p>
-          <Button
-            variant="ghost"
+          <button
             type="button"
+            className="btn btn--ghost"
             onClick={unsubscribe}
             disabled={busy}
           >
             {busy ? "Working…" : "Turn off"}
-          </Button>
+          </button>
         </>
       ) : (
         <>
@@ -181,9 +180,9 @@ export default function PushSubscribeButton({ vapidPublicKey }: Props) {
             Get notified when an RSVP needs review, capacity hits 85%, or
             staff change.
           </p>
-          <Button
-            variant="primary"
+          <button
             type="button"
+            className="btn"
             onClick={subscribe}
             disabled={busy || permission === "denied"}
           >
@@ -192,7 +191,7 @@ export default function PushSubscribeButton({ vapidPublicKey }: Props) {
               : busy
                 ? "Subscribing…"
                 : "Enable on this device"}
-          </Button>
+          </button>
         </>
       )}
       {err && (
