@@ -3,7 +3,6 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/components/wadl";
 import { claimAllocationAction } from "./actions";
 import { useToast } from "@/components/toast";
 
@@ -49,22 +48,22 @@ export default function ClaimForm({
           href={`/login?return=${encodeURIComponent(`/holder/claim/${token}`)}`}
           style={{ textDecoration: "none", display: "block" }}
         >
-          <Button variant="primary" style={{ width: "100%" }}>
+          <button type="button" className="btn" style={{ width: "100%" }}>
             Sign in by phone
-          </Button>
+          </button>
         </Link>
       </div>
     );
   }
 
   return (
-    <Button
-      variant="primary"
+    <button
       type="button"
+      className="btn"
       onClick={claim}
       disabled={pending}
     >
       {pending ? "Claiming…" : "Claim this allocation"}
-    </Button>
+    </button>
   );
 }

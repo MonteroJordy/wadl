@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Button, Chip, Wordmark } from "@/components/wadl";
+import { Logo } from "@/components/v5";
 
 export const metadata = { title: "Recovery codes — WADL" };
 
@@ -47,8 +47,8 @@ export default function RecoveryCodesPage() {
             gap: 12,
           }}
         >
-          <Wordmark variant="monogrid" size={16} />
-          <Chip tone="warn">SAVE THESE NOW · SHOWN ONCE</Chip>
+          <Logo size={16} />
+          <span className="chip chip--warn">SAVE THESE NOW · SHOWN ONCE</span>
         </div>
 
         <div
@@ -114,26 +114,25 @@ export default function RecoveryCodesPage() {
             marginTop: 20,
           }}
         >
-          <Button variant="ghost" block>
+          <button type="button" className="btn btn--ghost btn--block">
             Copy all
-          </Button>
-          <Button variant="ghost" block>
+          </button>
+          <button type="button" className="btn btn--ghost btn--block">
             Download .txt
-          </Button>
+          </button>
         </div>
 
         <Link
           href="/owner/profile"
           style={{ textDecoration: "none" }}
         >
-          <Button
-            variant="primary"
-            size="lg"
-            block
+          <button
+            type="button"
+            className="btn btn--lg btn--block"
             style={{ marginTop: 12 }}
           >
             I&apos;ve saved them — finish
-          </Button>
+          </button>
         </Link>
       </div>
     </main>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { isDemoMode } from "@/lib/demo-mode";
 import { enableDemoModeAction, disableDemoModeAction } from "./actions";
-import { Button, Chip, Wordmark } from "@/components/wadl";
+import { Logo } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Demo mode — WADL" };
@@ -51,7 +51,7 @@ export default function DemoModePage() {
               a venue manager through the product without firing real SMS.
             </p>
           </div>
-          <Wordmark variant="monogrid" size={18} />
+          <Logo size={18} />
         </header>
 
         <section
@@ -95,15 +95,15 @@ export default function DemoModePage() {
             </div>
             {on ? (
               <form action={disableDemoModeAction}>
-                <Button type="submit" variant="ghost" size="lg">
+                <button type="submit" className="btn btn--ghost btn--lg">
                   Turn demo mode off
-                </Button>
+                </button>
               </form>
             ) : (
               <form action={enableDemoModeAction}>
-                <Button type="submit" variant="primary" size="lg">
+                <button type="submit" className="btn btn--lg">
                   Turn demo mode on
-                </Button>
+                </button>
               </form>
             )}
           </div>
@@ -123,7 +123,9 @@ export default function DemoModePage() {
             your account from the welcome wizard. Great for pitches.
           </p>
           <Link href="/welcome" style={{ textDecoration: "none" }}>
-            <Button variant="ghost">Open welcome wizard</Button>
+            <button type="button" className="btn btn--ghost">
+              Open welcome wizard
+            </button>
           </Link>
         </section>
 
@@ -150,9 +152,9 @@ export default function DemoModePage() {
             <li>· Stripe writes still fire</li>
           </ul>
           <div style={{ marginTop: 14 }}>
-            <Chip tone="warn">
+            <span className="chip chip--warn">
               VISUAL INDICATOR ONLY · HANDLE LIVE INTEGRATIONS FROM ENV
-            </Chip>
+            </span>
           </div>
         </section>
       </div>

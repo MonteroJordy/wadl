@@ -2,7 +2,6 @@ import Link from "next/link";
 import { requireOwnerContext } from "@/lib/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fmtDate } from "@/lib/format";
-import { Button } from "@/components/wadl";
 import MergeForm from "./merge-form";
 
 export const dynamic = "force-dynamic";
@@ -83,7 +82,7 @@ export default async function GuestMergePage({
           href="/owner"
           style={{ display: "inline-block", marginTop: 24, textDecoration: "none" }}
         >
-          <Button variant="ghost">← Back</Button>
+          <button type="button" className="btn btn--ghost">← Back</button>
         </Link>
       </PageShell>
     );
@@ -117,7 +116,7 @@ export default async function GuestMergePage({
           href="/owner"
           style={{ display: "inline-block", marginTop: 24, textDecoration: "none" }}
         >
-          <Button variant="ghost">← Back</Button>
+          <button type="button" className="btn btn--ghost">← Back</button>
         </Link>
       </PageShell>
     );

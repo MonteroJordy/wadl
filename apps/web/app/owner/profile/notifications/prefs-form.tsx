@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Button } from "@/components/wadl";
 import { saveNotifPrefsAction, type NotifPrefs } from "./actions";
 import { useToast } from "@/components/toast";
 import { KIND_LABEL, type NotificationKind } from "@/lib/notification-kinds";
@@ -221,9 +220,14 @@ export default function NotifPrefsForm({ initial }: { initial: NotifPrefs }) {
         )}
       </section>
 
-      <Button variant="primary" type="button" onClick={save} disabled={pending}>
+      <button
+        type="button"
+        className="btn"
+        onClick={save}
+        disabled={pending}
+      >
         {pending ? "Saving…" : "Save preferences"}
-      </Button>
+      </button>
     </div>
   );
 }

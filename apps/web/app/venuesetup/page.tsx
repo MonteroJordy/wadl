@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Button, WFrame, Wordmark } from "@/components/wadl";
+import { Logo } from "@/components/v5";
 
 const TIMEZONES = [
   "America/New_York",
@@ -93,9 +93,20 @@ export default function VenueSetupPage() {
 
   return (
     <main id="main-content">
-      <WFrame style={{ paddingBottom: 48 }}>
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "var(--bg)",
+          maxWidth: 960,
+          marginInline: "auto",
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          paddingBottom: 48,
+        }}
+      >
         <div style={{ padding: "20px 24px 0" }}>
-          <Wordmark variant="monogrid" size={20} />
+          <Logo size={20} />
         </div>
 
         <div style={{ padding: "48px 24px 0" }}>
@@ -224,15 +235,13 @@ export default function VenueSetupPage() {
             </p>
           ) : null}
 
-          <Button
+          <button
             type="submit"
-            variant="primary"
-            size="lg"
-            block
+            className="btn btn--lg btn--block"
             disabled={loading}
           >
             {loading ? "Saving…" : "Finish setup →"}
-          </Button>
+          </button>
         </form>
 
         <div
@@ -247,7 +256,7 @@ export default function VenueSetupPage() {
         >
           STEP 03 · 03
         </div>
-      </WFrame>
+      </div>
     </main>
   );
 }

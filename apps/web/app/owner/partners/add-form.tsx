@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Button } from "@/components/wadl";
 import { addPartnerAction } from "./actions";
 
 const INPUT_STYLE: React.CSSProperties = {
@@ -47,13 +46,13 @@ export default function AddPartnerForm() {
 
   if (!open) {
     return (
-      <Button
-        variant="primary"
+      <button
         type="button"
+        className="btn"
         onClick={() => setOpen(true)}
       >
         + New partner
-      </Button>
+      </button>
     );
   }
 
@@ -164,9 +163,9 @@ export default function AddPartnerForm() {
         </div>
       )}
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        <Button variant="primary" type="submit" disabled={pending}>
+        <button type="submit" className="btn" disabled={pending}>
           {pending ? "Saving…" : "Save partner"}
-        </Button>
+        </button>
         <button
           type="button"
           onClick={() => {

@@ -1,5 +1,4 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Chip } from "@/components/wadl";
 import ActivityFeed from "@/components/activity-feed";
 
 export const dynamic = "force-dynamic";
@@ -79,9 +78,13 @@ export default async function AdminActivityPage({
               href={a ? `/admin/activity?action=${a}` : "/admin/activity"}
               style={{ textDecoration: "none", flexShrink: 0 }}
             >
-              <Chip tone={(filter || "") === a ? "acc" : "ghost"}>
+              <span
+                className={
+                  (filter || "") === a ? "chip" : "chip chip--ghost"
+                }
+              >
                 {(a || "ALL").toUpperCase()}
-              </Chip>
+              </span>
             </a>
           ))}
         </div>

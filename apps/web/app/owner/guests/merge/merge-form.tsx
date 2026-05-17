@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/wadl";
 import ConfirmDialog from "@/components/confirm-dialog";
 import { mergeGuestsAction, type MergeChoices } from "./actions";
 
@@ -215,14 +214,14 @@ export default function MergeForm({
         </p>
       )}
 
-      <Button
-        variant="primary"
+      <button
         type="button"
+        className="btn"
         onClick={submit}
         disabled={pending}
       >
         {pending ? "Merging…" : "Merge"}
-      </Button>
+      </button>
       <ConfirmDialog
         open={open}
         title="Merge these two guests?"

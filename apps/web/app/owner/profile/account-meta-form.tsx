@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Button } from "@/components/wadl";
 import SaveIndicator, { type SaveState } from "@/components/save-indicator";
 import { saveAccountMetaAction } from "./actions";
 
@@ -115,14 +114,14 @@ export default function AccountMetaForm({
           marginTop: 4,
         }}
       >
-        <Button
-          variant="primary"
+        <button
           type="submit"
+          className="btn"
           disabled={pending}
           aria-busy={pending || undefined}
         >
           {pending ? "Saving…" : "Save"}
-        </Button>
+        </button>
         <SaveIndicator
           state={saveState}
           errorMessage={errorMsg}

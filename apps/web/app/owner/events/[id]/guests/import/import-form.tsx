@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/wadl";
 import { parseCsv, toE164 } from "@/lib/csv";
 import { commitImportAction, type ImportRow } from "./actions";
 
@@ -180,14 +179,14 @@ export default function CsvImportForm({
           phones, {done.skipped_invalid_phone} invalid phones,{" "}
           {done.skipped_missing_name} no name.
         </p>
-        <Button
-          variant="ghost"
+        <button
           type="button"
+          className="btn btn--ghost"
           onClick={() => setDone(null)}
           style={{ marginTop: 12 }}
         >
           Import more
-        </Button>
+        </button>
       </div>
     );
   }
@@ -345,21 +344,21 @@ export default function CsvImportForm({
             gap: 8,
           }}
         >
-          <Button
-            variant="ghost"
+          <button
             type="button"
+            className="btn btn--ghost"
             onClick={() => setPreview(null)}
           >
             Back
-          </Button>
-          <Button
-            variant="primary"
+          </button>
+          <button
             type="button"
+            className="btn"
             onClick={onCommit}
             disabled={pending}
           >
             {pending ? "Importing…" : `Import ${validCount}`}
-          </Button>
+          </button>
         </div>
       </div>
     );
@@ -399,9 +398,9 @@ export default function CsvImportForm({
           {err}
         </p>
       )}
-      <Button variant="primary" type="submit">
+      <button type="submit" className="btn">
         Preview
-      </Button>
+      </button>
     </form>
   );
 }

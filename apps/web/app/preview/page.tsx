@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Button, Wordmark } from "@/components/wadl";
+import { Logo } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Preview · WADL" };
@@ -95,7 +95,7 @@ export default function PreviewPage() {
             marginBottom: 32,
           }}
         >
-          <Wordmark variant="monogrid" size={20} />
+          <Logo size={20} />
           <Link
             href="/"
             className="w-type-meta"
@@ -185,15 +185,16 @@ export default function PreviewPage() {
                   {r.preview}
                 </p>
                 <div style={{ marginTop: "auto", paddingTop: 8 }}>
-                  <Button
-                    variant="ghost"
+                  <button
+                    type="button"
+                    className="btn btn--ghost"
                     style={{
                       borderColor: TONE_BORDER[r.tone],
                       color: TONE_COLOR[r.tone],
                     }}
                   >
                     Enter →
-                  </Button>
+                  </button>
                 </div>
               </div>
             </a>

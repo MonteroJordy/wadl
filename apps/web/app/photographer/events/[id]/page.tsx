@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Chip, IconArrow, WFrame, Wordmark } from "@/components/wadl";
+import { Logo } from "@/components/v5";
 import UploadForm from "./upload-form";
 
 export const dynamic = "force-dynamic";
@@ -52,12 +52,23 @@ export default async function PhotographerPage({
   if (!allowed) {
     return (
       <main id="main-content">
-        <WFrame style={{ paddingBottom: 48 }}>
+        <div
+          style={{
+            minHeight: "100vh",
+            background: "var(--bg)",
+            maxWidth: 960,
+            marginInline: "auto",
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            paddingBottom: 48,
+          }}
+        >
           <div style={{ padding: "20px 24px 0" }}>
-            <Wordmark variant="monogrid" size={18} />
+            <Logo size={18} />
           </div>
           <div style={{ padding: "96px 24px 0", textAlign: "center" }}>
-            <Chip tone="warn">NOT AUTHORIZED</Chip>
+            <span className="chip chip--warn">NOT AUTHORIZED</span>
             <div className="w-type-display-md" style={{ marginTop: 12 }}>
               Ask the owner to add you.
             </div>
@@ -68,7 +79,7 @@ export default async function PhotographerPage({
               You need a photographer role on this event to upload.
             </p>
           </div>
-        </WFrame>
+        </div>
       </main>
     );
   }
@@ -82,7 +93,18 @@ export default async function PhotographerPage({
 
   return (
     <main id="main-content">
-      <WFrame style={{ paddingBottom: 64 }}>
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "var(--bg)",
+          maxWidth: 960,
+          marginInline: "auto",
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          paddingBottom: 64,
+        }}
+      >
         <div
           style={{
             padding: "20px 24px 0",
@@ -92,9 +114,9 @@ export default async function PhotographerPage({
           }}
         >
           <Link href="/" style={{ textDecoration: "none" }}>
-            <Wordmark variant="monogrid" size={18} />
+            <Logo size={18} />
           </Link>
-          <Chip tone="acc">PHOTOGRAPHER</Chip>
+          <span className="chip">PHOTOGRAPHER</span>
         </div>
 
         <div style={{ padding: "32px 24px 0" }}>
@@ -118,7 +140,10 @@ export default async function PhotographerPage({
               textDecoration: "none",
             }}
           >
-            PUBLIC GALLERY <IconArrow size={12} />
+            PUBLIC GALLERY{" "}
+            <span aria-hidden style={{ fontSize: 14, lineHeight: 1 }}>
+              →
+            </span>
           </Link>
         </div>
 
@@ -171,7 +196,7 @@ export default async function PhotographerPage({
             </div>
           </div>
         )}
-      </WFrame>
+      </div>
     </main>
   );
 }

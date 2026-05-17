@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Button, Chip, IconArrow, QRBlock } from "@/components/wadl";
+import { QRBlock } from "@/components/wadl";
 
 export const metadata = { title: "Security — WADL" };
 
@@ -122,9 +122,15 @@ export default function SecurityPage() {
                 href="/owner/profile/recovery"
                 style={{ textDecoration: "none" }}
               >
-                <Button variant="primary">
-                  Verify & continue <IconArrow size={14} />
-                </Button>
+                <button type="button" className="btn">
+                  Verify & continue{" "}
+                  <span
+                    aria-hidden
+                    style={{ fontSize: 16, lineHeight: 1 }}
+                  >
+                    →
+                  </span>
+                </button>
               </Link>
             </div>
           </div>
@@ -168,9 +174,9 @@ export default function SecurityPage() {
             </div>
 
             <div style={{ marginTop: 20 }}>
-              <Chip tone="warn">
+              <span className="chip chip--warn">
                 STORE THE SECRET WHERE YOUR PASSWORD MANAGER WILL FIND IT
-              </Chip>
+              </span>
             </div>
           </div>
         </div>

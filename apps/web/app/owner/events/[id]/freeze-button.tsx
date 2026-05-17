@@ -1,7 +1,6 @@
 "use client";
 
 import { useTransition } from "react";
-import { Button } from "@/components/wadl";
 import { toggleFreezeAction } from "./actions";
 
 export default function FreezeButton({
@@ -22,9 +21,9 @@ export default function FreezeButton({
   }
 
   return (
-    <Button
-      variant="ghost"
+    <button
       type="button"
+      className="btn btn--ghost"
       onClick={onClick}
       disabled={pending}
       style={{
@@ -42,6 +41,6 @@ export default function FreezeButton({
         : frozen
           ? "Frozen — tap to unfreeze"
           : "Freeze this night"}
-    </Button>
+    </button>
   );
 }

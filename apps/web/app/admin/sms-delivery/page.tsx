@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireOwnerContext } from "@/lib/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Chip } from "@/components/wadl";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "SMS delivery — WADL" };
@@ -174,9 +173,9 @@ export default async function AdminSmsDeliveryPage({
                 href={href}
                 style={{ textDecoration: "none", flexShrink: 0 }}
               >
-                <Chip tone={active ? "acc" : "ghost"}>
+                <span className={active ? "chip" : "chip chip--ghost"}>
                   {(s.replace("_", " ") || "ALL").toUpperCase()}
-                </Chip>
+                </span>
               </Link>
             );
           })}
