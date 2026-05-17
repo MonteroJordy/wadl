@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { Button } from "@/components/wadl";
 
 export default function AdminError({
   error,
@@ -61,16 +60,16 @@ export default function AdminError({
         <div
           style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}
         >
-          <Button variant="primary" type="button" onClick={() => reset()}>
+          <button className="btn btn--block" type="button" onClick={() => reset()}>
             Refresh
-          </Button>
+          </button>
           <a
             href="mailto:support@wadlwadl.com"
             style={{ textDecoration: "none" }}
           >
-            <Button variant="ghost" style={{ width: "100%" }}>
+            <button className="btn btn--ghost btn--block" type="button">
               Support
-            </Button>
+            </button>
           </a>
         </div>
       </div>

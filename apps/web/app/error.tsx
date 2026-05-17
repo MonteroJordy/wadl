@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { Button } from "@/components/wadl";
 
 export default function GlobalError({
   error,
@@ -72,16 +71,16 @@ export default function GlobalError({
         <div
           style={{ display: "flex", flexDirection: "column", gap: 8 }}
         >
-          <Button variant="primary" type="button" onClick={() => reset()}>
+          <button className="btn btn--block" type="button" onClick={() => reset()}>
             Try again
-          </Button>
+          </button>
           <a
             href="mailto:support@wadlwadl.com"
             style={{ textDecoration: "none" }}
           >
-            <Button variant="ghost" style={{ width: "100%" }}>
+            <button className="btn btn--ghost btn--block" type="button">
               Email support
-            </Button>
+            </button>
           </a>
         </div>
       </div>

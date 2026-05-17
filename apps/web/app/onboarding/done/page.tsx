@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Wordmark } from "@/components/wadl";
+import { Logo } from "@/components/v5";
 
 export const metadata = { title: "You're set up — WADL" };
 
@@ -35,7 +35,7 @@ export default function OnboardingDonePage() {
             gap: 12,
           }}
         >
-          <Wordmark variant="monogrid" size={18} />
+          <Logo size={18} />
           <span
             className="w-type-meta"
             style={{ color: "var(--w-fg-dim)" }}
