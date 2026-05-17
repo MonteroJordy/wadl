@@ -32,23 +32,23 @@
   /* Radii — minimal */
   --r-sm: 6px;
   --r-md: 10px;
-  --r-lg: 16px;
+  --r-lg: 14px;
   --r-pill: 999px;
 
-  /* Surfaces — near-black ramp */
+  /* Surfaces — near-black ramp, tightened contrast (v5.2) */
   --bg: #0a0a0a;
-  --bg-2: #131313;
-  --bg-3: #1c1c1c;
-  --bg-4: #262626;
-  --line: rgba(255, 255, 255, 0.06);
-  --line-2: rgba(255, 255, 255, 0.12);
-  --line-3: rgba(255, 255, 255, 0.22);
+  --bg-2: #141414;
+  --bg-3: #1e1e1e;
+  --bg-4: #2a2a2a;
+  --line: rgba(255, 255, 255, 0.05);
+  --line-2: rgba(255, 255, 255, 0.10);
+  --line-3: rgba(255, 255, 255, 0.20);
 
   /* Type colors */
   --fg: #fafafa;
-  --fg-2: #a3a3a3;
-  --fg-3: #737373;
-  --fg-4: #525252;
+  --fg-2: #a8a8a8;
+  --fg-3: #707070;
+  --fg-4: #4a4a4a;
 
   /* Status — single hue each, soft */
   --ok: #4ade80;
