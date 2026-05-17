@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { BrowserQRCodeReader, type IScannerControls } from "@zxing/browser";
 import { scanTokenAction, type ScanResult } from "./actions";
+import { playFeedback, isMuted, setMuted } from "./feedback";
 
 interface Props {
   eventId: string;
@@ -148,6 +149,7 @@ export default function Scanner({
   const [result, setResult] = useState<UiResult | null>(null);
 
   const [online, setOnline] = useState(true);
+  const [muted, setMutedState] = useState(false);
   const [manifestStatus, setManifestStatus] = useState<
     "none" | "loading" | "ready" | "stale"
   >("none");
@@ -165,6 +167,7 @@ export default function Scanner({
 
   useEffect(() => {
     setOnline(typeof navigator !== "undefined" ? navigator.onLine : true);
+    setMutedState(isMuted());
     const onUp = () => setOnline(true);
     const onDown = () => setOnline(false);
     window.addEventListener("online", onUp);
@@ -227,6 +230,7 @@ export default function Scanner({
 
   function showResult(res: UiResult, holdMs: number) {
     setResult(res);
+    playFeedback(res.state);
     if (resultTimerRef.current) clearTimeout(resultTimerRef.current);
     resultTimerRef.current = setTimeout(() => {
       setResult(null);
@@ -492,6 +496,21 @@ export default function Scanner({
                 {syncing ? "Syncing…" : `Sync ${queueDepth}`}
               </button>
             )}
+            <button
+              type="button"
+              onClick={() => {
+                const next = !muted;
+                setMuted(next);
+                setMutedState(next);
+              }}
+              className={"chip " + (muted ? "chip--ghost" : "")}
+              style={{ cursor: "pointer", border: 0, marginLeft: "auto" }}
+              aria-pressed={!muted}
+              aria-label={muted ? "Unmute scan feedback" : "Mute scan feedback"}
+              title={muted ? "Sound off" : "Sound on"}
+            >
+              {muted ? "🔇 Sound off" : "🔊 Sound on"}
+            </button>
           </div>
 
           {/* ── Camera / result viewport ── */}
