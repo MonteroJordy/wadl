@@ -9,72 +9,108 @@ import type { AccountType } from "@/lib/types";
 import { Logo } from "@/components/v5";
 
 // ════════════════════════════════════════════════════════════════════
-// Single-page onboarding wizard. Replaces the old chain
-// /signup → /entitysetup → /venuesetup → /welcome (5 redirects to start
-// running an event). Auth happens IN the wizard, at the OTP step. New
-// users never have to "already be signed in" before they can fill in
-// their profile.
+// v5.2 onboarding wizard. Auth happens IN the wizard at the OTP step.
 //
-// Steps:
-//  0  Role          — venue / brand / individual / guest-only
-//  1  Identity      — your name, org name, phone
+// Visible steps (V5DashboardFirstRun lives separately at /onboarding/done):
+//  0  Role pick     — V5OnboardEntry  : venue / brand / promoter / guest
+//                     "guest" short-circuits to /discover.
+//  1  Phone         — V5OnboardPhone  : single field + Continue
 //  2  Verify        — 6-digit OTP
-//  3  Venue extras  — only for account_type === "venue"
-//  4  Done          — bounce to /owner
+//  3  Welcome + name — V5OnboardWelcome : context-aware copy, name input
+//                     promoter → /owner (lightweight, no venue setup).
+//  4  Venue setup   — V5VenueSetup   : name + city + default_capacity
+//                     venue/brand → /onboarding/done (first-run dashboard)
 // ════════════════════════════════════════════════════════════════════
 
-type Step = 0 | 1 | 2 | 3;
+type Step = 0 | 1 | 2 | 3 | 4;
 
-const ROLES: {
-  id: AccountType;
-  label: string;
-  blurb: string;
-  orgLabel: string;
-  orgPlaceholder: string;
-}[] = [
-  {
-    id: "venue",
-    label: "Venue",
-    blurb: "Club, bar, rooftop — runs events on your floor",
-    orgLabel: "Venue name",
-    orgPlaceholder: "Floyd Miami",
-  },
-  {
-    id: "brand",
-    label: "Brand / Promoter",
-    blurb: "Label, agency, series — books rooms and brings the show",
-    orgLabel: "Brand name",
-    orgPlaceholder: "House Brand",
-  },
-  {
-    id: "individual",
-    label: "Artist / Individual",
-    blurb: "DJ, host, anyone running a list under your own name",
-    orgLabel: "Stage name (optional)",
-    orgPlaceholder: "Maya Wells",
-  },
+// UI-level role choice. AccountType only has venue|brand|individual, so we
+// thread "promoter" / "guest" as choice-only labels and map to AccountType
+// when we write to the DB (promoter → individual; guest never writes).
+type RoleChoice = "venue" | "brand" | "promoter" | "guest";
+
+const VISIBLE_TOTAL = 4; // 4 visible steps after role pick (incl. role pick)
+
+const ROLE_CARDS: ReadonlyArray<{
+  choice: RoleChoice;
+  title: string;
+  sub: string;
+}> = [
+  { choice: "venue", title: "I run a venue", sub: "Recurring nights · own door" },
+  { choice: "brand", title: "I run a brand", sub: "One-off productions · co-host venues" },
+  { choice: "promoter", title: "I promote", sub: "Build lists · share invites · no signup needed" },
+  { choice: "guest", title: "I'm a guest", sub: "Tap an invite link · I'm already in" },
 ];
+
+// Map UI role choice → DB AccountType. "guest" never reaches the DB.
+function roleToAccountType(role: RoleChoice): AccountType | null {
+  if (role === "venue") return "venue";
+  if (role === "brand") return "brand";
+  if (role === "promoter") return "individual";
+  return null;
+}
+
+// Welcome step copy keyed to role choice (mirrors V5OnboardWelcome).
+const WELCOME_COPY: Record<
+  RoleChoice,
+  { title: string; sub: string; cta: string }
+> = {
+  venue: {
+    title: "Welcome",
+    sub: "Let's open your door. Two questions and you're live.",
+    cta: "Set up venue",
+  },
+  brand: {
+    title: "Welcome",
+    sub: "Let's set up your brand. Co-hosts and productions appear automatically.",
+    cta: "Set up brand",
+  },
+  promoter: {
+    title: "You're in",
+    sub: "Lists you're assigned to will appear here. Wait for an invite, or build your own.",
+    cta: "Continue",
+  },
+  guest: {
+    title: "You're in",
+    sub: "Your passes live here. Tap any invite link to RSVP.",
+    cta: "Open wallet",
+  },
+};
+
+// Safe `?next=` — only same-site relative paths are honored.
+function safeNext(raw: string | null): string | null {
+  if (!raw) return null;
+  if (!raw.startsWith("/") || raw.startsWith("//")) return null;
+  return raw;
+}
 
 function SignupWizard() {
   const router = useRouter();
   const search = useSearchParams();
+  const nextHref = safeNext(search.get("next"));
 
   const [step, setStep] = useState<Step>(0);
-  const [accountType, setAccountType] = useState<AccountType | null>(null);
+  const [role, setRole] = useState<RoleChoice | null>(null);
   const [fullName, setFullName] = useState("");
-  const [orgName, setOrgName] = useState("");
   const [phoneInput, setPhoneInput] = useState("");
   const [e164Phone, setE164Phone] = useState<string | null>(null);
   const [code, setCode] = useState("");
-  const [venueAddr, setVenueAddr] = useState("");
+  const [venueName, setVenueName] = useState("");
   const [venueCity, setVenueCity] = useState("");
   const [venueCap, setVenueCap] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
+  // After venue/brand finish (with or without venue): land on the next
+  // query param if provided, else the first-run dashboard.
+  const postDoneHref = nextHref ?? "/onboarding/done";
+  // Promoter / already-onboarded: land on the next param if provided, else
+  // the owner dashboard.
+  const postOwnerHref = nextHref ?? "/owner";
+
   // Resume mid-flow: if user is already authenticated but onboarding is
   // incomplete (no full_name or no account_id), drop them at the right
-  // step instead of starting over.
+  // step instead of starting over. Mirrors the previous file's behavior.
   useEffect(() => {
     const supabase = createClient();
     (async () => {
@@ -94,48 +130,68 @@ function SignupWizard() {
         }>();
 
       if (profile?.full_name && profile.account_id) {
-        // Already onboarded. If venue + no venue row, go to step 3,
-        // otherwise straight to dashboard.
+        // Already onboarded. If venue + no venue row, drop into step 4 so
+        // they can add one. Otherwise straight to dashboard / next.
         if (profile.accounts?.account_type === "venue") {
           const { count } = await supabase
             .from("venues")
             .select("id", { count: "exact", head: true })
             .eq("account_id", profile.account_id);
           if ((count ?? 0) === 0) {
-            setAccountType("venue");
+            setRole("venue");
             setFullName(profile.full_name);
-            setStep(3);
+            setStep(4);
             return;
           }
         }
-        router.replace("/owner");
+        router.replace(postOwnerHref);
         return;
       }
       if (profile?.full_name) setFullName(profile.full_name);
     })();
-    // Pre-select role from query string if landing from a CTA.
+    // Pre-select role from query string if landing from a CTA. Accepts
+    // the legacy ?type=… (venue|brand|individual) as well as the new
+    // ?role=… (adds promoter / guest).
     const t = search.get("type");
-    if (t === "venue" || t === "brand" || t === "individual") {
-      setAccountType(t);
+    const r = search.get("role");
+    const incoming = (r ?? t) as string | null;
+    if (
+      incoming === "venue" ||
+      incoming === "brand" ||
+      incoming === "promoter"
+    ) {
+      setRole(incoming);
       setStep(1);
+    } else if (incoming === "individual") {
+      // Legacy alias.
+      setRole("promoter");
+      setStep(1);
+    } else if (incoming === "guest") {
+      router.replace("/discover");
     }
-  }, [router, search]);
+  }, [router, search, postOwnerHref]);
 
   // ──────────── STEP HANDLERS ────────────
 
-  function pickRole(t: AccountType) {
-    setAccountType(t);
+  function pickRole(r: RoleChoice) {
     setError(null);
+    if (r === "guest") {
+      router.push("/discover");
+      return;
+    }
+    setRole(r);
     setStep(1);
   }
 
-  async function onSubmitIdentity(e: React.FormEvent) {
+  function backOne() {
+    setError(null);
+    setStep((s) => (s > 0 ? ((s - 1) as Step) : s));
+  }
+
+  async function onSubmitPhone(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!accountType) return setError("Pick a role first.");
-    if (!fullName.trim()) return setError("Enter your name.");
-    if (accountType !== "individual" && !orgName.trim())
-      return setError("Enter your organization name.");
+    if (!role) return setError("Pick a role first.");
     const normalized = normalizePhone(phoneInput);
     if (!normalized) return setError("Enter a valid phone number.");
 
@@ -156,7 +212,7 @@ function SignupWizard() {
   async function onVerify(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!e164Phone || !accountType) return setError("Start over.");
+    if (!e164Phone || !role) return setError("Start over.");
     if (code.length < 4) return setError("Enter the code.");
 
     setPending(true);
@@ -166,26 +222,37 @@ function SignupWizard() {
       token: code,
       type: "sms",
     });
+    setPending(false);
     if (verifyErr) {
-      setPending(false);
       setError(verifyErr.message);
       return;
     }
+    setStep(3);
+  }
 
+  async function onSubmitWelcome(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!role || !e164Phone) return setError("Start over.");
+    if (!fullName.trim()) return setError("Enter your name.");
+
+    setPending(true);
+    const supabase = createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
       setPending(false);
-      setError("Verification succeeded but session is missing. Try again.");
+      setError("Session lost. Verify your phone again.");
+      setStep(2);
       return;
     }
 
     // 1. Upsert profile. Trigger normally creates the row on auth.users
     // insert, but we upsert here as a safety net for cases where the
-    // auth.users row predates the trigger (existing accounts that were
-    // created before the schema was applied) — the upsert fills the gap
-    // without breaking the next step (accounts insert FK references this).
+    // auth.users row predates the trigger (existing accounts created
+    // before the schema was applied) — the upsert fills the gap without
+    // breaking the next step (accounts insert FK references this).
     const { error: profileErr } = await supabase
       .from("profiles")
       .upsert(
@@ -204,11 +271,79 @@ function SignupWizard() {
       return;
     }
 
-    // 2. Create or upsert account.
-    const display =
-      accountType === "individual" && !orgName.trim()
-        ? fullName.trim()
-        : orgName.trim();
+    // 2. For promoter: create a lightweight account (display_name = full
+    // name) so the FK on profiles.account_id resolves, then ship them
+    // straight to the dashboard.
+    if (role === "promoter") {
+      const { data: existing } = await supabase
+        .from("accounts")
+        .select("id")
+        .eq("owner_user_id", user.id)
+        .maybeSingle();
+      const account =
+        existing ??
+        (
+          await supabase
+            .from("accounts")
+            .insert({
+              account_type: "individual" as AccountType,
+              display_name: fullName.trim(),
+              owner_user_id: user.id,
+            })
+            .select("id")
+            .single()
+        ).data;
+      if (!account) {
+        setPending(false);
+        setError("Could not create account. Try again.");
+        return;
+      }
+      await supabase
+        .from("profiles")
+        .update({ account_id: account.id })
+        .eq("id", user.id);
+      setPending(false);
+      router.replace(postOwnerHref);
+      return;
+    }
+
+    // 3. venue / brand: account is created at Step 4 (so display_name can
+    // reuse the venue name) — just advance.
+    setPending(false);
+    setStep(4);
+  }
+
+  async function onSubmitVenue(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!role || (role !== "venue" && role !== "brand"))
+      return setError("Start over.");
+    if (!venueName.trim()) return setError("Enter a venue name.");
+    const cap = venueCap.trim() ? parseInt(venueCap.trim(), 10) : null;
+    if (cap !== null && (Number.isNaN(cap) || cap < 1)) {
+      return setError("Capacity must be a positive number.");
+    }
+
+    setPending(true);
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setPending(false);
+      setError("Session lost. Sign in again.");
+      router.push("/login");
+      return;
+    }
+
+    const accountType = roleToAccountType(role);
+    if (!accountType) {
+      setPending(false);
+      setError("Unknown role.");
+      return;
+    }
+
+    // 1. Create or reuse account, using the venue name as display_name.
     const { data: existing } = await supabase
       .from("accounts")
       .select("id")
@@ -221,13 +356,12 @@ function SignupWizard() {
           .from("accounts")
           .insert({
             account_type: accountType,
-            display_name: display,
+            display_name: venueName.trim(),
             owner_user_id: user.id,
           })
           .select("id")
           .single()
       ).data;
-
     if (!account) {
       setPending(false);
       setError("Could not create account. Try again.");
@@ -239,17 +373,26 @@ function SignupWizard() {
       .update({ account_id: account.id })
       .eq("id", user.id);
 
+    // 2. Insert venue row. Per spec this happens for both venue + brand —
+    // brands often run their own room or maintain a default location.
+    const { error: venueErr } = await supabase.from("venues").insert({
+      account_id: account.id,
+      name: venueName.trim(),
+      city: venueCity.trim() || null,
+      timezone: "America/New_York",
+      default_capacity: cap,
+    });
     setPending(false);
-    if (accountType === "venue") {
-      setStep(3);
-    } else {
-      router.replace("/owner");
+    if (venueErr) {
+      setError(venueErr.message);
+      return;
     }
+    router.replace(postDoneHref);
   }
 
-  async function onSubmitVenue(e: React.FormEvent) {
-    e.preventDefault();
+  async function onSkipVenue() {
     setError(null);
+    if (!role || (role !== "venue" && role !== "brand")) return;
     setPending(true);
     const supabase = createClient();
     const {
@@ -261,40 +404,36 @@ function SignupWizard() {
       router.push("/login");
       return;
     }
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("account_id")
-      .eq("id", user.id)
-      .maybeSingle<{ account_id: string | null }>();
-
-    if (!profile?.account_id) {
-      setPending(false);
-      setError("Account missing. Restart.");
-      return;
+    const accountType = roleToAccountType(role)!;
+    // Still need an account row so the dashboard can resolve. Use the
+    // user's full name as a placeholder display_name; they can rename in
+    // settings later.
+    const { data: existing } = await supabase
+      .from("accounts")
+      .select("id")
+      .eq("owner_user_id", user.id)
+      .maybeSingle();
+    const account =
+      existing ??
+      (
+        await supabase
+          .from("accounts")
+          .insert({
+            account_type: accountType,
+            display_name: fullName.trim() || "My account",
+            owner_user_id: user.id,
+          })
+          .select("id")
+          .single()
+      ).data;
+    if (account) {
+      await supabase
+        .from("profiles")
+        .update({ account_id: account.id })
+        .eq("id", user.id);
     }
-
-    const cap = venueCap.trim() ? parseInt(venueCap.trim(), 10) : null;
-    if (cap !== null && (Number.isNaN(cap) || cap < 1)) {
-      setPending(false);
-      setError("Capacity must be a positive number.");
-      return;
-    }
-
-    const { error: venueErr } = await supabase.from("venues").insert({
-      account_id: profile.account_id,
-      name: orgName.trim(),
-      address: venueAddr.trim() || null,
-      city: venueCity.trim() || null,
-      timezone: "America/New_York",
-      default_capacity: cap,
-    });
-
     setPending(false);
-    if (venueErr) {
-      setError(venueErr.message);
-      return;
-    }
-    router.replace("/owner");
+    router.replace(postDoneHref);
   }
 
   async function onResend() {
@@ -316,82 +455,93 @@ function SignupWizard() {
         flexDirection: "column",
       }}
     >
-      <Header step={step} onBack={() => setStep(Math.max(0, step - 1) as Step)} />
+      {step > 0 && (
+        <StepHeader step={step} total={VISIBLE_TOTAL} onBack={backOne} />
+      )}
 
-      <div style={{ flex: 1, padding: "var(--s-6)" }}>
-        <div style={{ maxWidth: 540, margin: "0 auto" }}>
-          {step === 0 && (
-            <Step0
-              onPick={pickRole}
-              onAttendOnly={() => router.push("/discover")}
-            />
-          )}
-          {step === 1 && accountType && (
-            <Step1Identity
-              accountType={accountType}
-              fullName={fullName}
-              setFullName={setFullName}
-              orgName={orgName}
-              setOrgName={setOrgName}
-              phone={phoneInput}
-              setPhone={setPhoneInput}
-              error={error}
-              pending={pending}
-              onSubmit={onSubmitIdentity}
-            />
-          )}
-          {step === 2 && e164Phone && (
-            <Step2Verify
-              phone={e164Phone}
-              code={code}
-              setCode={setCode}
-              error={error}
-              pending={pending}
-              onVerify={onVerify}
-              onResend={onResend}
-              onChangePhone={() => setStep(1)}
-            />
-          )}
-          {step === 3 && accountType === "venue" && (
-            <Step3Venue
-              orgName={orgName}
-              venueAddr={venueAddr}
-              setVenueAddr={setVenueAddr}
-              venueCity={venueCity}
-              setVenueCity={setVenueCity}
-              venueCap={venueCap}
-              setVenueCap={setVenueCap}
-              error={error}
-              pending={pending}
-              onSubmit={onSubmitVenue}
-              onSkip={() => router.replace("/owner")}
-            />
-          )}
-        </div>
-      </div>
-
-      <footer
+      <div
         style={{
-          padding: "var(--s-5) var(--s-6) var(--s-6)",
-          textAlign: "center",
+          flex: 1,
+          padding: "var(--s-8) var(--s-6)",
+          display: "flex",
+          alignItems: step === 0 ? "center" : "flex-start",
+          justifyContent: "center",
         }}
       >
-        <span className="t-meta">
-          Already have an account?{" "}
-          <Link
-            href="/login"
-            style={{ color: "var(--fg)", textDecoration: "none" }}
-          >
-            Sign in
-          </Link>
-        </span>
-      </footer>
+        {step === 0 && <Step0 onPick={pickRole} />}
+
+        {step === 1 && role && (
+          <Step1Phone
+            phone={phoneInput}
+            setPhone={setPhoneInput}
+            error={error}
+            pending={pending}
+            onSubmit={onSubmitPhone}
+          />
+        )}
+
+        {step === 2 && e164Phone && (
+          <Step2Verify
+            phone={e164Phone}
+            code={code}
+            setCode={setCode}
+            error={error}
+            pending={pending}
+            onVerify={onVerify}
+            onResend={onResend}
+            onChangePhone={() => {
+              setError(null);
+              setCode("");
+              setStep(1);
+            }}
+          />
+        )}
+
+        {step === 3 && role && (
+          <Step3Welcome
+            role={role}
+            fullName={fullName}
+            setFullName={setFullName}
+            error={error}
+            pending={pending}
+            onSubmit={onSubmitWelcome}
+          />
+        )}
+
+        {step === 4 && (role === "venue" || role === "brand") && (
+          <Step4Venue
+            role={role}
+            venueName={venueName}
+            setVenueName={setVenueName}
+            venueCity={venueCity}
+            setVenueCity={setVenueCity}
+            venueCap={venueCap}
+            setVenueCap={setVenueCap}
+            error={error}
+            pending={pending}
+            onSubmit={onSubmitVenue}
+            onSkip={onSkipVenue}
+          />
+        )}
+      </div>
     </main>
   );
 }
 
-function Header({ step, onBack }: { step: Step; onBack: () => void }) {
-  const labels = ["Role", "Identity", "Verify", "Venue"];
+// ────────────────────────────────────────────────────────────────────
+// Step header — small logo + back arrow + "Step N of 4" chip.
+// Step 0 has no header (its layout centers the role grid).
+// ────────────────────────────────────────────────────────────────────
+
+function StepHeader({
+  step,
+  total,
+  onBack,
+}: {
+  step: Step;
+  total: number;
+  onBack: () => void;
+}) {
   return (
     <header
       style={{
@@ -399,269 +549,180 @@ function Header({ step, onBack }: { step: Step; onBack: () => void }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        borderBottom: "1px solid var(--line)",
         gap: "var(--s-4)",
-        flexWrap: "wrap",
       }}
     >
       <div
         style={{ display: "flex", alignItems: "center", gap: "var(--s-3)" }}
       >
-        {step > 0 ? (
-          <button
-            type="button"
-            onClick={onBack}
-            aria-label="Back"
-            className="btn btn--ghost btn--sm"
-            style={{ width: 32, padding: 0 }}
-          >
-            ←
-          </button>
-        ) : null}
+        <button
+          type="button"
+          onClick={onBack}
+          aria-label="Back"
+          className="btn btn--ghost btn--sm"
+          style={{ width: 36, padding: 0 }}
+        >
+          ←
+        </button>
         <Logo size={18} />
       </div>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "var(--s-2)",
-          flexWrap: "wrap",
-        }}
-      >
-        {labels.map((l, i) => (
-          <span
-            key={l}
-            className="t-meta"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "var(--s-2)",
-              color: i <= step ? "var(--fg)" : "var(--fg-4)",
-            }}
-          >
-            <span style={{ fontWeight: 600 }}>0{i + 1}</span>
-            <span>{l}</span>
-            {i < labels.length - 1 && (
-              <span
-                style={{
-                  width: 16,
-                  height: 1,
-                  background: "var(--line-2)",
-                }}
-              />
-            )}
-          </span>
-        ))}
-      </div>
-      <Link href="/" className="t-meta" style={{ textDecoration: "none" }}>
-        Exit
-      </Link>
+      <span className="chip chip--ghost">
+        Step {step} of {total}
+      </span>
     </header>
   );
 }
 
-function Step0({
-  onPick,
-  onAttendOnly,
-}: {
-  onPick: (t: AccountType) => void;
-  onAttendOnly: () => void;
-}) {
+// ────────────────────────────────────────────────────────────────────
+// Step 0 — V5OnboardEntry. 2×2 role grid, headline + sub copy.
+// ────────────────────────────────────────────────────────────────────
+
+function Step0({ onPick }: { onPick: (r: RoleChoice) => void }) {
   return (
-    <div>
-      <div className="t-meta">01 / Role</div>
-      <div className="t-display-lg" style={{ marginTop: "var(--s-3)" }}>
-        Who are you?
+    <div style={{ width: "100%", maxWidth: 720 }}>
+      <Logo size={20} />
+      <div
+        className="t-display-md"
+        style={{ marginTop: "var(--s-10)" }}
+      >
+        What brings you here?
       </div>
-      <p className="t-body-2" style={{ marginTop: "var(--s-4)" }}>
-        Pick the one that fits. You can always switch contexts later — same
-        login, different hat.
-      </p>
+      <div className="t-body-2" style={{ marginTop: "var(--s-2)" }}>
+        One question. Pick the closest. You can change later.
+      </div>
 
       <div
+        className="signup-role-grid"
         style={{
-          marginTop: "var(--s-7)",
-          display: "flex",
-          flexDirection: "column",
+          marginTop: "var(--s-8)",
+          display: "grid",
+          gridTemplateColumns: "repeat(2, 1fr)",
           gap: "var(--s-3)",
         }}
       >
-        {ROLES.map((r) => (
+        {ROLE_CARDS.map((card) => (
           <button
-            key={r.id}
+            key={card.choice}
             type="button"
-            onClick={() => onPick(r.id)}
+            onClick={() => onPick(card.choice)}
             className="card card--hover"
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "var(--s-4)",
               padding: "var(--s-5)",
               textAlign: "left",
               cursor: "pointer",
               color: "var(--fg)",
+              background: "var(--bg-2)",
             }}
           >
-            <div style={{ flex: 1 }}>
-              <div className="t-h1">{r.label}</div>
-              <div className="t-body-2" style={{ marginTop: "var(--s-1)" }}>
-                {r.blurb}
-              </div>
+            <div className="t-h1">{card.title}</div>
+            <div className="t-meta" style={{ marginTop: "var(--s-2)" }}>
+              {card.sub}
             </div>
-            <span style={{ color: "var(--fg-3)" }}>→</span>
           </button>
         ))}
-
-        <div className="hr" style={{ margin: "var(--s-3) 0" }} />
-
-        <button
-          type="button"
-          onClick={onAttendOnly}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "var(--s-4)",
-            padding: "var(--s-4)",
-            background: "transparent",
-            border: 0,
-            color: "var(--fg-2)",
-            textAlign: "left",
-            cursor: "pointer",
-          }}
-        >
-          <div style={{ flex: 1 }}>
-            <div className="t-meta">Just here to RSVP to an event?</div>
-            <div className="t-body-2" style={{ marginTop: "var(--s-1)" }}>
-              No account needed. Browse events →
-            </div>
-          </div>
-          <span style={{ color: "var(--fg-3)" }}>→</span>
-        </button>
       </div>
+
+      <div
+        className="t-meta"
+        style={{
+          marginTop: "var(--s-8)",
+          textAlign: "center",
+          color: "var(--fg-3)",
+        }}
+      >
+        Already on Wadl?{" "}
+        <Link href="/login" style={{ color: "var(--fg)" }}>
+          Sign in
+        </Link>
+      </div>
+
+      <style>{`
+        @media (max-width: 560px) {
+          .signup-role-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </div>
   );
 }
 
-function Step1Identity({
-  accountType,
-  fullName,
-  setFullName,
-  orgName,
-  setOrgName,
+// ────────────────────────────────────────────────────────────────────
+// Step 1 — V5OnboardPhone. Single phone field + Continue.
+// ────────────────────────────────────────────────────────────────────
+
+function Step1Phone({
   phone,
   setPhone,
   error,
   pending,
   onSubmit,
 }: {
-  accountType: AccountType;
-  fullName: string;
-  setFullName: (v: string) => void;
-  orgName: string;
-  setOrgName: (v: string) => void;
   phone: string;
   setPhone: (v: string) => void;
   error: string | null;
   pending: boolean;
   onSubmit: (e: React.FormEvent) => void;
 }) {
-  const role = ROLES.find((r) => r.id === accountType)!;
   return (
-    <div>
-      <div className="t-meta">02 / Identity · {role.label}</div>
-      <div className="t-display-lg" style={{ marginTop: "var(--s-3)" }}>
-        Tell us about you.
+    <div style={{ width: "100%", maxWidth: 460 }}>
+      <div className="t-display-md">Your phone</div>
+      <div className="t-body-2" style={{ marginTop: "var(--s-2)" }}>
+        One field. No password. We text a code.
       </div>
 
       <form
         onSubmit={onSubmit}
         style={{
-          marginTop: "var(--s-7)",
+          marginTop: "var(--s-6)",
           display: "flex",
           flexDirection: "column",
-          gap: "var(--s-4)",
+          gap: "var(--s-3)",
         }}
       >
-        <div>
-          <label
-            htmlFor="fullName"
-            className="t-meta"
-            style={{ display: "block", marginBottom: "var(--s-2)" }}
-          >
-            Your name
-          </label>
-          <input
-            id="fullName"
-            type="text"
-            autoComplete="name"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            className="input"
-            placeholder="Jordy Montero"
-            required
-            autoFocus
-          />
-        </div>
-
-        <div>
-          <label
-            htmlFor="orgName"
-            className="t-meta"
-            style={{ display: "block", marginBottom: "var(--s-2)" }}
-          >
-            {role.orgLabel}
-          </label>
-          <input
-            id="orgName"
-            type="text"
-            value={orgName}
-            onChange={(e) => setOrgName(e.target.value)}
-            className="input"
-            placeholder={role.orgPlaceholder}
-            required={accountType !== "individual"}
-          />
-        </div>
-
-        <div>
-          <label
-            htmlFor="phone"
-            className="t-meta"
-            style={{ display: "block", marginBottom: "var(--s-2)" }}
-          >
-            Phone
-          </label>
-          <input
-            id="phone"
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="input"
-            placeholder="(305) 555 1234"
-            required
-          />
-          <p
-            className="t-meta"
-            style={{ marginTop: "var(--s-2)", color: "var(--fg-4)" }}
-          >
-            We&apos;ll text you a 6-digit code · never shared · never spammed
-          </p>
-        </div>
+        <input
+          id="phone"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          className="input"
+          placeholder="+1 305 799 0518"
+          style={{ height: 56, fontSize: 18 }}
+          required
+          autoFocus
+        />
 
         {error ? <ErrorLine>{error}</ErrorLine> : null}
 
         <button
           type="submit"
-          className="btn btn--lg btn--block"
+          className="btn btn--xl btn--block"
           disabled={pending}
         >
-          {pending ? "Sending code…" : "Send code →"}
+          {pending ? "Sending code…" : "Continue"}
         </button>
+
+        <div
+          className="t-meta"
+          style={{
+            marginTop: "var(--s-1)",
+            textAlign: "center",
+            color: "var(--fg-3)",
+          }}
+        >
+          By tapping you agree to{" "}
+          <Link href="/legal/terms" style={{ color: "var(--fg-2)" }}>
+            terms
+          </Link>
+        </div>
       </form>
     </div>
   );
 }
+
+// ────────────────────────────────────────────────────────────────────
+// Step 2 — OTP verify. 6-digit code.
+// ────────────────────────────────────────────────────────────────────
 
 function Step2Verify({
   phone,
@@ -683,12 +744,9 @@ function Step2Verify({
   onChangePhone: () => void;
 }) {
   return (
-    <div>
-      <div className="t-meta">03 / Verify</div>
-      <div className="t-display-lg" style={{ marginTop: "var(--s-3)" }}>
-        Enter the code.
-      </div>
-      <p className="t-body-2" style={{ marginTop: "var(--s-4)" }}>
+    <div style={{ width: "100%", maxWidth: 460 }}>
+      <div className="t-display-md">Enter the code</div>
+      <div className="t-body-2" style={{ marginTop: "var(--s-2)" }}>
         Sent to <span style={{ color: "var(--fg)" }}>{phone}</span>.{" "}
         <button
           type="button"
@@ -705,56 +763,48 @@ function Step2Verify({
         >
           Change number
         </button>
-      </p>
+      </div>
 
       <form
         onSubmit={onVerify}
         style={{
-          marginTop: "var(--s-7)",
+          marginTop: "var(--s-6)",
           display: "flex",
           flexDirection: "column",
-          gap: "var(--s-4)",
+          gap: "var(--s-3)",
         }}
       >
-        <div>
-          <label
-            htmlFor="code"
-            className="t-meta"
-            style={{ display: "block", marginBottom: "var(--s-2)" }}
-          >
-            6-digit code
-          </label>
-          <input
-            id="code"
-            type="text"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            pattern="\d*"
-            maxLength={6}
-            value={code}
-            onChange={(e) =>
-              setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
-            }
-            className="input"
-            style={{
-              height: 64,
-              fontSize: 28,
-              textAlign: "center",
-              letterSpacing: "0.5em",
-              fontFamily: "var(--mono)",
-              paddingInlineStart: "0.5em",
-            }}
-            placeholder="••••••"
-            required
-            autoFocus
-          />
-        </div>
+        <input
+          id="code"
+          type="text"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          pattern="\d*"
+          maxLength={6}
+          value={code}
+          onChange={(e) =>
+            setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+          }
+          className="input"
+          style={{
+            height: 64,
+            fontSize: 28,
+            textAlign: "center",
+            letterSpacing: "0.5em",
+            fontFamily: "var(--mono)",
+            paddingInlineStart: "0.5em",
+          }}
+          placeholder="••••••"
+          required
+          autoFocus
+          aria-label="6-digit code"
+        />
 
         {error ? <ErrorLine>{error}</ErrorLine> : null}
 
         <button
           type="submit"
-          className="btn btn--lg btn--block"
+          className="btn btn--xl btn--block"
           disabled={pending}
         >
           {pending ? "Verifying…" : "Verify & continue"}
@@ -772,10 +822,106 @@ function Step2Verify({
   );
 }
 
-function Step3Venue({
-  orgName,
-  venueAddr,
-  setVenueAddr,
+// ────────────────────────────────────────────────────────────────────
+// Step 3 — V5OnboardWelcome. Context-aware welcome copy + name input.
+// ────────────────────────────────────────────────────────────────────
+
+function Step3Welcome({
+  role,
+  fullName,
+  setFullName,
+  error,
+  pending,
+  onSubmit,
+}: {
+  role: RoleChoice;
+  fullName: string;
+  setFullName: (v: string) => void;
+  error: string | null;
+  pending: boolean;
+  onSubmit: (e: React.FormEvent) => void;
+}) {
+  const copy = WELCOME_COPY[role];
+  return (
+    <div style={{ width: "100%", maxWidth: 480, textAlign: "center" }}>
+      <div
+        style={{
+          width: 64,
+          height: 64,
+          borderRadius: "var(--r-pill)",
+          background: "var(--ok)",
+          color: "var(--bg)",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 32,
+          lineHeight: 1,
+        }}
+        aria-hidden="true"
+      >
+        ✓
+      </div>
+      <div className="t-display-md" style={{ marginTop: "var(--s-6)" }}>
+        {copy.title}
+      </div>
+      <div className="t-body-2" style={{ marginTop: "var(--s-2)" }}>
+        {copy.sub}
+      </div>
+
+      <form
+        onSubmit={onSubmit}
+        style={{
+          marginTop: "var(--s-8)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-3)",
+          textAlign: "left",
+        }}
+      >
+        <div>
+          <label
+            htmlFor="fullName"
+            className="t-meta"
+            style={{ display: "block", marginBottom: "var(--s-2)" }}
+          >
+            Your name
+          </label>
+          <input
+            id="fullName"
+            type="text"
+            autoComplete="name"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            className="input"
+            placeholder="Jordy Montero"
+            style={{ height: 56, fontSize: 18 }}
+            required
+            autoFocus
+          />
+        </div>
+
+        {error ? <ErrorLine>{error}</ErrorLine> : null}
+
+        <button
+          type="submit"
+          className="btn btn--xl btn--block"
+          disabled={pending}
+        >
+          {pending ? "Saving…" : copy.cta}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Step 4 — V5VenueSetup. Single page: name + city + default_capacity.
+// ────────────────────────────────────────────────────────────────────
+
+function Step4Venue({
+  role,
+  venueName,
+  setVenueName,
   venueCity,
   setVenueCity,
   venueCap,
@@ -785,9 +931,9 @@ function Step3Venue({
   onSubmit,
   onSkip,
 }: {
-  orgName: string;
-  venueAddr: string;
-  setVenueAddr: (v: string) => void;
+  role: "venue" | "brand";
+  venueName: string;
+  setVenueName: (v: string) => void;
   venueCity: string;
   setVenueCity: (v: string) => void;
   venueCap: string;
@@ -797,116 +943,109 @@ function Step3Venue({
   onSubmit: (e: React.FormEvent) => void;
   onSkip: () => void;
 }) {
+  const nameLabel = role === "brand" ? "Brand / room name" : "Venue name";
   return (
-    <div>
-      <div className="t-meta">04 / Venue</div>
-      <div className="t-display-lg" style={{ marginTop: "var(--s-3)" }}>
-        Your room.
+    <div style={{ width: "100%", maxWidth: 560 }}>
+      <div className="t-display-md">Your venue</div>
+      <div className="t-body-2" style={{ marginTop: "var(--s-2)" }}>
+        Three fields. Skip cover for now — auto-generated.
       </div>
-      <p className="t-body-2" style={{ marginTop: "var(--s-4)" }}>
-        Basics for <span style={{ color: "var(--fg)" }}>{orgName}</span>. Skip
-        and add later if you&apos;re in a hurry.
-      </p>
 
       <form
         onSubmit={onSubmit}
         style={{
-          marginTop: "var(--s-7)",
+          marginTop: "var(--s-6)",
           display: "flex",
           flexDirection: "column",
-          gap: "var(--s-4)",
+          gap: "var(--s-3)",
         }}
       >
         <div>
-          <label
-            htmlFor="addr"
-            className="t-meta"
-            style={{ display: "block", marginBottom: "var(--s-2)" }}
-          >
-            Address
-          </label>
+          <div className="t-meta">{nameLabel}</div>
           <input
-            id="addr"
+            id="venueName"
             type="text"
-            value={venueAddr}
-            onChange={(e) => setVenueAddr(e.target.value)}
+            value={venueName}
+            onChange={(e) => setVenueName(e.target.value)}
             className="input"
-            placeholder="34 NE 11th St"
+            placeholder="BR · BK"
+            style={{ marginTop: "var(--s-1)" }}
+            required
+            autoFocus
           />
         </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "var(--s-3)",
-          }}
-        >
-          <div>
-            <label
-              htmlFor="city"
-              className="t-meta"
-              style={{ display: "block", marginBottom: "var(--s-2)" }}
-            >
-              City
-            </label>
-            <input
-              id="city"
-              type="text"
-              value={venueCity}
-              onChange={(e) => setVenueCity(e.target.value)}
-              className="input"
-              placeholder="Miami"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="cap"
-              className="t-meta"
-              style={{ display: "block", marginBottom: "var(--s-2)" }}
-            >
-              Capacity
-            </label>
-            <input
-              id="cap"
-              type="number"
-              inputMode="numeric"
-              min={1}
-              value={venueCap}
-              onChange={(e) => setVenueCap(e.target.value)}
-              className="input"
-              placeholder="400"
-            />
-          </div>
+        <div>
+          <div className="t-meta">City</div>
+          <input
+            id="venueCity"
+            type="text"
+            value={venueCity}
+            onChange={(e) => setVenueCity(e.target.value)}
+            className="input"
+            placeholder="Brooklyn"
+            style={{ marginTop: "var(--s-1)" }}
+          />
+        </div>
+        <div>
+          <div className="t-meta">Default capacity</div>
+          <input
+            id="venueCap"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            value={venueCap}
+            onChange={(e) => setVenueCap(e.target.value)}
+            className="input"
+            placeholder="320"
+            style={{ marginTop: "var(--s-1)" }}
+          />
         </div>
 
         {error ? <ErrorLine>{error}</ErrorLine> : null}
 
         <button
           type="submit"
-          className="btn btn--lg btn--block"
+          className="btn btn--xl btn--block"
+          style={{ marginTop: "var(--s-3)" }}
           disabled={pending}
         >
-          {pending ? "Saving…" : "Finish — open dashboard →"}
-        </button>
-        <button
-          type="button"
-          className="btn btn--ghost btn--block"
-          onClick={onSkip}
-          disabled={pending}
-        >
-          Skip — I&apos;ll add this later
+          {pending ? "Saving…" : "Open my dashboard"}
         </button>
 
-        <span
-          className="chip"
-          style={{ alignSelf: "center", marginTop: "var(--s-2)" }}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginTop: "var(--s-2)",
+          }}
         >
-          ✓ Role · ✓ Identity · ✓ Verify · Venue
-        </span>
+          <span className="t-meta" style={{ color: "var(--fg-3)" }}>
+            2 of 2
+          </span>
+          <button
+            type="button"
+            onClick={onSkip}
+            disabled={pending}
+            className="t-meta"
+            style={{
+              background: "transparent",
+              border: 0,
+              cursor: "pointer",
+              padding: 0,
+              color: "var(--fg-2)",
+              textDecoration: "underline",
+            }}
+          >
+            Skip · I&apos;ll do this later
+          </button>
+        </div>
       </form>
     </div>
   );
 }
+
+// ────────────────────────────────────────────────────────────────────
 
 function ErrorLine({ children }: { children: React.ReactNode }) {
   return (
