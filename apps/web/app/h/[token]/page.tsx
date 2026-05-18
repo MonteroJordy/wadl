@@ -24,21 +24,32 @@ interface TokenData {
   };
 }
 
-function ErrorFrame({ title, body }: { title: string; body: string }) {
+/**
+ * V5 mobile shell — every holder surface (error + main) sits inside the same
+ * centered 420-wide column so the page reads as a single coherent "pass".
+ */
+function MobileShell({ children }: { children: React.ReactNode }) {
   return (
     <main
       id="main-content"
+      className="v5"
       style={{ minHeight: "100vh", background: "var(--bg)" }}
     >
-      <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
+      <div style={{ maxWidth: 420, margin: "0 auto" }}>{children}</div>
+    </main>
+  );
+}
+
+function ErrorFrame({ title, body }: { title: string; body: string }) {
+  return (
+    <MobileShell>
+      <div style={{ padding: "var(--s-6) var(--s-5) 0" }}>
         <Logo size={18} />
       </div>
       <div
         style={{
-          padding: "var(--s-24) var(--s-6) 0",
+          padding: "var(--s-12) var(--s-5) 0",
           textAlign: "center",
-          maxWidth: 420,
-          margin: "0 auto",
         }}
       >
         <div className="t-meta">List owner</div>
@@ -83,8 +94,26 @@ function ErrorFrame({ title, body }: { title: string; body: string }) {
           </a>
         </p>
       </div>
-    </main>
+    </MobileShell>
   );
+}
+
+/**
+ * Compute a short, human countdown string for "Doors in …". Returns null when
+ * doors are in the past — caller flips the copy to "Doors open" in that case.
+ */
+function doorsCountdown(doorsAt: string): string | null {
+  const ms = new Date(doorsAt).getTime() - Date.now();
+  if (ms <= 0) return null;
+  const mins = Math.floor(ms / 60000);
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h >= 24) {
+    const d = Math.floor(h / 24);
+    return `${d}d ${h % 24}h`;
+  }
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
 }
 
 export default async function HolderPage({
@@ -210,14 +239,14 @@ export default async function HolderPage({
   const appUrl = getAppUrl();
   const appHost = appUrl.replace(/^https?:\/\//, "");
 
+  const countdown = doorsCountdown(night.doors_at);
+
   return (
-    <main
-      id="main-content"
-      style={{ minHeight: "100vh", background: "var(--bg)" }}
-    >
+    <MobileShell>
+      {/* ── Top bar: logo + role chip ── */}
       <div
         style={{
-          padding: "var(--s-6) var(--s-6) 0",
+          padding: "var(--s-5) var(--s-5) 0",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -227,78 +256,144 @@ export default async function HolderPage({
         <span className="chip chip--ghost">List owner</span>
       </div>
 
-      <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
-        <div className="t-meta">
+      {/* ── "TONIGHT" hero: date · event · doors countdown ── */}
+      <div style={{ padding: "var(--s-5) var(--s-5) 0" }}>
+        <div className="t-meta">Tonight</div>
+        <div
+          className="t-display-md"
+          style={{ marginTop: "var(--s-1)", lineHeight: 1.05 }}
+        >
+          {alloc.holder_name}&apos;s list
+        </div>
+        <div
+          className="t-body-2"
+          style={{ marginTop: "var(--s-2)", color: "var(--fg-2)" }}
+        >
           {fmtDate(night.night_date)} · {night.event.name}
         </div>
-        <div className="t-display-md" style={{ marginTop: "var(--s-2)" }}>
-          {alloc.holder_name}&apos;s list
+        <div
+          className="t-meta"
+          style={{ marginTop: "var(--s-1)", color: "var(--fg-3)" }}
+        >
+          {countdown
+            ? `Doors in ${countdown}`
+            : `Doors ${fmtTime(night.doors_at)} · open`}
         </div>
       </div>
 
-      {night.event.flyer_url ? (
-        <div style={{ padding: "var(--s-5) var(--s-6) 0" }}>
-          <div
-            style={{
-              width: "100%",
-              aspectRatio: "4 / 5",
-              borderRadius: "var(--r-lg)",
-              overflow: "hidden",
-              border: "1px solid var(--line)",
-              background: "var(--bg-3)",
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={night.event.flyer_url}
-              alt={night.event.name}
+      {/* ── Pass card: cover (flyer or procedural) + tier/list summary ── */}
+      <div style={{ padding: "var(--s-4) var(--s-5) 0" }}>
+        <div
+          className="card"
+          style={{
+            overflow: "hidden",
+            border: "1.5px solid var(--fg)",
+            padding: 0,
+          }}
+        >
+          {night.event.flyer_url ? (
+            <div
               style={{
+                position: "relative",
                 width: "100%",
-                height: "100%",
-                objectFit: "cover",
+                aspectRatio: "4 / 5",
+                overflow: "hidden",
+                background: "var(--bg-3)",
               }}
-            />
-          </div>
-        </div>
-      ) : null}
-
-      {night.is_frozen && (
-        <div style={{ padding: "var(--s-5) var(--s-6) 0" }}>
-          <div
-            className="card"
-            style={{ padding: "var(--s-4)", borderColor: "var(--warn)" }}
-          >
-            <span className="chip chip--warn">Capacity lockdown</span>
-            <p
-              className="t-body-2"
-              style={{ marginTop: "var(--s-3)" }}
             >
-              The night hit its capacity threshold and the host closed all
-              lists. Already-on names keep their spot; no new adds.
-            </p>
-          </div>
-        </div>
-      )}
-
-      <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
-        <div className="card" style={{ padding: "var(--s-5)" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={night.event.flyer_url}
+                alt={night.event.name}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  background:
+                    "linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,0.72) 100%)",
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  left: "var(--s-4)",
+                  right: "var(--s-4)",
+                  bottom: "var(--s-4)",
+                }}
+              >
+                <div
+                  className="t-meta"
+                  style={{ color: "rgba(255,255,255,0.7)" }}
+                >
+                  {fmtDate(night.night_date)}
+                </div>
+                <div
+                  className="t-h1"
+                  style={{ color: "#fff", marginTop: "var(--s-1)" }}
+                >
+                  {night.event.name}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <Cover
+              seed={night.event.name}
+              style={{ borderRadius: 0, height: undefined, aspectRatio: "4 / 5" }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  left: "var(--s-4)",
+                  right: "var(--s-4)",
+                  bottom: "var(--s-4)",
+                }}
+              >
+                <div
+                  className="t-meta"
+                  style={{ color: "rgba(255,255,255,0.7)" }}
+                >
+                  {fmtDate(night.night_date)}
+                </div>
+                <div
+                  className="t-h1"
+                  style={{ color: "#fff", marginTop: "var(--s-1)" }}
+                >
+                  {night.event.name}
+                </div>
+              </div>
+            </Cover>
+          )}
+          {/* Tier/list summary strip (mirrors V5GuestWalletV2's VIP · party of N row) */}
           <div
             style={{
+              padding: "var(--s-4)",
               display: "flex",
+              alignItems: "center",
               justifyContent: "space-between",
-              alignItems: "flex-start",
+              gap: "var(--s-3)",
             }}
           >
-            <div>
-              <div className="t-meta">Your list</div>
+            <div style={{ minWidth: 0, flex: 1 }}>
               <div
-                className="t-display-lg t-num"
-                style={{ marginTop: "var(--s-1)" }}
+                className="t-h2"
+                style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}
               >
-                {used}
+                <span
+                  className="t-num"
+                  style={{ fontWeight: 600 }}
+                >
+                  {used}
+                </span>
                 <span style={{ color: "var(--fg-4)" }}>/{alloc.cap}</span>
+                <span style={{ color: "var(--fg-3)" }}>names</span>
               </div>
-              <div className="t-meta" style={{ marginTop: "var(--s-2)" }}>
+              <div className="t-meta" style={{ marginTop: "var(--s-1)" }}>
                 {alloc.auto_approve ? "Auto-approve" : "Host approves"}
                 {night.is_frozen ? " · Night frozen" : ""}
               </div>
@@ -309,12 +404,11 @@ export default async function HolderPage({
               {listOpen ? "Open" : "Closed"}
             </span>
           </div>
+          {/* Slim progress under the strip */}
           <div
             style={{
-              marginTop: "var(--s-4)",
-              height: 4,
+              height: 3,
               background: "var(--line)",
-              borderRadius: "var(--r-pill)",
               overflow: "hidden",
             }}
           >
@@ -326,36 +420,41 @@ export default async function HolderPage({
               }}
             />
           </div>
-          <div
-            className="t-meta"
-            style={{
-              marginTop: "var(--s-2)",
-              display: "flex",
-              justifyContent: "space-between",
-            }}
-          >
-            <span>{capPct}% used</span>
-            <span>Doors {fmtTime(night.doors_at)}</span>
-          </div>
         </div>
       </div>
 
-      {/* Day 50 wedge: per-tier shareable links. One link per tier where
-          cap > 0. Holder copies three URLs and routes each to the right
-          audience (AAA in inner Signal, VIP in close circle, GA in IG bio). */}
+      {night.is_frozen && (
+        <div style={{ padding: "var(--s-4) var(--s-5) 0" }}>
+          <div
+            className="card"
+            style={{ padding: "var(--s-4)", borderColor: "var(--warn)" }}
+          >
+            <span className="chip chip--warn">Capacity lockdown</span>
+            <p className="t-body-2" style={{ marginTop: "var(--s-3)" }}>
+              The night hit its capacity threshold and the host closed all
+              lists. Already-on names keep their spot; no new adds.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Add a name form ── */}
+      <div style={{ padding: "var(--s-6) var(--s-5) 0" }}>
+        <HolderAddForm
+          token={params.token}
+          plusOnesAllowed={alloc.plus_ones_allowed}
+          listOpen={listOpen}
+        />
+      </div>
+
+      {/* ── Day 50 wedge: per-tier shareable links ── */}
       {tierCapRows.length > 0 && (
-        <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
-          <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+        <div style={{ padding: "var(--s-8) var(--s-5) 0" }}>
+          <div className="t-meta" style={{ marginBottom: "var(--s-2)" }}>
             Shareable links · {tierCapRows.length} tier
             {tierCapRows.length === 1 ? "" : "s"}
           </div>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "var(--s-3)",
-            }}
-          >
+          <div className="card" style={{ padding: 0 }}>
             {tierCapRows.map((tc) => {
               const tierKey = tc.tier.toUpperCase() as TierKey;
               const tierUsed = usedByTier[tierKey] ?? 0;
@@ -370,16 +469,13 @@ export default async function HolderPage({
               return (
                 <div
                   key={tc.id}
-                  className="card"
+                  className="row"
                   style={{
-                    padding: "var(--s-3) var(--s-4)",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "var(--s-3)",
+                    gridTemplateColumns: "auto 1fr auto",
                   }}
                 >
                   <span className="chip chip--solid">{tierKey}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ minWidth: 0 }}>
                     <div
                       className="t-body-2 truncate"
                       style={{
@@ -404,36 +500,26 @@ export default async function HolderPage({
         </div>
       )}
 
-      <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
-        <HolderAddForm
-          token={params.token}
-          plusOnesAllowed={alloc.plus_ones_allowed}
-          listOpen={listOpen}
-        />
-      </div>
-
+      {/* ── Your names ── */}
       {guests.length > 0 && (
-        <div style={{ padding: "var(--s-8) var(--s-6) 0" }}>
-          <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+        <div style={{ padding: "var(--s-8) var(--s-5) 0" }}>
+          <div className="t-meta" style={{ marginBottom: "var(--s-2)" }}>
             Your names · {guests.length}
           </div>
-          <div className="card">
+          <div className="card" style={{ padding: 0 }}>
             {guests.map((g, idx) => (
               <div
                 key={idx}
+                className="row"
                 style={{
-                  padding: "var(--s-3) var(--s-4)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "var(--s-3)",
-                  borderBottom:
-                    idx < guests.length - 1
-                      ? "1px solid var(--line)"
-                      : "none",
+                  gridTemplateColumns: "1fr auto",
                 }}
               >
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="t-body truncate" style={{ fontWeight: 500 }}>
+                <div style={{ minWidth: 0 }}>
+                  <div
+                    className="t-body truncate"
+                    style={{ fontWeight: 500 }}
+                  >
                     {g.full_name}
                   </div>
                   {g.plus_ones > 0 && (
@@ -459,11 +545,12 @@ export default async function HolderPage({
         </div>
       )}
 
+      {/* ── Footer: claim link + powered-by ── */}
       <div
         className="t-meta"
         style={{
           marginTop: "var(--s-8)",
-          padding: "0 var(--s-6)",
+          padding: "0 var(--s-5)",
           textAlign: "center",
         }}
       >
@@ -478,7 +565,7 @@ export default async function HolderPage({
 
       <div
         style={{
-          paddingTop: "var(--s-8)",
+          paddingTop: "var(--s-6)",
           paddingBottom: "var(--s-12)",
           display: "flex",
           alignItems: "center",
@@ -498,6 +585,6 @@ export default async function HolderPage({
         plusOnesAllowed={alloc.plus_ones_allowed}
         force={searchParams.intro === "1"}
       />
-    </main>
+    </MobileShell>
   );
 }

@@ -156,6 +156,17 @@ export default function Scanner({
   const [manifestCachedAt, setManifestCachedAt] = useState<number | null>(null);
   const [queueDepth, setQueueDepth] = useState(0);
   const [syncing, setSyncing] = useState(false);
+  /**
+   * Mirror of the cached manifest in component state — kept in sync by the
+   * load/refresh effects below. Powers the count display + manual-lookup
+   * list in the v5 shell without re-reading localStorage on every render.
+   */
+  const [cachedGuests, setCachedGuests] = useState<ManifestGuest[]>([]);
+  /**
+   * Bump on every approved/already_used result so the in-count and the
+   * "on list" lookup list re-render against the latest localScannedRef set.
+   */
+  const [scanTick, setScanTick] = useState(0);
 
   const localScannedRef = useRef<Set<string>>(new Set());
   /**
@@ -182,6 +193,7 @@ export default function Scanner({
     const cached = loadManifest(nightId);
     if (cached) {
       setManifestStatus("stale");
+      setCachedGuests(cached);
       try {
         const raw = localStorage.getItem(manifestKey(nightId));
         if (raw) {
@@ -212,6 +224,7 @@ export default function Scanner({
           saveManifest(nightId, j.guests);
           setManifestStatus("ready");
           setManifestCachedAt(Date.now());
+          setCachedGuests(j.guests);
           for (const g of j.guests) {
             if (g.scanned) localScannedRef.current.add(g.check_in_token);
           }
@@ -231,6 +244,10 @@ export default function Scanner({
   function showResult(res: UiResult, holdMs: number) {
     setResult(res);
     playFeedback(res.state);
+    // Bump tick so the in-count + lookup list reflect the new scanned set.
+    if (res.state === "approved" || res.state === "already_used") {
+      setScanTick((n) => n + 1);
+    }
     if (resultTimerRef.current) clearTimeout(resultTimerRef.current);
     resultTimerRef.current = setTimeout(() => {
       setResult(null);
@@ -392,135 +409,207 @@ export default function Scanner({
     }
   }
 
+  // Live count from cached manifest — used in the v5 top status bar.
+  // scanTick is referenced so the in-count + lookup list re-render after
+  // each approved/already_used result mutates localScannedRef.
+  void scanTick;
+  const totalCount = cachedGuests.length;
+  const inCount = cachedGuests.reduce(
+    (n, g) => n + (localScannedRef.current.has(g.check_in_token) ? 1 : 0),
+    0,
+  );
+
+  // Manual-lookup name list — surfaces a few unscanned approved guests for
+  // tap-to-confirm when the camera can't read the QR. Stays under the camera
+  // so it's always thumb-reachable.
+  const lookupNames = cachedGuests
+    .filter(
+      (g) =>
+        g.status === "approved" &&
+        !g.flag_dna &&
+        !localScannedRef.current.has(g.check_in_token),
+    )
+    .slice(0, 5);
+
   return (
     <main
       id="main-content"
-      className="v5"
-      style={{ minHeight: "100vh", background: "var(--bg)" }}
+      className="v5 noscroll"
+      style={{
+        minHeight: "100vh",
+        background: "var(--bg)",
+        display: "flex",
+        flexDirection: "column",
+      }}
     >
-      <div style={{ maxWidth: 540, margin: "0 auto" }}>
-        {/* ── Header ── */}
+      <div
+        style={{
+          maxWidth: 540,
+          margin: "0 auto",
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          flex: 1,
+        }}
+      >
+        {/* ── Top status bar — tighter, mirrors V5DoorV2 ── */}
         <div
           style={{
-            padding: "var(--s-6) var(--s-8)",
+            padding: "var(--s-4) var(--s-5)",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "var(--s-4)",
             borderBottom: "1px solid var(--line)",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: "var(--s-2)",
-            }}
-          >
-            <Link
-              href={backHref}
-              className="t-meta"
-              style={{ color: "var(--fg-3)", textDecoration: "none" }}
-            >
-              ← Back
-            </Link>
+          <div style={{ minWidth: 0, flex: 1 }}>
             <div
+              className="t-meta"
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: "var(--s-2)",
               }}
             >
-              <div
-                className={online ? "pulse" : "dot"}
+              <Link
+                href={backHref}
                 style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: "var(--r-pill)",
-                  background: online ? "var(--ok)" : "var(--err)",
+                  color: "var(--fg-3)",
+                  textDecoration: "none",
                 }}
-              />
-              <span className="t-meta">
-                {online ? "Scanning" : "Offline"}
+              >
+                ← Back
+              </Link>
+              <span style={{ color: "var(--fg-4)" }}>·</span>
+              <span className="truncate">{eventName}</span>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                gap: "var(--s-2)",
+                marginTop: "var(--s-1)",
+              }}
+            >
+              <span
+                className="t-num"
+                style={{ fontSize: 28, fontWeight: 600, lineHeight: 1 }}
+              >
+                {inCount}
               </span>
+              {totalCount > 0 && (
+                <span className="t-body-2" style={{ color: "var(--fg-3)" }}>
+                  / {totalCount}
+                </span>
+              )}
             </div>
           </div>
-          <div className="t-display-md">{eventName}</div>
-        </div>
-
-        <div
-          style={{
-            padding: "var(--s-8)",
-            display: "flex",
-            flexDirection: "column",
-            gap: "var(--s-4)",
-          }}
-        >
-          {/* ── Status chips ── */}
           <div
             style={{
               display: "flex",
               alignItems: "center",
               gap: "var(--s-2)",
-              flexWrap: "wrap",
+              flexShrink: 0,
             }}
           >
-            <span
-              className={"chip " + (online ? "chip--ok" : "chip--err")}
-            >
-              {online ? "Online" : "Offline"}
+            <div
+              className={online && started ? "pulse" : "dot"}
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: "var(--r-pill)",
+                background: online ? "var(--ok)" : "var(--err)",
+              }}
+            />
+            <span className="t-meta">
+              {!started
+                ? "Idle"
+                : online
+                  ? "Scanning"
+                  : "Offline"}
             </span>
-            <span
-              className={
-                "chip " +
-                (manifestStatus === "ready"
-                  ? "chip--ok"
-                  : manifestStatus === "stale"
-                    ? "chip--warn"
-                    : "")
-              }
-            >
-              {manifestStatus === "ready"
-                ? "Manifest cached"
+          </div>
+        </div>
+
+        {/* ── Status chips strip ── */}
+        <div
+          style={{
+            padding: "var(--s-3) var(--s-5)",
+            display: "flex",
+            alignItems: "center",
+            gap: "var(--s-2)",
+            flexWrap: "wrap",
+            borderBottom: "1px solid var(--line)",
+          }}
+        >
+          <span className={"chip " + (online ? "chip--ok" : "chip--err")}>
+            {online ? "Online" : "Offline"}
+          </span>
+          <span
+            className={
+              "chip " +
+              (manifestStatus === "ready"
+                ? "chip--ok"
                 : manifestStatus === "stale"
-                  ? "Stale cache"
-                  : manifestStatus === "loading"
-                    ? "Caching…"
-                    : "No cache"}
-            </span>
-            {queueDepth > 0 && (
-              <button
-                type="button"
-                onClick={() => void flushQueue()}
-                disabled={!online || syncing}
-                className="chip chip--warn"
-                style={{ cursor: "pointer", border: 0 }}
-              >
-                {syncing ? "Syncing…" : `Sync ${queueDepth}`}
-              </button>
-            )}
+                  ? "chip--warn"
+                  : "chip--ghost")
+            }
+          >
+            {manifestStatus === "ready"
+              ? "Manifest cached"
+              : manifestStatus === "stale"
+                ? "Stale cache"
+                : manifestStatus === "loading"
+                  ? "Caching…"
+                  : "No cache"}
+          </span>
+          {queueDepth > 0 && (
             <button
               type="button"
-              onClick={() => {
-                const next = !muted;
-                setMuted(next);
-                setMutedState(next);
-              }}
-              className={"chip " + (muted ? "chip--ghost" : "")}
-              style={{ cursor: "pointer", border: 0, marginLeft: "auto" }}
-              aria-pressed={!muted}
-              aria-label={muted ? "Unmute scan feedback" : "Mute scan feedback"}
-              title={muted ? "Sound off" : "Sound on"}
+              onClick={() => void flushQueue()}
+              disabled={!online || syncing}
+              className="chip chip--warn"
+              style={{ cursor: "pointer", border: 0 }}
             >
-              {muted ? "🔇 Sound off" : "🔊 Sound on"}
+              {syncing ? "Syncing…" : `Sync ${queueDepth}`}
             </button>
-          </div>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              const next = !muted;
+              setMuted(next);
+              setMutedState(next);
+            }}
+            className={"chip " + (muted ? "chip--ghost" : "")}
+            style={{ cursor: "pointer", border: 0, marginLeft: "auto" }}
+            aria-pressed={!muted}
+            aria-label={muted ? "Unmute scan feedback" : "Mute scan feedback"}
+            title={muted ? "Sound off" : "Sound on"}
+          >
+            {muted ? "🔇 Sound off" : "🔊 Sound on"}
+          </button>
+        </div>
 
-          {/* ── Camera / result viewport ── */}
+        {/* ── Camera viewport (rounded, v5 r-lg) ── */}
+        <div
+          style={{
+            padding: "var(--s-5)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "var(--s-3)",
+          }}
+        >
           <div
             style={{
               position: "relative",
               width: "100%",
+              maxWidth: 340,
               overflow: "hidden",
               borderRadius: "var(--r-lg)",
-              border: "1px solid var(--line-2)",
+              border: "2px dashed var(--line-3)",
               background: "var(--bg-2)",
               aspectRatio: "1 / 1",
             }}
@@ -547,7 +636,7 @@ export default function Scanner({
                 <div
                   style={{
                     textAlign: "center",
-                    padding: "0 var(--s-8)",
+                    padding: "0 var(--s-6)",
                   }}
                 >
                   <div className="t-display-sm">Camera off</div>
@@ -555,7 +644,7 @@ export default function Scanner({
                     className="t-body-2"
                     style={{
                       marginTop: "var(--s-2)",
-                      marginBottom: "var(--s-6)",
+                      marginBottom: "var(--s-5)",
                     }}
                   >
                     Grant access to start scanning QRs.
@@ -582,11 +671,16 @@ export default function Scanner({
               </div>
             )}
 
+            {/* ── Result overlay — full-bleed colored band ── */}
             {result &&
               (() => {
                 const color = stateColor(result.state);
-                const onColor =
-                  result.state === "approved" ? "var(--bg)" : "var(--fg)";
+                const isOk = result.state === "approved";
+                // Approved: solid green band, dark ink. Warn/Err: dark band
+                // with colored title for high contrast against the camera feed.
+                const bandBg = isOk ? "var(--ok)" : "rgba(10,10,10,0.96)";
+                const titleColor = isOk ? "var(--bg)" : color;
+                const bodyColor = isOk ? "var(--bg)" : "var(--fg)";
                 return (
                   <div
                     style={{
@@ -595,30 +689,26 @@ export default function Scanner({
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      background:
-                        result.state === "approved"
-                          ? "var(--ok)"
-                          : "var(--bg)",
+                      background: bandBg,
                       border: `2px solid ${color}`,
                     }}
                   >
                     <div
                       style={{
                         textAlign: "center",
-                        padding: "var(--s-6)",
+                        padding: "var(--s-5)",
                         width: "100%",
-                        color: onColor,
+                        color: bodyColor,
                       }}
                     >
                       <div
                         style={{
-                          fontFamily: "var(--display)",
+                          fontFamily: "var(--w-display)",
                           fontWeight: 700,
-                          fontSize: 40,
+                          fontSize: 36,
                           lineHeight: 1.05,
                           letterSpacing: "-0.02em",
-                          color:
-                            result.state === "approved" ? onColor : color,
+                          color: titleColor,
                         }}
                       >
                         {stateTitle(result.state)}
@@ -628,7 +718,10 @@ export default function Scanner({
                         <>
                           <div
                             className="t-h1"
-                            style={{ marginTop: "var(--s-3)" }}
+                            style={{
+                              marginTop: "var(--s-3)",
+                              color: bodyColor,
+                            }}
                           >
                             {result.guest.full_name}
                             {result.guest.plus_ones > 0 && (
@@ -639,15 +732,25 @@ export default function Scanner({
                             )}
                           </div>
                           <div
-                            className="t-meta"
                             style={{
-                              marginTop: "var(--s-1)",
-                              opacity: 0.8,
+                              marginTop: "var(--s-2)",
+                              display: "flex",
+                              justifyContent: "center",
                             }}
                           >
-                            {result.guest.tier
-                              .replace(/_/g, " ")
-                              .toUpperCase()}
+                            <span
+                              className="chip chip--solid"
+                              style={{
+                                background: isOk
+                                  ? "rgba(10,10,10,0.18)"
+                                  : "var(--fg)",
+                                color: isOk ? "var(--bg)" : "var(--bg)",
+                              }}
+                            >
+                              {result.guest.tier
+                                .replace(/_/g, " ")
+                                .toUpperCase()}
+                            </span>
                           </div>
                         </>
                       )}
@@ -657,17 +760,22 @@ export default function Scanner({
                           {result.guestName && (
                             <div
                               className="t-h1"
-                              style={{ marginTop: "var(--s-3)" }}
+                              style={{
+                                marginTop: "var(--s-3)",
+                                color: bodyColor,
+                              }}
                             >
                               {result.guestName}
                             </div>
                           )}
                           <div
                             className="t-body-2"
-                            style={{ marginTop: "var(--s-2)" }}
+                            style={{
+                              marginTop: "var(--s-2)",
+                              color: bodyColor,
+                            }}
                           >
-                            Already admitted on another device. Do not
-                            re-admit.
+                            Already admitted on another device.
                           </div>
                         </>
                       )}
@@ -677,13 +785,12 @@ export default function Scanner({
                           className="t-meta"
                           style={{
                             marginTop: "var(--s-2)",
+                            color: bodyColor,
                             opacity: 0.8,
                           }}
                         >
                           In at{" "}
-                          {new Date(
-                            result.scannedAt,
-                          ).toLocaleTimeString()}
+                          {new Date(result.scannedAt).toLocaleTimeString()}
                           {result.scannedByName
                             ? ` · by ${result.scannedByName}`
                             : ""}
@@ -692,7 +799,10 @@ export default function Scanner({
                       {result.state === "wrong_event" && (
                         <div
                           className="t-meta"
-                          style={{ marginTop: "var(--s-2)" }}
+                          style={{
+                            marginTop: "var(--s-2)",
+                            color: bodyColor,
+                          }}
                         >
                           QR is for {result.actualEventName}
                         </div>
@@ -700,36 +810,41 @@ export default function Scanner({
                       {result.state === "wrong_night" && (
                         <div
                           className="t-meta"
-                          style={{ marginTop: "var(--s-2)" }}
+                          style={{
+                            marginTop: "var(--s-2)",
+                            color: bodyColor,
+                          }}
                         >
                           QR is for{" "}
-                          {new Date(
-                            result.actualNightDate,
-                          ).toLocaleDateString("en-US", {
-                            weekday: "short",
-                            month: "short",
-                            day: "numeric",
-                          })}
+                          {new Date(result.actualNightDate).toLocaleDateString(
+                            "en-US",
+                            {
+                              weekday: "short",
+                              month: "short",
+                              day: "numeric",
+                            },
+                          )}
                         </div>
                       )}
-                      {result.state === "do_not_admit" &&
-                        result.reason && (
-                          <div
-                            className="t-meta"
-                            style={{
-                              marginTop: "var(--s-2)",
-                              opacity: 0.8,
-                            }}
-                          >
-                            {result.reason}
-                          </div>
-                        )}
+                      {result.state === "do_not_admit" && result.reason && (
+                        <div
+                          className="t-meta"
+                          style={{
+                            marginTop: "var(--s-2)",
+                            color: bodyColor,
+                            opacity: 0.85,
+                          }}
+                        >
+                          {result.reason}
+                        </div>
+                      )}
                       {result.state === "error" && (
                         <div
                           className="t-meta"
                           style={{
                             marginTop: "var(--s-2)",
-                            opacity: 0.8,
+                            color: bodyColor,
+                            opacity: 0.85,
                           }}
                         >
                           {result.error}
@@ -740,7 +855,8 @@ export default function Scanner({
                           className="t-meta"
                           style={{
                             marginTop: "var(--s-2)",
-                            opacity: 0.6,
+                            color: bodyColor,
+                            opacity: 0.65,
                           }}
                         >
                           Offline · queued
@@ -752,26 +868,110 @@ export default function Scanner({
               })()}
           </div>
 
-          {/* ── Footer hint ── */}
           <div
-            className="t-meta"
-            style={{ textAlign: "center", lineHeight: 1.6 }}
+            className="t-body-2"
+            style={{ textAlign: "center", color: "var(--fg-3)" }}
           >
-            {online
-              ? "Hold steady. Auto-continues after each scan."
-              : `Offline mode — queueing scans (${queueDepth} pending). Reconnect to sync.`}
-            {manifestCachedAt && (
-              <div
-                style={{
-                  marginTop: "var(--s-1)",
-                  color: "var(--fg-4)",
-                }}
-              >
-                Cache from{" "}
-                {new Date(manifestCachedAt).toLocaleTimeString()}
-              </div>
-            )}
+            {online && started
+              ? "Point at QR · auto-detects"
+              : !started
+                ? "Tap Start scanner to begin"
+                : `Offline · ${queueDepth} queued`}
           </div>
+        </div>
+
+        {/* ── Manual-lookup names list — quick tap to confirm by name ── */}
+        {lookupNames.length > 0 && (
+          <div style={{ padding: "0 var(--s-5) var(--s-4)" }}>
+            <div className="t-meta" style={{ marginBottom: "var(--s-2)" }}>
+              On list · tap to look up
+            </div>
+            <div className="card" style={{ padding: 0 }}>
+              {lookupNames.map((g) => (
+                <Link
+                  key={g.id}
+                  href={`/door/events/${eventId}/search?q=${encodeURIComponent(
+                    g.full_name,
+                  )}`}
+                  className="row"
+                  style={{
+                    gridTemplateColumns: "1fr auto",
+                    textDecoration: "none",
+                    color: "inherit",
+                  }}
+                >
+                  <div style={{ minWidth: 0 }}>
+                    <div className="t-body truncate" style={{ fontWeight: 500 }}>
+                      {g.full_name}
+                      {g.plus_ones > 0 && (
+                        <span style={{ color: "var(--fg-3)", fontWeight: 400 }}>
+                          {" "}
+                          +{g.plus_ones}
+                        </span>
+                      )}
+                    </div>
+                    {g.tier && (
+                      <div className="t-meta" style={{ marginTop: "var(--s-1)" }}>
+                        {g.tier.replace(/_/g, " ").toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <span className="t-meta" style={{ color: "var(--fg-3)" }}>
+                    →
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* spacer pushes the action bar to the bottom on tall screens */}
+        <div style={{ flex: 1 }} />
+
+        {/* ── Bottom action bar: Manual + Walk-in ── */}
+        <div
+          style={{
+            padding: "var(--s-4) var(--s-5)",
+            borderTop: "1px solid var(--line)",
+            background: "var(--bg)",
+            position: "sticky",
+            bottom: 0,
+          }}
+        >
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "var(--s-2)",
+            }}
+          >
+            <Link
+              href={`/door/events/${eventId}/search`}
+              className="btn btn--secondary btn--lg btn--block"
+              style={{ textDecoration: "none" }}
+            >
+              Manual
+            </Link>
+            <Link
+              href={`/door/events/${eventId}/walkup`}
+              className="btn btn--secondary btn--lg btn--block"
+              style={{ textDecoration: "none" }}
+            >
+              + Walk-in
+            </Link>
+          </div>
+          {manifestCachedAt && (
+            <div
+              className="t-meta"
+              style={{
+                marginTop: "var(--s-2)",
+                textAlign: "center",
+                color: "var(--fg-4)",
+              }}
+            >
+              Cache from {new Date(manifestCachedAt).toLocaleTimeString()}
+            </div>
+          )}
         </div>
       </div>
     </main>
