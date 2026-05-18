@@ -247,6 +247,8 @@ export function EventSubNav({
     ["lineup", "Lineup", "/template"],
     ["comms", "Comms", "/broadcast"],
     ["staff", "Staff", "/staff"],
+    ["door", "Door", "/door-manager"],
+    ["timeline", "Timeline", "/timeline"],
     ["settings", "Settings", "/settings"],
   ];
   return (
