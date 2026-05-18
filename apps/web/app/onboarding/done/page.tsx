@@ -1,217 +1,136 @@
 import Link from "next/link";
-import { Logo } from "@/components/v5";
+import { PageHeader } from "@/components/v5";
 
 export const metadata = { title: "You're set up — WADL" };
 
-const STEPS = ["Identity", "Branding", "Payments", "Invite"] as const;
+const STEPS: Array<{
+  n: string;
+  h: string;
+  d: string;
+  cta: string;
+  href: string;
+}> = [
+  {
+    n: "1",
+    h: "Create your first event",
+    d: "90 seconds · auto-publishes a public RSVP page.",
+    cta: "Create event",
+    href: "/owner/events/new",
+  },
+  {
+    n: "2",
+    h: "Add a credential tier",
+    d: "GA · VIP · AAA · whatever you want. Caps + colors.",
+    cta: "Add tier",
+    href: "/owner/events/new",
+  },
+  {
+    n: "3",
+    h: "Invite your team or promoters",
+    d: "Magic-link · no signup for them either.",
+    cta: "Invite",
+    href: "/owner/partners",
+  },
+];
 
 export default function OnboardingDonePage() {
   return (
     <main
       id="main-content"
-      className="w-app"
       style={{
         minHeight: "100vh",
-        background: "var(--w-bg)",
-        display: "flex",
-        flexDirection: "column",
+        background: "var(--bg)",
       }}
     >
-      <header
-        style={{
-          padding: "18px 32px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          borderBottom: "1px solid var(--w-line)",
-          flexWrap: "wrap",
-          gap: 16,
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-          }}
-        >
-          <Logo size={18} />
-          <span
-            className="w-type-meta"
-            style={{ color: "var(--w-fg-dim)" }}
+      <PageHeader
+        eyebrow="Welcome"
+        title="Let's open your first door"
+        sub="Three steps. No deadline. You can do them in any order."
+        actions={
+          <Link
+            href="/owner"
+            className="btn btn--ghost"
+            style={{ textDecoration: "none" }}
           >
-            · SETUP
-          </span>
-        </div>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 0,
-            fontFamily: "var(--w-mono)",
-            fontSize: 11,
-            letterSpacing: "0.06em",
-          }}
-        >
-          {STEPS.map((s, i) => (
-            <span
-              key={s}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                color: "var(--w-acc)",
-              }}
-            >
-              {i + 1}.{s.toUpperCase()}
-              {i < STEPS.length - 1 && (
-                <span
-                  style={{
-                    width: 24,
-                    height: 1,
-                    background: "var(--w-line-2)",
-                    margin: "0 10px",
-                  }}
-                />
-              )}
-            </span>
-          ))}
-        </div>
-        <Link
-          href="/owner"
-          className="w-type-meta"
-          style={{ textDecoration: "none" }}
-        >
-          SAVE & EXIT
-        </Link>
-      </header>
+            Skip to dashboard
+          </Link>
+        }
+      />
 
       <div
         style={{
-          flex: 1,
-          padding: "60px 32px",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          textAlign: "center",
-          justifyContent: "center",
+          padding: "var(--s-8)",
+          maxWidth: 1200,
+          margin: "0 auto",
         }}
       >
         <div
           style={{
-            width: 72,
-            height: 72,
-            background: "var(--w-acc)",
-            color: "var(--w-acc-ink)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 36,
-            fontWeight: 700,
-          }}
-        >
-          ✓
-        </div>
-        <div
-          style={{
-            fontFamily: "var(--w-display)",
-            fontWeight: 700,
-            fontSize: "clamp(48px, 7vw, 72px)",
-            letterSpacing: "-0.04em",
-            marginTop: 28,
-            lineHeight: 0.95,
-          }}
-        >
-          You&apos;re set up.
-          <br />
-          <span
-            style={{
-              background: "var(--w-acc)",
-              color: "var(--w-acc-ink)",
-              padding: "0 14px",
-              display: "inline-block",
-            }}
-          >
-            Now go run a door.
-          </span>
-        </div>
-        <p
-          className="w-type-body"
-          style={{
-            color: "var(--w-fg-muted)",
-            fontSize: 17,
-            marginTop: 24,
-            lineHeight: 1.55,
-            maxWidth: 560,
-          }}
-        >
-          Your venue is live. Your first event template is ready. Time-to-published RSVP page:{" "}
-          <span
-            style={{ color: "var(--w-fg)", fontFamily: "var(--w-mono)" }}
-          >
-            0:09:42
-          </span>
-          .
-        </p>
-
-        <div
-          style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: 12,
-            marginTop: 48,
-            maxWidth: 720,
-            width: "100%",
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+            gap: "var(--s-3)",
           }}
         >
-          {[
-            {
-              t: "CREATE FIRST EVENT",
-              s: "It takes 90s",
-              hot: true,
-              href: "/owner/events/new",
-            },
-            {
-              t: "PAIR A DOOR DEVICE",
-              s: "iPhone or ScanPro",
-              hot: false,
-              href: "/door",
-            },
-            {
-              t: "IMPORT GUEST CSV",
-              s: "Optional",
-              hot: false,
-              href: "/owner",
-            },
-          ].map((c) => (
-            <Link
-              key={c.t}
-              href={c.href}
-              style={{ textDecoration: "none", color: "inherit" }}
-            >
+          {STEPS.map((s) => (
+            <div key={s.n} className="card" style={{ padding: "var(--s-5)" }}>
+              <span className="t-meta">Step {s.n}</span>
+              <div className="t-h1" style={{ marginTop: "var(--s-2)" }}>
+                {s.h}
+              </div>
               <div
+                className="t-body-2"
+                style={{ marginTop: "var(--s-2)", color: "var(--fg-2)" }}
+              >
+                {s.d}
+              </div>
+              <Link
+                href={s.href}
+                className="btn btn--block"
                 style={{
-                  background: c.hot ? "var(--w-fg)" : "transparent",
-                  color: c.hot ? "var(--w-bg)" : "var(--w-fg)",
-                  border: c.hot ? "none" : "1px solid var(--w-line-2)",
-                  padding: "20px 18px",
-                  textAlign: "left",
-                  cursor: "pointer",
+                  marginTop: "var(--s-4)",
+                  textDecoration: "none",
                 }}
               >
-                <div
-                  className="w-type-meta"
-                  style={{
-                    color: c.hot ? "var(--w-bg)" : "var(--w-fg-muted)",
-                  }}
-                >
-                  {c.t}
-                </div>
-                <div style={{ fontSize: 14, marginTop: 8 }}>
-                  {c.s} →
-                </div>
-              </div>
-            </Link>
+                {s.cta}
+              </Link>
+            </div>
           ))}
+        </div>
+
+        <div
+          className="card"
+          style={{
+            marginTop: "var(--s-6)",
+            padding: "var(--s-5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "var(--s-4)",
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ minWidth: 0 }}>
+            <div className="t-h2">Need help?</div>
+            <div className="t-meta" style={{ marginTop: "var(--s-1)" }}>
+              90-second walkthrough · or message us
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: "var(--s-2)" }}>
+            <Link
+              href="/docs"
+              className="btn btn--ghost btn--sm"
+              style={{ textDecoration: "none" }}
+            >
+              Walkthrough
+            </Link>
+            <Link
+              href="/contact"
+              className="btn btn--ghost btn--sm"
+              style={{ textDecoration: "none" }}
+            >
+              Message
+            </Link>
+          </div>
         </div>
       </div>
     </main>
