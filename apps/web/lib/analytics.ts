@@ -98,6 +98,7 @@ export async function computeAccountAnalytics(
       trend: [],
       byVenue: [],
       byDow: DOW_LABELS.map((label, dow) => ({ dow, label, events: 0, scanned: 0 })),
+      byTier: [],
       totalApproved: 0,
       totalScanned: 0,
       showRate: 0,

@@ -25,12 +25,12 @@ export default async function VenueSettingsPage() {
   return (
     <SettingsShell
       active="venue"
-      eyebrow={`Venue · ${venue?.name ?? account.name}`}
+      eyebrow={`Venue · ${venue?.name ?? account.display_name}`}
       title="Settings"
       sub="Defaults all new events inherit."
     >
       <div className="t-h1" style={{ marginBottom: "var(--s-6)" }}>
-        {venue?.name ?? account.name}
+        {venue?.name ?? account.display_name}
       </div>
       {fields.length === 0 ? (
         <p className="t-body-2" style={{ color: "var(--fg-3)" }}>

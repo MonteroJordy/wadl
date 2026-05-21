@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 export default async function BrandingSettings() {
   const { account } = await requireOwnerContext();
-  const initials = account.name
+  const initials = account.display_name
     .split(" ")
     .map((s) => s[0] ?? "")
     .join("")
