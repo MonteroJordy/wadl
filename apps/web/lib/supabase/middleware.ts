@@ -18,6 +18,7 @@ const PUBLIC_PATHS = [
   "/api/log/client-error",
   "/h",
   "/g",
+  "/v",
   "/invite",
   "/role-picker",
   "/recognized",
