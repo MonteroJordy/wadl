@@ -111,16 +111,24 @@ export default function V5Shell({
           <Link href="/owner" aria-label="WADL home">
             <Logo size={18} />
           </Link>
-          <span
+          <Link
+            href="/role-picker"
             className="t-meta"
+            title="Switch workspace"
             style={{
               paddingLeft: "var(--s-2)",
               borderLeft: "1px solid var(--line)",
               marginLeft: "var(--s-2)",
+              textDecoration: "none",
+              color: "var(--fg-2)",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "var(--s-2)",
             }}
           >
             {context}
-          </span>
+            <span style={{ color: "var(--fg-4)", fontSize: 10 }}>▾</span>
+          </Link>
         </div>
 
         {/* primary nav — hidden on narrow screens, shown via mobile sheet */}

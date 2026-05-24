@@ -40,6 +40,7 @@ const PUBLIC_PATHS = [
   "/careers",
   "/about",
   "/shortcuts",
+  "/reissue",
   "/docs",
   "/help",
   "/contact",
