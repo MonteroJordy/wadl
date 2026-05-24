@@ -41,6 +41,8 @@ const PUBLIC_PATHS = [
   "/about",
   "/shortcuts",
   "/reissue",
+  "/verify-age",
+  "/walkthrough",
   "/docs",
   "/help",
   "/contact",
