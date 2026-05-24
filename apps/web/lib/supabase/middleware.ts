@@ -38,6 +38,8 @@ const PUBLIC_PATHS = [
   "/changelog",
   "/press",
   "/careers",
+  "/about",
+  "/shortcuts",
   "/docs",
   "/help",
   "/contact",

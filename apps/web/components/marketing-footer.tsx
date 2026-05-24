@@ -3,9 +3,11 @@ import { Logo } from "@/components/v5";
 
 const LINKS: Array<[string, string]> = [
   ["Pricing", "/pricing"],
+  ["About", "/about"],
   ["Tonight", "/discover"],
   ["Changelog", "/changelog"],
   ["Status", "/status"],
+  ["Shortcuts", "/shortcuts"],
   ["Press", "/press"],
   ["Careers", "/careers"],
   ["Privacy", "/privacy"],
