@@ -43,6 +43,7 @@ const PUBLIC_PATHS = [
   "/reissue",
   "/verify-age",
   "/walkthrough",
+  "/strike",
   "/docs",
   "/help",
   "/contact",

@@ -132,10 +132,22 @@ export default async function GuestlessLanding({ params }: PageProps) {
                 <span className="chip chip--warn">List full</span>
                 <p
                   className="t-body-2"
-                  style={{ marginTop: "var(--s-3)" }}
+                  style={{ marginTop: "var(--s-3)", color: "var(--fg-2)" }}
                 >
-                  This list is at capacity. Check back in case spots open up.
+                  This list is at capacity. Most lists move in the last hour
+                  before doors — join the waitlist and we&apos;ll text the
+                  moment a spot opens.
                 </p>
+                <Link
+                  href={`/g/${params.token}/waitlist`}
+                  className="btn btn--lg btn--accent btn--block"
+                  style={{
+                    marginTop: "var(--s-4)",
+                    textDecoration: "none",
+                  }}
+                >
+                  Join waitlist →
+                </Link>
               </div>
             ) : (
               <>
