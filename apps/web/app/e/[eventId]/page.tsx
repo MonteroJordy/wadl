@@ -370,7 +370,7 @@ export default async function EventDetailPage({
               {firstNight && !firstNight.is_frozen && (
                 <Link
                   href={`/e/${event.id}/rsvp?night=${firstNight.id}`}
-                  className="btn btn--xl btn--block"
+                  className="btn btn--xl btn--accent btn--block"
                   style={{
                     textDecoration: "none",
                     marginTop: "var(--s-5)",

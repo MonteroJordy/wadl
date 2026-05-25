@@ -201,7 +201,7 @@ export default async function InviteLanding({ params }: PageProps) {
         )}
 
         <form action={accept} style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-          <button type="submit" className="btn btn--lg btn--block">
+          <button type="submit" className="btn btn--lg btn--accent btn--block">
             {invite.kind === "staff"
               ? "Accept shift"
               : invite.kind === "co_owner"

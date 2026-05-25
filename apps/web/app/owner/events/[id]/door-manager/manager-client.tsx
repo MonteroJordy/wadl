@@ -281,7 +281,7 @@ export default function DoorManagerClient({
           )}
           <button
             type="submit"
-            className="btn btn--block"
+            className="btn btn--accent btn--block"
             disabled={pending}
           >
             {pending ? "Adding…" : "+ Add walk-in"}

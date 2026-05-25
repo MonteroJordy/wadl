@@ -154,7 +154,7 @@ export default function VerifyAgePage() {
           type="button"
           onClick={onConfirm}
           disabled={submitting}
-          className="btn btn--lg btn--block"
+          className="btn btn--lg btn--accent btn--block"
         >
           {submitting
             ? "Verifying…"

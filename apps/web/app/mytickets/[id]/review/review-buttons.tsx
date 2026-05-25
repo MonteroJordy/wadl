@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { submitReviewAction } from "./actions";
 
 const OPTIONS: Array<{ key: "loved" | "good" | "meh"; label: string; tone: string }> = [
-  { key: "loved", label: "Loved it", tone: "" },
+  { key: "loved", label: "Loved it", tone: "btn--accent" },
   { key: "good", label: "Good", tone: "btn--ghost" },
   { key: "meh", label: "Meh", tone: "btn--ghost" },
 ];

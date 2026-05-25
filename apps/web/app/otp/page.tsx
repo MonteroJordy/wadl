@@ -238,7 +238,7 @@ function OtpInner() {
 
           <button
             type="submit"
-            className="btn btn--lg btn--block"
+            className="btn btn--lg btn--accent btn--block"
             style={{ marginTop: "var(--s-6)" }}
             disabled={loading || code.length < 4}
             aria-busy={loading || undefined}

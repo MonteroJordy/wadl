@@ -158,7 +158,7 @@ export default function LoginPage() {
               />
               {error ? <ErrorLine>{error}</ErrorLine> : null}
               <button
-                className="btn btn--lg btn--block"
+                className="btn btn--lg btn--accent btn--block"
                 type="submit"
                 disabled={loading}
               >
@@ -198,7 +198,7 @@ export default function LoginPage() {
                 </p>
               ) : null}
               <button
-                className="btn btn--lg btn--block"
+                className="btn btn--lg btn--accent btn--block"
                 type="submit"
                 disabled={loading}
               >

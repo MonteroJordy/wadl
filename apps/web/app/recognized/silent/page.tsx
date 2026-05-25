@@ -131,7 +131,7 @@ export default async function SilentRecognized({ searchParams }: PageProps) {
 
         <Link
           href={backHref}
-          className="btn btn--lg btn--block"
+          className="btn btn--lg btn--accent btn--block"
           style={{ textDecoration: "none" }}
         >
           Confirm

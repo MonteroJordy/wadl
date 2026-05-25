@@ -56,7 +56,7 @@ export default function RecognizedSignIn({ searchParams }: PageProps) {
 
         <Link
           href={`/login?phone=${encodeURIComponent(phone)}&next=${encodeURIComponent(next)}`}
-          className="btn btn--lg btn--block"
+          className="btn btn--lg btn--accent btn--block"
           style={{ textDecoration: "none" }}
         >
           Text me a code
