@@ -696,7 +696,7 @@ function Step1Phone({
 
         <button
           type="submit"
-          className="btn btn--xl btn--block"
+          className="btn btn--xl btn--accent btn--block"
           disabled={pending}
         >
           {pending ? "Sending code…" : "Continue"}
@@ -804,7 +804,7 @@ function Step2Verify({
 
         <button
           type="submit"
-          className="btn btn--xl btn--block"
+          className="btn btn--xl btn--accent btn--block"
           disabled={pending}
         >
           {pending ? "Verifying…" : "Verify & continue"}
@@ -904,7 +904,7 @@ function Step3Welcome({
 
         <button
           type="submit"
-          className="btn btn--xl btn--block"
+          className="btn btn--xl btn--accent btn--block"
           disabled={pending}
         >
           {pending ? "Saving…" : copy.cta}
@@ -1005,7 +1005,7 @@ function Step4Venue({
 
         <button
           type="submit"
-          className="btn btn--xl btn--block"
+          className="btn btn--xl btn--accent btn--block"
           style={{ marginTop: "var(--s-3)" }}
           disabled={pending}
         >

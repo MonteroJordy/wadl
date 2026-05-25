@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { Profile } from "@/lib/types";
 import MarketingFooter from "@/components/marketing-footer";
-import { Cover, CoverHeader, Logo } from "@/components/v5";
+import { Cover, Logo } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -146,26 +146,67 @@ export default async function RootPage() {
           </nav>
         </header>
 
-        {/* Hero — v5 CoverHeader composition: full-bleed procedural
-            cover, eyebrow + display-lg title bottom-aligned, actions
-            inline. Matches Wadl v5.html → V5Marketing exactly. */}
-        <CoverHeader
-          seed="Replace the WhatsApp door"
-          height={560}
-          eyebrow="■ BUILT WITH MIAMI OPERATORS"
-          title={
-            <>
+        {/* Hero — content-first composition. Headline + sub + CTAs sit at
+            the top of the hero, atmospheric cover gradient sits behind.
+            Inverts the old V5Marketing pattern (which buried the title
+            at the bottom of a 560px void) so the value prop reads
+            instantly without scroll. */}
+        <section
+          style={{
+            position: "relative",
+            background:
+              "radial-gradient(circle at 85% 15%, rgba(255,138,61,0.08) 0%, transparent 45%), radial-gradient(circle at 15% 90%, rgba(255,61,110,0.06) 0%, transparent 50%), radial-gradient(circle at 25% 20%, rgba(255,255,255,0.04) 0%, transparent 60%), var(--bg)",
+            borderBottom: "1px solid var(--line)",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              maxWidth: 1200,
+              margin: "0 auto",
+              padding: "var(--s-16) var(--s-8) var(--s-12)",
+            }}
+          >
+            <div className="t-meta">■ BUILT WITH MIAMI OPERATORS</div>
+            <h1
+              className="t-display-xl"
+              style={{
+                marginTop: "var(--s-4)",
+                maxWidth: 880,
+                lineHeight: 0.95,
+              }}
+            >
               Replace the
               <br />
               WhatsApp door.
-            </>
-          }
-          actions={
-            <>
+            </h1>
+            <p
+              className="t-body"
+              style={{
+                marginTop: "var(--s-6)",
+                color: "var(--fg-2)",
+                fontSize: 19,
+                lineHeight: 1.45,
+                maxWidth: 640,
+              }}
+            >
+              Google Sheets. Group chats. Names yelled across the door at
+              midnight. WADL turns nightlife guest lists into one
+              attributed list every venue trusts — and the data nobody
+              else has on their promoters.
+            </p>
+            <div
+              style={{
+                marginTop: "var(--s-8)",
+                display: "flex",
+                gap: "var(--s-3)",
+                flexWrap: "wrap",
+              }}
+            >
               {user ? (
                 <Link
                   href={dashboardHref}
-                  className="btn btn--xl"
+                  className="btn btn--xl btn--accent"
                   style={{ textDecoration: "none" }}
                 >
                   Open dashboard →
@@ -173,7 +214,7 @@ export default async function RootPage() {
               ) : (
                 <Link
                   href="/signup"
-                  className="btn btn--xl"
+                  className="btn btn--xl btn--accent"
                   style={{ textDecoration: "none" }}
                 >
                   Start free — 4 min →
@@ -186,31 +227,17 @@ export default async function RootPage() {
               >
                 See pricing
               </Link>
-            </>
-          }
-        />
-        {/* Intro line under hero */}
-        <section
-          style={{
-            padding: "var(--s-8) var(--s-8) var(--s-4)",
-            maxWidth: 1280,
-            margin: "0 auto",
-          }}
-        >
-          <p
-            className="t-body"
-            style={{
-              color: "var(--fg-2)",
-              fontSize: 18,
-              lineHeight: 1.5,
-              maxWidth: 680,
-            }}
-          >
-            Google Sheets. Group chats. Names yelled across the door at
-            midnight. WADL turns nightlife guest lists into one attributed
-            list every venue trusts — and the data nobody else has on their
-            promoters.
-          </p>
+            </div>
+            <div
+              className="t-meta"
+              style={{
+                marginTop: "var(--s-6)",
+                color: "var(--fg-3)",
+              }}
+            >
+              FREE FOREVER · NO CARD · 4-MINUTE SETUP
+            </div>
+          </div>
         </section>
 
         {/* Tonight, somewhere — 3-card grid (V5Marketing) */}
@@ -535,7 +562,7 @@ export default async function RootPage() {
             {user ? (
               <Link
                 href={dashboardHref}
-                className="btn btn--lg"
+                className="btn btn--lg btn--accent"
                 style={{ textDecoration: "none" }}
               >
                 Open dashboard →
@@ -543,7 +570,7 @@ export default async function RootPage() {
             ) : (
               <Link
                 href="/signup"
-                className="btn btn--lg"
+                className="btn btn--lg btn--accent"
                 style={{ textDecoration: "none" }}
               >
                 Start free →

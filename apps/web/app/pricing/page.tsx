@@ -1,6 +1,6 @@
 import Link from "next/link";
-import PublicShell from "@/components/public-shell";
 import MarketingFooter from "@/components/marketing-footer";
+import { Logo } from "@/components/v5";
 
 export const metadata = {
   title: "Pricing — WADL",
@@ -92,8 +92,54 @@ const FAQ: Array<[string, string]> = [
 export default function PricingPage() {
   return (
     <>
-      <PublicShell maxWidth="6xl">
-        <div className="v5">
+      <header
+        style={{
+          padding: "var(--s-4) var(--s-6)",
+          borderBottom: "1px solid var(--line)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "var(--s-4)",
+        }}
+      >
+        <Link href="/" aria-label="WADL home" style={{ textDecoration: "none" }}>
+          <Logo size={20} />
+        </Link>
+        <nav style={{ display: "flex", alignItems: "center", gap: "var(--s-5)" }}>
+          <Link
+            href="/discover"
+            className="t-meta hidden sm:inline"
+            style={{ textDecoration: "none", color: "var(--fg-2)" }}
+          >
+            TONIGHT
+          </Link>
+          <Link
+            href="/login"
+            className="t-meta"
+            style={{ textDecoration: "none", color: "var(--fg-2)" }}
+          >
+            SIGN IN
+          </Link>
+          <Link
+            href="/signup"
+            className="btn btn--sm"
+            style={{ textDecoration: "none" }}
+          >
+            Start free
+          </Link>
+        </nav>
+      </header>
+      <main
+        id="main-content"
+        style={{
+          minHeight: "100vh",
+          background: "var(--bg)",
+          padding: "var(--s-12) var(--s-6)",
+          maxWidth: 1200,
+          margin: "0 auto",
+        }}
+      >
+        <div>
           <header
             style={{ textAlign: "center", marginBottom: "var(--s-16)" }}
           >
@@ -148,7 +194,7 @@ export default function PricingPage() {
               >
                 {t.highlight && (
                   <span
-                    className="chip chip--ok"
+                    className="chip chip--accent"
                     style={{
                       position: "absolute",
                       top: "var(--s-4)",
@@ -201,7 +247,7 @@ export default function PricingPage() {
                   href={t.cta.href}
                   className={
                     t.highlight
-                      ? "btn btn--lg btn--block"
+                      ? "btn btn--lg btn--accent btn--block"
                       : "btn btn--ghost btn--lg btn--block"
                   }
                   style={{ textDecoration: "none" }}
@@ -269,7 +315,7 @@ export default function PricingPage() {
             </div>
           </section>
         </div>
-      </PublicShell>
+      </main>
       <MarketingFooter />
     </>
   );

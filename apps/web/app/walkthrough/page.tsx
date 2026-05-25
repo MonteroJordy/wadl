@@ -114,7 +114,7 @@ export default function WalkthroughPage() {
           >
             Skip
           </Link>
-          <button type="button" onClick={next} className="btn">
+          <button type="button" onClick={next} className="btn btn--accent">
             {isLast ? "Open dashboard →" : step.cta}
           </button>
         </div>

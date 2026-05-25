@@ -56,6 +56,15 @@
   --err: #f87171;
   --info: #60a5fa;
 
+  /* Brand accent gradient — pink → orange → yellow.
+     Use sparingly: primary marketing CTAs, "live" chips, accent surfaces.
+     Pairs with --accent-soft as a low-saturation backdrop tint. */
+  --accent-1: #ff3d6e;
+  --accent-2: #ff8a3d;
+  --accent-3: #ffd23d;
+  --accent-grad: linear-gradient(135deg, #ff3d6e 0%, #ff8a3d 50%, #ffd23d 100%);
+  --accent-soft: rgba(255, 61, 110, 0.12);
+
   /* Type scale — modular 1.25 */
   --ts-xs: 11px;
   --ts-sm: 13px;
@@ -1194,6 +1203,14 @@ a:focus-visible > .w-card {
 .btn--ghost:hover { background: var(--bg-2); box-shadow: inset 0 0 0 1px var(--line-3); }
 .btn--danger { background: var(--err); color: var(--bg); }
 .btn--danger:hover { background: #fb8e8e; }
+.btn--accent {
+  background: var(--accent-grad);
+  color: #0a0a0a;
+  box-shadow: 0 2px 16px rgba(255, 61, 110, 0.28);
+  border: 0;
+}
+.btn--accent:hover { filter: brightness(1.08); background: var(--accent-grad); }
+.btn--accent:focus-visible { outline: 2px solid var(--accent-3); outline-offset: 2px; }
 .btn--sm { height: 32px; padding: 0 var(--s-3); font-size: var(--ts-sm); border-radius: var(--r-sm); }
 .btn--lg { height: 48px; padding: 0 var(--s-6); font-size: 15px; border-radius: var(--r-md); }
 .btn--xl { height: 56px; padding: 0 var(--s-8); font-size: var(--ts-lg); border-radius: var(--r-md); }
@@ -1232,6 +1249,7 @@ a:focus-visible > .w-card {
 .chip--warn { background: rgba(251,191,36,0.16); color: var(--warn); }
 .chip--err { background: rgba(248,113,113,0.16); color: var(--err); }
 .chip--info { background: rgba(96,165,250,0.16); color: var(--info); }
+.chip--accent { background: var(--accent-grad); color: #0a0a0a; font-weight: 600; }
 .chip--ghost { background: transparent; box-shadow: inset 0 0 0 1px var(--line-2); }
 
 /* DIVIDER */

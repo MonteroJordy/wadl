@@ -119,10 +119,11 @@ export default function WallClient({
               width: 16,
               height: 16,
               borderRadius: "var(--r-pill)",
-              background: "var(--ok)",
+              background: "var(--accent-1)",
+              boxShadow: "0 0 24px rgba(255,61,110,0.6)",
             }}
           />
-          <span className="t-meta">LIVE</span>
+          <span className="chip chip--accent">LIVE</span>
         </div>
       </div>
 

@@ -71,7 +71,7 @@ export default function OnboardingDonePage() {
             gap: "var(--s-3)",
           }}
         >
-          {STEPS.map((s) => (
+          {STEPS.map((s, idx) => (
             <div key={s.n} className="card" style={{ padding: "var(--s-5)" }}>
               <span className="t-meta">Step {s.n}</span>
               <div className="t-h1" style={{ marginTop: "var(--s-2)" }}>
@@ -85,7 +85,7 @@ export default function OnboardingDonePage() {
               </div>
               <Link
                 href={s.href}
-                className="btn btn--block"
+                className={`btn btn--block ${idx === 0 ? "btn--accent" : ""}`}
                 style={{
                   marginTop: "var(--s-4)",
                   textDecoration: "none",

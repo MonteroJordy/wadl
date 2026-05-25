@@ -310,7 +310,7 @@ export default function NewEventForm({
           <button
             type="submit"
             form="new-event-form"
-            className="btn"
+            className="btn btn--accent"
             disabled={pending}
           >
             {pending ? "Publishing…" : "Publish"}
@@ -921,7 +921,7 @@ export default function NewEventForm({
 
           <button
             type="submit"
-            className="btn btn--lg btn--block"
+            className="btn btn--lg btn--accent btn--block"
             disabled={pending}
           >
             {pending ? "Publishing…" : "Publish event"}

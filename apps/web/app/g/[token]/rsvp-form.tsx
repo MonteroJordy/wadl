@@ -80,7 +80,7 @@ export default function GuestlessRsvpForm({ token }: { token: string }) {
       )}
       <button
         type="submit"
-        className="btn btn--lg btn--block"
+        className="btn btn--lg btn--accent btn--block"
         disabled={pending}
       >
         {pending ? "Saving…" : "Get my pass →"}
