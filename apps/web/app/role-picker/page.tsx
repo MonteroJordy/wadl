@@ -109,7 +109,7 @@ export default async function RolePickerPage() {
             gap: "var(--s-3)",
           }}
         >
-          {contexts.map((c) => (
+          {contexts.map((c, idx) => (
             <Link
               key={c.href}
               href={c.href}
@@ -121,6 +121,9 @@ export default async function RolePickerPage() {
                 alignItems: "center",
                 textDecoration: "none",
                 color: "inherit",
+                background: idx === 0 ? "var(--accent-soft)" : undefined,
+                borderColor:
+                  idx === 0 ? "rgba(255,61,110,0.35)" : "var(--line)",
               }}
             >
               <div>
@@ -129,7 +132,15 @@ export default async function RolePickerPage() {
                   {c.role} · {c.sub}
                 </div>
               </div>
-              <span style={{ color: "var(--fg-3)" }}>→</span>
+              <span
+                style={{
+                  color: idx === 0 ? "var(--accent-1)" : "var(--fg-3)",
+                  fontSize: 18,
+                  fontWeight: 600,
+                }}
+              >
+                →
+              </span>
             </Link>
           ))}
         </div>
