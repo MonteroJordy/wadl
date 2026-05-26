@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireOwnerContext } from "@/lib/owner";
 import V5Shell, { type V5NavItem } from "@/components/v5/shell";
 import CommandPalette from "@/components/command-palette";
@@ -85,6 +86,13 @@ export default async function OwnerLayout({
       unread={unread ?? 0}
       topBarRight={
         <>
+          <Link
+            href="/owner/events/new"
+            className="btn btn--sm btn--accent"
+            style={{ textDecoration: "none" }}
+          >
+            + New event
+          </Link>
           <CommandPalette />
           <NotificationBell unread={unread ?? 0} accountId={account.id} />
         </>
