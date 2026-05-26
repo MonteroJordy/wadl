@@ -189,7 +189,7 @@ export default function TemplateManager({
           >
             Cancel
           </button>
-          <button type="submit" className="btn" disabled={pending}>
+          <button type="submit" className="btn btn--accent" disabled={pending}>
             {pending ? "Saving…" : "Save"}
           </button>
         </div>

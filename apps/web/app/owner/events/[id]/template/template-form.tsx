@@ -92,7 +92,7 @@ export default function TemplateForm({ eventId }: { eventId: string }) {
       )}
       <button
         type="submit"
-        className="btn"
+        className="btn btn--accent"
         disabled={pending}
         style={{ marginTop: "var(--s-4)" }}
       >

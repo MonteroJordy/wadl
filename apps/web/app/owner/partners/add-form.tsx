@@ -163,7 +163,7 @@ export default function AddPartnerForm() {
         </div>
       )}
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        <button type="submit" className="btn" disabled={pending}>
+        <button type="submit" className="btn btn--accent" disabled={pending}>
           {pending ? "Saving…" : "Save partner"}
         </button>
         <button

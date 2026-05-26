@@ -189,7 +189,7 @@ export default async function HoldersPage({
             </p>
             <Link
               href="/owner"
-              className="btn"
+              className="btn btn--accent"
               style={{ marginTop: "var(--s-6)" }}
             >
               Back to events

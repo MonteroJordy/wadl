@@ -34,7 +34,7 @@ export default function NotFound() {
         </div>
         <Link
           href="/discover"
-          className="btn"
+          className="btn btn--accent"
           style={{ marginTop: "var(--s-6)", textDecoration: "none" }}
         >
           Back to events

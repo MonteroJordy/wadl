@@ -222,7 +222,7 @@ export default function NotifPrefsForm({ initial }: { initial: NotifPrefs }) {
 
       <button
         type="button"
-        className="btn"
+        className="btn btn--accent"
         onClick={save}
         disabled={pending}
       >

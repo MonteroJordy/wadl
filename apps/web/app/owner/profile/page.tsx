@@ -461,7 +461,7 @@ export default async function ProfilePage() {
             </p>
             <Link
               href="/signup"
-              className="btn"
+              className="btn btn--accent"
               style={{
                 marginTop: "var(--s-4)",
                 textDecoration: "none",

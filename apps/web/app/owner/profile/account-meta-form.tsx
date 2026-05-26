@@ -116,7 +116,7 @@ export default function AccountMetaForm({
       >
         <button
           type="submit"
-          className="btn"
+          className="btn btn--accent"
           disabled={pending}
           aria-busy={pending || undefined}
         >

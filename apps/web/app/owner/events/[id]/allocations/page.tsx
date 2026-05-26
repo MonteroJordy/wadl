@@ -113,7 +113,7 @@ export default async function AllocationsPage({
         actions={
           <Link
             href={`/owner/events/${event.id}/allocations/new`}
-            className="btn"
+            className="btn btn--accent"
             style={{ textDecoration: "none" }}
           >
             New allocation
@@ -196,7 +196,7 @@ export default async function AllocationsPage({
             </div>
             <Link
               href={`/owner/events/${event.id}/settings`}
-              className="btn"
+              className="btn btn--accent"
               style={{
                 marginTop: "var(--s-6)",
                 textDecoration: "none",
@@ -239,7 +239,7 @@ export default async function AllocationsPage({
             </div>
             <Link
               href={`/owner/events/${event.id}/allocations/new`}
-              className="btn"
+              className="btn btn--accent"
               style={{
                 marginTop: "var(--s-6)",
                 textDecoration: "none",

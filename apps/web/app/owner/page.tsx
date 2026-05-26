@@ -328,7 +328,7 @@ export default async function OwnerWeekViewPage({
                 >
                   <Link
                     href="/owner/events/new"
-                    className="btn"
+                    className="btn btn--accent"
                     style={{ textDecoration: "none" }}
                   >
                     {framing.emptyCtaLabel}

@@ -60,7 +60,7 @@ export default async function TicketPage({
           </p>
           <Link
             href="/mytickets"
-            className="btn"
+            className="btn btn--accent"
             style={{
               marginTop: "var(--s-6)",
               textDecoration: "none",

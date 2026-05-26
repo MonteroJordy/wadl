@@ -241,7 +241,7 @@ export default function OverrideForm({
         />
       </div>
 
-      <button type="submit" className="btn" disabled={pending}>
+      <button type="submit" className="btn btn--accent" disabled={pending}>
         {pending ? "Admitting…" : "Override + admit"}
       </button>
 
