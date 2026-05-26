@@ -199,7 +199,7 @@ export default async function MyTicketsPage() {
             </div>
             <Link
               href="/discover"
-              className="btn"
+              className="btn btn--accent"
               style={{ marginTop: "var(--s-6)" }}
             >
               Browse events

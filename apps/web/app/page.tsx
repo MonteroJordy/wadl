@@ -319,7 +319,7 @@ export default async function RootPage() {
                   }}
                 >
                   <span className={"chip chip--" + ev.chip}>{ev.status}</span>
-                  <span className="btn btn--sm">RSVP</span>
+                  <span className="btn btn--sm btn--accent">RSVP</span>
                 </div>
               </Link>
             ))}

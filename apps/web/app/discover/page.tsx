@@ -73,10 +73,21 @@ export default async function DiscoverPage() {
             borderBottom: "1px solid var(--line)",
           }}
         >
-          <Logo size={18} />
-          <Link href="/login" className="btn btn--ghost btn--sm">
-            Sign in
+          <Link href="/" aria-label="WADL home" style={{ textDecoration: "none" }}>
+            <Logo size={18} />
           </Link>
+          <div style={{ display: "flex", gap: "var(--s-2)", alignItems: "center" }}>
+            <Link
+              href="/login"
+              className="t-meta"
+              style={{ textDecoration: "none", color: "var(--fg-2)" }}
+            >
+              SIGN IN
+            </Link>
+            <Link href="/signup" className="btn btn--sm btn--accent" style={{ textDecoration: "none" }}>
+              I run a room
+            </Link>
+          </div>
         </div>
 
         {/* Hero header */}
@@ -84,6 +95,8 @@ export default async function DiscoverPage() {
           style={{
             padding: "var(--s-8) var(--s-8) var(--s-6)",
             borderBottom: "1px solid var(--line)",
+            background:
+              "radial-gradient(circle at 85% 20%, rgba(255,138,61,0.05) 0%, transparent 50%), transparent",
           }}
         >
           <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
@@ -118,7 +131,7 @@ export default async function DiscoverPage() {
             </div>
             <Link
               href="/login"
-              className="btn"
+              className="btn btn--accent"
               style={{ marginTop: "var(--s-6)" }}
             >
               I run a room
@@ -233,10 +246,10 @@ function DiscoverCard({
           alignItems: "center",
         }}
       >
-        <span className={"chip " + (live ? "chip--ok" : "chip--ghost")}>
+        <span className={"chip " + (live ? "chip--accent" : "chip--ghost")}>
           {live ? "Live tonight" : cap ? `${cap} cap` : "On sale"}
         </span>
-        <span className="btn btn--sm">RSVP</span>
+        <span className={"btn btn--sm " + (live ? "btn--accent" : "")}>RSVP</span>
       </div>
     </Link>
   );

@@ -251,7 +251,7 @@ export default async function HelpPage() {
           </p>
           <Link
             href="/contact"
-            className="btn"
+            className="btn btn--accent"
             style={{
               marginTop: "var(--s-5)",
               textDecoration: "none",
