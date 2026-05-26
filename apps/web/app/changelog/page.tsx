@@ -74,7 +74,8 @@ export default function ChangelogPage() {
         id="main-content"
         style={{
           minHeight: "100vh",
-          background: "var(--bg)",
+          background:
+            "radial-gradient(circle at 95% 5%, rgba(255,210,61,0.05) 0%, transparent 40%), var(--bg)",
           padding: "var(--s-16) var(--s-12)",
           maxWidth: 880,
           margin: "0 auto",

@@ -60,7 +60,7 @@ function ErrorFrame({ title, body }: { title: string; body: string }) {
         >
           <Link
             href="/holder"
-            className="btn btn--block"
+            className="btn btn--accent btn--block"
             style={{ textDecoration: "none" }}
           >
             Your allocations

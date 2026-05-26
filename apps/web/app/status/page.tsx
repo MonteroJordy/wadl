@@ -61,7 +61,8 @@ export default function StatusPage() {
         id="main-content"
         style={{
           minHeight: "100vh",
-          background: "var(--bg)",
+          background:
+            "radial-gradient(circle at 95% 5%, rgba(74,222,128,0.04) 0%, transparent 40%), var(--bg)",
           padding: "var(--s-12)",
           maxWidth: 1100,
           margin: "0 auto",

@@ -368,7 +368,7 @@ export default async function OwnerWeekViewPage({
                       ? `/owner/events/${tonight.event_id}?night=${tonight.id}`
                       : "/owner/events/new"
                   }
-                  className="btn btn--lg"
+                  className="btn btn--lg btn--accent"
                   style={{ textDecoration: "none" }}
                 >
                   {tonight ? "Open daydash" : "New event"}

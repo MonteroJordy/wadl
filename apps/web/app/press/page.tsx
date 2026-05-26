@@ -40,7 +40,8 @@ export default function PressPage() {
         id="main-content"
         style={{
           minHeight: "100vh",
-          background: "var(--bg)",
+          background:
+            "radial-gradient(circle at 90% 10%, rgba(255,138,61,0.05) 0%, transparent 45%), var(--bg)",
           padding: "var(--s-12)",
           maxWidth: 1100,
           margin: "0 auto",

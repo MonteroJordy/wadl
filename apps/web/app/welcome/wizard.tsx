@@ -301,7 +301,11 @@ export default function WelcomeWizard({ initial }: { initial: InitialState }) {
                     </li>
                   ))}
                 </ul>
-                <button type="button" onClick={next} className="btn btn--lg">
+                <button
+                  type="button"
+                  onClick={next}
+                  className="btn btn--lg btn--accent"
+                >
                   Let&apos;s go →
                 </button>
               </section>
@@ -397,7 +401,7 @@ export default function WelcomeWizard({ initial }: { initial: InitialState }) {
                 </p>
                 <Link
                   href="/venuesetup?return=/welcome"
-                  className="btn btn--block"
+                  className="btn btn--accent btn--block"
                   style={{
                     marginTop: "var(--s-6)",
                     textDecoration: "none",
