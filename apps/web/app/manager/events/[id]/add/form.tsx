@@ -217,7 +217,7 @@ export default function ManagerAddForm({
           )}
 
           <button
-            className="btn btn--lg btn--block"
+            className="btn btn--lg btn--accent btn--block"
             type="submit"
             disabled={pending || allocations.length === 0}
           >

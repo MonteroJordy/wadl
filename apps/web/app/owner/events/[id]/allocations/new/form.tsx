@@ -225,7 +225,7 @@ export default function NewAllocationForm({
 
         <button
           type="submit"
-          className="btn btn--lg btn--block"
+          className="btn btn--lg btn--accent btn--block"
           disabled={pending || total < 1}
         >
           {pending ? "Creating…" : `Create allocation · ${total} total`}

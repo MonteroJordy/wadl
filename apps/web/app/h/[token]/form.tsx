@@ -127,7 +127,7 @@ export default function HolderAddForm({
 
         <button
           type="submit"
-          className="btn btn--lg btn--block"
+          className="btn btn--lg btn--accent btn--block"
           disabled={pending}
         >
           {pending ? "Adding…" : "Add to list"}

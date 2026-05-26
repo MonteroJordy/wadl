@@ -237,7 +237,7 @@ export default function RsvpForm({
                 typeof window !== "undefined" ? window.location.origin : "",
                 "",
               )}
-              className="btn btn--lg btn--block"
+              className="btn btn--lg btn--accent btn--block"
               style={{ textDecoration: "none" }}
             >
               See your QR
@@ -359,7 +359,7 @@ export default function RsvpForm({
 
             <button
               type="submit"
-              className="btn btn--lg btn--block"
+              className="btn btn--lg btn--accent btn--block"
               disabled={pending}
             >
               {pending ? "Locking you in…" : "Verify & RSVP"}
@@ -577,7 +577,7 @@ export default function RsvpForm({
 
           <button
             type="submit"
-            className="btn btn--lg btn--block"
+            className="btn btn--lg btn--accent btn--block"
             disabled={pending}
           >
             {pending ? "Sending…" : "Text me the code"}

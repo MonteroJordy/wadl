@@ -68,7 +68,7 @@ export default function GuestlessUpgrade({ params, searchParams }: PageProps) {
 
         <Link
           href={`/signup?next=${encodeURIComponent(next)}`}
-          className="btn btn--lg btn--block"
+          className="btn btn--lg btn--accent btn--block"
           style={{ textDecoration: "none" }}
         >
           Sign in with magic link

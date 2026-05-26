@@ -256,7 +256,7 @@ export default async function TierSubLinkPage({
           <div style={{ padding: "var(--s-5) var(--s-6) 0" }}>
             <Link
               href={rsvpHref}
-              className="btn btn--lg btn--block"
+              className="btn btn--lg btn--accent btn--block"
               style={{ textDecoration: "none" }}
             >
               Continue to RSVP

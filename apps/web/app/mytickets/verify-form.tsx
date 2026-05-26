@@ -91,7 +91,7 @@ export default function MyTicketsVerify() {
         )}
         <button
           type="submit"
-          className="btn btn--lg btn--block"
+          className="btn btn--lg btn--accent btn--block"
           disabled={pending}
         >
           {pending ? "Verifying…" : "See my tickets"}
@@ -152,7 +152,7 @@ export default function MyTicketsVerify() {
       )}
       <button
         type="submit"
-        className="btn btn--lg btn--block"
+        className="btn btn--lg btn--accent btn--block"
         disabled={pending}
       >
         {pending ? "Sending…" : "Send code"}

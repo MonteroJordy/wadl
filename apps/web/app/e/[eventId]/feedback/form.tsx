@@ -157,7 +157,7 @@ export default function FeedbackForm({
 
       <button
         type="submit"
-        className="btn btn--lg btn--block"
+        className="btn btn--lg btn--accent btn--block"
         disabled={pending || rating < 1}
       >
         {pending ? "Sending…" : "Submit feedback"}

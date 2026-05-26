@@ -237,7 +237,7 @@ export default function VenueSetupPage() {
 
           <button
             type="submit"
-            className="btn btn--lg btn--block"
+            className="btn btn--lg btn--accent btn--block"
             disabled={loading}
           >
             {loading ? "Saving…" : "Finish setup →"}
