@@ -105,7 +105,7 @@ export default function ReferralForm({
           list.
         </p>
       )}
-      <button className="btn" type="submit" disabled={pending}>
+      <button className="btn btn--accent" type="submit" disabled={pending}>
         {pending ? "Adding…" : "Add friend"}
       </button>
     </form>

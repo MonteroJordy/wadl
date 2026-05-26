@@ -104,7 +104,7 @@ export default function CoOwnerAcceptForm({
           </p>
         )}
         <button
-          className="btn"
+          className="btn btn--accent"
           type="button"
           onClick={onBindExisting}
           disabled={pending}
@@ -151,7 +151,7 @@ export default function CoOwnerAcceptForm({
             {error}
           </p>
         )}
-        <button className="btn" type="submit" disabled={pending}>
+        <button className="btn btn--accent" type="submit" disabled={pending}>
           {pending ? "Verifying…" : "Verify & accept"}
         </button>
         <button
@@ -200,7 +200,7 @@ export default function CoOwnerAcceptForm({
           {error}
         </p>
       )}
-      <button className="btn" type="submit" disabled={pending}>
+      <button className="btn btn--accent" type="submit" disabled={pending}>
         {pending ? "Sending…" : "Text me the code"}
       </button>
     </form>
