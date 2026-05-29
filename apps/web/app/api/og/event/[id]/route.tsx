@@ -100,7 +100,7 @@ export async function GET(
           <div
             style={{
               display: "flex",
-              color: "#FF4A2B",
+              color: "oklch(0.7 0.24 260)",
               fontSize: 24,
               letterSpacing: 6,
               textTransform: "uppercase",
@@ -119,7 +119,7 @@ export async function GET(
             <div
               style={{
                 fontSize: 64,
-                color: "#F2EDE4",
+                color: "#f3f1ec",
                 lineHeight: 1,
                 letterSpacing: 2,
                 textTransform: "uppercase",
@@ -131,7 +131,7 @@ export async function GET(
             <div
               style={{
                 fontSize: 24,
-                color: "rgba(245, 200, 66, 1)", // gold
+                color: "oklch(0.86 0.16 85 / 1)", // gold
                 letterSpacing: 2,
                 textTransform: "uppercase",
                 display: "flex",

@@ -22,12 +22,16 @@ export default function GuestDmButton({
 
   if (!hasPhone) {
     return (
-      <p className="label-mono text-muted">No phone — can&apos;t DM.</p>
+      <div className="w-type-meta" style={{ color: "var(--w-fg-muted)" }}>
+        NO PHONE — CAN&apos;T DM.
+      </div>
     );
   }
   if (optedOut) {
     return (
-      <p className="label-mono text-coral">Opted out of SMS.</p>
+      <div className="w-type-meta" style={{ color: "var(--w-err)" }}>
+        OPTED OUT OF SMS.
+      </div>
     );
   }
 
@@ -45,40 +49,55 @@ export default function GuestDmButton({
 
   if (!open) {
     return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="btn-ghost"
-      >
+      <button type="button" className="btn btn--ghost" onClick={() => setOpen(true)}>
         Message {guestName.split(" ")[0]} via SMS
       </button>
     );
   }
 
   return (
-    <div className="card border-coral/40">
-      <p className="label-mono mb-2">Direct SMS</p>
+    <div
+      className="w-card"
+      style={{ padding: 14, borderColor: "var(--w-acc)" }}
+    >
+      <div className="w-type-meta" style={{ marginBottom: 8 }}>
+        DIRECT SMS
+      </div>
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
         maxLength={320}
         placeholder={`Hey ${guestName.split(" ")[0]}, …`}
-        className="input-dark min-h-[96px]"
+        style={{
+          width: "100%",
+          background: "var(--w-surface-1)",
+          border: "1px solid var(--w-line)",
+          color: "var(--w-fg)",
+          padding: "10px 12px",
+          fontFamily: "var(--w-sans)",
+          fontSize: 14,
+          minHeight: 96,
+        }}
       />
-      <p className="label-mono mt-2">{body.length}/320 · charged at standard SMS rate</p>
-      <div className="grid grid-cols-2 gap-2 mt-3">
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="btn-ghost"
-        >
+      <div className="w-type-meta" style={{ marginTop: 8 }}>
+        {body.length}/320 · CHARGED AT STANDARD SMS RATE
+      </div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 8,
+          marginTop: 12,
+        }}
+      >
+        <button type="button" className="btn btn--ghost" onClick={() => setOpen(false)}>
           Cancel
         </button>
         <button
           type="button"
+          className="btn btn--accent"
           onClick={send}
           disabled={pending || !body.trim()}
-          className="btn-primary"
         >
           {pending ? "Sending…" : "Send"}
         </button>

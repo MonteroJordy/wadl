@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 /**
- * Mounts on the daydash and listens for changes on guests + check_ins for the
- * given event_night_id. Calls router.refresh() when something happens so the
- * server-rendered counters re-fetch. Debounced to avoid storms.
+ * Mounts on the daydash and listens for changes on guests + check_ins for
+ * the given event_night_id. Calls router.refresh() when something happens
+ * so the server-rendered counters re-fetch. Debounced to avoid storms.
  */
 export default function RealtimeCounters({ nightId }: { nightId: string }) {
   const router = useRouter();
@@ -27,8 +27,12 @@ export default function RealtimeCounters({ nightId }: { nightId: string }) {
       }, 600);
     }
 
+    // Unique per-mount suffix prevents Supabase from de-duping the
+    // channel with a leftover instance from StrictMode's double-mount
+    // (or a previous navigation), which would otherwise throw
+    // "cannot add postgres_changes callbacks ... after subscribe()".
     const channel = supabase
-      .channel(`night-${nightId}`)
+      .channel(`night-${nightId}-${Math.random().toString(36).slice(2, 10)}`)
       .on(
         "postgres_changes",
         {
@@ -37,7 +41,7 @@ export default function RealtimeCounters({ nightId }: { nightId: string }) {
           table: "check_ins",
           filter: `event_night_id=eq.${nightId}`,
         },
-        () => refresh("scan")
+        () => refresh("scan"),
       )
       .on(
         "postgres_changes",
@@ -47,7 +51,7 @@ export default function RealtimeCounters({ nightId }: { nightId: string }) {
           table: "guests",
           filter: `event_night_id=eq.${nightId}`,
         },
-        () => refresh("rsvp")
+        () => refresh("rsvp"),
       )
       .subscribe();
 
@@ -57,21 +61,37 @@ export default function RealtimeCounters({ nightId }: { nightId: string }) {
     };
   }, [nightId, router]);
 
+  const color = pulse ? "var(--w-ok)" : "var(--w-fg-muted)";
+
   return (
-    <span
-      className={`label-mono inline-flex items-center gap-1 px-2 py-0.5 rounded-full border ${
-        pulse
-          ? "border-mint/60 text-mint"
-          : "border-line text-muted"
-      }`}
-      title={pulse ? `Last update: ${pulse}` : "Live"}
-    >
+    <>
+      <style>{`@keyframes wadlLivePulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.4 } }`}</style>
       <span
-        className={`inline-block w-1.5 h-1.5 rounded-full ${
-          pulse ? "bg-mint animate-pulse" : "bg-muted"
-        }`}
-      />
-      LIVE
-    </span>
+        title={pulse ? `Last update: ${pulse}` : "Live"}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 4,
+          padding: "2px 10px",
+          border: `1px solid ${color}`,
+          color,
+          fontFamily: "var(--w-mono)",
+          fontSize: 11,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+        }}
+      >
+        <span
+          style={{
+            display: "inline-block",
+            width: 6,
+            height: 6,
+            background: color,
+            animation: pulse ? "wadlLivePulse 1s ease-in-out infinite" : undefined,
+          }}
+        />
+        LIVE
+      </span>
+    </>
   );
 }

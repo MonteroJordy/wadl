@@ -32,22 +32,49 @@ export default function UploadForm({ eventId }: { eventId: string }) {
   }
 
   return (
-    <div className="card">
-      <p className="label-mono mb-2">Upload</p>
+    <div className="w-card" style={{ padding: 16 }}>
+      <div className="w-type-meta" style={{ marginBottom: 8 }}>
+        UPLOAD
+      </div>
       <input
         type="file"
         accept="image/jpeg,image/png,image/webp"
         multiple
         onChange={onChange}
-        className="block text-sm text-cream"
+        style={{
+          display: "block",
+          fontSize: 14,
+          color: "var(--w-fg)",
+        }}
         disabled={pending}
       />
-      {pending && <p className="label-mono mt-2 text-mint">Uploading…</p>}
-      {!pending && count > 0 && (
-        <p className="label-mono mt-2 text-mint">{count} uploaded</p>
+      {pending && (
+        <div
+          className="w-type-meta"
+          style={{ marginTop: 8, color: "var(--w-ok)" }}
+        >
+          UPLOADING…
+        </div>
       )}
-      {err && <p className="text-coral text-sm mt-2">{err}</p>}
-      <p className="label-mono mt-3">JPG/PNG/WebP, ≤5 MB each.</p>
+      {!pending && count > 0 && (
+        <div
+          className="w-type-meta"
+          style={{ marginTop: 8, color: "var(--w-ok)" }}
+        >
+          {count} UPLOADED
+        </div>
+      )}
+      {err && (
+        <p
+          className="w-type-body-sm"
+          style={{ color: "var(--w-err)", marginTop: 8 }}
+        >
+          {err}
+        </p>
+      )}
+      <div className="w-type-meta" style={{ marginTop: 12 }}>
+        JPG/PNG/WEBP, ≤5 MB EACH.
+      </div>
     </div>
   );
 }

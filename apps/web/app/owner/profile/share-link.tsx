@@ -10,7 +10,15 @@ export default function ShareLinkInput({ url }: { url: string }) {
       readOnly
       value={url}
       onFocus={(e) => e.currentTarget.select()}
-      className="input-dark text-xs font-mono"
+      style={{
+        width: "100%",
+        background: "var(--w-surface-1)",
+        border: "1px solid var(--w-line)",
+        color: "var(--w-fg)",
+        padding: "10px 12px",
+        fontFamily: "var(--w-mono)",
+        fontSize: 12,
+      }}
     />
   );
 }

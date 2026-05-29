@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import ConfirmDialog from "@/components/confirm-dialog";
 import { cancelGuestAction } from "@/app/owner/events/[id]/waitlist/actions";
 
 export default function GuestCancelButton({
@@ -13,41 +14,53 @@ export default function GuestCancelButton({
   status: string;
 }) {
   const [pending, startTransition] = useTransition();
+  const [open, setOpen] = useState(false);
   const [done, setDone] = useState<{ promoted: boolean } | null>(null);
 
   if (status === "cancelled" || status === "rejected") return null;
 
-  function onClick() {
-    if (
-      !confirm(
-        "Cancel this guest? If they were approved, the oldest waitlisted guest will be auto-promoted (and SMS'd)."
-      )
-    )
-      return;
+  function doCancel() {
     startTransition(async () => {
       const res = await cancelGuestAction(eventId, guestId);
       if ("ok" in res && res.ok) {
         setDone({ promoted: !!res.promotedId });
       }
+      setOpen(false);
     });
   }
 
   if (done) {
     return (
-      <p className="label-mono text-mint">
-        Cancelled.{done.promoted ? " Waitlist auto-promoted." : ""}
-      </p>
+      <div className="w-type-meta" style={{ color: "var(--w-ok)" }}>
+        CANCELLED.{done.promoted ? " WAITLIST AUTO-PROMOTED." : ""}
+      </div>
     );
   }
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={pending}
-      className="btn-ghost border-coral/40 text-coral disabled:opacity-50"
-    >
-      {pending ? "Cancelling…" : "Cancel guest"}
-    </button>
+    <>
+      <button
+        type="button"
+        className="btn btn--ghost"
+        onClick={() => setOpen(true)}
+        disabled={pending}
+        style={{
+          borderColor: "var(--w-err)",
+          color: "var(--w-err)",
+        }}
+      >
+        {pending ? "Cancelling…" : "Cancel guest"}
+      </button>
+      <ConfirmDialog
+        open={open}
+        title="Cancel this guest?"
+        body="If they were approved, the oldest waitlisted guest auto-promotes and gets an SMS. The cancel stays in the audit log."
+        confirmLabel="Cancel guest"
+        danger
+        pending={pending}
+        onConfirm={doCancel}
+        onCancel={() => setOpen(false)}
+      />
+    </>
   );
 }

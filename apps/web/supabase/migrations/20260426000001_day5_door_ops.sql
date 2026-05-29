@@ -1,15 +1,8 @@
 -- Day 5: door operations.
--- Adds door_staff + door_manager role values, do_not_admit scan state,
--- flag_dna/flag_reason on guests, staff_invites table + RLS.
---
--- Note: ALTER TYPE ... ADD VALUE must commit before the new value is used
--- inside subsequent statements. psql runs each statement in autocommit mode
--- unless wrapped in BEGIN/COMMIT, so the ADD VALUE statements below commit
--- individually before anything references them.
-
-alter type user_role         add value if not exists 'door_staff';
-alter type user_role         add value if not exists 'door_manager';
-alter type check_in_state    add value if not exists 'do_not_admit';
+-- Adds flag_dna/flag_reason on guests, staff_invites table + RLS.
+-- The new enum values used below (door_staff/door_manager/do_not_admit) are
+-- introduced in 20260426000000_day5_enum_values.sql which commits first so
+-- this file can reference them inside the CHECK constraints.
 
 -- event_staff.role is gated by a CHECK constraint from Day 1 ('manager','staff').
 -- Replace it with one that accepts the new door_* values. (Legacy values kept

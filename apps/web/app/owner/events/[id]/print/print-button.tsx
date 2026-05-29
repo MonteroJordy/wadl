@@ -5,7 +5,7 @@ export default function PrintButton() {
     <button
       type="button"
       onClick={() => window.print()}
-      className="btn-primary print:hidden"
+      className="btn print-hide"
     >
       Print now
     </button>

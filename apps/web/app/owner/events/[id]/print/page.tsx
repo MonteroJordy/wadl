@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireOwnerContext, fmtDate, fmtTime } from "@/lib/owner";
+import { requireOwnerContext } from "@/lib/owner";
+import { fmtDate, fmtTime } from "@/lib/format";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { Breadcrumb, PageHeader, EventSubNav } from "@/components/v5";
 import PrintButton from "./print-button";
 
 export const dynamic = "force-dynamic";
@@ -30,23 +32,29 @@ export default async function PrintRosterPage({
   const { data: event } = await supabase
     .from("events")
     .select(
-      "id, name, account_id, event_nights(id, night_date, doors_at), venue:venues(name, city)"
+      "id, name, account_id, event_nights(id, night_date, doors_at), venue:venues(name, city)",
     )
     .eq("id", params.id)
     .eq("account_id", account.id)
     .maybeSingle<{
       id: string;
       name: string;
-      event_nights: Array<{ id: string; night_date: string; doors_at: string }>;
+      event_nights: Array<{
+        id: string;
+        night_date: string;
+        doors_at: string;
+      }>;
       venue: { name: string | null; city: string | null } | null;
     }>();
   if (!event) notFound();
 
   const nights = [...event.event_nights].sort((a, b) =>
-    a.doors_at < b.doors_at ? -1 : 1
+    a.doors_at < b.doors_at ? -1 : 1,
   );
   const activeNight = nights.find((n) => n.id === searchParams.night) ?? null;
-  const targetNightIds = activeNight ? [activeNight.id] : nights.map((n) => n.id);
+  const targetNightIds = activeNight
+    ? [activeNight.id]
+    : nights.map((n) => n.id);
 
   const admin = createAdminClient();
   let guests: PrintGuest[] = [];
@@ -57,7 +65,7 @@ export default async function PrintRosterPage({
         "id, full_name, plus_ones, tier, status, flag_dna, " +
           "allocation:allocations(holder_name), " +
           "night:event_nights!inner(id, night_date, doors_at), " +
-          "check_ins(state)"
+          "check_ins(state)",
       )
       .in("event_night_id", targetNightIds)
       .eq("status", "approved")
@@ -65,7 +73,6 @@ export default async function PrintRosterPage({
     guests = (data ?? []) as unknown as PrintGuest[];
   }
 
-  // Group by allocation.
   const groups = new Map<string, PrintGuest[]>();
   for (const g of guests) {
     const key = g.allocation?.holder_name ?? "Walk-up / direct";
@@ -77,7 +84,10 @@ export default async function PrintRosterPage({
   const total = guests.reduce((s, g) => s + 1 + (g.plus_ones ?? 0), 0);
 
   return (
-    <main id="main-content" className="mobile-frame print:mobile-frame-none print:max-w-none print:p-0">
+    <main
+      id="main-content"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
+    >
       <style>{`
         @media print {
           html, body { background: #fff !important; color: #000 !important; }
@@ -90,144 +100,244 @@ export default async function PrintRosterPage({
             border: 1px solid #000 !important;
             width: 16px; height: 16px;
           }
-          .print-roster .group-rule { border-top: 1px solid #000 !important; }
+          .print-hide { display: none !important; }
           @page { margin: 0.5in; }
         }
       `}</style>
 
-      <header className="flex items-center justify-between pt-6 pb-4 print:hidden">
-        <Link
-          href={`/owner/events/${event.id}`}
-          className="label-mono hover:text-cream"
-        >
-          ← Back
-        </Link>
-        <p className="label-mono">Print roster</p>
-      </header>
-
-      <div className="mb-4 print:hidden">
-        <PrintButton />
+      <div className="print-hide">
+        <Breadcrumb
+          items={[
+            ["Events", "/owner"],
+            [event.name, `/owner/events/${event.id}`],
+            "Print roster",
+          ]}
+        />
+        <PageHeader
+          eyebrow="Print roster"
+          title="Door roster"
+          sub="Grouped by holder · check-box per head."
+          actions={<PrintButton />}
+        />
+        <EventSubNav active="guests" eventId={event.id} />
       </div>
 
-      <div className="print-roster">
-        <div className="mb-5">
-          <h1 className="display-lg leading-[0.95] mb-1">{event.name}</h1>
-          <p className="label-mono">
-            {activeNight
-              ? `${fmtDate(activeNight.night_date)} · Doors ${fmtTime(activeNight.doors_at)}`
-              : `${nights.length} nights`}
-            {event.venue?.name && ` · ${event.venue.name}`}
-            {event.venue?.city && `, ${event.venue.city}`}
-          </p>
-          <p className="label-mono mt-1">
-            {guests.length} approved · {total} heads incl. +1s
-          </p>
-        </div>
-
+      <div style={{ padding: "var(--s-8)", maxWidth: 760 }}>
         {nights.length > 1 && (
-          <div className="flex gap-2 mb-4 overflow-x-auto print:hidden">
+          <div
+            className="print-hide"
+            style={{
+              display: "flex",
+              gap: "var(--s-1)",
+              overflowX: "auto",
+              marginBottom: "var(--s-4)",
+              paddingBottom: "var(--s-1)",
+            }}
+          >
             <Link
               href={`/owner/events/${event.id}/print`}
-              className={`shrink-0 px-3 py-2 rounded-md border text-xs font-mono uppercase tracking-wider ${
-                !activeNight
-                  ? "border-coral bg-s2 text-cream"
-                  : "border-line bg-s1 text-muted hover:text-cream"
-              }`}
+              style={{ textDecoration: "none", flexShrink: 0 }}
             >
-              All nights
+              <span
+                className={`chip ${!activeNight ? "chip--solid" : "chip--ghost"}`}
+              >
+                All nights
+              </span>
             </Link>
             {nights.map((n) => (
               <Link
                 key={n.id}
                 href={`/owner/events/${event.id}/print?night=${n.id}`}
-                className={`shrink-0 px-3 py-2 rounded-md border text-xs font-mono uppercase tracking-wider ${
-                  activeNight?.id === n.id
-                    ? "border-coral bg-s2 text-cream"
-                    : "border-line bg-s1 text-muted hover:text-cream"
-                }`}
+                style={{ textDecoration: "none", flexShrink: 0 }}
               >
-                {fmtDate(n.night_date)}
+                <span
+                  className={`chip ${
+                    activeNight?.id === n.id ? "chip--solid" : "chip--ghost"
+                  }`}
+                >
+                  {fmtDate(n.night_date)}
+                </span>
               </Link>
             ))}
           </div>
         )}
 
-        {guests.length === 0 ? (
-          <p className="label-mono">
-            No approved guests on this scope. Approve some from the queue first.
-          </p>
-        ) : (
-          groupOrder.map((name) => {
-            const list = groups.get(name) ?? [];
-            const subtotal = list.reduce(
-              (s, g) => s + 1 + (g.plus_ones ?? 0),
-              0
-            );
-            return (
-              <section key={name} className="mb-5">
-                <div className="flex items-baseline justify-between mb-2 group-rule pt-2">
-                  <p className="font-sans font-semibold text-cream print:text-black">
-                    {name}
-                  </p>
-                  <p className="label-mono">{list.length} · {subtotal} heads</p>
-                </div>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="label-mono text-left">
-                      <th className="w-6"></th>
-                      <th>Name</th>
-                      <th className="w-16">Tier</th>
-                      <th className="w-8 text-right">+1</th>
-                      {!activeNight && <th className="w-20">Night</th>}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {list.map((g) => {
-                      const scanned = g.check_ins.some(
-                        (c) => c.state === "approved"
-                      );
-                      return (
-                        <tr
-                          key={g.id}
-                          className={`border-t border-line ${
-                            g.flag_dna ? "text-coral" : ""
-                          }`}
+        <div className="print-roster">
+          <div
+            style={{
+              borderBottom: "1px solid var(--line)",
+              paddingBottom: "var(--s-5)",
+              marginBottom: "var(--s-5)",
+            }}
+          >
+            <div className="t-display-md">{event.name}</div>
+            <div className="t-meta" style={{ marginTop: "var(--s-2)" }}>
+              {activeNight
+                ? `${fmtDate(activeNight.night_date)} · doors ${fmtTime(activeNight.doors_at)}`
+                : `${nights.length} nights`}
+              {event.venue?.name && ` · ${event.venue.name}`}
+              {event.venue?.city && `, ${event.venue.city}`}
+            </div>
+            <div className="t-meta" style={{ marginTop: "var(--s-1)" }}>
+              {guests.length} approved · {total} heads incl. +1s
+            </div>
+          </div>
+
+          {guests.length === 0 ? (
+            <div className="t-body-2">
+              No approved guests on this scope. Approve some from the queue
+              first.
+            </div>
+          ) : (
+            groupOrder.map((name) => {
+              const list = groups.get(name) ?? [];
+              const subtotal = list.reduce(
+                (s, g) => s + 1 + (g.plus_ones ?? 0),
+                0,
+              );
+              return (
+                <section key={name} style={{ marginBottom: "var(--s-6)" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "baseline",
+                      justifyContent: "space-between",
+                      marginBottom: "var(--s-2)",
+                      borderTop: "1px solid var(--line)",
+                      paddingTop: "var(--s-3)",
+                    }}
+                  >
+                    <span className="t-h1">{name}</span>
+                    <span className="t-meta">
+                      {list.length} · {subtotal} heads
+                    </span>
+                  </div>
+                  <table
+                    style={{
+                      width: "100%",
+                      fontSize: "var(--ts-md)",
+                      borderCollapse: "collapse",
+                    }}
+                  >
+                    <thead>
+                      <tr>
+                        <th style={{ width: 24, textAlign: "left" }}></th>
+                        <th
+                          className="t-meta"
+                          style={{
+                            textAlign: "left",
+                            paddingBottom: "var(--s-2)",
+                          }}
                         >
-                          <td className="py-1">
-                            <span
-                              className={`checkbox inline-block rounded-sm ${
-                                scanned
-                                  ? "bg-mint/40 border border-mint"
-                                  : "border border-line"
-                              }`}
-                            />
-                          </td>
-                          <td className="py-1">
-                            {g.full_name}
-                            {g.flag_dna && (
-                              <span className="ml-2 label-mono">⚠ DNA</span>
-                            )}
-                          </td>
-                          <td className="py-1 label-mono">
-                            {g.tier.toUpperCase()}
-                          </td>
-                          <td className="py-1 label-mono text-right">
-                            {g.plus_ones > 0 ? `+${g.plus_ones}` : ""}
-                          </td>
-                          {!activeNight && (
-                            <td className="py-1 label-mono">
-                              {fmtDate(g.night.night_date)}
+                          Name
+                        </th>
+                        <th
+                          className="t-meta"
+                          style={{
+                            width: 64,
+                            textAlign: "left",
+                            paddingBottom: "var(--s-2)",
+                          }}
+                        >
+                          Tier
+                        </th>
+                        <th
+                          className="t-meta"
+                          style={{
+                            width: 32,
+                            textAlign: "right",
+                            paddingBottom: "var(--s-2)",
+                          }}
+                        >
+                          +1
+                        </th>
+                        {!activeNight && (
+                          <th
+                            className="t-meta"
+                            style={{
+                              width: 80,
+                              textAlign: "left",
+                              paddingBottom: "var(--s-2)",
+                            }}
+                          >
+                            Night
+                          </th>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {list.map((g) => {
+                        const scanned = g.check_ins.some(
+                          (c) => c.state === "approved",
+                        );
+                        return (
+                          <tr
+                            key={g.id}
+                            style={{
+                              borderTop: "1px solid var(--line)",
+                              color: g.flag_dna ? "var(--err)" : undefined,
+                            }}
+                          >
+                            <td style={{ padding: "6px 0" }}>
+                              <span
+                                className="checkbox"
+                                style={{
+                                  display: "inline-block",
+                                  width: 14,
+                                  height: 14,
+                                  background: scanned
+                                    ? "var(--ok)"
+                                    : "transparent",
+                                  border: scanned
+                                    ? "1px solid var(--ok)"
+                                    : "1px solid var(--line-2)",
+                                }}
+                              />
                             </td>
-                          )}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </section>
-            );
-          })
-        )}
+                            <td style={{ padding: "6px 0" }}>
+                              {g.full_name}
+                              {g.flag_dna && (
+                                <span
+                                  className="t-meta"
+                                  style={{ marginLeft: "var(--s-2)" }}
+                                >
+                                  ⚠ DNA
+                                </span>
+                              )}
+                            </td>
+                            <td
+                              className="t-meta"
+                              style={{ padding: "6px 0" }}
+                            >
+                              {g.tier}
+                            </td>
+                            <td
+                              className="t-meta"
+                              style={{
+                                padding: "6px 0",
+                                textAlign: "right",
+                              }}
+                            >
+                              {g.plus_ones > 0 ? `+${g.plus_ones}` : ""}
+                            </td>
+                            {!activeNight && (
+                              <td
+                                className="t-meta"
+                                style={{ padding: "6px 0" }}
+                              >
+                                {fmtDate(g.night.night_date)}
+                              </td>
+                            )}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </section>
+              );
+            })
+          )}
+        </div>
       </div>
     </main>
   );

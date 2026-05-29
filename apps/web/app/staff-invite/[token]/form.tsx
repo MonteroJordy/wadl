@@ -23,7 +23,7 @@ export default function InviteAcceptForm({
 }: Props) {
   const router = useRouter();
   const [step, setStep] = useState<"start" | "otp" | "binding">(
-    alreadyAuthedPhone ? "binding" : "start"
+    alreadyAuthedPhone ? "binding" : "start",
   );
   const [phone, setPhone] = useState(invitePhone);
   const [code, setCode] = useState("");
@@ -32,12 +32,12 @@ export default function InviteAcceptForm({
       ? alreadyAuthedPhone.startsWith("+")
         ? alreadyAuthedPhone
         : `+${alreadyAuthedPhone}`
-      : null
+      : null,
   );
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  async function accept(phoneE164: string) {
+  async function accept(_phoneE164: string) {
     const res = await acceptInviteAction(token);
     if (!res.ok) {
       setError(res.error);
@@ -97,21 +97,32 @@ export default function InviteAcceptForm({
     role === "door_manager"
       ? "Door manager"
       : role === "photographer"
-      ? "Photographer"
-      : "Door staff";
+        ? "Photographer"
+        : "Door staff";
 
   if (step === "binding") {
     return (
-      <div className="flex flex-col gap-4">
-        <p className="text-muted text-sm">
-          You&apos;re already signed in as <span className="text-cream">{e164}</span>.
-          Bind this invite to your account.
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-4)",
+        }}
+      >
+        <p className="t-body-2">
+          You&apos;re already signed in as{" "}
+          <span style={{ color: "var(--fg)" }}>{e164}</span>. Bind this invite
+          to your account.
         </p>
-        {error && <p className="text-coral text-sm">{error}</p>}
+        {error && (
+          <p className="t-body-2" style={{ color: "var(--err)" }}>
+            {error}
+          </p>
+        )}
         <button
+          className="btn btn--accent"
           type="button"
           onClick={onBindExisting}
-          className="btn-primary"
           disabled={pending}
         >
           {pending ? "Working…" : `Accept invite as ${roleLabel}`}
@@ -122,9 +133,16 @@ export default function InviteAcceptForm({
 
   if (step === "otp") {
     return (
-      <form onSubmit={onVerify} className="flex flex-col gap-4">
-        <p className="text-muted text-sm">
-          Sent to <span className="text-cream">{e164}</span>.
+      <form
+        onSubmit={onVerify}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-4)",
+        }}
+      >
+        <p className="t-body-2">
+          Sent to <span style={{ color: "var(--fg)" }}>{e164}</span>.
         </p>
         <input
           type="text"
@@ -134,18 +152,36 @@ export default function InviteAcceptForm({
           maxLength={6}
           value={code}
           onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-          className="input-dark tracking-[0.5em] text-center text-2xl"
+          className="input"
+          style={{
+            letterSpacing: "0.5em",
+            textAlign: "center",
+            fontSize: 24,
+            height: 56,
+          }}
           placeholder="••••••"
           required
         />
-        {error && <p className="text-coral text-sm">{error}</p>}
-        <button type="submit" className="btn-primary" disabled={pending}>
+        {error && (
+          <p className="t-body-2" style={{ color: "var(--err)" }}>
+            {error}
+          </p>
+        )}
+        <button className="btn btn--accent" type="submit" disabled={pending}>
           {pending ? "Verifying…" : `Verify & join as ${roleLabel}`}
         </button>
         <button
           type="button"
           onClick={() => setStep("start")}
-          className="label-mono text-center hover:text-cream transition"
+          className="t-meta"
+          style={{
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            color: "var(--fg-3)",
+            textAlign: "center",
+            padding: 0,
+          }}
         >
           ← Wrong number
         </button>
@@ -154,15 +190,22 @@ export default function InviteAcceptForm({
   }
 
   return (
-    <form onSubmit={onSendCode} className="flex flex-col gap-4">
-      <p className="text-muted text-sm">
+    <form
+      onSubmit={onSendCode}
+      style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}
+    >
+      <p className="t-body-2">
         You were invited to work the door at{" "}
-        <span className="text-cream">{eventName}</span> as{" "}
-        <span className="text-cream">{roleLabel.toLowerCase()}</span>. Verify
-        your phone to continue.
+        <span style={{ color: "var(--fg)" }}>{eventName}</span> as{" "}
+        <span style={{ color: "var(--fg)" }}>{roleLabel.toLowerCase()}</span>.
+        Verify your phone to continue.
       </p>
       <div>
-        <label htmlFor="invite-phone" className="label-mono block mb-2">
+        <label
+          htmlFor="invite-phone"
+          className="t-meta"
+          style={{ display: "block", marginBottom: "var(--s-2)" }}
+        >
           Phone
         </label>
         <input
@@ -171,12 +214,16 @@ export default function InviteAcceptForm({
           inputMode="tel"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          className="input-dark"
+          className="input"
           required
         />
       </div>
-      {error && <p className="text-coral text-sm">{error}</p>}
-      <button type="submit" className="btn-primary" disabled={pending}>
+      {error && (
+        <p className="t-body-2" style={{ color: "var(--err)" }}>
+          {error}
+        </p>
+      )}
+      <button className="btn btn--accent" type="submit" disabled={pending}>
         {pending ? "Sending…" : "Text me the code"}
       </button>
     </form>

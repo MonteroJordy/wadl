@@ -22,7 +22,7 @@ export async function GET() {
           style={{
             display: "flex",
             flexDirection: "column",
-            color: "#FF4A2B",
+            color: "oklch(0.7 0.24 260)",
             fontSize: 32,
             letterSpacing: 6,
             textTransform: "uppercase",
@@ -40,7 +40,7 @@ export async function GET() {
           <div
             style={{
               fontSize: 84,
-              color: "#F2EDE4",
+              color: "#f3f1ec",
               lineHeight: 1,
               letterSpacing: 3,
               textTransform: "uppercase",

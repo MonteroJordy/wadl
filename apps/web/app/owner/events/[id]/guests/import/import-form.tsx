@@ -22,6 +22,28 @@ interface PreviewRow extends ImportRow {
 
 const TIER_VALUES = new Set(["ga", "vip", "all_access"]);
 
+const INPUT_STYLE: React.CSSProperties = {
+  width: "100%",
+  background: "var(--w-surface-1)",
+  border: "1px solid var(--w-line)",
+  color: "var(--w-fg)",
+  padding: "10px 12px",
+  fontFamily: "var(--w-sans)",
+  fontSize: 14,
+};
+
+const PILL = (active: boolean): React.CSSProperties => ({
+  padding: 12,
+  border: `1px solid ${active ? "var(--w-acc)" : "var(--w-line)"}`,
+  background: active ? "var(--w-acc-soft)" : "var(--w-surface-1)",
+  color: active ? "var(--w-acc-ink)" : "var(--w-fg-muted)",
+  fontFamily: "var(--w-mono)",
+  fontSize: 12,
+  letterSpacing: "0.08em",
+  textTransform: "uppercase",
+  cursor: "pointer",
+});
+
 export default function CsvImportForm({
   eventId,
   nights,
@@ -90,20 +112,21 @@ export default function CsvImportForm({
     const out: PreviewRow[] = data.map((r) => {
       const rawPhone = map.phone >= 0 ? (r[map.phone] ?? "").trim() : "";
       const norm = rawPhone ? toE164(rawPhone) : null;
-      const tierRaw = map.tier >= 0 ? (r[map.tier] ?? "").toLowerCase().trim() : "ga";
+      const tierRaw =
+        map.tier >= 0 ? (r[map.tier] ?? "").toLowerCase().trim() : "ga";
       const tier = (
         tierRaw === "vip"
           ? "vip"
           : tierRaw === "aa" || tierRaw === "all" || tierRaw === "all_access"
-          ? "all_access"
-          : "ga"
+            ? "all_access"
+            : "ga"
       ) as ImportRow["tier"];
       return {
         full_name: r[map.name] ?? "",
         phone: norm,
         phone_raw: rawPhone,
         phone_valid: rawPhone === "" || !!norm,
-        email: map.email >= 0 ? r[map.email] ?? null : null,
+        email: map.email >= 0 ? (r[map.email] ?? null) : null,
         plus_ones:
           map.plus_ones >= 0 ? parseInt(r[map.plus_ones] ?? "0", 10) || 0 : 0,
         tier,
@@ -128,7 +151,7 @@ export default function CsvImportForm({
         nightId,
         allocationId || null,
         status,
-        rows
+        rows,
       );
       if (res.ok) {
         setDone(res.result);
@@ -141,16 +164,26 @@ export default function CsvImportForm({
 
   if (done) {
     return (
-      <div className="card border-mint/40">
-        <p className="label-mono text-mint mb-2">Done</p>
-        <p className="text-cream">
-          Inserted {done.inserted}. Skipped: {done.skipped_dupe_phone} dupe phones,{" "}
-          {done.skipped_invalid_phone} invalid phones, {done.skipped_missing_name} no name.
+      <div
+        className="w-card"
+        style={{ padding: 16, borderColor: "var(--w-ok)" }}
+      >
+        <div
+          className="w-type-meta"
+          style={{ color: "var(--w-ok)", marginBottom: 8 }}
+        >
+          DONE
+        </div>
+        <p style={{ color: "var(--w-fg)" }}>
+          Inserted {done.inserted}. Skipped: {done.skipped_dupe_phone} dupe
+          phones, {done.skipped_invalid_phone} invalid phones,{" "}
+          {done.skipped_missing_name} no name.
         </p>
         <button
           type="button"
+          className="btn btn--ghost"
           onClick={() => setDone(null)}
-          className="btn-ghost mt-3"
+          style={{ marginTop: 12 }}
         >
           Import more
         </button>
@@ -162,17 +195,22 @@ export default function CsvImportForm({
     const validCount = preview.length;
     return (
       <div>
-        <div className="card mb-3">
-          <p className="label-mono mb-2">Preview · {validCount} rows</p>
-          <div className="grid gap-2 mb-3">
-            <label className="label-mono">Night</label>
+        <div
+          className="w-card"
+          style={{ padding: 18, marginBottom: 12 }}
+        >
+          <div className="w-type-meta" style={{ marginBottom: 8 }}>
+            PREVIEW · {validCount} ROWS
+          </div>
+          <div style={{ display: "grid", gap: 8, marginBottom: 12 }}>
+            <div className="w-type-meta">NIGHT</div>
             <select
               value={nightId}
               onChange={(e) => {
                 setNightId(e.target.value);
                 setAllocationId("");
               }}
-              className="input-dark"
+              style={INPUT_STYLE}
             >
               {nights.map((n) => (
                 <option key={n.id} value={n.id}>
@@ -180,11 +218,11 @@ export default function CsvImportForm({
                 </option>
               ))}
             </select>
-            <label className="label-mono">Allocation</label>
+            <div className="w-type-meta">ALLOCATION</div>
             <select
               value={allocationId}
               onChange={(e) => setAllocationId(e.target.value)}
-              className="input-dark"
+              style={INPUT_STYLE}
             >
               <option value="">— Direct (no allocation) —</option>
               {filteredAllocs.map((a) => (
@@ -193,18 +231,20 @@ export default function CsvImportForm({
                 </option>
               ))}
             </select>
-            <label className="label-mono">Status</label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="w-type-meta">STATUS</div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 6,
+              }}
+            >
               {(["approved", "pending"] as const).map((s) => (
                 <button
                   key={s}
                   type="button"
                   onClick={() => setStatus(s)}
-                  className={`p-3 rounded border ${
-                    status === s
-                      ? "border-coral bg-s2 text-cream"
-                      : "border-line text-muted"
-                  }`}
+                  style={PILL(status === s)}
                 >
                   {s}
                 </button>
@@ -213,57 +253,109 @@ export default function CsvImportForm({
           </div>
         </div>
 
-        <div className="card max-h-96 overflow-y-auto mb-3">
-          <table className="w-full text-xs">
-            <thead className="label-mono text-left">
+        <div
+          className="w-card"
+          style={{
+            padding: 16,
+            maxHeight: 400,
+            overflowY: "auto",
+            marginBottom: 12,
+          }}
+        >
+          <table style={{ width: "100%", fontSize: 12 }}>
+            <thead>
               <tr>
-                <th className="pb-1">Name</th>
-                <th>Phone</th>
-                <th>Tier</th>
-                <th>+1</th>
+                {["NAME", "PHONE", "TIER", "+1"].map((h) => (
+                  <th
+                    key={h}
+                    className="w-type-meta"
+                    style={{
+                      textAlign: h === "+1" ? "right" : "left",
+                      paddingBottom: 4,
+                    }}
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {preview.slice(0, 100).map((r, i) => (
-                <tr key={i} className="border-t border-line">
-                  <td className="py-1 text-cream">{r.full_name || "—"}</td>
-                  <td className="py-1 font-mono">
+                <tr
+                  key={i}
+                  style={{ borderTop: "1px solid var(--w-line)" }}
+                >
+                  <td style={{ padding: "4px 0", color: "var(--w-fg)" }}>
+                    {r.full_name || "—"}
+                  </td>
+                  <td
+                    style={{
+                      padding: "4px 0",
+                      fontFamily: "var(--w-mono)",
+                    }}
+                  >
                     {r.phone_raw ? (
                       r.phone_valid ? (
-                        <span className="text-mint">{r.phone}</span>
+                        <span style={{ color: "var(--w-ok)" }}>
+                          {r.phone}
+                        </span>
                       ) : (
-                        <span className="text-coral">⚠ {r.phone_raw}</span>
+                        <span style={{ color: "var(--w-err)" }}>
+                          ⚠ {r.phone_raw}
+                        </span>
                       )
                     ) : (
-                      <span className="text-muted">—</span>
+                      <span style={{ color: "var(--w-fg-muted)" }}>—</span>
                     )}
                   </td>
-                  <td className="py-1 label-mono">{r.tier}</td>
-                  <td className="py-1 text-right">{r.plus_ones || ""}</td>
+                  <td
+                    className="w-type-meta"
+                    style={{ padding: "4px 0" }}
+                  >
+                    {r.tier}
+                  </td>
+                  <td style={{ padding: "4px 0", textAlign: "right" }}>
+                    {r.plus_ones || ""}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
           {preview.length > 100 && (
-            <p className="label-mono mt-2">+ {preview.length - 100} more…</p>
+            <div className="w-type-meta" style={{ marginTop: 8 }}>
+              + {preview.length - 100} MORE…
+            </div>
           )}
         </div>
 
-        {err && <p className="text-coral text-sm mb-2">{err}</p>}
+        {err && (
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-err)", marginBottom: 8 }}
+          >
+            {err}
+          </p>
+        )}
 
-        <div className="grid grid-cols-2 gap-2">
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 8,
+          }}
+        >
           <button
             type="button"
+            className="btn btn--ghost"
             onClick={() => setPreview(null)}
-            className="btn-ghost"
           >
             Back
           </button>
           <button
             type="button"
+            className="btn btn--accent"
             onClick={onCommit}
             disabled={pending}
-            className="btn-primary"
           >
             {pending ? "Importing…" : `Import ${validCount}`}
           </button>
@@ -273,26 +365,40 @@ export default function CsvImportForm({
   }
 
   return (
-    <form onSubmit={onPreview} className="flex flex-col gap-4">
+    <form
+      onSubmit={onPreview}
+      style={{ display: "flex", flexDirection: "column", gap: 16 }}
+    >
       <div>
-        <label className="label-mono block mb-2">CSV text</label>
+        <div className="w-type-meta" style={{ marginBottom: 6 }}>
+          CSV TEXT
+        </div>
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          className="input-dark min-h-[240px] font-mono text-sm"
+          style={{
+            ...INPUT_STYLE,
+            minHeight: 240,
+            fontFamily: "var(--w-mono)",
+            fontSize: 14,
+          }}
           placeholder={`name,phone,tier,plus_ones\nAlice Smith,+13055551111,vip,1\nBob,3055552222,,0`}
           required
         />
-        <p className="label-mono mt-2">
-          Headers: <span className="text-cream">name</span> required.{" "}
-          <span className="text-cream">phone</span>,{" "}
-          <span className="text-cream">email</span>,{" "}
-          <span className="text-cream">tier</span>,{" "}
-          <span className="text-cream">plus_ones</span> optional.
-        </p>
+        <div className="w-type-meta" style={{ marginTop: 8 }}>
+          HEADERS: <span style={{ color: "var(--w-fg)" }}>NAME</span>{" "}
+          REQUIRED. <span style={{ color: "var(--w-fg)" }}>PHONE</span>,{" "}
+          <span style={{ color: "var(--w-fg)" }}>EMAIL</span>,{" "}
+          <span style={{ color: "var(--w-fg)" }}>TIER</span>,{" "}
+          <span style={{ color: "var(--w-fg)" }}>PLUS_ONES</span> OPTIONAL.
+        </div>
       </div>
-      {err && <p className="text-coral text-sm">{err}</p>}
-      <button type="submit" className="btn-primary">
+      {err && (
+        <p className="w-type-body-sm" style={{ color: "var(--w-err)" }}>
+          {err}
+        </p>
+      )}
+      <button type="submit" className="btn btn--accent">
         Preview
       </button>
     </form>

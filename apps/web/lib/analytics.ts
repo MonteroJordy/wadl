@@ -24,10 +24,17 @@ export interface DowBreakdown {
   scanned: number;
 }
 
+export interface TierBreakdown {
+  tier: string;
+  scanned: number;
+  pct: number;
+}
+
 export interface AnalyticsSummary {
   trend: AnalyticsBucket[];
   byVenue: VenueBreakdown[];
   byDow: DowBreakdown[];
+  byTier: TierBreakdown[];
   totalApproved: number;
   totalScanned: number;
   showRate: number;
@@ -54,6 +61,7 @@ interface GuestAggRow {
   allocation_id: string | null;
   plus_ones: number;
   status: string;
+  tier: string;
   allocation: { holder_name: string } | null;
   check_ins: Array<{ state: string }>;
 }
@@ -90,6 +98,7 @@ export async function computeAccountAnalytics(
       trend: [],
       byVenue: [],
       byDow: DOW_LABELS.map((label, dow) => ({ dow, label, events: 0, scanned: 0 })),
+      byTier: [],
       totalApproved: 0,
       totalScanned: 0,
       showRate: 0,
@@ -102,7 +111,7 @@ export async function computeAccountAnalytics(
   const { data: guestsRaw } = await admin
     .from("guests")
     .select(
-      "event_night_id, allocation_id, plus_ones, status, allocation:allocations(holder_name), check_ins(state)"
+      "event_night_id, allocation_id, plus_ones, status, tier, allocation:allocations(holder_name), check_ins(state)"
     )
     .in("event_night_id", nightIds);
   const guests = (guestsRaw ?? []) as unknown as GuestAggRow[];
@@ -120,6 +129,9 @@ export async function computeAccountAnalytics(
     { name: string; scanned: number; approved: number; nights: Set<string> }
   >();
 
+  // Per-tier scanned head count.
+  const tierAgg = new Map<string, number>();
+
   for (const g of guests) {
     if (g.status !== "approved") continue;
     const heads = 1 + (g.plus_ones ?? 0);
@@ -127,7 +139,11 @@ export async function computeAccountAnalytics(
     if (!slot) continue;
     slot.approved += heads;
     const scannedHere = g.check_ins.some((c) => c.state === "approved");
-    if (scannedHere) slot.scanned += heads;
+    if (scannedHere) {
+      slot.scanned += heads;
+      const tk = (g.tier ?? "ga").toString();
+      tierAgg.set(tk, (tierAgg.get(tk) ?? 0) + heads);
+    }
     if (g.allocation?.holder_name) {
       const key = g.allocation.holder_name.toLowerCase().trim();
       if (!perHolder.has(key)) {
@@ -230,10 +246,20 @@ export async function computeAccountAnalytics(
   const totalApproved = trend.reduce((s, t) => s + t.approved, 0);
   const totalScanned = trend.reduce((s, t) => s + t.scanned, 0);
 
+  const tierTotal = [...tierAgg.values()].reduce((a, b) => a + b, 0);
+  const byTier: TierBreakdown[] = [...tierAgg.entries()]
+    .map(([tier, scanned]) => ({
+      tier,
+      scanned,
+      pct: tierTotal === 0 ? 0 : scanned / tierTotal,
+    }))
+    .sort((a, b) => b.scanned - a.scanned);
+
   return {
     trend,
     byVenue,
     byDow,
+    byTier,
     totalApproved,
     totalScanned,
     showRate: totalApproved === 0 ? 0 : totalScanned / totalApproved,

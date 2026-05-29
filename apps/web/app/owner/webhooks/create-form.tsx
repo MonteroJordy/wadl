@@ -26,43 +26,64 @@ export default function CreateWebhookForm() {
   }
 
   return (
-    <form onSubmit={submit} className="card flex flex-col gap-3">
+    <form
+      onSubmit={submit}
+      className="card"
+      style={{
+        padding: "var(--s-6)",
+        display: "flex",
+        flexDirection: "column",
+        gap: "var(--s-3)",
+      }}
+    >
       <div>
-        <label className="label-mono block mb-2">Endpoint URL</label>
+        <div className="t-meta" style={{ marginBottom: "var(--s-1)" }}>
+          Endpoint URL
+        </div>
         <input
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://api.yourdomain.com/wadl"
-          className="input-dark"
+          className="input"
           required
         />
       </div>
       <div>
-        <label className="label-mono block mb-2">
+        <div className="t-meta" style={{ marginBottom: "var(--s-1)" }}>
           Events (comma-separated; * for all)
-        </label>
+        </div>
         <input
           value={events}
           onChange={(e) => setEvents(e.target.value)}
           placeholder="rsvp.created,guest.checked_in"
-          className="input-dark"
+          className="input"
         />
-        <p className="label-mono mt-2">
-          Available: <code>rsvp.created</code>, <code>guest.checked_in</code>,{" "}
-          <code>allocation.full</code>, <code>guest.flagged</code>,{" "}
-          <code>broadcast.sent</code>, <code>event.created</code>
-        </p>
+        <div className="t-meta" style={{ marginTop: "var(--s-2)" }}>
+          Available: <code className="kbd">rsvp.created</code>{" "}
+          <code className="kbd">guest.checked_in</code>{" "}
+          <code className="kbd">allocation.full</code>{" "}
+          <code className="kbd">guest.flagged</code>{" "}
+          <code className="kbd">broadcast.sent</code>{" "}
+          <code className="kbd">event.created</code>
+        </div>
       </div>
-      {err && <p className="text-coral text-sm">{err}</p>}
-      {secret && (
-        <p className="text-mint text-sm">
-          Created. Signing secret:{" "}
-          <code className="text-cream break-all">{secret}</code>
-          <br />
-          Save this — every payload includes <code>x-wadl-signature: sha256=&lt;hmac&gt;</code>.
+      {err && (
+        <p className="t-body-2" style={{ color: "var(--err)" }}>
+          {err}
         </p>
       )}
-      <button type="submit" className="btn-primary" disabled={pending}>
+      {secret && (
+        <p className="t-body-2" style={{ color: "var(--ok)" }}>
+          Created. Signing secret:{" "}
+          <code className="kbd" style={{ wordBreak: "break-all" }}>
+            {secret}
+          </code>
+          <br />
+          Save this — every payload includes{" "}
+          <code className="kbd">x-wadl-signature: sha256=&lt;hmac&gt;</code>.
+        </p>
+      )}
+      <button type="submit" className="btn btn--accent" disabled={pending}>
         {pending ? "Creating…" : "Add endpoint"}
       </button>
     </form>

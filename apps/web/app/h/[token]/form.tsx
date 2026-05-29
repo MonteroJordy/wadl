@@ -41,9 +41,12 @@ export default function HolderAddForm({
 
   if (!listOpen) {
     return (
-      <div className="card text-center">
-        <p className="label-mono mb-2">List closed</p>
-        <p className="text-muted text-sm">
+      <div
+        className="card"
+        style={{ padding: "var(--s-5)", textAlign: "center" }}
+      >
+        <span className="chip chip--ghost">List closed</span>
+        <p className="t-body-2" style={{ marginTop: "var(--s-3)" }}>
           The host has closed this list for now.
         </p>
       </div>
@@ -51,47 +54,85 @@ export default function HolderAddForm({
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
-      <div>
-        <label htmlFor="fullName" className="label-mono block mb-2">
-          Full name
-        </label>
-        <input
-          id="fullName"
-          type="text"
-          value={fullName}
-          onChange={(e) => setFullName(e.target.value)}
-          className="input-dark"
-          placeholder="Guest full name"
-          required
-        />
-      </div>
-
-      {plusOnesAllowed && (
+    <div className="card" style={{ padding: "var(--s-5)" }}>
+      <div className="t-meta">Add a name</div>
+      <form
+        onSubmit={onSubmit}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-3)",
+          marginTop: "var(--s-3)",
+        }}
+      >
         <div>
-          <label htmlFor="plusOnes" className="label-mono block mb-2">
-            +1s
+          <label
+            htmlFor="fullName"
+            className="t-meta"
+            style={{ display: "block", marginBottom: "var(--s-2)" }}
+          >
+            Full name
           </label>
           <input
-            id="plusOnes"
-            type="number"
-            min={0}
-            max={10}
-            value={plusOnes}
-            onChange={(e) => setPlusOnes(e.target.value)}
-            className="input-dark"
+            id="fullName"
+            type="text"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            className="input"
+            placeholder="Guest full name"
+            required
           />
         </div>
-      )}
 
-      {error && <p className="text-coral text-sm">{error}</p>}
-      {added && (
-        <p className="text-mint text-sm">Added <span className="text-cream">{added}</span>.</p>
-      )}
+        {plusOnesAllowed && (
+          <div>
+            <label
+              htmlFor="plusOnes"
+              className="t-meta"
+              style={{ display: "block", marginBottom: "var(--s-2)" }}
+            >
+              +1s
+            </label>
+            <input
+              id="plusOnes"
+              type="number"
+              min={0}
+              max={10}
+              value={plusOnes}
+              onChange={(e) => setPlusOnes(e.target.value)}
+              className="input"
+            />
+          </div>
+        )}
 
-      <button type="submit" className="btn-primary" disabled={pending}>
-        {pending ? "Adding…" : "Add to list"}
-      </button>
-    </form>
+        {error ? (
+          <p
+            className="t-body-2"
+            style={{ color: "var(--err)" }}
+            role="alert"
+          >
+            {error}
+          </p>
+        ) : null}
+        {added ? (
+          <p
+            className="t-body-2"
+            style={{ color: "var(--ok)" }}
+            role="status"
+          >
+            Added{" "}
+            <strong style={{ color: "var(--fg)" }}>{added}</strong>.
+          </p>
+        ) : null}
+
+        <button
+          type="submit"
+          className="btn btn--lg btn--accent btn--block"
+          disabled={pending}
+        >
+          {pending ? "Adding…" : "Add to list"}
+        </button>
+      </form>
+    </div>
   );
 }

@@ -1,61 +1,147 @@
 import Link from "next/link";
 import { requireOwnerContext } from "@/lib/owner";
 import { computeScorecards } from "@/lib/scorecards";
-import EmptyState from "@/components/empty-state";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Scorecards — WADL" };
 
 const GRADE_COLOR: Record<string, string> = {
-  A: "text-mint",
-  B: "text-cream",
-  C: "text-gold",
-  D: "text-coral",
+  A: "var(--ok)",
+  B: "var(--fg)",
+  C: "var(--warn)",
+  D: "var(--err)",
 };
 
 export default async function ScorecardsAnalyticsPage() {
   const { account } = await requireOwnerContext();
   const cards = await computeScorecards(account.id);
 
-  if (cards.length === 0)
-    return <EmptyState title="No promoters graded" body="Allocations + check-ins → grades. Drop a magic link, run a night, the rankings sort themselves." />;
+  if (cards.length === 0) {
+    return (
+      <div
+        className="card"
+        style={{ padding: "var(--s-16) var(--s-8)", textAlign: "center" }}
+      >
+        <div className="t-display-sm">No promoters graded</div>
+        <p
+          className="t-body-2"
+          style={{
+            marginTop: "var(--s-3)",
+            maxWidth: 480,
+            marginInline: "auto",
+          }}
+        >
+          Allocations + check-ins → grades. Drop a magic link, run a night, the
+          rankings sort themselves.
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col gap-3">
-      <section className="card">
-        <p className="label-mono mb-3">Show rate by promoter</p>
-        <div className="overflow-x-auto -mx-4 px-4">
-          <table className="w-full text-sm">
-            <thead className="label-mono text-left">
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
+      <div className="card" style={{ padding: "var(--s-6)" }}>
+        <div className="t-meta" style={{ marginBottom: "var(--s-4)" }}>
+          Show rate by promoter
+        </div>
+        <div
+          style={{
+            overflowX: "auto",
+            margin: "0 calc(-1 * var(--s-6))",
+            padding: "0 var(--s-6)",
+          }}
+        >
+          <table
+            style={{
+              width: "100%",
+              fontSize: "var(--ts-md)",
+              borderCollapse: "collapse",
+            }}
+          >
+            <thead>
               <tr>
-                <th className="pb-2">#</th>
-                <th>Holder</th>
-                <th className="text-right">Events</th>
-                <th className="text-right">Approved</th>
-                <th className="text-right">Scanned</th>
-                <th className="text-right">Show</th>
-                <th className="text-right">Grade</th>
+                {[
+                  ["#", "left"],
+                  ["Holder", "left"],
+                  ["Events", "right"],
+                  ["Approved", "right"],
+                  ["Scanned", "right"],
+                  ["Show", "right"],
+                  ["Grade", "right"],
+                ].map(([h, align]) => (
+                  <th
+                    key={h}
+                    className="t-meta"
+                    style={{
+                      textAlign: align as "left" | "right",
+                      paddingBottom: "var(--s-2)",
+                    }}
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {cards.map((c, i) => (
-                <tr key={c.key} className="border-t border-line">
-                  <td className="py-2 text-muted">{i + 1}</td>
-                  <td className="py-2 text-cream truncate">
+                <tr
+                  key={c.key}
+                  style={{ borderTop: "1px solid var(--line)" }}
+                >
+                  <td
+                    className="t-meta t-num"
+                    style={{ padding: "var(--s-3) 0", color: "var(--fg-4)" }}
+                  >
+                    {i + 1}
+                  </td>
+                  <td style={{ padding: "var(--s-3) 0" }}>
                     <Link
                       href={`/owner/scorecards/${encodeURIComponent(c.key)}`}
-                      className="hover:underline"
+                      className="t-body"
+                      style={{ color: "var(--fg)", textDecoration: "none" }}
                     >
                       {c.display_name}
                     </Link>
                   </td>
-                  <td className="py-2 text-right">{c.events_played}</td>
-                  <td className="py-2 text-right">{c.approved}</td>
-                  <td className="py-2 text-right text-mint">{c.scanned}</td>
-                  <td className="py-2 text-right">
+                  <td
+                    className="t-body t-num"
+                    style={{ padding: "var(--s-3) 0", textAlign: "right" }}
+                  >
+                    {c.events_played}
+                  </td>
+                  <td
+                    className="t-body t-num"
+                    style={{ padding: "var(--s-3) 0", textAlign: "right" }}
+                  >
+                    {c.approved}
+                  </td>
+                  <td
+                    className="t-body t-num"
+                    style={{
+                      padding: "var(--s-3) 0",
+                      textAlign: "right",
+                      color: "var(--ok)",
+                    }}
+                  >
+                    {c.scanned}
+                  </td>
+                  <td
+                    className="t-body t-num"
+                    style={{ padding: "var(--s-3) 0", textAlign: "right" }}
+                  >
                     {Math.round(c.show_rate * 100)}%
                   </td>
-                  <td className={`py-2 text-right font-display ${GRADE_COLOR[c.grade] ?? ""}`}>
+                  <td
+                    className="t-num"
+                    style={{
+                      padding: "var(--s-3) 0",
+                      textAlign: "right",
+                      fontFamily: "var(--display)",
+                      fontWeight: 700,
+                      fontSize: "var(--ts-lg)",
+                      color: GRADE_COLOR[c.grade] ?? "var(--fg)",
+                    }}
+                  >
                     {c.grade}
                     {c.trend === "up" && " ↑"}
                     {c.trend === "down" && " ↓"}
@@ -65,15 +151,17 @@ export default async function ScorecardsAnalyticsPage() {
             </tbody>
           </table>
         </div>
-      </section>
+      </div>
 
-      <p className="label-mono">
-        Drill into a holder for trend + tier mix on{" "}
-        <Link href="/owner/scorecards" className="text-coral hover:text-cream">
+      <div className="t-meta" style={{ color: "var(--fg-4)" }}>
+        Drill into a holder for tier mix + per-tier conversion on{" "}
+        <Link
+          href="/owner/scorecards"
+          style={{ color: "var(--fg)", textDecoration: "none" }}
+        >
           /owner/scorecards
         </Link>
-        .
-      </p>
+      </div>
     </div>
   );
 }

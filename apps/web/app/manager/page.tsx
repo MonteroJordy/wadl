@@ -18,22 +18,53 @@ export default async function ManagerHome() {
   if (active) redirect(`/manager/events/${active.event_id}`);
 
   return (
-    <main id="main-content" className="mobile-frame">
-      <header className="pt-6 pb-4">
-        <p className="label-mono text-gold mb-1">Manager</p>
-        <h1 className="display-lg">Pick an event.</h1>
-      </header>
-      <div className="flex flex-col gap-2 mt-4">
-        {managerEvents.map((s) => (
-          <Link
-            key={s.event_id}
-            href={`/manager/events/${s.event_id}`}
-            className="card hover:border-gold transition"
-          >
-            <p className="font-sans font-semibold text-cream">{s.event.name}</p>
-            <p className="label-mono mt-1 text-gold">Door manager</p>
-          </Link>
-        ))}
+    <main
+      id="main-content"
+      className="v5"
+      style={{
+        minHeight: "100vh",
+        background: "var(--bg)",
+        padding: "var(--s-8) var(--s-6) var(--s-24)",
+      }}
+    >
+      <div style={{ maxWidth: 720, margin: "0 auto" }}>
+        <div
+          style={{
+            borderBottom: "1px solid var(--line)",
+            paddingBottom: "var(--s-6)",
+            marginBottom: "var(--s-6)",
+          }}
+        >
+          <div className="t-meta">Manager</div>
+          <div className="t-display-md" style={{ marginTop: "var(--s-2)" }}>
+            Pick an event.
+          </div>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "var(--s-2)",
+          }}
+        >
+          {managerEvents.map((s) => (
+            <Link
+              key={s.event_id}
+              href={`/manager/events/${s.event_id}`}
+              className="card card--hover"
+              style={{
+                padding: "var(--s-4)",
+                textDecoration: "none",
+                color: "inherit",
+              }}
+            >
+              <p className="t-h1">{s.event.name}</p>
+              <div className="t-meta" style={{ marginTop: "var(--s-2)" }}>
+                Door manager
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
     </main>
   );

@@ -1,7 +1,9 @@
+import * as React from "react";
 import Link from "next/link";
 import { requireOwnerContext, fmtDate, fmtTime } from "@/lib/owner";
 import OnboardingTour from "@/components/onboarding-tour";
 import { dashboardFraming } from "@wadl/shared/account-type";
+import { Cover, CoverHeader, Stat } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +23,12 @@ interface NightWithEvent {
   doors_at: string;
   capacity_cap: number | null;
   is_frozen: boolean;
-  event: { id: string; name: string; flyer_url: string | null } | null;
+  event: {
+    id: string;
+    name: string;
+    flyer_url: string | null;
+    venue_id: string | null;
+  } | null;
 }
 
 interface GuestRow {
@@ -62,13 +69,6 @@ function isSameDay(a: Date, b: Date): boolean {
   );
 }
 
-function dayLabel(date: Date): { dow: string; day: string } {
-  return {
-    dow: date.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase(),
-    day: String(date.getDate()),
-  };
-}
-
 export default async function OwnerWeekViewPage({
   searchParams,
 }: {
@@ -83,23 +83,28 @@ export default async function OwnerWeekViewPage({
   const { start, end } = rangeWindow(range);
   const venueFilter = (searchParams.venue ?? "").trim();
 
-  const { data: venuesData } = await supabase
-    .from("venues")
-    .select("id, name")
-    .eq("account_id", account.id)
-    .order("name");
-  const venues = (venuesData ?? []) as Array<{ id: string; name: string }>;
-
+  // Venues + events run in parallel — neither depends on the other. The
+  // venues query feeds the venue-filter dropdown UI; events applies the
+  // venueFilter from searchParams independently.
   let eventsQ = supabase
     .from("events")
     .select(
-      "id, name, flyer_url, venue_id, event_nights(id, event_id, night_date, doors_at, capacity_cap, is_frozen)"
+      "id, name, flyer_url, venue_id, event_nights(id, event_id, night_date, doors_at, capacity_cap, is_frozen)",
     )
     .eq("account_id", account.id);
   if (q) eventsQ = eventsQ.ilike("name", `%${q}%`);
   if (venueFilter) eventsQ = eventsQ.eq("venue_id", venueFilter);
 
-  const { data: eventsData } = await eventsQ;
+  const [venuesRes, eventsRes] = await Promise.all([
+    supabase
+      .from("venues")
+      .select("id, name")
+      .eq("account_id", account.id)
+      .order("name"),
+    eventsQ,
+  ]);
+  const venues = (venuesRes.data ?? []) as Array<{ id: string; name: string }>;
+  const eventsData = eventsRes.data;
 
   const nights: NightWithEvent[] = [];
   for (const e of eventsData ?? []) {
@@ -107,6 +112,7 @@ export default async function OwnerWeekViewPage({
       id: string;
       name: string;
       flyer_url: string | null;
+      venue_id: string | null;
       event_nights: Array<{
         id: string;
         event_id: string;
@@ -123,7 +129,12 @@ export default async function OwnerWeekViewPage({
       if (!inRange) continue;
       nights.push({
         ...n,
-        event: { id: ev.id, name: ev.name, flyer_url: ev.flyer_url },
+        event: {
+          id: ev.id,
+          name: ev.name,
+          flyer_url: ev.flyer_url,
+          venue_id: ev.venue_id,
+        },
       });
     }
   }
@@ -134,8 +145,8 @@ export default async function OwnerWeekViewPage({
         ? 1
         : -1
       : a.doors_at < b.doors_at
-      ? -1
-      : 1
+        ? -1
+        : 1,
   );
 
   let guests: GuestRow[] = [];
@@ -157,10 +168,10 @@ export default async function OwnerWeekViewPage({
   }
 
   function statsFor(nightId: string) {
-    let approved = 0,
-      pending = 0,
-      scanned = 0,
-      rsvps = 0;
+    let approved = 0;
+    let pending = 0;
+    let scanned = 0;
+    let rsvps = 0;
     for (const g of guests) {
       if (g.event_night_id !== nightId) continue;
       const heads = 1 + (g.plus_ones ?? 0);
@@ -175,15 +186,28 @@ export default async function OwnerWeekViewPage({
     return { approved, pending, scanned, rsvps };
   }
 
-  // Identify tonight's event (a night happening today).
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const tonight = nights.find((n) => {
-    const d = new Date(n.doors_at);
-    return isSameDay(d, today);
-  });
+  const tonight = nights.find((n) =>
+    isSameDay(new Date(n.doors_at), today),
+  );
   const tonightStats = tonight ? statsFor(tonight.id) : null;
   const remainingNights = nights.filter((n) => n !== tonight);
+
+  // Aggregate KPIs across the visible range
+  const liveNow = nights.filter((n) => {
+    const d = new Date(n.doors_at).getTime();
+    return d <= Date.now() && d >= Date.now() - 8 * 60 * 60_000;
+  }).length;
+  const totalRsvpd = nights.reduce(
+    (sum, n) => sum + statsFor(n.id).rsvps,
+    0,
+  );
+  const totalScanned = nights.reduce(
+    (sum, n) => sum + statsFor(n.id).scanned,
+    0,
+  );
+  const distinctEvents = new Set(nights.map((n) => n.event_id)).size;
 
   function rangeHref(r: Range) {
     const sp = new URLSearchParams();
@@ -202,306 +226,382 @@ export default async function OwnerWeekViewPage({
     return s ? `/owner?${s}` : "/owner";
   }
 
+  // ─── v5 hero framing ───
+  // When there's an event today, the hero counts down to doors; otherwise it
+  // frames the current range. The seed drives the procedural cover gradient.
+  const heroSeed = tonight?.event?.name ?? account.display_name;
+  let heroEyebrow: string;
+  if (tonight) {
+    const doorsMs = new Date(tonight.doors_at).getTime() - Date.now();
+    if (doorsMs > 0) {
+      const h = Math.floor(doorsMs / 3_600_000);
+      const m = Math.floor((doorsMs % 3_600_000) / 60_000);
+      heroEyebrow = `Tonight · doors in ${h > 0 ? `${h}h ` : ""}${m}m`;
+    } else {
+      heroEyebrow = `Tonight · doors ${fmtTime(tonight.doors_at)}`;
+    }
+  } else {
+    heroEyebrow = `${RANGE_LABEL[range]} · ${account.display_name}`;
+  }
+  // v5 hero title is 2-line: event name over "at <venue>" (matches the
+  // V5Dashboard artboard's `Donato Dozzy<br/>at BR · BK`). The venue name is
+  // resolved from the venues query already fetched above.
+  const tonightVenueName = tonight?.event?.venue_id
+    ? (venues.find((v) => v.id === tonight.event?.venue_id)?.name ?? null)
+    : null;
+  const heroTitle: React.ReactNode = tonight ? (
+    <>
+      {tonight.event?.name ?? "Tonight"}
+      {tonightVenueName && (
+        <>
+          <br />
+          at {tonightVenueName}
+        </>
+      )}
+    </>
+  ) : (
+    RANGE_LABEL[range]
+  );
+
+  // ─── v5 4-up stat row ───
+  const showRate =
+    totalRsvpd > 0 ? Math.round((totalScanned / totalRsvpd) * 100) : 0;
+
+  const isEmpty = nights.length === 0 && !tonight;
+
   return (
     <main
       id="main-content"
-      className="mx-auto w-full max-w-6xl px-4 md:px-8 pt-6 pb-16"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
     >
-      {/* Hero strip — owner's current focus */}
-      <header className="flex items-end justify-between gap-4 mb-6">
-        <div className="min-w-0">
-          <p className="label-mono mb-1">
-            {RANGE_LABEL[range]} · {account.display_name}
-            {account.handle && (
-              <>
-                {" · "}
-                <span className="text-cream">@{account.handle}</span>
-              </>
-            )}
-            {account.city && <> · {account.city}</>}
-          </p>
-          <h1 className="font-display text-5xl md:text-6xl text-cream uppercase leading-[0.9] tracking-wide">
-            {tonight ? "Tonight" : RANGE_LABEL[range]}
-          </h1>
-        </div>
-        <Link
-          href="/owner/events/new"
-          className="shrink-0 inline-flex items-center gap-2 bg-coral text-bg font-sans font-semibold text-xs uppercase tracking-[0.16em] px-5 py-3 rounded-full hover:brightness-110 transition"
-        >
-          + New event
-        </Link>
-      </header>
-
-      {/* Compact search + range tabs row */}
-      <div className="flex flex-col md:flex-row gap-2 md:items-center mb-3">
-        <form action="/owner" method="get" className="flex-1">
-          <input
-            type="text"
-            name="q"
-            defaultValue={q}
-            placeholder="Search events…"
-            className="w-full bg-s2 border border-line text-cream px-4 py-2.5 rounded-md font-sans text-sm placeholder:text-muted focus:border-coral focus:outline-none transition-colors"
-          />
-          {range !== "week" && (
-            <input type="hidden" name="range" value={range} />
-          )}
-          {venueFilter && (
-            <input type="hidden" name="venue" value={venueFilter} />
-          )}
-        </form>
-        <div className="flex gap-1 overflow-x-auto pb-1 md:pb-0">
-          {RANGES.map((r) => {
-            const active = r === range;
-            return (
-              <Link
-                key={r}
-                href={rangeHref(r)}
-                className={`shrink-0 px-3 py-1.5 rounded-full border text-[10px] font-mono uppercase tracking-wider transition ${
-                  active
-                    ? "border-coral bg-coral/10 text-cream"
-                    : "border-line bg-s1 text-muted hover:text-cream"
-                }`}
-              >
-                {RANGE_LABEL[r]}
-              </Link>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Venue switcher pills */}
-      {venues.length > 1 && (
-        <div className="flex gap-1 overflow-x-auto pb-2 mb-6">
-          <Link
-            href={venueHref("")}
-            className={`shrink-0 px-3 py-1 rounded-full border text-[10px] font-mono uppercase tracking-wider ${
-              !venueFilter
-                ? "border-coral bg-s2 text-cream"
-                : "border-line bg-s1 text-muted hover:text-cream"
-            }`}
-          >
-            All venues
-          </Link>
-          {venues.map((v) => (
-            <Link
-              key={v.id}
-              href={venueHref(v.id)}
-              className={`shrink-0 px-3 py-1 rounded-full border text-[10px] font-mono uppercase tracking-wider ${
-                venueFilter === v.id
-                  ? "border-coral bg-s2 text-cream"
-                  : "border-line bg-s1 text-muted hover:text-cream"
-              }`}
-            >
-              {v.name}
-            </Link>
-          ))}
-        </div>
-      )}
-
-      {/* TONIGHT hero card — coral gradient, big stats */}
-      {tonight && tonightStats && (
-        <Link
-          href={`/owner/events/${tonight.event_id}?night=${tonight.id}`}
-          className="group block relative overflow-hidden rounded-2xl mb-6 isolate"
-        >
-          <div
-            className="absolute inset-0 -z-10"
-            style={{
-              background:
-                "linear-gradient(135deg, #FF4A2B 0%, #FF7A3C 55%, #c9351c 100%)",
-            }}
-          />
-          <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-white/10 -z-10" />
-          <div className="absolute -bottom-20 -left-12 w-64 h-64 rounded-full bg-white/5 -z-10" />
-
-          {tonight.event?.flyer_url && (
+      {isEmpty ? (
+        // ─── v5 empty state — matches V5Empty ───
+        (() => {
+          const framing = dashboardFraming(account.account_type);
+          const emptyTitle = q
+            ? "Nothing matches"
+            : range === "past"
+              ? "No past events"
+              : range === "upcoming"
+                ? "Nothing booked"
+                : framing.emptyTitle;
+          const emptyBody = q
+            ? `Nothing named "${q}". Try a different search or change the range.`
+            : range === "past"
+              ? "Once you run a night, the recap lands here."
+              : framing.emptyBody;
+          return (
             <div
-              className="absolute inset-0 -z-20 opacity-50"
               style={{
-                backgroundImage: `url(${tonight.event.flyer_url})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
+                padding: "var(--s-20) var(--s-8)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                textAlign: "center",
+                maxWidth: 480,
+                margin: "0 auto",
               }}
-            />
-          )}
-
-          <div className="p-6 md:p-8">
-            <div className="flex items-center justify-between mb-3">
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/70">
-                Tonight · {fmtDate(tonight.night_date)}
-              </p>
-              <span className="inline-flex items-center gap-1.5 bg-black/25 px-3 py-1 rounded-full font-mono text-[10px] uppercase tracking-widest text-white">
-                <span
-                  className="w-1.5 h-1.5 rounded-full bg-white"
-                  style={{
-                    boxShadow: "0 0 0 0 rgba(255,255,255,0.7)",
-                    animation: "wadl-pulse 2s infinite",
-                  }}
-                />
-                Live
-              </span>
-            </div>
-
-            <h2 className="font-display text-4xl md:text-6xl text-white uppercase leading-[0.9] tracking-wide mb-1">
-              {tonight.event?.name}
-            </h2>
-            <p className="font-mono text-[10px] uppercase tracking-widest text-white/70 mb-6">
-              Doors {fmtTime(tonight.doors_at)}
-              {tonight.is_frozen ? " · LOCKDOWN" : ""}
-            </p>
-
-            <div className="grid grid-cols-3 gap-3 max-w-md">
-              <div>
-                <p className="font-display text-4xl md:text-5xl text-white leading-none">
-                  {tonightStats.scanned}
-                </p>
-                <p className="font-mono text-[9px] uppercase tracking-widest text-white/60 mt-1">
-                  In
-                </p>
-              </div>
-              <div>
-                <p className="font-display text-4xl md:text-5xl text-white/70 leading-none">
-                  {tonightStats.pending}
-                </p>
-                <p className="font-mono text-[9px] uppercase tracking-widest text-white/60 mt-1">
-                  Pending
-                </p>
-              </div>
-              <div>
-                <p className="font-display text-4xl md:text-5xl text-white leading-none">
-                  {tonightStats.rsvps}
-                </p>
-                <p className="font-mono text-[9px] uppercase tracking-widest text-white/60 mt-1">
-                  RSVPs
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="px-6 md:px-8 py-3 bg-black/20 border-t border-white/10">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-white/80">
-              Tap to open dashboard →
-            </p>
-          </div>
-        </Link>
-      )}
-
-      {/* Coming up + past list */}
-      {nights.length === 0 && !tonight ? (
-        <section className="rounded-2xl border border-line bg-s1 px-6 py-12 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-coral/10 border border-coral/30 mx-auto mb-5 flex items-center justify-center">
-            <svg
-              width="28"
-              height="28"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              className="text-coral"
             >
-              <rect x="3" y="4" width="18" height="18" rx="2" />
-              <line x1="16" y1="2" x2="16" y2="6" />
-              <line x1="8" y1="2" x2="8" y2="6" />
-              <line x1="3" y1="10" x2="21" y2="10" />
-            </svg>
-          </div>
-          {(() => {
-            const framing = dashboardFraming(account.account_type);
-            return (
-              <>
-                <p className="font-display text-3xl text-cream uppercase tracking-wide mb-2">
-                  {q
-                    ? "Nothing matches"
-                    : range === "past"
-                    ? "No past events yet"
-                    : range === "upcoming"
-                    ? "Nothing booked"
-                    : framing.emptyTitle}
-                </p>
-                <p className="text-muted text-sm leading-relaxed max-w-md mx-auto mb-6">
-                  {q
-                    ? `Nothing named "${q}". Try a different search or change the range.`
-                    : range === "past"
-                    ? "Once you run a night, the recap lands here."
-                    : framing.emptyBody}
-                </p>
-                {!q && range !== "past" && (
+              <div
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: "var(--r-lg)",
+                  background: "var(--bg-3)",
+                  marginBottom: "var(--s-5)",
+                }}
+              />
+              <div className="t-display-md">{emptyTitle}</div>
+              <div
+                className="t-body-2"
+                style={{ marginTop: "var(--s-3)", maxWidth: 380 }}
+              >
+                {emptyBody}
+              </div>
+              {!q && range !== "past" && (
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "var(--s-2)",
+                    marginTop: "var(--s-6)",
+                  }}
+                >
                   <Link
                     href="/owner/events/new"
-                    className="inline-flex items-center gap-2 bg-coral text-bg font-sans font-semibold text-xs uppercase tracking-[0.16em] px-5 py-3 rounded-full hover:brightness-110 transition"
+                    className="btn btn--accent"
+                    style={{ textDecoration: "none" }}
                   >
                     {framing.emptyCtaLabel}
                   </Link>
-                )}
-              </>
-            );
-          })()}
-        </section>
-      ) : remainingNights.length > 0 ? (
-        <section className="mt-2">
-          <p className="label-mono mb-3">
-            {tonight ? "Coming up" : RANGE_LABEL[range]} · {remainingNights.length}
-          </p>
-          <div className="grid gap-3 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-            {remainingNights.map((n) => {
-              const s = statsFor(n.id);
-              const cap = n.capacity_cap ?? 0;
-              const date = new Date(n.doors_at);
-              const lbl = dayLabel(date);
-              const linkHref =
-                range === "past"
-                  ? `/owner/events/${n.event_id}/recap?night=${n.id}`
-                  : `/owner/events/${n.event_id}?night=${n.id}`;
-              return (
+                  <Link
+                    href="/owner/calendar"
+                    className="btn btn--ghost"
+                    style={{ textDecoration: "none" }}
+                  >
+                    Open calendar
+                  </Link>
+                </div>
+              )}
+            </div>
+          );
+        })()
+      ) : (
+        <>
+          {/* ─── CoverHeader hero ─── */}
+          <CoverHeader
+            seed={heroSeed}
+            eyebrow={heroEyebrow}
+            title={heroTitle}
+            height={360}
+            actions={
+              <>
                 <Link
-                  key={n.id}
-                  href={linkHref}
-                  className="card hover:border-coral/60 transition group flex gap-4 items-start p-4"
+                  href="/owner/calendar"
+                  className="btn btn--ghost btn--lg"
+                  style={{ textDecoration: "none" }}
                 >
-                  <div className="w-12 shrink-0 bg-s2 border border-line rounded-md py-2 text-center">
-                    <p className="font-mono text-[9px] uppercase tracking-widest text-muted">
-                      {lbl.dow}
-                    </p>
-                    <p className="font-display text-2xl text-cream leading-none mt-0.5">
-                      {lbl.day}
-                    </p>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-sans font-semibold text-cream truncate group-hover:text-coral transition">
-                      {n.event?.name ?? "—"}
-                    </p>
-                    <p className="label-mono mt-1">
-                      Doors {fmtTime(n.doors_at)}
-                      {n.is_frozen ? " · LOCKED" : ""}
-                    </p>
-                    <div className="mt-3 flex gap-3 label-mono">
-                      <span className="text-cream">
-                        {s.scanned}
-                        {cap > 0 && (
-                          <span className="text-muted">/{cap}</span>
-                        )}
-                      </span>
-                      <span>·</span>
-                      <span>{s.approved} approved</span>
-                      {s.pending > 0 && (
-                        <span className="text-gold">{s.pending} pending</span>
-                      )}
-                    </div>
-                  </div>
+                  Calendar
                 </Link>
-              );
-            })}
-          </div>
-        </section>
-      ) : null}
+                <Link
+                  href={
+                    tonight
+                      ? `/owner/events/${tonight.event_id}?night=${tonight.id}`
+                      : "/owner/events/new"
+                  }
+                  className="btn btn--lg btn--accent"
+                  style={{ textDecoration: "none" }}
+                >
+                  {tonight ? "Open daydash" : "New event"}
+                </Link>
+              </>
+            }
+          />
 
-      <style>{`
-        @keyframes wadl-pulse {
-          0% { box-shadow: 0 0 0 0 rgba(255,255,255,0.7); }
-          70% { box-shadow: 0 0 0 8px rgba(255,255,255,0); }
-          100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
-        }
-      `}</style>
+          {/* ─── 4-up Stat row ─── */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(4, 1fr)",
+              borderBottom: "1px solid var(--line)",
+            }}
+          >
+            <Stat
+              label="Doors"
+              value={tonight ? fmtTime(tonight.doors_at) : "—"}
+              sub={
+                tonight
+                  ? `${tonightStats?.approved ?? 0} on list`
+                  : "no event today"
+              }
+            />
+            <Stat
+              label="RSVP'd"
+              value={String(totalRsvpd)}
+              sub={`across ${nights.length} night${nights.length === 1 ? "" : "s"}`}
+            />
+            <Stat
+              label="Events"
+              value={String(distinctEvents)}
+              sub={RANGE_LABEL[range].toLowerCase()}
+            />
+            <Stat
+              label="Live now"
+              value={String(liveNow)}
+              sub={`${totalScanned} checked in`}
+              delta={showRate > 0 ? `${showRate}% show` : undefined}
+              last
+            />
+          </div>
+
+          {/* ─── Filters: search + range + venue ─── */}
+          <div
+            style={{
+              padding: "var(--s-4) var(--s-8)",
+              borderBottom: "1px solid var(--line)",
+              display: "flex",
+              alignItems: "center",
+              gap: "var(--s-3)",
+              flexWrap: "wrap",
+            }}
+          >
+            <form
+              action="/owner"
+              method="get"
+              style={{ flex: 1, minWidth: 220 }}
+            >
+              <input
+                type="text"
+                name="q"
+                defaultValue={q}
+                placeholder="Search events…"
+                className="input"
+                style={{ maxWidth: 320 }}
+              />
+              {range !== "week" && (
+                <input type="hidden" name="range" value={range} />
+              )}
+              {venueFilter && (
+                <input type="hidden" name="venue" value={venueFilter} />
+              )}
+            </form>
+            <div
+              style={{
+                display: "flex",
+                gap: "var(--s-1)",
+                marginLeft: "auto",
+              }}
+            >
+              {RANGES.map((r) => (
+                <Link
+                  key={r}
+                  href={rangeHref(r)}
+                  className={
+                    "nav-item " + (r === range ? "nav-item--active" : "")
+                  }
+                  style={{
+                    textDecoration: "none",
+                    fontSize: "var(--ts-sm)",
+                  }}
+                >
+                  {RANGE_LABEL[r]}
+                </Link>
+              ))}
+            </div>
+          </div>
+          {venues.length > 1 && (
+            <div
+              style={{
+                padding: "var(--s-3) var(--s-8)",
+                borderBottom: "1px solid var(--line)",
+                display: "flex",
+                gap: "var(--s-1)",
+                flexWrap: "wrap",
+              }}
+            >
+              <Link
+                href={venueHref("")}
+                className={
+                  "nav-item " + (!venueFilter ? "nav-item--active" : "")
+                }
+                style={{ textDecoration: "none", fontSize: "var(--ts-sm)" }}
+              >
+                All venues
+              </Link>
+              {venues.map((v) => (
+                <Link
+                  key={v.id}
+                  href={venueHref(v.id)}
+                  className={
+                    "nav-item " +
+                    (venueFilter === v.id ? "nav-item--active" : "")
+                  }
+                  style={{
+                    textDecoration: "none",
+                    fontSize: "var(--ts-sm)",
+                  }}
+                >
+                  {v.name}
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {/* ─── Upcoming · 3-col event card grid ─── */}
+          {remainingNights.length > 0 && (
+            <div style={{ padding: "var(--s-8)" }}>
+              <div
+                className="t-meta"
+                style={{ marginBottom: "var(--s-4)" }}
+              >
+                {tonight ? "Upcoming" : RANGE_LABEL[range]} ·{" "}
+                {remainingNights.length}
+              </div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, 1fr)",
+                  gap: "var(--s-4)",
+                }}
+              >
+                {remainingNights.map((n) => {
+                  const s = statsFor(n.id);
+                  const cap = n.capacity_cap ?? 0;
+                  const name = n.event?.name ?? "—";
+                  const linkHref =
+                    range === "past"
+                      ? `/owner/events/${n.event_id}/recap?night=${n.id}`
+                      : `/owner/events/${n.event_id}?night=${n.id}`;
+                  // Status chip mirrors V5Dashboard: scanned → ok,
+                  // has list → info, otherwise draft/ghost.
+                  let chipClass = "chip chip--ghost";
+                  let chipLabel = "Draft";
+                  if (s.scanned > 0) {
+                    chipClass = "chip chip--ok";
+                    chipLabel = "Live";
+                  } else if (s.approved > 0) {
+                    chipClass = "chip chip--info";
+                    chipLabel = "On list";
+                  } else if (n.is_frozen) {
+                    chipClass = "chip chip--warn";
+                    chipLabel = "Locked";
+                  }
+                  const countLabel = cap > 0 ? `${s.approved} / ${cap}` : `${s.approved}`;
+                  return (
+                    <Link
+                      key={n.id}
+                      href={linkHref}
+                      className="card card--hover"
+                      style={{
+                        textDecoration: "none",
+                        color: "inherit",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <Cover seed={name} height={160}>
+                        <div
+                          style={{
+                            position: "absolute",
+                            left: "var(--s-4)",
+                            right: "var(--s-4)",
+                            bottom: "var(--s-4)",
+                          }}
+                        >
+                          <div
+                            className="t-meta"
+                            style={{ color: "rgba(255,255,255,0.7)" }}
+                          >
+                            {fmtDate(n.night_date)}
+                          </div>
+                          <div
+                            className="t-h1 truncate"
+                            style={{
+                              marginTop: "var(--s-1)",
+                              color: "#fff",
+                            }}
+                          >
+                            {name}
+                          </div>
+                        </div>
+                      </Cover>
+                      <div
+                        style={{
+                          padding: "var(--s-4)",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
+                        <span className="t-body-2 t-num">{countLabel}</span>
+                        <span className={chipClass}>{chipLabel}</span>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
       {!profile.tour_completed_at && !profile.tour_dismissed_at && (
         <OnboardingTour alreadySeeded={!!profile.demo_seeded_at} />
@@ -509,3 +609,4 @@ export default async function OwnerWeekViewPage({
     </main>
   );
 }
+

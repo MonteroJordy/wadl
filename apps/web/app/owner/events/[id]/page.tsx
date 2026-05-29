@@ -1,12 +1,16 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOwnerContext, fmtDate, fmtTime } from "@/lib/owner";
-import { fmtHour } from "@/lib/recap";
 import FreezeButton from "./freeze-button";
-import EmptyState from "@/components/empty-state";
 import RealtimeCounters from "@/components/realtime-counters";
 import ActivityFeedRealtime from "@/components/activity-feed-realtime";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  Breadcrumb,
+  CoverHeader,
+  EventSubNav,
+  Stat,
+} from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +46,7 @@ export default async function DayDashPage({
   const { data: event } = await supabase
     .from("events")
     .select(
-      "id, name, description, flyer_url, event_type, venue_id, account_id, event_nights(id, night_date, doors_at, cutoff_at, capacity_cap, lockdown_threshold_pct, is_frozen)"
+      "id, name, description, flyer_url, event_type, venue_id, account_id, event_nights(id, night_date, doors_at, cutoff_at, capacity_cap, lockdown_threshold_pct, is_frozen)",
     )
     .eq("id", params.id)
     .eq("account_id", account.id)
@@ -62,24 +66,64 @@ export default async function DayDashPage({
   nights.sort((a, b) => (a.doors_at < b.doors_at ? -1 : 1));
 
   if (nights.length === 0) {
+    // No nights yet — v5 empty state, matches V5Empty.
     return (
-      <main id="main-content" className="mobile-frame">
-        <Link href="/owner" className="label-mono hover:text-cream">
-          ← Back
-        </Link>
-        <h1 className="display-lg mt-4 mb-6">{event.name}</h1>
-        <EmptyState
-          title="No nights yet"
-          body="Add a night from settings to start building the list."
-          action={
+      <main
+        id="main-content"
+        style={{ minHeight: "100vh", background: "var(--bg)" }}
+      >
+        <Breadcrumb items={[["Events", "/owner"], event.name]} />
+        <div
+          style={{
+            padding: "var(--s-20) var(--s-8)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            textAlign: "center",
+            maxWidth: 480,
+            margin: "0 auto",
+          }}
+        >
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: "var(--r-lg)",
+              background: "var(--bg-3)",
+              marginBottom: "var(--s-5)",
+            }}
+          />
+          <div className="t-display-md">No nights yet</div>
+          <div
+            className="t-body-2"
+            style={{ marginTop: "var(--s-3)", maxWidth: 380 }}
+          >
+            Add a night from settings to start building the list. We&apos;ll
+            publish a public RSVP page automatically.
+          </div>
+          <div
+            style={{
+              display: "flex",
+              gap: "var(--s-2)",
+              marginTop: "var(--s-6)",
+            }}
+          >
             <Link
               href={`/owner/events/${event.id}/settings`}
-              className="btn-primary inline-block"
+              className="btn btn--accent"
+              style={{ textDecoration: "none" }}
             >
               Go to settings
             </Link>
-          }
-        />
+            <Link
+              href="/owner"
+              className="btn btn--ghost"
+              style={{ textDecoration: "none" }}
+            >
+              Back to events
+            </Link>
+          </div>
+        </div>
       </main>
     );
   }
@@ -88,27 +132,27 @@ export default async function DayDashPage({
   const now = Date.now();
   const upcoming = nights.find((n) => new Date(n.doors_at).getTime() >= now);
   const defaultNight = upcoming ?? nights[0];
-  const active = nights.find((n) => n.id === searchParams.night) ?? defaultNight;
+  const active =
+    nights.find((n) => n.id === searchParams.night) ?? defaultNight;
 
-  // Live analytics fetch. Pull check_ins with joined guest/allocation so
-  // we can show last-scan, arrival curve, and top holder inline.
-  const [guestsRes, checkInsRes, allocRes, pendingRes] = await Promise.all([
-    supabase.from("guests").select("status, plus_ones").eq("event_night_id", active.id),
+  // Live analytics fetch. We pull guests once and derive pending counts in
+  // memory — the previous version did a separate count(*) for pending,
+  // which was a redundant round-trip on every daydash render.
+  const [guestsRes, checkInsRes, allocRes] = await Promise.all([
+    supabase
+      .from("guests")
+      .select("status, plus_ones")
+      .eq("event_night_id", active.id),
     supabase
       .from("check_ins")
       .select(
-        "state, scanned_at, guest:guests!inner(plus_ones, allocation_id, allocation:allocations(holder_name))"
+        "state, scanned_at, guest:guests!inner(plus_ones, allocation_id, allocation:allocations(holder_name))",
       )
       .eq("event_night_id", active.id),
     supabase
       .from("allocations")
       .select("id", { count: "exact", head: true })
       .eq("event_night_id", active.id),
-    supabase
-      .from("guests")
-      .select("id", { count: "exact", head: true })
-      .eq("event_night_id", active.id)
-      .eq("status", "pending"),
   ]);
 
   const guests = (guestsRes.data ?? []) as Array<{
@@ -127,14 +171,11 @@ export default async function DayDashPage({
 
   let scanned = 0;
   const holderScans = new Map<string, { name: string; count: number }>();
-  const hourCounts = new Map<number, number>();
   let lastScanAt: string | null = null;
 
   for (const c of approvedScans) {
     const heads = 1 + (c.guest?.plus_ones ?? 0);
     scanned += heads;
-    const hour = new Date(c.scanned_at).getHours();
-    hourCounts.set(hour, (hourCounts.get(hour) ?? 0) + heads);
     if (!lastScanAt || c.scanned_at > lastScanAt) lastScanAt = c.scanned_at;
     if (c.guest?.allocation_id) {
       const key = c.guest.allocation_id;
@@ -149,104 +190,126 @@ export default async function DayDashPage({
   }
 
   const recentScans = approvedScans.filter(
-    (c) => Date.now() - new Date(c.scanned_at).getTime() < 30 * 60_000
+    (c) => Date.now() - new Date(c.scanned_at).getTime() < 30 * 60_000,
   ).length;
 
   const topHolderEntry = [...holderScans.values()].sort(
-    (a, b) => b.count - a.count
+    (a, b) => b.count - a.count,
   )[0];
-
-  // Build an hour array spanning first scan hour → now (or a 4-hour window).
-  const currentHour = new Date().getHours();
-  const earliestHour =
-    hourCounts.size > 0 ? Math.min(...hourCounts.keys()) : currentHour;
-  const hours: Array<{ hour: number; count: number }> = [];
-  for (let h = earliestHour; h <= currentHour; h++) {
-    hours.push({ hour: h % 24, count: hourCounts.get(h) ?? 0 });
-  }
-  const peakHourCount = Math.max(1, ...hours.map((h) => h.count));
 
   const cap = active.capacity_cap ?? 0;
   const pctFull = cap > 0 ? Math.round((scanned / cap) * 100) : 0;
   const totalList = approvedHeads + pendingHeads;
+  const allocCount = allocRes.count ?? 0;
+  const pendingCount = guests.filter((g) => g.status === "pending").length;
+
+  // ─── v5 hero framing ───
+  const doorsMs = new Date(active.doors_at).getTime() - Date.now();
+  let heroEyebrow = `${fmtDate(active.night_date)} · doors ${fmtTime(active.doors_at)}`;
+  if (doorsMs > 0 && doorsMs < 24 * 3_600_000) {
+    const h = Math.floor(doorsMs / 3_600_000);
+    const m = Math.floor((doorsMs % 3_600_000) / 60_000);
+    heroEyebrow = `Doors in ${h > 0 ? `${h}h ` : ""}${m}m · ${fmtTime(active.doors_at)}`;
+  }
+  if (active.is_frozen) heroEyebrow += " · frozen";
+
+  // ─── v5 Quick-actions card grid (real routes) ───
+  const quickActions: Array<{ href: string; title: string; sub: string }> = [
+    {
+      href: `/door/events/${event.id}?night=${active.id}`,
+      title: "Open the door",
+      sub: `${scanned}${cap ? ` / ${cap}` : ""} scanned in`,
+    },
+    {
+      href: `/owner/events/${event.id}/queue`,
+      title:
+        pendingCount > 0 ? `Review ${pendingCount} pending` : "Approval queue",
+      sub:
+        pendingCount > 0
+          ? `${pendingHeads} heads waiting`
+          : "Nothing waiting",
+    },
+    {
+      href: `/owner/events/${event.id}/allocations`,
+      title: "Promoter lists",
+      sub: allocCount > 0 ? `${allocCount} allocations` : "No allocations yet",
+    },
+    {
+      href: `/owner/events/${event.id}/staff`,
+      title: "Door staff",
+      sub: "Invite + brief your team",
+    },
+    {
+      href: `/owner/events/${event.id}/chathub`,
+      title: "Paste names",
+      sub: "AI bulk-add to the list",
+    },
+    {
+      href: `/owner/events/${event.id}/broadcast`,
+      title: "Broadcast",
+      sub: `${totalList} on list`,
+    },
+  ];
 
   return (
-    <main id="main-content" className="mobile-frame">
-      <header className="flex items-center justify-between pt-6 pb-4">
-        <Link href="/owner" className="label-mono hover:text-cream">
-          ← Back
-        </Link>
-        <Link
-          href={`/owner/events/${event.id}/settings`}
-          className="label-mono hover:text-cream"
-        >
-          Settings
-        </Link>
-      </header>
+    <main
+      id="main-content"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
+    >
+      <Breadcrumb items={[["Events", "/owner"], event.name]} />
 
-      {event.flyer_url ? (
-        <div
-          className="w-full rounded-lg overflow-hidden mb-4 border border-line"
-          style={{ aspectRatio: "4 / 5" }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={event.flyer_url}
-            alt={event.name}
-            className="w-full h-full object-cover"
-          />
-        </div>
-      ) : null}
-
-      <h1 className="display-lg mb-1">{event.name}</h1>
-      <div className="flex items-center justify-between mb-6">
-        <p className="label-mono">
-          {fmtDate(active.night_date)} · Doors {fmtTime(active.doors_at)}
-        </p>
-        <RealtimeCounters nightId={active.id} />
-      </div>
-
-      {(allocRes.count ?? 0) === 0 && approvedHeads === 0 && (
-        <div className="card border-coral/40 mb-6 bg-s2">
-          <p className="label-mono text-coral mb-1">Set up your list</p>
-          <p className="text-cream font-sans font-semibold mb-3">
-            No allocations yet
-          </p>
-          <p className="text-muted text-sm leading-relaxed mb-4">
-            An allocation is a slice of your door given to a promoter, artist,
-            or partner. They get a magic link, add guests up to their cap, and
-            you see who added whom — no accounts on their end.
-          </p>
-          <div className="grid grid-cols-2 gap-2">
+      <CoverHeader
+        seed={event.name}
+        eyebrow={heroEyebrow}
+        title={event.name}
+        height={300}
+        actions={
+          <>
             <Link
-              href={`/owner/events/${event.id}/allocations/new`}
-              className="btn-primary text-center"
+              href={`/owner/events/${event.id}/recap?night=${active.id}`}
+              className="btn btn--ghost"
+              style={{ textDecoration: "none" }}
             >
-              Add allocation
+              Recap
             </Link>
             <Link
-              href={`/owner/events/${event.id}/staff`}
-              className="btn-ghost text-center"
+              href={`/owner/events/${event.id}/settings`}
+              className="btn btn--accent"
+              style={{ textDecoration: "none" }}
             >
-              Invite door staff
+              Edit
             </Link>
-          </div>
-        </div>
-      )}
+          </>
+        }
+      />
 
+      <EventSubNav active="overview" eventId={event.id} />
+
+      {/* Multi-night picker — only when the event spans nights. */}
       {nights.length > 1 && (
-        <div className="flex gap-2 mb-6 overflow-x-auto">
+        <div
+          style={{
+            padding: "var(--s-3) var(--s-8)",
+            borderBottom: "1px solid var(--line)",
+            display: "flex",
+            gap: "var(--s-1)",
+            overflowX: "auto",
+          }}
+        >
           {nights.map((n) => {
             const isActive = n.id === active.id;
             return (
               <Link
                 key={n.id}
                 href={`/owner/events/${event.id}?night=${n.id}`}
-                className={`shrink-0 px-3 py-2 rounded-md border text-xs font-mono uppercase tracking-wider ${
-                  isActive
-                    ? "border-coral bg-s2 text-cream"
-                    : "border-line bg-s1 text-muted hover:text-cream"
-                }`}
+                className={
+                  "nav-item " + (isActive ? "nav-item--active" : "")
+                }
+                style={{
+                  textDecoration: "none",
+                  fontSize: "var(--ts-sm)",
+                  whiteSpace: "nowrap",
+                }}
               >
                 {fmtDate(n.night_date)}
               </Link>
@@ -255,327 +318,136 @@ export default async function DayDashPage({
         </div>
       )}
 
-      <section className="card mb-4">
-        <div className="flex items-end justify-between">
-          <div>
-            <p className="label-mono">Scanned in</p>
-            <p className="font-display text-6xl leading-none text-cream">
-              {scanned}
-              <span className="text-muted">/{cap || "—"}</span>
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="label-mono">Full</p>
-            <p className="font-display text-4xl text-coral leading-none">
-              {pctFull}%
-            </p>
-          </div>
-        </div>
-        <div className="h-2 bg-s3 rounded-full mt-4 overflow-hidden">
-          <div
-            className="h-full bg-coral"
-            style={{ width: `${Math.min(100, pctFull)}%` }}
-          />
-        </div>
-        <div className="grid grid-cols-3 gap-2 mt-4">
-          <div>
-            <p className="label-mono">Approved</p>
-            <p className="font-display text-2xl text-cream">{approvedHeads}</p>
-          </div>
-          <div>
-            <p className="label-mono">Pending</p>
-            <p className="font-display text-2xl text-gold">{pendingHeads}</p>
-          </div>
-          <div>
-            <p className="label-mono">Allocs</p>
-            <p className="font-display text-2xl text-cream">
-              {allocRes.count ?? 0}
-            </p>
-          </div>
-        </div>
-
-        {scanned > 0 && (
-          <div className="mt-4 pt-4 border-t border-line grid grid-cols-3 gap-3">
-            <div>
-              <p className="label-mono">Last scan</p>
-              <p className="font-sans text-sm text-cream">
-                {lastScanAt ? ago(lastScanAt) : "—"}
-              </p>
-            </div>
-            <div>
-              <p className="label-mono">Last 30m</p>
-              <p className="font-sans text-sm text-cream">
-                {recentScans} in
-              </p>
-            </div>
-            {(() => {
-              // Projected ETA to capacity at current pace.
-              if (!cap || cap <= 0) return <div />;
-              if (scanned >= cap) {
-                return (
-                  <div>
-                    <p className="label-mono text-coral">At cap</p>
-                    <p className="font-sans text-sm text-coral">Now</p>
-                  </div>
-                );
-              }
-              if (recentScans <= 0) {
-                return (
-                  <div>
-                    <p className="label-mono">Pace</p>
-                    <p className="font-sans text-sm text-muted">—</p>
-                  </div>
-                );
-              }
-              const perMin = recentScans / 30;
-              const remaining = cap - scanned;
-              const eta = Math.round(remaining / perMin);
-              return (
-                <div>
-                  <p
-                    className={`label-mono ${
-                      eta <= 30
-                        ? "text-coral"
-                        : eta <= 90
-                        ? "text-gold"
-                        : "text-mint"
-                    }`}
-                  >
-                    Cap in
-                  </p>
-                  <p
-                    className={`font-sans text-sm ${
-                      eta <= 30
-                        ? "text-coral"
-                        : eta <= 90
-                        ? "text-gold"
-                        : "text-cream"
-                    }`}
-                  >
-                    {eta < 60
-                      ? `~${eta}m`
-                      : `~${Math.floor(eta / 60)}h ${eta % 60}m`}
-                  </p>
-                </div>
-              );
-            })()}
-          </div>
-        )}
-      </section>
-
-      {hours.length > 0 && scanned > 0 && (
-        <section className="card mb-4">
-          <p className="label-mono mb-3">Arrivals by hour</p>
-          <div className="flex items-end gap-1 h-20">
-            {hours.map((b) => {
-              const h = (b.count / peakHourCount) * 100;
-              const isPeak = b.count > 0 && b.count === peakHourCount;
-              return (
-                <div
-                  key={b.hour}
-                  className="flex-1 flex flex-col items-center gap-1"
-                  title={`${fmtHour(b.hour)}: ${b.count}`}
-                >
-                  <div
-                    className={`w-full rounded-t ${
-                      isPeak ? "bg-coral" : "bg-mint/60"
-                    }`}
-                    style={{ height: `${Math.max(4, h)}%` }}
-                  />
-                  <p className="label-mono text-[9px]">{fmtHour(b.hour)}</p>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {topHolderEntry && (
-        <section className="card mb-4">
-          <p className="label-mono mb-1">Top holder so far</p>
-          <p className="font-sans text-cream font-semibold">
-            {topHolderEntry.name}
-          </p>
-          <p className="label-mono mt-1">
-            <span className="text-mint">{topHolderEntry.count}</span> scanned in
-          </p>
-        </section>
-      )}
-
-      <section className="grid grid-cols-2 gap-2 mb-4">
-        <Link
-          href={`/owner/events/${event.id}/allocations`}
-          className="card text-center hover:border-coral transition"
-        >
-          <p className="label-mono mb-1">Manage</p>
-          <p className="font-sans font-semibold text-cream">Allocations</p>
-        </Link>
-        <Link
-          href={`/owner/events/${event.id}/queue`}
-          className="card text-center hover:border-coral transition"
-        >
-          <p className="label-mono mb-1">Review</p>
-          <p className="font-sans font-semibold text-cream">
-            Queue
-            {(pendingRes.count ?? 0) > 0 && (
-              <span className="ml-1 text-gold">· {pendingRes.count}</span>
-            )}
-          </p>
-        </Link>
-      </section>
-
-      <section className="grid grid-cols-2 gap-2 mb-4">
-        <Link
-          href={`/owner/events/${event.id}/staff`}
-          className="card text-center hover:border-coral transition"
-        >
-          <p className="label-mono mb-1">Door</p>
-          <p className="font-sans font-semibold text-cream">Staff</p>
-        </Link>
-        <Link
-          href={`/door/events/${event.id}?night=${active.id}`}
-          className="card text-center border-mint/40 hover:border-mint transition"
-        >
-          <p className="label-mono mb-1 text-mint">Live</p>
-          <p className="font-sans font-semibold text-mint">Door view</p>
-        </Link>
-      </section>
-
-      <section className="grid grid-cols-3 gap-2 mb-4">
-        <Link
-          href={`/owner/events/${event.id}/chathub`}
-          className="card text-center hover:border-coral transition"
-        >
-          <p className="label-mono mb-1">Paste</p>
-          <p className="font-sans font-semibold text-cream">Chat Hub</p>
-        </Link>
-        <Link
-          href={`/owner/events/${event.id}/waitlist`}
-          className="card text-center hover:border-coral transition"
-        >
-          <p className="label-mono mb-1">Backups</p>
-          <p className="font-sans font-semibold text-cream">Waitlist</p>
-        </Link>
-        <Link
-          href={`/owner/events/${event.id}/co-owners`}
-          className="card text-center hover:border-coral transition"
-        >
-          <p className="label-mono mb-1">Share</p>
-          <p className="font-sans font-semibold text-cream">Co-owners</p>
-        </Link>
-      </section>
-
-      <section className="grid grid-cols-3 gap-2 mb-4">
-        <Link
-          href={`/owner/events/${event.id}/recap?night=${active.id}`}
-          className="card text-center hover:border-coral transition"
-        >
-          <p className="label-mono mb-1">Post</p>
-          <p className="font-sans font-semibold text-cream">Recap</p>
-        </Link>
-        <Link
-          href={`/owner/events/${event.id}/scorecards`}
-          className="card text-center hover:border-coral transition"
-        >
-          <p className="label-mono mb-1">Holders</p>
-          <p className="font-sans font-semibold text-cream">Scorecards</p>
-        </Link>
-        <Link
-          href={`/owner/events/${event.id}/audit`}
-          className="card text-center hover:border-coral transition"
-        >
-          <p className="label-mono mb-1">Trail</p>
-          <p className="font-sans font-semibold text-cream">Audit log</p>
-        </Link>
-      </section>
-
-      <div className="mb-4">
-        <FreezeButton
-          eventId={event.id}
-          nightId={active.id}
-          frozen={active.is_frozen}
+      {/* ─── 4-up Stat row ─── */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, 1fr)",
+          borderBottom: "1px solid var(--line)",
+        }}
+      >
+        <Stat
+          label="Scanned in"
+          value={cap ? `${scanned} / ${cap}` : String(scanned)}
+          sub={cap ? `${pctFull}% full` : "no cap set"}
+          delta={recentScans > 0 ? `+${recentScans} / 30m` : undefined}
+        />
+        <Stat
+          label="Approved"
+          value={String(approvedHeads)}
+          sub={`${totalList} on list`}
+        />
+        <Stat
+          label="Pending"
+          value={String(pendingHeads)}
+          sub={pendingCount > 0 ? `${pendingCount} waiting` : "queue clear"}
+        />
+        <Stat
+          label="Allocations"
+          value={String(allocCount)}
+          sub={lastScanAt ? `last scan ${ago(lastScanAt)}` : "no scans yet"}
+          last
         />
       </div>
 
-      {totalList === 0 && (
-        <EmptyState
-          title="No guests yet"
-          body="Invite a promoter or share the discovery page to start the list."
-        />
-      )}
+      {/* ─── 2-col body: Quick actions · Recent activity ─── */}
+      <div
+        style={{
+          padding: "var(--s-8)",
+          display: "grid",
+          gridTemplateColumns: "1.4fr 1fr",
+          gap: "var(--s-4)",
+        }}
+      >
+        <div>
+          <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+            Quick actions
+          </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(2, 1fr)",
+              gap: "var(--s-2)",
+            }}
+          >
+            {quickActions.map((a) => (
+              <Link
+                key={a.href}
+                href={a.href}
+                className="card card--hover"
+                style={{
+                  padding: "var(--s-5)",
+                  cursor: "pointer",
+                  textDecoration: "none",
+                  color: "inherit",
+                }}
+              >
+                <div className="t-h1">{a.title}</div>
+                <div className="t-meta" style={{ marginTop: "var(--s-2)" }}>
+                  {a.sub}
+                </div>
+              </Link>
+            ))}
+          </div>
 
-      <section className="grid grid-cols-2 gap-2 mt-4">
-        <Link
-          href={`/owner/events/${event.id}/export`}
-          className="label-mono text-center py-2 hover:text-cream transition"
-        >
-          Export CSV
-        </Link>
-        <Link
-          href={`/owner/events/${event.id}/export/pdf`}
-          className="label-mono text-center py-2 hover:text-cream transition"
-        >
-          Export PDF
-        </Link>
-        <Link
-          href={`/owner/events/${event.id}/print`}
-          className="label-mono text-center py-2 hover:text-cream transition"
-        >
-          Print roster
-        </Link>
-        <Link
-          href={`/owner/events/${event.id}/clone`}
-          className="label-mono text-center py-2 hover:text-cream transition"
-        >
-          Clone event
-        </Link>
-      </section>
+          {topHolderEntry && (
+            <>
+              <div
+                className="t-meta"
+                style={{
+                  marginTop: "var(--s-6)",
+                  marginBottom: "var(--s-3)",
+                }}
+              >
+                Top holder
+              </div>
+              <div className="card" style={{ padding: "var(--s-5)" }}>
+                <div className="t-h1">{topHolderEntry.name}</div>
+                <div
+                  className="t-meta"
+                  style={{ marginTop: "var(--s-2)", color: "var(--ok)" }}
+                >
+                  {topHolderEntry.count} scanned
+                </div>
+              </div>
+            </>
+          )}
 
-      <section className="grid grid-cols-2 gap-2 mt-2">
-        <Link
-          href={`/owner/events/${event.id}/guests/import`}
-          className="label-mono text-center py-2 hover:text-cream transition"
-        >
-          Import CSV
-        </Link>
-        <Link
-          href={`/owner/events/${event.id}/broadcast`}
-          className="label-mono text-center py-2 hover:text-cream transition"
-        >
-          Broadcast SMS
-        </Link>
-        <Link
-          href={`/owner/events/${event.id}/template`}
-          className="label-mono text-center py-2 hover:text-cream transition"
-        >
-          Templates
-        </Link>
-        <Link
-          href={`/owner/events/${event.id}/override`}
-          className="label-mono text-center py-2 hover:text-cream transition text-coral"
-        >
-          Override admit
-        </Link>
-        <Link
-          href={`/embed/${event.id}`}
-          target="_blank"
-          className="label-mono text-center py-2 hover:text-cream transition"
-        >
-          Embed widget
-        </Link>
-      </section>
+          <div style={{ marginTop: "var(--s-6)" }}>
+            <FreezeButton
+              eventId={event.id}
+              nightId={active.id}
+              frozen={active.is_frozen}
+            />
+          </div>
+        </div>
 
-      {await renderActivity(active.id, event.id)}
+        <div>
+          <div
+            className="t-meta"
+            style={{
+              marginBottom: "var(--s-3)",
+              display: "flex",
+              alignItems: "center",
+              gap: "var(--s-2)",
+            }}
+          >
+            Recent activity
+            <RealtimeCounters nightId={active.id} />
+          </div>
+          {await renderActivity(active.id, event.id)}
+        </div>
+      </div>
     </main>
   );
 }
 
-async function renderActivity(nightId: string, eventId: string) {
+async function renderActivity(_nightId: string, eventId: string) {
   const admin = createAdminClient();
   const { data } = await admin
     .from("audit_log")
     .select(
-      "id, action, context, created_at, actor:profiles!actor_user_id(full_name)"
+      "id, action, context, created_at, actor:profiles!actor_user_id(full_name)",
     )
     .eq("event_id", eventId)
     .order("created_at", { ascending: false })
@@ -587,29 +459,16 @@ async function renderActivity(nightId: string, eventId: string) {
     created_at: string;
     actor: { full_name: string | null } | null;
   }>;
+  // ActivityFeedRealtime renders the live-updating list; the v5 `.card`
+  // wrapper gives it the bordered surface from the V5EventOverview mockup.
   return (
-    <section className="mt-6">
-      <p className="label-mono mb-2">
-        Live activity
-        <span
-          className="inline-block w-1.5 h-1.5 rounded-full bg-mint ml-2 align-middle"
-          style={{ animation: "wadl-pulse-mint 2s infinite" }}
-          aria-hidden="true"
-        />
-      </p>
+    <div className="card">
       <ActivityFeedRealtime
         initialRows={rows}
         eventId={eventId}
         emptyTitle="Quiet so far"
         emptyBody="Holders haven't added anyone and the door hasn't opened yet."
       />
-      <style>{`
-        @keyframes wadl-pulse-mint {
-          0% { box-shadow: 0 0 0 0 rgba(0,217,126,0.7); }
-          70% { box-shadow: 0 0 0 6px rgba(0,217,126,0); }
-          100% { box-shadow: 0 0 0 0 rgba(0,217,126,0); }
-        }
-      `}</style>
-    </section>
+    </div>
   );
 }

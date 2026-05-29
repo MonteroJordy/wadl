@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { Breadcrumb, PageHeader, EventSubNav } from "@/components/v5";
 import { cloneEventAction } from "./actions";
 
 interface Props {
@@ -29,7 +29,7 @@ export default function CloneForm({
 
   const previewIso = earliestNightIso
     ? new Date(
-        new Date(earliestNightIso).getTime() + shiftDays * 86_400_000
+        new Date(earliestNightIso).getTime() + shiftDays * 86_400_000,
       ).toISOString()
     : null;
   const previewLabel = previewIso
@@ -55,26 +55,36 @@ export default function CloneForm({
   }
 
   return (
-    <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 py-12">
-      <header className="flex items-center justify-between pb-4">
-        <Link
-          href={`/owner/events/${eventId}`}
-          className="label-mono hover:text-cream transition"
-        >
-          ← Back
-        </Link>
-        <p className="label-mono">Clone event</p>
-      </header>
+    <main
+      id="main-content"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
+    >
+      <Breadcrumb
+        items={[
+          ["Events", "/owner"],
+          [sourceName, `/owner/events/${eventId}`],
+          "Clone",
+        ]}
+      />
+      <PageHeader
+        eyebrow="Clone event"
+        title="Clone & reuse"
+        sub="Copies the event shell (name, type, venue, flyer) and shifts every night forward by N days. Guests, check-ins, and the audit log are NOT copied."
+      />
+      <EventSubNav active="settings" eventId={eventId} />
 
-      <h1 className="display-lg leading-[0.95] mb-2">Clone &amp; reuse.</h1>
-      <p className="text-muted text-sm mb-6">
-        Copies the event shell (name, type, venue, flyer) and shifts every night
-        forward by N days. Guests, check-ins, and the audit log are NOT copied.
-      </p>
-
-      <form onSubmit={onSubmit} className="flex flex-col gap-5">
+      <form
+        onSubmit={onSubmit}
+        style={{
+          padding: "var(--s-8)",
+          maxWidth: 720,
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-5)",
+        }}
+      >
         <div>
-          <label htmlFor="name" className="label-mono block mb-2">
+          <label htmlFor="name" className="t-meta">
             New event name
           </label>
           <input
@@ -82,20 +92,22 @@ export default function CloneForm({
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="input-dark"
+            className="input"
+            style={{ marginTop: "var(--s-2)" }}
             required
           />
         </div>
 
         <div>
-          <label htmlFor="shift" className="label-mono block mb-2">
+          <label htmlFor="shift" className="t-meta">
             Shift dates by
           </label>
           <select
             id="shift"
             value={shiftDays}
             onChange={(e) => setShiftDays(parseInt(e.target.value, 10))}
-            className="input-dark"
+            className="input"
+            style={{ marginTop: "var(--s-2)" }}
           >
             <option value={7}>+1 week</option>
             <option value={14}>+2 weeks</option>
@@ -103,39 +115,54 @@ export default function CloneForm({
             <option value={1}>+1 day</option>
           </select>
           {previewLabel && (
-            <p className="label-mono mt-2">
+            <div className="t-meta" style={{ marginTop: "var(--s-2)" }}>
               First night will be{" "}
-              <span className="text-cream">{previewLabel}</span>
-            </p>
+              <span style={{ color: "var(--fg)" }}>{previewLabel}</span>
+            </div>
           )}
         </div>
 
-        <label className="flex items-center gap-3 cursor-pointer">
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "var(--s-3)",
+            cursor: "pointer",
+          }}
+        >
           <input
             type="checkbox"
             checked={copyAllocations}
             onChange={(e) => setCopyAllocations(e.target.checked)}
-            className="w-5 h-5 accent-coral"
+            style={{ width: 18, height: 18, accentColor: "var(--fg)" }}
           />
           <span>
-            <span className="font-sans text-cream text-sm font-semibold">
+            <span className="t-body" style={{ fontWeight: 500 }}>
               Copy allocations
             </span>
-            <span className="label-mono block">
-              {sourceAllocCount} holder
-              {sourceAllocCount === 1 ? "" : "s"} (with fresh magic links)
-            </span>
+            <div className="t-meta">
+              {sourceAllocCount} holder{sourceAllocCount === 1 ? "" : "s"} (with
+              fresh magic links)
+            </div>
           </span>
         </label>
 
-        <p className="label-mono">
-          Source: {sourceNightCount} night{sourceNightCount === 1 ? "" : "s"}
-          {sourceAllocCount > 0 && ` · ${sourceAllocCount} allocation${sourceAllocCount === 1 ? "" : "s"}`}
-        </p>
+        <div className="t-meta">
+          Source: {sourceNightCount} night
+          {sourceNightCount === 1 ? "" : "s"}
+          {sourceAllocCount > 0 &&
+            ` · ${sourceAllocCount} allocation${
+              sourceAllocCount === 1 ? "" : "s"
+            }`}
+        </div>
 
-        {error && <p className="text-coral text-sm">{error}</p>}
+        {error && (
+          <p className="t-body-2" style={{ color: "var(--err)" }}>
+            {error}
+          </p>
+        )}
 
-        <button type="submit" className="btn-primary" disabled={pending}>
+        <button type="submit" className="btn btn--accent" disabled={pending}>
           {pending ? "Cloning…" : "Clone event"}
         </button>
       </form>

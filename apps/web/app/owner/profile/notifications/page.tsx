@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { requireOwnerContext } from "@/lib/owner";
+import { Breadcrumb, PageHeader } from "@/components/v5";
 import NotifPrefsForm from "./prefs-form";
 import type { NotifPrefs } from "./actions";
 
@@ -27,26 +27,26 @@ const DEFAULT_PREFS: NotifPrefs = {
 export default async function NotifPrefsPage() {
   const { profile } = await requireOwnerContext();
   const prefs =
-    ((profile as unknown as { notif_prefs: NotifPrefs | null }).notif_prefs) ??
+    (profile as unknown as { notif_prefs: NotifPrefs | null }).notif_prefs ??
     DEFAULT_PREFS;
 
   return (
     <main
       id="main-content"
-      className="mx-auto max-w-frame md:max-w-2xl px-6 pt-12 pb-8 md:py-12"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
     >
-      <header className="mb-6">
-        <Link href="/owner/profile" className="label-mono hover:text-cream">
-          ← Profile
-        </Link>
-        <h1 className="display-lg mt-3 mb-2">Notification preferences</h1>
-        <p className="label-mono">
-          Channel + per-kind controls. Quiet hours pause push + SMS while
-          keeping the inbox up to date.
-        </p>
-      </header>
+      <Breadcrumb
+        items={[["Profile", "/owner/profile"], "Notifications"]}
+      />
+      <PageHeader
+        eyebrow="Settings · notifications"
+        title="Notifications"
+        sub="Channel + per-kind controls. Quiet hours pause push + SMS while keeping the inbox up to date."
+      />
 
-      <NotifPrefsForm initial={prefs} />
+      <div style={{ padding: "var(--s-8)", maxWidth: 720 }}>
+        <NotifPrefsForm initial={prefs} />
+      </div>
     </main>
   );
 }

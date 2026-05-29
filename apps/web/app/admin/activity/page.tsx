@@ -23,7 +23,7 @@ export default async function AdminActivityPage({
   let query = admin
     .from("audit_log")
     .select(
-      "id, action, context, created_at, actor:profiles!actor_user_id(full_name), event:events(name)"
+      "id, action, context, created_at, actor:profiles!actor_user_id(full_name), event:events(name)",
     )
     .order("created_at", { ascending: false })
     .limit(200);
@@ -42,38 +42,64 @@ export default async function AdminActivityPage({
   ];
 
   return (
-    <main id="main-content" className="mx-auto max-w-5xl px-6 pt-6 pb-12">
-      <h1 className="display-lg mb-2">Platform activity log</h1>
-      <p className="label-mono mb-6">
-        Cross-account audit_log stream. Most recent 200 rows.
-      </p>
-
-      <div className="flex gap-1 overflow-x-auto pb-2 mb-4">
-        {FILTERS.map((a) => (
-          <a
-            key={a || "all"}
-            href={a ? `/admin/activity?action=${a}` : "/admin/activity"}
-            className={`shrink-0 px-3 py-1 rounded-full border text-[10px] font-mono uppercase tracking-wider ${
-              (filter || "") === a
-                ? "border-coral bg-s2 text-cream"
-                : "border-line bg-s1 text-muted hover:text-cream"
-            }`}
+    <main id="main-content" style={{ padding: "32px 24px 96px" }}>
+      <div style={{ maxWidth: 1080, margin: "0 auto" }}>
+        <div
+          style={{
+            borderBottom: "1px solid var(--w-line)",
+            paddingBottom: 24,
+            marginBottom: 24,
+          }}
+        >
+          <div className="w-type-meta">PLATFORM</div>
+          <div className="w-type-display-md" style={{ marginTop: 8 }}>
+            Activity log
+          </div>
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-fg-muted)", marginTop: 8 }}
           >
-            {a || "all"}
-          </a>
-        ))}
-      </div>
+            Cross-account audit_log stream. Most recent 200 rows.
+          </p>
+        </div>
 
-      <ActivityFeed
-        rows={rows}
-        showEvent
-        emptyTitle="Nothing yet"
-        emptyBody={
-          filter
-            ? `No activity rows match action='${filter}'.`
-            : "No platform activity yet."
-        }
-      />
+        <div
+          style={{
+            display: "flex",
+            gap: 6,
+            overflowX: "auto",
+            paddingBottom: 4,
+            marginBottom: 16,
+          }}
+        >
+          {FILTERS.map((a) => (
+            <a
+              key={a || "all"}
+              href={a ? `/admin/activity?action=${a}` : "/admin/activity"}
+              style={{ textDecoration: "none", flexShrink: 0 }}
+            >
+              <span
+                className={
+                  (filter || "") === a ? "chip" : "chip chip--ghost"
+                }
+              >
+                {(a || "ALL").toUpperCase()}
+              </span>
+            </a>
+          ))}
+        </div>
+
+        <ActivityFeed
+          rows={rows}
+          showEvent
+          emptyTitle="Nothing yet"
+          emptyBody={
+            filter
+              ? `No activity rows match action='${filter}'.`
+              : "No platform activity yet."
+          }
+        />
+      </div>
     </main>
   );
 }

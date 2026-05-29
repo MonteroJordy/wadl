@@ -3,7 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fmtDate, fmtTime } from "@/lib/format";
-import EmptyState from "@/components/empty-state";
+import { Cover, PageHeader } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Holder dashboard — WADL" };
@@ -46,12 +46,11 @@ export default async function HolderDashboardPage() {
   const { data: ownerRowsRaw } = await admin
     .from("allocation_owners")
     .select(
-      "allocation_id, allocation:allocations!inner(id, holder_name, cap, plus_ones_allowed, list_open, event_night_id, event_night:event_nights!inner(id, night_date, doors_at, is_frozen, event:events!inner(id, name)))"
+      "allocation_id, allocation:allocations!inner(id, holder_name, cap, plus_ones_allowed, list_open, event_night_id, event_night:event_nights!inner(id, night_date, doors_at, is_frozen, event:events!inner(id, name)))",
     )
     .eq("user_id", user.id);
   const owned = (ownerRowsRaw ?? []) as unknown as OwnerRow[];
 
-  // Latest token per allocation for quick-share.
   const allocIds = owned.map((o) => o.allocation_id);
   const tokenMap = new Map<string, string>();
   if (allocIds.length > 0) {
@@ -69,7 +68,6 @@ export default async function HolderDashboardPage() {
     }
   }
 
-  // Guest aggregates per allocation for show-rate + capacity.
   let agg: GuestAggRow[] = [];
   if (allocIds.length > 0) {
     const { data: rows } = await admin
@@ -97,7 +95,6 @@ export default async function HolderDashboardPage() {
     return { approved, scanned, used };
   }
 
-  // Lifetime show rate across all owned allocations.
   const totals = owned.reduce(
     (acc, o) => {
       const s = statsFor(o.allocation_id);
@@ -106,11 +103,11 @@ export default async function HolderDashboardPage() {
       acc.events.add(o.allocation.event_night.event.id);
       return acc;
     },
-    { approved: 0, scanned: 0, events: new Set<string>() }
+    { approved: 0, scanned: 0, events: new Set<string>() },
   );
-  const showRate = totals.approved === 0 ? 0 : totals.scanned / totals.approved;
+  const showRate =
+    totals.approved === 0 ? 0 : totals.scanned / totals.approved;
 
-  // Sort upcoming first, then by date desc.
   const now = Date.now();
   owned.sort((a, b) => {
     const ad = new Date(a.allocation.event_night.doors_at).getTime();
@@ -121,109 +118,190 @@ export default async function HolderDashboardPage() {
     return aFuture ? ad - bd : bd - ad;
   });
 
-  return (
-    <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 py-10">
-      <header className="mb-6">
-        <p className="label-mono mb-1">Holder dashboard</p>
-        <h1 className="display-lg">Your allocations</h1>
-      </header>
+  const liveCount = owned.filter(
+    (o) =>
+      o.allocation.list_open && !o.allocation.event_night.is_frozen,
+  ).length;
+  const subline = `${liveCount} live · ${totals.scanned} of ${totals.approved} scanned · ${Math.round(
+    showRate * 100,
+  )}% show rate`;
 
-      <section className="card mb-4">
-        <div className="grid grid-cols-3 gap-3">
-          <div>
-            <p className="label-mono">Show rate</p>
-            <p className="font-display text-3xl text-cream leading-none">
-              {Math.round(showRate * 100)}%
-            </p>
-          </div>
-          <div>
-            <p className="label-mono">Lifetime</p>
-            <p className="font-display text-3xl text-mint leading-none">
-              {totals.scanned}
-            </p>
-            <p className="label-mono mt-1">scanned</p>
-          </div>
-          <div>
-            <p className="label-mono">Events</p>
-            <p className="font-display text-3xl text-cream leading-none">
-              {totals.events.size}
-            </p>
-          </div>
-        </div>
-      </section>
+  return (
+    <main
+      id="main-content"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
+    >
+      <PageHeader
+        eyebrow="Independent promoter"
+        title="Your lists"
+        sub={owned.length === 0 ? "No allocations claimed yet." : subline}
+      />
 
       {owned.length === 0 ? (
-        <EmptyState
-          title="No allocations claimed"
-          body="When a host shares a magic link, open it and tap 'Claim this allocation' to track it here."
-        />
+        <div
+          style={{
+            padding: "var(--s-20) var(--s-8)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            textAlign: "center",
+            maxWidth: 480,
+            margin: "0 auto",
+          }}
+        >
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: "var(--r-lg)",
+              background: "var(--bg-3)",
+              marginBottom: "var(--s-5)",
+            }}
+          />
+          <div className="t-display-md">No allocations claimed</div>
+          <div
+            className="t-body-2"
+            style={{ marginTop: "var(--s-3)", maxWidth: 380 }}
+          >
+            When a host shares a magic link, open it and tap &quot;Claim this
+            allocation&quot; to track it here.
+          </div>
+        </div>
       ) : (
-        <ul className="flex flex-col gap-3">
+        <div
+          style={{
+            padding: "var(--s-8)",
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "var(--s-4)",
+          }}
+        >
           {owned.map((o) => {
             const s = statsFor(o.allocation_id);
-            const remaining = Math.max(0, o.allocation.cap - s.used);
+            const cap = o.allocation.cap;
+            const remaining = Math.max(0, cap - s.used);
             const token = tokenMap.get(o.allocation_id);
             const eventDate = new Date(o.allocation.event_night.doors_at);
             const isPast = eventDate.getTime() < now;
+            const name = o.allocation.event_night.event.name;
+            const isOpen =
+              o.allocation.list_open &&
+              !o.allocation.event_night.is_frozen;
+            const pct = cap > 0 ? Math.min(100, (s.used / cap) * 100) : 0;
             return (
-              <li
-                key={o.allocation_id}
-                className="card hover:border-coral/60 transition"
-              >
-                <div className="flex items-start justify-between gap-3 mb-2">
-                  <div className="min-w-0">
-                    <p className="font-sans text-cream font-semibold truncate">
-                      {o.allocation.event_night.event.name}
-                    </p>
-                    <p className="label-mono mt-1">
-                      {fmtDate(o.allocation.event_night.night_date)} · Doors{" "}
+              <div key={o.allocation_id} className="card card--hover">
+                <Cover seed={name} height={160}>
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: "var(--s-4)",
+                      right: "var(--s-4)",
+                      bottom: "var(--s-4)",
+                    }}
+                  >
+                    <div
+                      className="t-meta"
+                      style={{ color: "rgba(255,255,255,0.7)" }}
+                    >
+                      {fmtDate(o.allocation.event_night.night_date)} · doors{" "}
                       {fmtTime(o.allocation.event_night.doors_at)}
                       {isPast ? " · past" : ""}
-                    </p>
+                    </div>
+                    <div
+                      className="t-h1 truncate"
+                      style={{ marginTop: "var(--s-1)", color: "#fff" }}
+                    >
+                      {name}
+                    </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="font-display text-2xl text-cream leading-none">
-                      {s.used}
-                      <span className="text-muted">/{o.allocation.cap}</span>
-                    </p>
-                    <p className="label-mono mt-1">on list</p>
+                </Cover>
+                <div style={{ padding: "var(--s-4)" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <span className="t-body-2 truncate">
+                      {o.allocation.holder_name}
+                    </span>
+                    <span
+                      className={
+                        "chip " + (isOpen ? "chip--ok" : "chip--err")
+                      }
+                    >
+                      {isOpen ? "Open" : "Closed"}
+                    </span>
                   </div>
-                </div>
-                <div className="grid grid-cols-3 gap-2 mt-3 label-mono">
-                  <div>
-                    <span className="text-cream">{remaining}</span> left
-                  </div>
-                  <div>
-                    <span className="text-mint">{s.scanned}</span> scanned
-                  </div>
-                  <div>
-                    {o.allocation.list_open && !o.allocation.event_night.is_frozen ? (
-                      <span className="text-mint">open</span>
+                  <div
+                    style={{
+                      marginTop: "var(--s-3)",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <span className="t-body t-num">
+                      {s.used} / {cap}
+                    </span>
+                    {token && !isPast ? (
+                      <Link
+                        href={`/h/${token}`}
+                        target="_blank"
+                        className="btn btn--sm btn--ghost"
+                        style={{ textDecoration: "none" }}
+                      >
+                        Open list
+                      </Link>
                     ) : (
-                      <span className="text-coral">closed</span>
+                      <span className="t-meta">{remaining} left</span>
                     )}
                   </div>
-                </div>
-                {token && !isPast && (
-                  <Link
-                    href={`/h/${token}`}
-                    target="_blank"
-                    className="btn-ghost text-center mt-3 block text-xs"
+                  <div
+                    style={{
+                      marginTop: "var(--s-2)",
+                      height: 3,
+                      background: "var(--line)",
+                      borderRadius: 2,
+                    }}
                   >
-                    Open list →
-                  </Link>
-                )}
-              </li>
+                    <div
+                      style={{
+                        height: "100%",
+                        background: "var(--fg)",
+                        width: `${pct}%`,
+                        borderRadius: 2,
+                      }}
+                    />
+                  </div>
+                  <div
+                    className="t-meta"
+                    style={{ marginTop: "var(--s-3)" }}
+                  >
+                    {s.scanned} scanned · {remaining} left
+                  </div>
+                </div>
+              </div>
             );
           })}
-        </ul>
+        </div>
       )}
 
-      <p className="label-mono mt-8 text-center">
-        <a href="/api/auth/signout" className="hover:text-cream">
+      <div
+        className="t-meta"
+        style={{
+          padding: "var(--s-6) var(--s-8) var(--s-12)",
+          textAlign: "center",
+        }}
+      >
+        <a
+          href="/api/auth/signout"
+          style={{ color: "var(--fg-3)", textDecoration: "none" }}
+        >
           Sign out
         </a>
-      </p>
+      </div>
     </main>
   );
 }

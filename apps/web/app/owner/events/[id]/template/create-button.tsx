@@ -30,35 +30,46 @@ export default function CreateFromTemplateButton({
     return (
       <button
         type="button"
+        className="btn btn--ghost btn--sm"
         onClick={() => setOpen(true)}
-        className="btn-ghost text-xs w-auto px-3"
       >
         Create from template
       </button>
     );
   }
   return (
-    <div className="mt-2 flex flex-col gap-2">
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "var(--s-2)",
+        minWidth: 220,
+      }}
+    >
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="input-dark"
+        className="input"
         placeholder="New event name"
       />
-      {err && <p className="text-coral text-xs">{err}</p>}
-      <div className="grid grid-cols-2 gap-2">
+      {err && (
+        <p className="t-meta" style={{ color: "var(--err)" }}>
+          {err}
+        </p>
+      )}
+      <div style={{ display: "flex", gap: "var(--s-2)" }}>
         <button
           type="button"
+          className="btn btn--ghost btn--sm"
           onClick={() => setOpen(false)}
-          className="btn-ghost text-xs"
         >
           Cancel
         </button>
         <button
           type="button"
+          className="btn btn--sm"
           onClick={go}
           disabled={pending}
-          className="btn-primary text-xs"
         >
           {pending ? "Creating…" : "Create"}
         </button>

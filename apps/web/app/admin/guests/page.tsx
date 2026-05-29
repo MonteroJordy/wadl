@@ -1,8 +1,10 @@
-import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { PageHeader } from "@/components/v5";
 import ForceFlagButton from "./force-flag-button";
 
 export const dynamic = "force-dynamic";
+
+const COLS = "1.4fr 140px 110px 1.4fr 1.2fr 110px";
 
 interface Row {
   id: string;
@@ -27,7 +29,7 @@ export default async function AdminGuestsPage({
   let query = admin
     .from("guests")
     .select(
-      "id, full_name, phone, flag_dna, status, created_at, night:event_nights!inner(night_date, event:events!inner(name, account:accounts!inner(display_name)))"
+      "id, full_name, phone, flag_dna, status, created_at, night:event_nights!inner(night_date, event:events!inner(name, account:accounts!inner(display_name)))",
     )
     .order("created_at", { ascending: false })
     .limit(200);
@@ -36,57 +38,72 @@ export default async function AdminGuestsPage({
   const rows = (data ?? []) as unknown as Row[];
 
   return (
-    <main id="main-content" className="mx-auto max-w-5xl px-6 pt-8 pb-12">
-      <h1 className="display-lg mb-2">Guests</h1>
-      <form action="/admin/guests" method="get" className="mb-4">
-        <input
-          type="text"
-          name="q"
-          defaultValue={q}
-          placeholder="Search by name…"
-          className="input-dark max-w-md"
-        />
-      </form>
-
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="label-mono text-left">
-            <tr>
-              <th className="pb-2">Name</th>
-              <th>Phone</th>
-              <th>Status</th>
-              <th>Event</th>
-              <th>Account</th>
-              <th>DNA</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id} className="border-t border-line">
-                <td className="py-2 text-cream">{r.full_name}</td>
-                <td className="py-2 font-mono text-xs">{r.phone ?? "—"}</td>
-                <td className="py-2 label-mono">{r.status}</td>
-                <td className="py-2">{r.night.event.name}</td>
-                <td className="py-2 text-muted text-xs">
-                  {r.night.event.account.display_name}
-                </td>
-                <td className="py-2">
-                  <ForceFlagButton
-                    guestId={r.id}
-                    alreadyFlagged={r.flag_dna}
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <main id="main-content">
+      <PageHeader eyebrow="Platform" title="Guests" />
+      <div
+        style={{
+          padding: "var(--s-4) var(--s-8)",
+          borderBottom: "1px solid var(--line)",
+        }}
+      >
+        <form action="/admin/guests" method="get">
+          <input
+            className="input"
+            type="text"
+            name="q"
+            defaultValue={q}
+            placeholder="Search by name…"
+            style={{ maxWidth: 420 }}
+          />
+        </form>
       </div>
 
-      <p className="label-mono mt-8">
-        <Link href="/admin" className="hover:text-cream">
-          ← Back
-        </Link>
-      </p>
+      <div style={{ padding: "var(--s-8)" }}>
+        <div className="card" style={{ overflowX: "auto" }}>
+          <div
+            className="row"
+            style={{
+              gridTemplateColumns: COLS,
+              padding: "var(--s-3) var(--s-5)",
+              background: "var(--bg)",
+            }}
+          >
+            {["Name", "Phone", "Status", "Event", "Account", "DNA"].map((h) => (
+              <span key={h} className="t-meta">
+                {h}
+              </span>
+            ))}
+          </div>
+          {rows.map((r) => (
+            <div
+              key={r.id}
+              className="row"
+              style={{
+                gridTemplateColumns: COLS,
+                padding: "var(--s-4) var(--s-5)",
+              }}
+            >
+              <span className="t-body" style={{ color: "var(--fg)" }}>
+                {r.full_name}
+              </span>
+              <span
+                className="t-body-2"
+                style={{ fontFamily: "var(--mono)", fontSize: "var(--ts-sm)" }}
+              >
+                {r.phone ?? "—"}
+              </span>
+              <span className="chip">{r.status}</span>
+              <span className="t-body-2 truncate">{r.night.event.name}</span>
+              <span className="t-body-2 truncate">
+                {r.night.event.account.display_name}
+              </span>
+              <span>
+                <ForceFlagButton guestId={r.id} alreadyFlagged={r.flag_dna} />
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
     </main>
   );
 }

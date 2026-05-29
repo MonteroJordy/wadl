@@ -1,8 +1,14 @@
 import Link from "next/link";
 import { requireOwnerContext } from "@/lib/owner";
-import { KIND_LABEL, KIND_TONE, type NotificationKind } from "@/lib/notifications";
+import {
+  KIND_LABEL,
+  KIND_TONE,
+  type NotificationKind,
+} from "@/lib/notifications";
 import { markAllReadAction } from "./actions";
-import EmptyState from "@/components/empty-state";
+import { PageHeader } from "@/components/v5";
+import { InlineFormSubmit } from "@/components/form-submit";
+import { fmtRelative } from "@wadl/shared/format";
 
 export const dynamic = "force-dynamic";
 
@@ -14,15 +20,9 @@ interface Row {
   created_at: string;
 }
 
-function ago(iso: string) {
-  const ms = Date.now() - new Date(iso).getTime();
-  const min = Math.round(ms / 60_000);
-  if (min < 1) return "just now";
-  if (min < 60) return `${min}m ago`;
-  const hr = Math.round(min / 60);
-  if (hr < 24) return `${hr}h ago`;
-  return `${Math.round(hr / 24)}d ago`;
-}
+// Local alias for the shared formatter — kept so existing `ago(...)`
+// call sites in this file continue to read naturally.
+const ago = (iso: string) => fmtRelative(iso) ?? "—";
 
 export default async function NotificationsPage() {
   const { supabase, account } = await requireOwnerContext();
@@ -38,74 +38,121 @@ export default async function NotificationsPage() {
   const unread = rows.filter((r) => !r.read_at).length;
 
   return (
-    <main id="main-content" className="mx-auto max-w-frame md:max-w-3xl px-6 pt-12 pb-8 md:py-12">
-      <header className="flex items-end justify-between pb-4">
-        <div>
-          <p className="label-mono mb-1">Inbox</p>
-          <h1 className="display-lg">Notifications</h1>
-        </div>
-        {unread > 0 && (
-          <form action={markAllReadAction}>
-            <button className="label-mono hover:text-cream" type="submit">
-              Mark all read
-            </button>
-          </form>
-        )}
-      </header>
+    <main id="main-content" style={{ minHeight: "100vh", background: "var(--bg)" }}>
+      <PageHeader
+        eyebrow="Inbox"
+        title="Notifications"
+        sub={`${rows.length} total${
+          unread > 0 ? ` · ${unread} unread` : " · all read"
+        }`}
+        actions={
+          unread > 0 ? (
+            <form action={markAllReadAction}>
+              <InlineFormSubmit className="btn btn--ghost" pendingLabel="Marking…">
+                Mark all read
+              </InlineFormSubmit>
+            </form>
+          ) : undefined
+        }
+      />
 
-      {rows.length === 0 ? (
-        <EmptyState
-          title="Inbox zero"
-          body="RSVPs, capacity alerts, staff joins, escalations — they all land here when the night gets loud."
-        />
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {rows.map((r) => {
-            const kind = r.kind as NotificationKind;
-            const label = KIND_LABEL[kind] ?? r.kind;
-            const tone = KIND_TONE[kind] ?? "coral";
-            const toneCls =
-              tone === "mint"
-                ? "border-mint/30 text-mint"
-                : tone === "gold"
-                ? "border-gold/30 text-gold"
-                : "border-coral/30 text-coral";
-            const message =
-              (r.payload?.message as string | undefined) ?? label;
-            const href = (r.payload?.href as string | undefined) ?? null;
-            const inner = (
-              <>
-                <span
-                  className={`shrink-0 px-2 py-0.5 rounded-full border ${toneCls} label-mono`}
+      <div style={{ padding: "var(--s-8)", maxWidth: 800 }}>
+        {rows.length === 0 ? (
+          <div
+            className="card"
+            style={{ padding: "var(--s-16) var(--s-8)", textAlign: "center" }}
+          >
+            <div className="t-display-sm">Inbox zero</div>
+            <p
+              className="t-body-2"
+              style={{
+                marginTop: "var(--s-3)",
+                maxWidth: 460,
+                marginInline: "auto",
+              }}
+            >
+              RSVPs, capacity alerts, staff joins, escalations — they all land
+              here when the night gets loud.
+            </p>
+          </div>
+        ) : (
+          <ul
+            style={{
+              listStyle: "none",
+              padding: 0,
+              margin: 0,
+              display: "flex",
+              flexDirection: "column",
+              gap: "var(--s-2)",
+            }}
+          >
+            {rows.map((r) => {
+              const kind = r.kind as NotificationKind;
+              const label = KIND_LABEL[kind] ?? r.kind;
+              const tone = KIND_TONE[kind] ?? "coral";
+              const chipClass =
+                tone === "mint"
+                  ? "chip chip--ok"
+                  : tone === "gold"
+                    ? "chip chip--warn"
+                    : "chip chip--info";
+              const message =
+                (r.payload?.message as string | undefined) ?? label;
+              const href = (r.payload?.href as string | undefined) ?? null;
+              const isUnread = !r.read_at;
+              const inner = (
+                <div
+                  className="card"
+                  style={{
+                    padding: "var(--s-4)",
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: "var(--s-3)",
+                    borderColor: isUnread ? "var(--line-2)" : "var(--line)",
+                  }}
                 >
-                  {label}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="font-sans text-sm text-cream">{message}</p>
-                  <p className="label-mono mt-1">{ago(r.created_at)}</p>
+                  <span className={chipClass}>{label}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p
+                      className="t-body"
+                      style={{ fontWeight: isUnread ? 500 : 400 }}
+                    >
+                      {message}
+                    </p>
+                    <p
+                      className="t-meta"
+                      style={{ marginTop: "var(--s-1)" }}
+                    >
+                      {ago(r.created_at)}
+                    </p>
+                  </div>
+                  {isUnread && (
+                    <span
+                      className="dot dot--ok"
+                      style={{ flexShrink: 0, marginTop: 6 }}
+                      aria-label="unread"
+                    />
+                  )}
                 </div>
-                {!r.read_at && (
-                  <span className="shrink-0 mt-1 w-2 h-2 rounded-full bg-coral" />
-                )}
-              </>
-            );
-            const cls = `card flex items-start gap-3 ${
-              !r.read_at ? "border-coral/40" : ""
-            } ${href ? "hover:border-coral transition" : ""}`;
-            return (
-              <li key={r.id}>
-                {href ? (
-                  <Link href={href} className={cls}>
-                    {inner}
-                  </Link>
-                ) : (
-                  <div className={cls}>{inner}</div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
+              );
+              return (
+                <li key={r.id}>
+                  {href ? (
+                    <Link
+                      href={href}
+                      style={{ textDecoration: "none", color: "inherit" }}
+                    >
+                      {inner}
+                    </Link>
+                  ) : (
+                    inner
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
     </main>
   );
 }

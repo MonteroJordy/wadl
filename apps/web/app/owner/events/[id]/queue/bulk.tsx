@@ -1,7 +1,10 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
+import ConfirmDialog from "@/components/confirm-dialog";
 import { approveAllAction, rejectAllAction } from "./actions";
+
+type Pending = "approve" | "deny" | null;
 
 export default function BulkActions({
   eventId,
@@ -13,38 +16,56 @@ export default function BulkActions({
   count: number;
 }) {
   const [pending, startTransition] = useTransition();
+  const [confirmKind, setConfirmKind] = useState<Pending>(null);
 
-  function approveAll() {
-    if (!confirm(`Approve all ${count} pending on this night?`)) return;
+  function run(kind: Exclude<Pending, null>) {
     startTransition(async () => {
-      await approveAllAction(eventId, nightId);
-    });
-  }
-  function denyAll() {
-    if (!confirm(`Deny all ${count} pending on this night?`)) return;
-    startTransition(async () => {
-      await rejectAllAction(eventId, nightId);
+      if (kind === "approve") await approveAllAction(eventId, nightId);
+      else await rejectAllAction(eventId, nightId);
+      setConfirmKind(null);
     });
   }
 
   return (
-    <div className="grid grid-cols-2 gap-2 mb-3">
-      <button
-        type="button"
-        onClick={denyAll}
-        disabled={pending}
-        className="btn-ghost disabled:opacity-40"
-      >
-        Deny all
-      </button>
-      <button
-        type="button"
-        onClick={approveAll}
-        disabled={pending}
-        className="btn-primary disabled:opacity-40"
-      >
-        Approve all
-      </button>
-    </div>
+    <>
+      <div style={{ display: "flex", gap: "var(--s-2)" }}>
+        <button
+          type="button"
+          className="btn btn--ghost btn--sm"
+          onClick={() => setConfirmKind("deny")}
+          disabled={pending}
+        >
+          Deny all
+        </button>
+        <button
+          type="button"
+          className="btn btn--sm"
+          onClick={() => setConfirmKind("approve")}
+          disabled={pending}
+        >
+          Approve all
+        </button>
+      </div>
+      <ConfirmDialog
+        open={confirmKind !== null}
+        title={
+          confirmKind === "approve"
+            ? `Approve all ${count}?`
+            : `Deny all ${count}?`
+        }
+        body={
+          confirmKind === "approve"
+            ? "Everyone on the waitlist for this night gets a yes. You can override individual guests later."
+            : "Everyone on the waitlist for this night gets a no. They'll see the reject in their thread."
+        }
+        confirmLabel={confirmKind === "approve" ? "Approve all" : "Deny all"}
+        danger={confirmKind === "deny"}
+        pending={pending}
+        onConfirm={() => {
+          if (confirmKind) run(confirmKind);
+        }}
+        onCancel={() => setConfirmKind(null)}
+      />
+    </>
   );
 }

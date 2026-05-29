@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireOwnerContext } from "@/lib/owner";
-import EmptyState from "@/components/empty-state";
+import { PageHeader } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 
@@ -8,81 +8,135 @@ export default async function BillingPage() {
   const { account } = await requireOwnerContext();
   const stripeKey = process.env.STRIPE_SECRET_KEY;
 
-  // Stripe portal flow only kicks in once the key is configured AND the
-  // account row carries a stripe_customer_id (set by an out-of-band
-  // provisioning step — that's a v1.2 thing).
   const hasStripe = Boolean(stripeKey);
   const customerId = (account as { stripe_customer_id?: string | null })
     .stripe_customer_id;
 
   return (
-    <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 py-12">
-      <p className="label-mono mb-1">Settings</p>
-      <h1 className="display-lg leading-[0.95] mb-2">Billing</h1>
-      <p className="text-muted text-sm mb-6">
-        {account.display_name} · {account.account_type}
-      </p>
-
-      {!hasStripe ? (
-        <EmptyState
-          title="Free for now"
-          body="WADL is free while we hammer it into shape. Pricing flips on with your first paying customer — we'll email before any card hits."
-          action={
+    <main id="main-content" style={{ minHeight: "100vh", background: "var(--bg)" }}>
+      <PageHeader
+        eyebrow="Settings · Billing"
+        title="Billing"
+        sub={`${account.display_name} · ${account.account_type}`}
+      />
+      <div
+        style={{
+          padding: "var(--s-8)",
+          maxWidth: 720,
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-3)",
+        }}
+      >
+        {!hasStripe ? (
+          <div
+            className="card"
+            style={{ padding: "var(--s-10) var(--s-8)", textAlign: "center" }}
+          >
+            <span className="chip">Beta</span>
+            <div className="t-display-sm" style={{ marginTop: "var(--s-3)" }}>
+              No card needed
+            </div>
+            <p
+              className="t-body-2"
+              style={{
+                marginTop: "var(--s-3)",
+                maxWidth: 480,
+                marginInline: "auto",
+              }}
+            >
+              Free during beta. Founding venues lock in pricing before launch —
+              we&apos;ll email before any card hits.
+            </p>
             <a
               href="mailto:jmontero@mainframeagency.com"
-              className="btn-ghost inline-block"
+              className="btn btn--ghost"
+              style={{ marginTop: "var(--s-6)" }}
             >
               Email the founder
             </a>
-          }
-        />
-      ) : !customerId ? (
-        <section className="card">
-          <p className="label-mono mb-2">Plan</p>
-          <p className="font-sans text-cream font-semibold mb-3">
-            Free trial — no card on file
-          </p>
-          <p className="text-muted text-sm mb-4">
-            Upgrade to keep running events past the trial. We&apos;ll create
-            your customer record at first checkout.
-          </p>
-          <Link
-            href="/api/billing/checkout"
-            className="btn-primary inline-block"
-          >
-            Set up billing
-          </Link>
-        </section>
-      ) : (
-        <section className="card">
-          <p className="label-mono mb-2">Plan</p>
-          <p className="font-sans text-cream font-semibold mb-3">
-            Stripe customer · {customerId.slice(0, 12)}…
-          </p>
-          <p className="text-muted text-sm mb-4">
-            Manage your subscription, payment method, and invoices via the
-            Stripe Customer Portal.
-          </p>
-          <Link
-            href="/api/billing/portal"
-            className="btn-primary inline-block"
-          >
-            Open billing portal
-          </Link>
-        </section>
-      )}
+          </div>
+        ) : !customerId ? (
+          <div className="card" style={{ padding: "var(--s-6)" }}>
+            <div className="t-meta">Plan</div>
+            <div className="t-h1" style={{ marginTop: "var(--s-2)" }}>
+              Free trial — no card on file
+            </div>
+            <p className="t-body-2" style={{ marginTop: "var(--s-2)" }}>
+              Upgrade to keep running events past the trial. We&apos;ll create
+              your customer record at first checkout.
+            </p>
+            <Link
+              href="/api/billing/checkout"
+              className="btn btn--accent"
+              style={{ marginTop: "var(--s-4)" }}
+            >
+              Set up billing
+            </Link>
+          </div>
+        ) : (
+          <div className="card" style={{ padding: "var(--s-6)" }}>
+            <div className="t-meta">Stripe customer</div>
+            <div
+              className="t-num"
+              style={{
+                fontFamily: "var(--mono)",
+                fontSize: "var(--ts-md)",
+                marginTop: "var(--s-2)",
+              }}
+            >
+              {customerId.slice(0, 12)}…
+            </div>
+            <p className="t-body-2" style={{ marginTop: "var(--s-3)" }}>
+              Manage your subscription, payment method, and invoices via the
+              Stripe Customer Portal.
+            </p>
+            <Link
+              href="/api/billing/portal"
+              className="btn btn--accent"
+              style={{ marginTop: "var(--s-4)" }}
+            >
+              Open billing portal
+            </Link>
+          </div>
+        )}
 
-      <section className="card mt-4">
-        <p className="label-mono mb-2">What you get</p>
-        <ul className="text-muted text-sm space-y-1 list-disc list-inside">
-          <li>Unlimited events &amp; nights</li>
-          <li>Unlimited allocations &amp; staff invites</li>
-          <li>QR scanner, name search, manual add at door</li>
-          <li>Recap, audit log, CSV / print export</li>
-          <li>Chat Hub AI parsing</li>
-          <li>Promoter scorecards across events</li>
-        </ul>
-      </section>
+        <div className="card" style={{ padding: "var(--s-6)" }}>
+          <div className="t-meta">What you get</div>
+          <ul
+            style={{
+              listStyle: "none",
+              padding: 0,
+              marginTop: "var(--s-3)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "var(--s-2)",
+            }}
+          >
+            {[
+              "Unlimited events & nights",
+              "Unlimited allocations & staff invites",
+              "QR scanner, name search, manual add at the door",
+              "Recap, audit log, CSV / print export",
+              "Chat Hub AI parsing",
+              "Per-tier promoter scorecards across events",
+            ].map((line) => (
+              <li
+                key={line}
+                className="t-body-2"
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "var(--s-2)",
+                }}
+              >
+                <span style={{ color: "var(--fg-3)", flexShrink: 0 }}>·</span>
+                <span>{line}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
     </main>
   );
 }

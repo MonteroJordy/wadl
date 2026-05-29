@@ -84,50 +84,126 @@ export default function OnboardingTour({
   }
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 px-3 pb-3 md:px-6 md:pb-6 pointer-events-none">
-      <div className="pointer-events-auto mx-auto max-w-md rounded-lg border border-coral/40 bg-s1 shadow-xl shadow-coral/10 p-5">
-        <div className="flex items-center justify-between mb-3">
-          <p className="label-mono text-coral">
-            Tour {step + 1} / {STEPS.length}
-          </p>
+    <div
+      style={{
+        position: "fixed",
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 40,
+        padding: "12px 12px 12px",
+        pointerEvents: "none",
+      }}
+    >
+      <div
+        className="w-app"
+        style={{
+          pointerEvents: "auto",
+          margin: "0 auto",
+          maxWidth: 460,
+          background: "var(--w-surface-2)",
+          border: "1px solid var(--w-acc)",
+          padding: 20,
+          boxShadow: "0 18px 60px rgba(0,0,0,0.55)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 12,
+          }}
+        >
+          <span className="chip">
+            TOUR · {step + 1} / {STEPS.length}
+          </span>
           <button
             type="button"
             onClick={dismiss}
-            className="label-mono hover:text-cream"
+            disabled={pending}
+            className="w-type-meta"
+            style={{
+              background: "transparent",
+              border: 0,
+              color: "var(--w-fg-muted)",
+              cursor: pending ? "not-allowed" : "pointer",
+              padding: 0,
+            }}
           >
-            Skip
+            SKIP
           </button>
         </div>
-        <h3 className="font-display text-2xl text-cream mb-2">{cur.label}</h3>
-        <p className="text-muted text-sm mb-4">{cur.body}</p>
+
+        <h3 className="w-type-h2" style={{ marginBottom: 8 }}>
+          {cur.label}
+        </h3>
+        <p
+          className="w-type-body-sm"
+          style={{
+            color: "var(--w-fg-muted)",
+            marginBottom: 16,
+            lineHeight: 1.5,
+          }}
+        >
+          {cur.body}
+        </p>
 
         {step === 0 && !seeded && (
-          <div className="card mb-3">
-            <p className="label-mono mb-2">Or skip the empty-screen problem</p>
-            <p className="text-muted text-sm mb-3">
-              Load demo data: 1 venue, 1 event with 2 nights, 3 allocations, 25 guests.
+          <div
+            className="w-card"
+            style={{
+              padding: 14,
+              marginBottom: 14,
+            }}
+          >
+            <div className="w-type-meta">OR SKIP THE EMPTY-SCREEN PROBLEM</div>
+            <p
+              className="w-type-body-sm"
+              style={{
+                color: "var(--w-fg-muted)",
+                marginTop: 8,
+                marginBottom: 12,
+                lineHeight: 1.5,
+              }}
+            >
+              Load demo data: 1 venue, 1 event with 2 nights, 3 allocations,
+              25 guests.
             </p>
             <button
               type="button"
+              className="btn btn--ghost"
               onClick={seed}
               disabled={pending}
-              className="btn-ghost"
             >
               {pending ? "Seeding…" : "Load demo data"}
             </button>
-            {err && <p className="text-coral text-xs mt-2">{err}</p>}
+            {err && (
+              <p
+                className="w-type-body-sm"
+                style={{ color: "var(--w-err)", marginTop: 8 }}
+              >
+                {err}
+              </p>
+            )}
           </div>
         )}
         {seeded && step === 0 && (
-          <p className="text-mint text-sm mb-3">Demo data loaded ↑</p>
+          <div
+            className="w-type-body-sm"
+            style={{ color: "var(--w-ok)", marginBottom: 14 }}
+          >
+            ✓ Demo data loaded
+          </div>
         )}
 
-        <div className="flex gap-2">
+        <div style={{ display: "flex", gap: 8 }}>
           {step > 0 && (
             <button
               type="button"
+              className="btn btn--ghost"
               onClick={() => setStep((s) => s - 1)}
-              className="btn-ghost flex-1"
+              style={{ flex: 1 }}
             >
               Back
             </button>
@@ -141,16 +217,22 @@ export default function OnboardingTour({
                     await completeTourAction();
                   });
               }}
-              className="btn-primary flex-1 text-center"
+              style={{
+                flex: 1,
+                textDecoration: "none",
+              }}
             >
-              {cur.cta}
+              <button type="button" className="btn btn--block">
+                {cur.cta} →
+              </button>
             </Link>
           ) : (
             <button
               type="button"
+              className="btn btn--accent"
               onClick={next}
               disabled={pending}
-              className="btn-primary flex-1"
+              style={{ flex: 1 }}
             >
               {cur.cta}
             </button>

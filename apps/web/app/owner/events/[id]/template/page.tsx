@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOwnerContext } from "@/lib/owner";
+import { Breadcrumb, PageHeader, EventSubNav } from "@/components/v5";
 import TemplateForm from "./template-form";
 import CreateFromTemplateButton from "./create-button";
 
@@ -37,46 +37,82 @@ export default async function TemplatePage({
   const tpls = (tplsRaw ?? []) as unknown as TemplateRow[];
 
   return (
-    <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 pt-12 pb-8 md:py-12">
-      <Link
-        href={`/owner/events/${event.id}`}
-        className="label-mono hover:text-cream"
-      >
-        ← Back
-      </Link>
-      <h1 className="display-lg mt-3 mb-2">Templates</h1>
-      <p className="label-mono mb-6">
-        Save {event.name}&apos;s shape (nights + allocations, no guests) as a reusable starting point.
-      </p>
+    <main id="main-content">
+      <Breadcrumb
+        items={[
+          ["Events", "/owner"],
+          [event.name, `/owner/events/${event.id}`],
+          "Lineup",
+        ]}
+      />
+      <PageHeader
+        eyebrow={`${tpls.length} template${
+          tpls.length === 1 ? "" : "s"
+        } · drag to reorder`}
+        title="Lineup"
+      />
+      <EventSubNav active="lineup" eventId={event.id} />
 
-      <section className="mb-8">
-        <p className="label-mono mb-3">New template from this event</p>
-        <TemplateForm eventId={event.id} />
-      </section>
+      <div style={{ padding: "var(--s-8)" }}>
+        {/* New template form */}
+        <div style={{ marginBottom: "var(--s-8)", maxWidth: 720 }}>
+          <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+            New template from this event
+          </div>
+          <TemplateForm eventId={event.id} />
+        </div>
 
-      <section>
-        <p className="label-mono mb-3">All templates</p>
+        {/* All templates */}
+        <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+          All templates
+        </div>
         {tpls.length === 0 ? (
-          <p className="text-muted text-sm">None yet.</p>
+          <div
+            className="card"
+            style={{ padding: "var(--s-10)", textAlign: "center" }}
+          >
+            <div className="t-h1">No templates yet</div>
+            <div className="t-body-2" style={{ marginTop: "var(--s-2)" }}>
+              Save this event&apos;s shape above to reuse it later.
+            </div>
+          </div>
         ) : (
-          <ul className="flex flex-col gap-2">
+          <div className="card">
             {tpls.map((t) => (
-              <li key={t.id} className="card">
-                <p className="font-sans text-cream font-semibold">{t.name}</p>
-                <p className="label-mono mt-1">
+              <div
+                key={t.id}
+                className="row"
+                style={{
+                  gridTemplateColumns: "24px 180px 1fr 1fr 24px",
+                }}
+              >
+                <span style={{ color: "var(--fg-3)", cursor: "grab" }}>
+                  ≡
+                </span>
+                <span className="t-meta">
                   {t.cadence_days
-                    ? `Auto every ${t.cadence_days} days · next ${t.next_run_at ? new Date(t.next_run_at).toLocaleDateString() : "—"}`
+                    ? `Auto · every ${t.cadence_days}d`
                     : "Manual only"}
-                </p>
+                </span>
+                <span className="t-display-sm">{t.name}</span>
+                <span className="t-body-2">
+                  {t.cadence_days
+                    ? `Next ${
+                        t.next_run_at
+                          ? new Date(t.next_run_at).toLocaleDateString()
+                          : "—"
+                      }`
+                    : "Run on demand"}
+                </span>
                 <CreateFromTemplateButton
                   templateId={t.id}
                   defaultName={t.config?.source_name ?? "New event"}
                 />
-              </li>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
-      </section>
+      </div>
     </main>
   );
 }

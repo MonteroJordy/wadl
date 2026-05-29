@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { Logo } from "@/components/v5";
 import InviteAcceptForm from "./form";
 
 export const dynamic = "force-dynamic";
@@ -24,12 +25,39 @@ function Shell({
   cta?: React.ReactNode;
 }) {
   return (
-    <main id="main-content" className="mobile-frame">
-      <div className="pt-12 text-center">
-        <p className="label-mono mb-3">WADL / Staff invite</p>
-        <h1 className="display-lg mb-4">{title}</h1>
-        <p className="text-muted text-sm">{body}</p>
-        {cta}
+    <main
+      id="main-content"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
+    >
+      <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
+        <Logo size={18} />
+      </div>
+      <div
+        style={{
+          padding: "var(--s-24) var(--s-6) 0",
+          textAlign: "center",
+          maxWidth: 420,
+          margin: "0 auto",
+        }}
+      >
+        <div className="t-meta">Staff invite</div>
+        <div className="t-display-md" style={{ marginTop: "var(--s-3)" }}>
+          {title}
+        </div>
+        <p className="t-body-2" style={{ marginTop: "var(--s-3)" }}>
+          {body}
+        </p>
+        {cta ?? (
+          <p className="t-meta" style={{ marginTop: "var(--s-7)" }}>
+            Need help?{" "}
+            <a
+              href="mailto:support@wadlwadl.com"
+              style={{ color: "var(--fg)", textDecoration: "none" }}
+            >
+              Email support
+            </a>
+          </p>
+        )}
       </div>
     </main>
   );
@@ -45,7 +73,7 @@ export default async function StaffInvitePage({
   const { data: invite } = await admin
     .from("staff_invites")
     .select(
-      "id, phone, role, used_at, expires_at, event:events!inner(id, name)"
+      "id, phone, role, used_at, expires_at, event:events!inner(id, name)",
     )
     .eq("token", params.token)
     .maybeSingle<InviteLookup>();
@@ -66,7 +94,10 @@ export default async function StaffInvitePage({
       />
     );
   }
-  if (invite.expires_at && new Date(invite.expires_at).getTime() < Date.now()) {
+  if (
+    invite.expires_at &&
+    new Date(invite.expires_at).getTime() < Date.now()
+  ) {
     return <Shell title="Expired." body="Ask for a fresh invite link." />;
   }
 
@@ -75,38 +106,82 @@ export default async function StaffInvitePage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  return (
-    <main id="main-content" className="mobile-frame">
-      <header className="pt-6 pb-4">
-        <p className="label-mono mb-2">WADL / Staff</p>
-        <h1 className="display-lg">Working the door.</h1>
-      </header>
+  const roleLabel =
+    invite.role === "door_manager"
+      ? "Door manager"
+      : invite.role === "photographer"
+        ? "Photographer"
+        : "Door staff";
 
-      <div className="card mb-5">
-        <p className="label-mono mb-1">{invite.event.name}</p>
-        <p className="font-sans text-cream font-semibold">
-          {invite.role === "door_manager"
-            ? "Door manager"
-            : invite.role === "photographer"
-            ? "Photographer"
-            : "Door staff"}
-        </p>
+  return (
+    <main
+      id="main-content"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
+    >
+      <div
+        style={{
+          padding: "var(--s-6) var(--s-6) 0",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <Logo size={18} />
+        <span className="chip chip--solid">Staff · role invite</span>
       </div>
 
-      <InviteAcceptForm
-        token={params.token}
-        invitePhone={invite.phone}
-        eventName={invite.event.name}
-        role={invite.role}
-        alreadyAuthedPhone={user?.phone ?? null}
-      />
+      <div style={{ padding: "var(--s-8) var(--s-6) 0" }}>
+        <div className="t-meta">{invite.event.name}</div>
+        <div className="t-display-md" style={{ marginTop: "var(--s-2)" }}>
+          Working the door.
+        </div>
+      </div>
 
-      <p className="label-mono mt-auto pt-8 text-center">
+      <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
+        <div
+          className="card"
+          style={{ padding: "var(--s-5)", borderColor: "var(--fg)" }}
+        >
+          <div className="t-meta">Your role</div>
+          <div className="t-h1" style={{ marginTop: "var(--s-2)" }}>
+            {roleLabel}
+          </div>
+          <p className="t-body-2" style={{ marginTop: "var(--s-2)" }}>
+            {invite.role === "door_manager"
+              ? "Manage the list, override scans, run the door for the night."
+              : invite.role === "photographer"
+                ? "Upload to the post-event gallery. Read-only on guest data."
+                : "Scan QR codes and search by name. Manager handles overrides."}
+          </p>
+        </div>
+      </div>
+
+      <div style={{ padding: "var(--s-8) var(--s-6) 0" }}>
+        <InviteAcceptForm
+          token={params.token}
+          invitePhone={invite.phone}
+          eventName={invite.event.name}
+          role={invite.role}
+          alreadyAuthedPhone={user?.phone ?? null}
+        />
+      </div>
+
+      <div
+        className="t-meta"
+        style={{
+          paddingTop: "var(--s-8)",
+          paddingBottom: "var(--s-4)",
+          textAlign: "center",
+        }}
+      >
         Need help?{" "}
-        <Link href="/discover" className="text-coral hover:brightness-125">
+        <Link
+          href="/discover"
+          style={{ color: "var(--fg)", textDecoration: "none" }}
+        >
           WADL home
         </Link>
-      </p>
+      </div>
     </main>
   );
 }

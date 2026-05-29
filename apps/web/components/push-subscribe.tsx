@@ -17,7 +17,9 @@ function urlBase64ToUint8Array(base64: string): Uint8Array {
 
 export default function PushSubscribeButton({ vapidPublicKey }: Props) {
   const [supported, setSupported] = useState(false);
-  const [permission, setPermission] = useState<NotificationPermission | "default">("default");
+  const [permission, setPermission] = useState<
+    NotificationPermission | "default"
+  >("default");
   const [subscribed, setSubscribed] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -64,7 +66,7 @@ export default function PushSubscribeButton({ vapidPublicKey }: Props) {
         userVisibleOnly: true,
         applicationServerKey: keyArr.buffer.slice(
           keyArr.byteOffset,
-          keyArr.byteOffset + keyArr.byteLength
+          keyArr.byteOffset + keyArr.byteLength,
         ) as ArrayBuffer,
       });
       const json = sub.toJSON();
@@ -98,7 +100,7 @@ export default function PushSubscribeButton({ vapidPublicKey }: Props) {
       if (sub) {
         await fetch(
           `/api/push/subscribe?endpoint=${encodeURIComponent(sub.endpoint)}`,
-          { method: "DELETE" }
+          { method: "DELETE" },
         );
         await sub.unsubscribe();
       }
@@ -112,9 +114,14 @@ export default function PushSubscribeButton({ vapidPublicKey }: Props) {
 
   if (!supported) {
     return (
-      <div className="card border-line">
-        <p className="label-mono mb-1">Push notifications</p>
-        <p className="text-muted text-sm">
+      <div className="w-card" style={{ padding: 14 }}>
+        <div className="w-type-meta" style={{ marginBottom: 4 }}>
+          PUSH NOTIFICATIONS
+        </div>
+        <p
+          className="w-type-body-sm"
+          style={{ color: "var(--w-fg-muted)" }}
+        >
           Your browser doesn&apos;t support web push. iOS Safari requires
           16.4+ and the site added to home screen.
         </p>
@@ -124,50 +131,77 @@ export default function PushSubscribeButton({ vapidPublicKey }: Props) {
 
   if (!vapidPublicKey) {
     return (
-      <div className="card border-line">
-        <p className="label-mono mb-1">Push notifications</p>
-        <p className="text-muted text-sm">
-          Server isn&apos;t configured for push. Set <code>VAPID_PUBLIC_KEY</code> + <code>VAPID_PRIVATE_KEY</code> on the deployment to enable.
+      <div className="w-card" style={{ padding: 14 }}>
+        <div className="w-type-meta" style={{ marginBottom: 4 }}>
+          PUSH NOTIFICATIONS
+        </div>
+        <p
+          className="w-type-body-sm"
+          style={{ color: "var(--w-fg-muted)" }}
+        >
+          Server isn&apos;t configured for push. Set{" "}
+          <code style={{ fontFamily: "var(--w-mono)" }}>VAPID_PUBLIC_KEY</code>{" "}
+          +{" "}
+          <code style={{ fontFamily: "var(--w-mono)" }}>VAPID_PRIVATE_KEY</code>{" "}
+          on the deployment to enable.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="card">
-      <p className="label-mono mb-2">Push notifications</p>
+    <div className="w-card" style={{ padding: 14 }}>
+      <div className="w-type-meta" style={{ marginBottom: 8 }}>
+        PUSH NOTIFICATIONS
+      </div>
       {subscribed ? (
         <>
-          <p className="text-mint text-sm mb-3">Active on this device.</p>
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-ok)", marginBottom: 12 }}
+          >
+            Active on this device.
+          </p>
           <button
             type="button"
+            className="btn btn--ghost"
             onClick={unsubscribe}
             disabled={busy}
-            className="btn-ghost"
           >
             {busy ? "Working…" : "Turn off"}
           </button>
         </>
       ) : (
         <>
-          <p className="text-muted text-sm mb-3">
-            Get notified when an RSVP needs review, capacity hits 85%, or staff change.
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-fg-muted)", marginBottom: 12 }}
+          >
+            Get notified when an RSVP needs review, capacity hits 85%, or
+            staff change.
           </p>
           <button
             type="button"
+            className="btn btn--accent"
             onClick={subscribe}
             disabled={busy || permission === "denied"}
-            className="btn-primary"
           >
             {permission === "denied"
               ? "Blocked in browser settings"
               : busy
-              ? "Subscribing…"
-              : "Enable on this device"}
+                ? "Subscribing…"
+                : "Enable on this device"}
           </button>
         </>
       )}
-      {err && <p className="text-coral text-sm mt-2">{err}</p>}
+      {err && (
+        <p
+          className="w-type-body-sm"
+          style={{ color: "var(--w-err)", marginTop: 8 }}
+        >
+          {err}
+        </p>
+      )}
     </div>
   );
 }

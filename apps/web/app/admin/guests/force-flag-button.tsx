@@ -16,7 +16,7 @@ export default function ForceFlagButton({
   const [err, setErr] = useState<string | null>(null);
 
   if (alreadyFlagged) {
-    return <span className="text-coral text-xs">⚠ flagged</span>;
+    return <span className="chip chip--err">Flagged</span>;
   }
 
   function go() {
@@ -35,11 +35,19 @@ export default function ForceFlagButton({
         type="button"
         onClick={go}
         disabled={pending}
-        className="text-coral text-xs hover:text-cream transition disabled:opacity-50"
+        className="btn btn--danger btn--sm"
+        style={{ opacity: pending ? 0.5 : 1 }}
       >
-        {pending ? "…" : "force-flag"}
+        {pending ? "…" : "Force-flag"}
       </button>
-      {err && <p className="text-coral text-[10px] mt-1">{err}</p>}
+      {err && (
+        <p
+          className="t-meta"
+          style={{ color: "var(--err)", marginTop: "var(--s-1)" }}
+        >
+          {err}
+        </p>
+      )}
     </>
   );
 }

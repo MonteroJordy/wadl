@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import ConfirmDialog from "@/components/confirm-dialog";
 import {
   upsertTemplateAction,
   deleteTemplateAction,
@@ -13,6 +14,17 @@ interface Template {
   body: string;
 }
 
+const INLINE_BTN: React.CSSProperties = {
+  background: "transparent",
+  border: "none",
+  cursor: "pointer",
+  padding: 0,
+  fontFamily: "var(--mono)",
+  fontSize: 11,
+  letterSpacing: "0.04em",
+  textTransform: "uppercase",
+};
+
 export default function TemplateManager({
   initial,
 }: {
@@ -22,6 +34,7 @@ export default function TemplateManager({
   const [editing, setEditing] = useState<Template | null>(null);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [deleteKey, setDeleteKey] = useState<string | null>(null);
 
   function startNew() {
     setEditing({ key: "", label: "", body: "" });
@@ -49,11 +62,15 @@ export default function TemplateManager({
   }
 
   function del(key: string) {
-    if (!confirm("Delete this template?")) return;
+    setDeleteKey(key);
+  }
+
+  function doDelete(key: string) {
     startTransition(async () => {
       const res = await deleteTemplateAction(key);
       if (!res.ok) setError(res.error);
       else setTemplates((ts) => ts.filter((t) => t.key !== key));
+      setDeleteKey(null);
     });
   }
 
@@ -61,10 +78,7 @@ export default function TemplateManager({
     startTransition(async () => {
       const res = await seedDefaultsAction();
       if (!res.ok) setError(res.error);
-      else {
-        // Refetch via refresh.
-        location.reload();
-      }
+      else location.reload();
     });
   }
 
@@ -75,13 +89,24 @@ export default function TemplateManager({
           e.preventDefault();
           save(editing);
         }}
-        className="card flex flex-col gap-4"
+        className="card"
+        style={{
+          padding: "var(--s-6)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-4)",
+        }}
       >
-        <p className="label-mono">
-          {templates.find((t) => t.key === editing.key) ? "Edit" : "New"} template
-        </p>
+        <div className="t-meta">
+          {templates.find((t) => t.key === editing.key) ? "Edit" : "New"}{" "}
+          template
+        </div>
         <div>
-          <label htmlFor="key" className="label-mono block mb-1">
+          <label
+            htmlFor="key"
+            className="t-meta"
+            style={{ display: "block", marginBottom: "var(--s-1)" }}
+          >
             Key (e.g. doors_open)
           </label>
           <input
@@ -89,14 +114,21 @@ export default function TemplateManager({
             type="text"
             value={editing.key}
             onChange={(e) =>
-              setEditing({ ...editing, key: e.target.value.replace(/\s+/g, "_").toLowerCase() })
+              setEditing({
+                ...editing,
+                key: e.target.value.replace(/\s+/g, "_").toLowerCase(),
+              })
             }
-            className="input-dark"
+            className="input"
             required
           />
         </div>
         <div>
-          <label htmlFor="label" className="label-mono block mb-1">
+          <label
+            htmlFor="label"
+            className="t-meta"
+            style={{ display: "block", marginBottom: "var(--s-1)" }}
+          >
             Label
           </label>
           <input
@@ -104,38 +136,60 @@ export default function TemplateManager({
             type="text"
             value={editing.label}
             onChange={(e) => setEditing({ ...editing, label: e.target.value })}
-            className="input-dark"
+            className="input"
             required
           />
         </div>
         <div>
-          <label htmlFor="body" className="label-mono block mb-1">
+          <label
+            htmlFor="body"
+            className="t-meta"
+            style={{ display: "block", marginBottom: "var(--s-1)" }}
+          >
             Body
           </label>
           <textarea
             id="body"
             value={editing.body}
             onChange={(e) => setEditing({ ...editing, body: e.target.value })}
-            className="input-dark min-h-[120px] font-mono text-xs"
+            className="input"
+            style={{
+              minHeight: 120,
+              height: "auto",
+              padding: "var(--s-3) var(--s-4)",
+              fontFamily: "var(--mono)",
+              fontSize: 12,
+              lineHeight: 1.5,
+            }}
             required
           />
-          <p className="label-mono mt-2">
-            Variables: <code>{`{{guest.name}}`}</code>{" "}
-            <code>{`{{event.name}}`}</code>{" "}
-            <code>{`{{event.date}}`}</code>{" "}
-            <code>{`{{venue.name}}`}</code>
-          </p>
+          <div className="t-meta" style={{ marginTop: "var(--s-2)" }}>
+            Variables: <code className="kbd">{`{{guest.name}}`}</code>{" "}
+            <code className="kbd">{`{{event.name}}`}</code>{" "}
+            <code className="kbd">{`{{event.date}}`}</code>{" "}
+            <code className="kbd">{`{{venue.name}}`}</code>
+          </div>
         </div>
-        {error && <p className="text-coral text-sm">{error}</p>}
-        <div className="grid grid-cols-2 gap-2">
+        {error && (
+          <p className="t-body-2" style={{ color: "var(--err)" }}>
+            {error}
+          </p>
+        )}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "var(--s-2)",
+          }}
+        >
           <button
             type="button"
+            className="btn btn--ghost"
             onClick={() => setEditing(null)}
-            className="btn-ghost"
           >
             Cancel
           </button>
-          <button type="submit" className="btn-primary" disabled={pending}>
+          <button type="submit" className="btn btn--accent" disabled={pending}>
             {pending ? "Saving…" : "Save"}
           </button>
         </div>
@@ -145,57 +199,119 @@ export default function TemplateManager({
 
   return (
     <div>
-      <div className="grid grid-cols-2 gap-2 mb-6">
-        <button type="button" onClick={startNew} className="btn-primary">
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "var(--s-2)",
+          marginBottom: "var(--s-6)",
+        }}
+      >
+        <button type="button" className="btn btn--accent" onClick={startNew}>
           + New template
         </button>
-        <button type="button" onClick={seed} className="btn-ghost" disabled={pending}>
+        <button
+          type="button"
+          className="btn btn--ghost"
+          onClick={seed}
+          disabled={pending}
+        >
           Seed defaults
         </button>
       </div>
 
-      {error && <p className="text-coral text-sm mb-3">{error}</p>}
+      {error && (
+        <p
+          className="t-body-2"
+          style={{ color: "var(--err)", marginBottom: "var(--s-3)" }}
+        >
+          {error}
+        </p>
+      )}
 
       {templates.length === 0 ? (
-        <p className="label-mono text-center text-mint">
+        <div
+          className="t-body-2"
+          style={{ textAlign: "center", padding: "var(--s-8)" }}
+        >
           No templates yet. Tap &quot;Seed defaults&quot; to install the four
           starter messages, or build your own.
-        </p>
+        </div>
       ) : (
-        <div className="flex flex-col gap-2">
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "var(--s-2)",
+          }}
+        >
           {templates.map((t) => (
-            <div key={t.key} className="card">
-              <div className="flex items-baseline justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-sans text-cream font-semibold truncate">
-                    {t.label}
-                  </p>
-                  <p className="label-mono mt-1">{t.key}</p>
+            <div key={t.key} className="card" style={{ padding: "var(--s-4)" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "baseline",
+                  justifyContent: "space-between",
+                  gap: "var(--s-3)",
+                }}
+              >
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <p className="t-h2 truncate">{t.label}</p>
+                  <div className="t-meta" style={{ marginTop: "var(--s-1)" }}>
+                    {t.key}
+                  </div>
                 </div>
-                <div className="flex gap-3 shrink-0">
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "var(--s-3)",
+                    flexShrink: 0,
+                  }}
+                >
                   <button
                     type="button"
                     onClick={() => setEditing(t)}
-                    className="label-mono hover:text-cream transition"
+                    style={{ ...INLINE_BTN, color: "var(--fg-3)" }}
                   >
                     Edit
                   </button>
                   <button
                     type="button"
                     onClick={() => del(t.key)}
-                    className="label-mono text-coral hover:brightness-125"
+                    style={{ ...INLINE_BTN, color: "var(--err)" }}
                   >
                     Delete
                   </button>
                 </div>
               </div>
-              <p className="text-cream text-xs mt-3 whitespace-pre-wrap font-mono">
+              <p
+                style={{
+                  color: "var(--fg-2)",
+                  fontSize: 12,
+                  marginTop: "var(--s-3)",
+                  whiteSpace: "pre-wrap",
+                  fontFamily: "var(--mono)",
+                  lineHeight: 1.5,
+                }}
+              >
                 {t.body}
               </p>
             </div>
           ))}
         </div>
       )}
+      <ConfirmDialog
+        open={deleteKey !== null}
+        title="Delete this template?"
+        body="The template will be removed. Existing sends already out the door are unaffected."
+        confirmLabel="Delete"
+        danger
+        pending={pending}
+        onConfirm={() => {
+          if (deleteKey) doDelete(deleteKey);
+        }}
+        onCancel={() => setDeleteKey(null)}
+      />
     </div>
   );
 }

@@ -11,6 +11,28 @@ const PRESET_REASONS = [
   "Refusing entry",
 ];
 
+const INPUT_STYLE: React.CSSProperties = {
+  flex: 1,
+  background: "var(--w-surface-1)",
+  border: "1px solid var(--w-line)",
+  color: "var(--w-fg)",
+  padding: "10px 12px",
+  fontFamily: "var(--w-sans)",
+  fontSize: 14,
+};
+
+const INLINE_BTN: React.CSSProperties = {
+  background: "transparent",
+  border: "none",
+  cursor: "pointer",
+  padding: 0,
+  fontFamily: "var(--w-mono)",
+  fontSize: 11,
+  letterSpacing: "0.08em",
+  textTransform: "uppercase",
+  color: "var(--w-fg-muted)",
+};
+
 export default function EscalateButton({ eventId }: { eventId: string }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
@@ -27,7 +49,11 @@ export default function EscalateButton({ eventId }: { eventId: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ eventId, reason: useReason || null }),
       });
-      const json = (await res.json()) as { ok: boolean; smsSent?: number; error?: string };
+      const json = (await res.json()) as {
+        ok: boolean;
+        smsSent?: number;
+        error?: string;
+      };
       if (!res.ok || !json.ok) {
         setError(json.error ?? `Failed (${res.status})`);
       } else {
@@ -43,18 +69,39 @@ export default function EscalateButton({ eventId }: { eventId: string }) {
 
   if (done) {
     return (
-      <div className="card border-coral/60 bg-s2 mt-3 text-center">
-        <p className="label-mono text-coral mb-1">Manager paged</p>
-        <p className="text-cream/80 text-sm">
+      <div
+        className="w-card"
+        style={{
+          padding: 16,
+          borderColor: "var(--w-err)",
+          background: "var(--w-surface-2)",
+          marginTop: 12,
+          textAlign: "center",
+        }}
+      >
+        <div
+          className="w-type-meta"
+          style={{ color: "var(--w-err)", marginBottom: 4 }}
+        >
+          MANAGER PAGED
+        </div>
+        <p
+          style={{
+            color: "var(--w-fg)",
+            opacity: 0.85,
+            fontSize: 14,
+          }}
+        >
           {done.smsSent > 0
             ? `SMS sent to ${done.smsSent} manager${done.smsSent === 1 ? "" : "s"}.`
             : "Notification logged. Push delivered if subscribed."}
         </p>
         <button
           onClick={() => setDone(null)}
-          className="label-mono mt-3 text-muted hover:text-cream"
+          style={{ ...INLINE_BTN, marginTop: 12 }}
+          type="button"
         >
-          Dismiss
+          DISMISS
         </button>
       </div>
     );
@@ -64,65 +111,125 @@ export default function EscalateButton({ eventId }: { eventId: string }) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="card w-full mt-3 border-coral/40 hover:border-coral transition text-center"
+        className="w-card"
+        style={{
+          width: "100%",
+          marginTop: 12,
+          padding: 16,
+          borderColor: "var(--w-err)",
+          textAlign: "center",
+          cursor: "pointer",
+          background: "var(--w-surface-1)",
+        }}
         type="button"
       >
-        <p className="font-display text-2xl text-coral mb-1">PAGE MANAGER</p>
-        <p className="label-mono">Escalate now</p>
+        <div
+          style={{
+            fontFamily: "var(--w-display)",
+            fontWeight: 700,
+            fontSize: 22,
+            color: "var(--w-err)",
+            marginBottom: 4,
+          }}
+        >
+          PAGE MANAGER
+        </div>
+        <div className="w-type-meta">ESCALATE NOW</div>
       </button>
     );
   }
 
   return (
-    <div className="card border-coral/60 mt-3">
-      <p className="label-mono text-coral mb-3">Page the manager — pick a reason</p>
-      <div className="flex flex-col gap-2 mb-3">
+    <div
+      className="w-card"
+      style={{ padding: 14, borderColor: "var(--w-err)", marginTop: 12 }}
+    >
+      <div
+        className="w-type-meta"
+        style={{ color: "var(--w-err)", marginBottom: 12 }}
+      >
+        PAGE THE MANAGER — PICK A REASON
+      </div>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+          marginBottom: 12,
+        }}
+      >
         {PRESET_REASONS.map((r) => (
           <button
             key={r}
             onClick={() => send(r)}
             disabled={pending}
-            className="text-left px-3 py-2 rounded-md border border-line bg-s1 text-cream text-sm hover:border-coral transition disabled:opacity-50"
+            style={{
+              textAlign: "left",
+              padding: "10px 12px",
+              border: "1px solid var(--w-line)",
+              background: "var(--w-surface-1)",
+              color: "var(--w-fg)",
+              fontSize: 14,
+              cursor: pending ? "default" : "pointer",
+              opacity: pending ? 0.5 : 1,
+            }}
             type="button"
           >
             {r}
           </button>
         ))}
       </div>
-      <label className="label-mono block mb-1" htmlFor="escalate-other">
-        Other (max 200 chars)
+      <label
+        htmlFor="escalate-other"
+        className="w-type-meta"
+        style={{ display: "block", marginBottom: 4 }}
+      >
+        OTHER (MAX 200 CHARS)
       </label>
-      <div className="flex gap-2">
+      <div style={{ display: "flex", gap: 8 }}>
         <input
           id="escalate-other"
           maxLength={200}
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           placeholder="e.g. need backup at the gate"
-          className="flex-1 bg-s1 border border-line rounded-md px-3 py-2 text-cream text-sm focus:border-coral focus:outline-none"
+          style={INPUT_STYLE}
           disabled={pending}
         />
         <button
-          onClick={() => send(reason)}
-          disabled={pending || (!reason.trim() && false)}
-          className="bg-coral text-bg font-sans font-semibold text-xs uppercase tracking-[0.14em] px-4 rounded-md hover:brightness-110 transition disabled:opacity-50"
           type="button"
+          className="btn"
+          onClick={() => send(reason)}
+          disabled={pending}
+          style={{
+            background: "var(--w-err)",
+            borderColor: "var(--w-err)",
+            color: "var(--w-bg)",
+            padding: "0 18px",
+          }}
         >
           Send
         </button>
       </div>
-      {error && <p className="label-mono text-coral mt-2">{error}</p>}
+      {error && (
+        <div
+          className="w-type-meta"
+          style={{ color: "var(--w-err)", marginTop: 8 }}
+        >
+          {error}
+        </div>
+      )}
       <button
         onClick={() => {
           setOpen(false);
           setReason("");
           setError(null);
         }}
-        className="label-mono mt-3 text-muted hover:text-cream"
+        style={{ ...INLINE_BTN, marginTop: 12 }}
         type="button"
         disabled={pending}
       >
-        Cancel
+        CANCEL
       </button>
     </div>
   );

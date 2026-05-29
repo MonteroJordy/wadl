@@ -1,11 +1,11 @@
 import Link from "next/link";
-import PublicShell from "@/components/public-shell";
-import MarketingFooter from "@/components/marketing-footer";
+import { Logo } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Help — WADL",
-  description: "How WADL works at the door, and how to get help when it doesn't.",
+  description:
+    "How WADL works at the door, and how to get help when it doesn't.",
 };
 
 const FAQS = [
@@ -27,7 +27,7 @@ const FAQS = [
   },
   {
     q: "What happens at capacity?",
-    a: "When approved heads cross the lockdown threshold (default 90%), WADL auto-flips the night to frozen — all allocations close, no new RSVPs, and a coral capacity-alert pushes to staff. You can override individual entries from the daydash.",
+    a: "When approved heads cross the lockdown threshold (default 90%), WADL auto-flips the night to frozen — all allocations close, no new RSVPs, and a capacity-alert pushes to staff. You can override individual entries from the daydash.",
   },
   {
     q: "Wi-Fi died at the door.",
@@ -43,56 +43,225 @@ const FAQS = [
   },
 ];
 
+function PublicHeader() {
+  return (
+    <header
+      style={{
+        position: "sticky",
+        top: 0,
+        zIndex: 30,
+        backdropFilter: "blur(12px)",
+        background: "rgba(10,10,10,0.78)",
+        borderBottom: "1px solid var(--line)",
+      }}
+    >
+      <div
+        style={{
+          maxWidth: 960,
+          margin: "0 auto",
+          padding: "var(--s-3) var(--s-6)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "var(--s-4)",
+        }}
+      >
+        <Link href="/" aria-label="WADL home" style={{ textDecoration: "none" }}>
+          <Logo size={20} />
+        </Link>
+        <nav
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "var(--s-4)",
+          }}
+        >
+          <Link
+            href="/discover"
+            className="t-meta"
+            style={{ textDecoration: "none" }}
+          >
+            Tonight
+          </Link>
+          <Link
+            href="/login"
+            className="btn btn--ghost btn--sm"
+            style={{ textDecoration: "none" }}
+          >
+            Sign in
+          </Link>
+        </nav>
+      </div>
+    </header>
+  );
+}
+
+function PublicFooter() {
+  return (
+    <footer
+      style={{
+        borderTop: "1px solid var(--line)",
+        padding: "var(--s-10) var(--s-6)",
+      }}
+    >
+      <div
+        style={{
+          maxWidth: 960,
+          margin: "0 auto",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-end",
+          gap: "var(--s-6)",
+          flexWrap: "wrap",
+        }}
+      >
+        <div>
+          <Logo size={22} />
+          <div className="t-meta" style={{ marginTop: "var(--s-3)" }}>
+            One door · one list · one truth
+          </div>
+          <div
+            className="t-meta"
+            style={{ marginTop: "var(--s-2)", color: "var(--fg-4)" }}
+          >
+            © {new Date().getFullYear()} WADL · Built in Miami
+          </div>
+        </div>
+        <nav
+          style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-6)" }}
+        >
+          {[
+            ["Pricing", "/pricing"],
+            ["Tonight", "/discover"],
+            ["Embed widget", "/docs/embed"],
+            ["Privacy", "/privacy"],
+            ["Terms", "/terms"],
+            ["Contact", "/contact"],
+          ].map(([label, href]) => (
+            <Link
+              key={href}
+              href={href}
+              className="t-meta"
+              style={{ textDecoration: "none" }}
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
+      </div>
+    </footer>
+  );
+}
+
 export default async function HelpPage() {
   return (
-    <>
-      <PublicShell maxWidth="4xl" ambient>
-        <header className="mb-8">
-          <p className="label-mono mb-2">Help</p>
-          <h1 className="font-display text-5xl md:text-6xl text-cream uppercase tracking-wide leading-[0.95]">
-            Stuck at the door<span className="text-coral">?</span>
+    <main
+      id="main-content"
+      className="v5"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
+    >
+      <PublicHeader />
+      <div
+        style={{
+          maxWidth: 960,
+          margin: "0 auto",
+          padding: "var(--s-12) var(--s-6) var(--s-16)",
+        }}
+      >
+        <header style={{ marginBottom: "var(--s-10)" }}>
+          <div className="t-meta">Help</div>
+          <h1 className="t-display-lg" style={{ marginTop: "var(--s-3)" }}>
+            Stuck at the door?
           </h1>
-          <p className="text-cream/70 text-base leading-relaxed mt-3 max-w-2xl">
+          <p
+            className="t-body-2"
+            style={{ marginTop: "var(--s-4)", maxWidth: 640 }}
+          >
             Eight things that fix 90% of door problems. Anything else, the
             founder reads every email — see Contact below.
           </p>
         </header>
 
-        <section className="flex flex-col gap-3 mb-12">
+        <section
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "var(--s-3)",
+            marginBottom: "var(--s-14)",
+          }}
+        >
           {FAQS.map((f, i) => (
             <details
               key={i}
-              className="card group hover:border-coral/40 transition"
+              className="card"
+              style={{ padding: "var(--s-5)", cursor: "pointer" }}
             >
-              <summary className="cursor-pointer flex items-start justify-between gap-4 list-none">
-                <p className="font-sans font-semibold text-cream pr-2">{f.q}</p>
-                <span className="font-display text-2xl text-coral shrink-0 group-open:rotate-45 transition">
+              <summary
+                style={{
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  justifyContent: "space-between",
+                  gap: "var(--s-4)",
+                  listStyle: "none",
+                }}
+              >
+                <span className="t-h2" style={{ paddingRight: "var(--s-2)" }}>
+                  {f.q}
+                </span>
+                <span
+                  className="t-display-sm"
+                  style={{ color: "var(--fg-3)", flexShrink: 0 }}
+                >
                   +
                 </span>
               </summary>
-              <p className="text-cream/80 text-sm leading-relaxed mt-3">{f.a}</p>
+              <p
+                className="t-body-2"
+                style={{ marginTop: "var(--s-3)" }}
+              >
+                {f.a}
+              </p>
             </details>
           ))}
         </section>
 
-        <section className="card border-coral/40 bg-s2 text-center">
-          <p className="label-mono text-coral mb-2">Still stuck</p>
-          <p className="font-display text-3xl text-cream uppercase tracking-wide mb-3">
+        <section
+          className="card"
+          style={{
+            padding: "var(--s-6)",
+            textAlign: "center",
+            borderColor: "var(--line-3)",
+          }}
+        >
+          <div className="t-meta">Still stuck</div>
+          <h2 className="t-display-sm" style={{ marginTop: "var(--s-2)" }}>
             Email the founder.
-          </p>
-          <p className="text-cream/70 text-sm mb-5 max-w-md mx-auto">
+          </h2>
+          <p
+            className="t-body-2"
+            style={{
+              marginTop: "var(--s-2)",
+              maxWidth: 420,
+              marginInline: "auto",
+            }}
+          >
             Jordy reads every message. Reply usually within an hour during a
             real night, same day otherwise.
           </p>
           <Link
             href="/contact"
-            className="inline-flex items-center gap-2 bg-coral text-bg font-sans font-semibold text-xs uppercase tracking-[0.16em] px-5 py-3 rounded-full hover:brightness-110 transition"
+            className="btn btn--accent"
+            style={{
+              marginTop: "var(--s-5)",
+              textDecoration: "none",
+            }}
           >
             Contact →
           </Link>
         </section>
-      </PublicShell>
-      <MarketingFooter />
-    </>
+      </div>
+      <PublicFooter />
+    </main>
   );
 }

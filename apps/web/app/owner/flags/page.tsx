@@ -1,6 +1,7 @@
-import { requireOwnerContext, fmtDate } from "@/lib/owner";
+import { requireOwnerContext } from "@/lib/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
-import EmptyState from "@/components/empty-state";
+import { fmtDate } from "@/lib/format";
+import { PageHeader } from "@/components/v5";
 import BulkFlagForm from "./bulk-form";
 
 export const dynamic = "force-dynamic";
@@ -25,16 +26,15 @@ export default async function MasterFlagsPage({
   const sort = (searchParams.sort ?? "recent") as "recent" | "name" | "event";
   const admin = createAdminClient();
 
-  // Pull all flagged guests across this account's events.
   const { data } = await admin
     .from("guests")
     .select(
-      "id, full_name, flag_reason, phone, created_at, night:event_nights!inner(night_date, event:events!inner(id, name, account_id))"
+      "id, full_name, flag_reason, phone, created_at, night:event_nights!inner(night_date, event:events!inner(id, name, account_id))",
     )
     .eq("flag_dna", true);
-  const all = ((data ?? []) as unknown as Array<FlagRow & { created_at: string }>).filter(
-    (r) => r.night.event.account_id === account.id
-  );
+  const all = (
+    (data ?? []) as unknown as Array<FlagRow & { created_at: string }>
+  ).filter((r) => r.night.event.account_id === account.id);
 
   if (sort === "name") all.sort((a, b) => a.full_name.localeCompare(b.full_name));
   else if (sort === "event")
@@ -50,41 +50,86 @@ export default async function MasterFlagsPage({
     phone: r.phone,
   }));
 
-  return (
-    <main id="main-content" className="mx-auto max-w-frame md:max-w-3xl px-6 pt-12 pb-8 md:py-12">
-      <header className="mb-6">
-        <p className="label-mono mb-1">DNA registry</p>
-        <h1 className="display-lg">Flag list</h1>
-        <p className="label-mono mt-2">
-          {items.length} flagged guest{items.length === 1 ? "" : "s"} across this account
-        </p>
-      </header>
+  const sortLabels: Record<typeof sort, string> = {
+    recent: "Most recent",
+    name: "By name",
+    event: "By event",
+  };
 
-      {items.length === 0 ? (
-        <EmptyState
-          title="Clean sheet"
-          body="No DNA flags across any of your events. Flag a guest from their detail page when needed."
-        />
-      ) : (
-        <>
-          <div className="flex gap-1 overflow-x-auto pb-2 mb-4">
-            {(["recent", "name", "event"] as const).map((s) => (
-              <a
-                key={s}
-                href={s === "recent" ? "/owner/flags" : `/owner/flags?sort=${s}`}
-                className={`shrink-0 px-3 py-1 rounded-full border text-[10px] font-mono uppercase tracking-wider ${
-                  sort === s
-                    ? "border-coral bg-s2 text-cream"
-                    : "border-line bg-s1 text-muted hover:text-cream"
-                }`}
-              >
-                {s === "recent" ? "Most recent" : s === "name" ? "By name" : "By event"}
-              </a>
-            ))}
+  return (
+    <main
+      id="main-content"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
+    >
+      <PageHeader
+        eyebrow="Guests · blocklist"
+        title={`Blocklist · ${items.length} active`}
+        sub="Private to this account · the door scanner rejects these on sight."
+      />
+
+      <div style={{ padding: "var(--s-8)" }}>
+        {items.length === 0 ? (
+          <div
+            style={{
+              padding: "var(--s-20) var(--s-8)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              textAlign: "center",
+              maxWidth: 480,
+              margin: "0 auto",
+            }}
+          >
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: "var(--r-lg)",
+                background: "var(--bg-3)",
+                marginBottom: "var(--s-5)",
+              }}
+            />
+            <div className="t-display-md">Clean sheet</div>
+            <div
+              className="t-body-2"
+              style={{ marginTop: "var(--s-3)", maxWidth: 380 }}
+            >
+              No DNA flags across any of your events. Flag a guest from their
+              detail page when needed.
+            </div>
           </div>
-          <BulkFlagForm items={items} />
-        </>
-      )}
+        ) : (
+          <>
+            <div
+              style={{
+                display: "flex",
+                gap: "var(--s-1)",
+                marginBottom: "var(--s-4)",
+                flexWrap: "wrap",
+              }}
+            >
+              {(["recent", "name", "event"] as const).map((s) => (
+                <a
+                  key={s}
+                  href={
+                    s === "recent" ? "/owner/flags" : `/owner/flags?sort=${s}`
+                  }
+                  className={
+                    "nav-item " + (sort === s ? "nav-item--active" : "")
+                  }
+                  style={{
+                    textDecoration: "none",
+                    fontSize: "var(--ts-sm)",
+                  }}
+                >
+                  {sortLabels[s]}
+                </a>
+              ))}
+            </div>
+            <BulkFlagForm items={items} />
+          </>
+        )}
+      </div>
     </main>
   );
 }

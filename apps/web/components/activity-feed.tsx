@@ -31,15 +31,13 @@ const ACTION_LABEL: Record<string, string> = {
   "sms.opted_in": "SMS opted-in",
 };
 
-const ACTION_TONE: Record<string, string> = {
-  "door.scanned_in": "border-mint/30 text-mint",
-  "door.blocked_dna": "border-coral/40 text-coral",
-  "guest.rsvp": "border-cream/20 text-cream",
-  "holder.add_guest": "border-cream/20 text-cream",
-  "guest.tier_upgraded": "border-mint/30 text-mint",
-  "guest.flag_dna": "border-coral/40 text-coral",
-  "owner.override_admit": "border-coral/40 text-coral",
-  "capacity.lockdown": "border-coral/60 text-coral",
+const ACTION_COLOR: Record<string, string> = {
+  "door.scanned_in": "var(--w-ok)",
+  "door.blocked_dna": "var(--w-err)",
+  "guest.tier_upgraded": "var(--w-ok)",
+  "guest.flag_dna": "var(--w-err)",
+  "owner.override_admit": "var(--w-err)",
+  "capacity.lockdown": "var(--w-err)",
 };
 
 function ago(iso: string) {
@@ -75,11 +73,17 @@ export default function ActivityFeed({
 }) {
   if (rows.length === 0) {
     return (
-      <div className="card text-center">
-        <p className="label-mono mb-1">
-          {emptyTitle ?? "Nothing yet"}
-        </p>
-        <p className="text-muted text-sm">
+      <div
+        className="w-card"
+        style={{ padding: 16, textAlign: "center" }}
+      >
+        <div className="w-type-meta" style={{ marginBottom: 4 }}>
+          {(emptyTitle ?? "Nothing yet").toUpperCase()}
+        </div>
+        <p
+          className="w-type-body-sm"
+          style={{ color: "var(--w-fg-muted)" }}
+        >
           {emptyBody ??
             "Activity from holders, the door, and the queue will land here as it happens."}
         </p>
@@ -88,30 +92,85 @@ export default function ActivityFeed({
   }
 
   return (
-    <ul className="flex flex-col gap-1.5">
+    <ul
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 6,
+        listStyle: "none",
+        padding: 0,
+        margin: 0,
+      }}
+    >
       {rows.map((r) => {
         const label = ACTION_LABEL[r.action] ?? r.action.replace(/[._]/g, " ");
-        const tone = ACTION_TONE[r.action] ?? "border-line text-muted";
+        const color = ACTION_COLOR[r.action] ?? "var(--w-fg-muted)";
         const subject = rowSubject(r);
         return (
           <li
             key={r.id}
-            className={`flex items-baseline gap-2 px-3 py-2 rounded border ${tone} bg-s1`}
+            style={{
+              display: "flex",
+              alignItems: "baseline",
+              gap: 8,
+              padding: "8px 12px",
+              border: `1px solid ${color === "var(--w-fg-muted)" ? "var(--w-line)" : color}`,
+              background: "var(--w-surface-1)",
+              color,
+            }}
           >
-            <span className="label-mono shrink-0">{ago(r.created_at)}</span>
-            <span className="label-mono shrink-0 hidden sm:inline">·</span>
-            <span className="label-mono shrink-0">{label}</span>
+            <span
+              className="w-type-meta"
+              style={{ flexShrink: 0 }}
+            >
+              {ago(r.created_at).toUpperCase()}
+            </span>
+            <span
+              className="w-type-meta"
+              style={{ flexShrink: 0 }}
+            >
+              ·
+            </span>
+            <span
+              className="w-type-meta"
+              style={{ flexShrink: 0 }}
+            >
+              {label.toUpperCase()}
+            </span>
             {subject && (
               <>
-                <span className="label-mono shrink-0">·</span>
-                <span className="font-sans text-cream text-sm truncate">
+                <span
+                  className="w-type-meta"
+                  style={{ flexShrink: 0 }}
+                >
+                  ·
+                </span>
+                <span
+                  style={{
+                    color: "var(--w-fg)",
+                    fontSize: 14,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
                   {subject}
                 </span>
               </>
             )}
             {showEvent && r.event?.name && (
-              <span className="label-mono ml-auto shrink-0 truncate max-w-[40%]">
-                {r.event.name}
+              <span
+                className="w-type-meta"
+                style={{
+                  marginLeft: "auto",
+                  flexShrink: 0,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  maxWidth: "40%",
+                }}
+              >
+                {r.event.name.toUpperCase()}
               </span>
             )}
           </li>

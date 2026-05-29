@@ -34,7 +34,8 @@ export default function OverrideForm({
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return toast.error("Enter a name.");
-    if (!reason.trim()) return toast.error("Reason required for the audit log.");
+    if (!reason.trim())
+      return toast.error("Reason required for the audit log.");
     startTransition(async () => {
       const res = await ownerOverrideAdmitAction({
         eventId,
@@ -55,26 +56,42 @@ export default function OverrideForm({
   const currentNight = nights.find((n) => n.id === nightId);
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-4">
+    <form
+      onSubmit={submit}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "var(--s-5)",
+      }}
+    >
       {currentNight?.is_frozen && (
-        <div className="card border-coral">
-          <p className="label-mono text-coral mb-1">⚠ Lockdown active</p>
-          <p className="text-cream text-sm">
+        <div
+          className="card"
+          style={{ padding: "var(--s-4)", borderColor: "var(--err)" }}
+        >
+          <div
+            className="t-meta"
+            style={{ color: "var(--err)", marginBottom: "var(--s-1)" }}
+          >
+            ⚠ Lockdown active
+          </div>
+          <div className="t-body-2" style={{ color: "var(--fg)" }}>
             This night is at capacity threshold. The override will admit them
             anyway and the audit log records the bypass.
-          </p>
+          </div>
         </div>
       )}
 
       <div>
-        <label className="label-mono block mb-2" htmlFor="ov-night">
+        <label htmlFor="ov-night" className="t-meta">
           Night
         </label>
         <select
           id="ov-night"
           value={nightId}
           onChange={(e) => setNightId(e.target.value)}
-          className="input-dark"
+          className="input"
+          style={{ marginTop: "var(--s-2)" }}
         >
           {nights.map((n) => (
             <option key={n.id} value={n.id}>
@@ -86,20 +103,21 @@ export default function OverrideForm({
       </div>
 
       <div>
-        <label className="label-mono block mb-2" htmlFor="ov-name">
+        <label htmlFor="ov-name" className="t-meta">
           Full name
         </label>
         <input
           id="ov-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="input-dark"
+          className="input"
+          style={{ marginTop: "var(--s-2)" }}
           required
         />
       </div>
 
       <div>
-        <label className="label-mono block mb-2" htmlFor="ov-phone">
+        <label htmlFor="ov-phone" className="t-meta">
           Phone (optional)
         </label>
         <input
@@ -108,33 +126,52 @@ export default function OverrideForm({
           inputMode="tel"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          className="input-dark"
+          className="input"
+          style={{ marginTop: "var(--s-2)" }}
           placeholder="(305) 555 1234"
         />
       </div>
 
       <div>
-        <p className="label-mono mb-2">Tier</p>
-        <div className="grid grid-cols-3 gap-2">
-          {TIERS.map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setTier(t)}
-              className={`p-3 rounded border ${
-                tier === t
-                  ? "border-coral bg-s2 text-cream"
-                  : "border-line text-muted hover:text-cream"
-              }`}
-            >
-              {t === "all_access" ? "AA" : t.toUpperCase()}
-            </button>
-          ))}
+        <div className="t-meta" style={{ marginBottom: "var(--s-2)" }}>
+          Tier
+        </div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "var(--s-2)",
+          }}
+        >
+          {TIERS.map((t) => {
+            const active = tier === t;
+            return (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTier(t)}
+                style={{
+                  padding: "var(--s-3)",
+                  border: `1px solid ${
+                    active ? "var(--fg)" : "var(--line-2)"
+                  }`,
+                  borderRadius: "var(--r-md)",
+                  background: active ? "var(--bg-3)" : "transparent",
+                  color: active ? "var(--fg)" : "var(--fg-3)",
+                  fontFamily: "var(--mono)",
+                  fontSize: "var(--ts-sm)",
+                  cursor: "pointer",
+                }}
+              >
+                {t === "all_access" ? "AA" : t.toUpperCase()}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       <div>
-        <label className="label-mono block mb-2" htmlFor="ov-plus">
+        <label htmlFor="ov-plus" className="t-meta">
           +1s
         </label>
         <input
@@ -144,15 +181,24 @@ export default function OverrideForm({
           max={10}
           value={plus}
           onChange={(e) => setPlus(e.target.value.replace(/[^\d]/g, ""))}
-          className="input-dark"
+          className="input"
+          style={{ marginTop: "var(--s-2)" }}
         />
       </div>
 
       <div>
-        <label className="label-mono block mb-2" htmlFor="ov-reason">
+        <label htmlFor="ov-reason" className="t-meta">
           Reason (required for audit)
         </label>
-        <div className="flex flex-wrap gap-1 mb-2">
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "var(--s-1)",
+            marginTop: "var(--s-2)",
+            marginBottom: "var(--s-2)",
+          }}
+        >
           {[
             "VIP arrival",
             "Staff comp",
@@ -165,17 +211,22 @@ export default function OverrideForm({
               key={preset}
               type="button"
               onClick={() =>
-                setReason((cur) =>
-                  cur.trim() === preset ? "" : preset
-                )
+                setReason((cur) => (cur.trim() === preset ? "" : preset))
               }
-              className={`px-2 py-1 rounded-full border text-[10px] font-mono uppercase tracking-wider ${
-                reason.trim() === preset
-                  ? "border-coral bg-s2 text-cream"
-                  : "border-line bg-s1 text-muted hover:text-cream"
-              }`}
+              style={{
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                padding: 0,
+              }}
             >
-              {preset}
+              <span
+                className={`chip ${
+                  reason.trim() === preset ? "chip--solid" : "chip--ghost"
+                }`}
+              >
+                {preset}
+              </span>
             </button>
           ))}
         </div>
@@ -183,19 +234,20 @@ export default function OverrideForm({
           id="ov-reason"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          className="input-dark min-h-[72px]"
+          className="input"
+          style={{ minHeight: 72 }}
           placeholder="VIP guest of the headliner — venue OK"
           required
         />
       </div>
 
-      <button type="submit" className="btn-primary" disabled={pending}>
+      <button type="submit" className="btn btn--accent" disabled={pending}>
         {pending ? "Admitting…" : "Override + admit"}
       </button>
 
-      <p className="label-mono">
+      <div className="t-meta">
         This bypasses capacity caps + frozen lists. Every override is logged.
-      </p>
+      </div>
     </form>
   );
 }

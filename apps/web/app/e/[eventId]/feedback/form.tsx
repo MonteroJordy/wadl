@@ -32,7 +32,7 @@ export default function FeedbackForm({
 
   function toggleTag(key: string) {
     setTags((cur) =>
-      cur.includes(key) ? cur.filter((t) => t !== key) : [...cur, key]
+      cur.includes(key) ? cur.filter((t) => t !== key) : [...cur, key],
     );
   }
 
@@ -60,10 +60,21 @@ export default function FeedbackForm({
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
-      <section className="card">
-        <p className="label-mono mb-3">Overall rating</p>
-        <div className="flex justify-between gap-2">
+    <form
+      onSubmit={onSubmit}
+      style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}
+    >
+      <section className="card" style={{ padding: "var(--s-5)" }}>
+        <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+          Overall rating
+        </div>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: "var(--s-2)",
+          }}
+        >
           {[1, 2, 3, 4, 5].map((n) => {
             const active = rating >= n;
             return (
@@ -71,11 +82,16 @@ export default function FeedbackForm({
                 key={n}
                 type="button"
                 onClick={() => setRating(n)}
-                className={`flex-1 aspect-square rounded-2xl border text-3xl ${
-                  active
-                    ? "border-coral bg-coral/10 text-coral"
-                    : "border-line bg-s1 text-muted hover:text-cream"
-                }`}
+                style={{
+                  flex: 1,
+                  aspectRatio: "1 / 1",
+                  borderRadius: "var(--r-md)",
+                  border: `1px solid ${active ? "var(--fg)" : "var(--line-2)"}`,
+                  background: active ? "var(--fg)" : "var(--bg-2)",
+                  color: active ? "var(--bg)" : "var(--fg-3)",
+                  fontSize: 28,
+                  cursor: "pointer",
+                }}
                 aria-label={`${n} of 5 stars`}
               >
                 ★
@@ -85,9 +101,11 @@ export default function FeedbackForm({
         </div>
       </section>
 
-      <section className="card">
-        <p className="label-mono mb-3">What stood out? (optional)</p>
-        <div className="flex flex-wrap gap-2">
+      <section className="card" style={{ padding: "var(--s-5)" }}>
+        <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+          What stood out? (optional)
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-2)" }}>
           {TAGS.map((t) => {
             const on = tags.includes(t.key);
             return (
@@ -95,11 +113,8 @@ export default function FeedbackForm({
                 key={t.key}
                 type="button"
                 onClick={() => toggleTag(t.key)}
-                className={`px-3 py-1 rounded-full border text-xs font-mono uppercase tracking-wider ${
-                  on
-                    ? "border-coral bg-s2 text-cream"
-                    : "border-line bg-s1 text-muted hover:text-cream"
-                }`}
+                className={on ? "chip chip--solid" : "chip"}
+                style={{ cursor: "pointer", border: 0 }}
               >
                 {t.label}
               </button>
@@ -108,8 +123,12 @@ export default function FeedbackForm({
         </div>
       </section>
 
-      <section className="card">
-        <label className="label-mono block mb-2" htmlFor="fb-comment">
+      <section className="card" style={{ padding: "var(--s-5)" }}>
+        <label
+          htmlFor="fb-comment"
+          className="t-meta"
+          style={{ display: "block", marginBottom: "var(--s-2)" }}
+        >
           Anything else? (optional)
         </label>
         <textarea
@@ -119,24 +138,34 @@ export default function FeedbackForm({
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           placeholder="Stays between you and the venue."
-          className="w-full bg-s1 border border-line rounded-lg p-3 text-cream text-sm font-sans focus:border-coral focus:outline-none"
+          className="input"
+          style={{ height: "auto", padding: "var(--s-3)" }}
         />
-        <p className="label-mono mt-1 text-right">{comment.length}/1000</p>
+        <div
+          className="t-meta"
+          style={{ marginTop: "var(--s-1)", textAlign: "right" }}
+        >
+          {comment.length}/1000
+        </div>
       </section>
 
-      {error && <p className="label-mono text-coral">{error}</p>}
+      {error && (
+        <div className="t-meta" style={{ color: "var(--err)" }}>
+          {error}
+        </div>
+      )}
 
       <button
         type="submit"
+        className="btn btn--lg btn--accent btn--block"
         disabled={pending || rating < 1}
-        className="btn-primary w-full disabled:opacity-50"
       >
         {pending ? "Sending…" : "Submit feedback"}
       </button>
       {guestId && (
-        <p className="label-mono text-center">
+        <div className="t-meta" style={{ textAlign: "center" }}>
           Linked to your ticket · counts once
-        </p>
+        </div>
       )}
     </form>
   );

@@ -47,8 +47,12 @@ export default function ActivityFeedRealtime({
   useEffect(() => {
     if (!eventId) return;
     const supabase = createClient();
+    // Unique per-mount suffix prevents Supabase from de-duping the
+    // channel with a leftover instance from StrictMode's double-mount
+    // (or a previous navigation), which would otherwise throw
+    // "cannot add postgres_changes callbacks ... after subscribe()".
     const channel = supabase
-      .channel(`activity:${eventId}`)
+      .channel(`activity:${eventId}:${Math.random().toString(36).slice(2, 10)}`)
       .on(
         "postgres_changes",
         {
@@ -116,7 +120,7 @@ export default function ActivityFeedRealtime({
           transition: box-shadow 0.4s ease;
         }
         [data-row-id].wadl-pulse-row {
-          box-shadow: 0 0 0 2px rgba(255, 74, 43, 0.35);
+          box-shadow: 0 0 0 2px oklch(0.7 0.24 260 / 0.35);
         }
       `}</style>
       <ActivityFeed

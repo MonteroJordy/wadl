@@ -23,19 +23,24 @@ export default function FreezeButton({
   return (
     <button
       type="button"
+      className="btn btn--ghost"
       onClick={onClick}
       disabled={pending}
-      className={`w-full border rounded-md py-3 font-sans text-sm uppercase tracking-[0.14em] transition ${
-        frozen
-          ? "bg-coral text-bg border-coral"
-          : "bg-transparent text-cream border-line hover:border-coral"
-      }`}
+      style={{
+        width: "100%",
+        ...(frozen
+          ? {
+              borderColor: "var(--w-err)",
+              color: "var(--w-err)",
+            }
+          : {}),
+      }}
     >
       {pending
         ? "Updating…"
         : frozen
-        ? "Frozen — tap to unfreeze"
-        : "Freeze this night"}
+          ? "Frozen — tap to unfreeze"
+          : "Freeze this night"}
     </button>
   );
 }

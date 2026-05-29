@@ -57,7 +57,6 @@ export default function HolderIntroWizard({
       const seen = window.localStorage.getItem(storageKey);
       if (!seen) setOpen(true);
     } catch {
-      // Privacy mode / cookies blocked → just show once.
       setOpen(true);
     }
   }, [force, storageKey]);
@@ -77,7 +76,6 @@ export default function HolderIntroWizard({
   const isLast = step === CARDS.length - 1;
   const card = CARDS[step];
 
-  // Replace placeholder copy on first card with allocation specifics.
   const firstBody = `Welcome${holderName ? `, ${holderName}` : ""}. Your cap is ${cap} ${plusOnesAllowed ? "(plus-ones allowed)" : "(no plus-ones)"} · ${autoApprove ? "auto-approve on" : "host approves"}.`;
 
   return (
@@ -85,66 +83,113 @@ export default function HolderIntroWizard({
       role="dialog"
       aria-modal="true"
       aria-labelledby="hwiz-title"
-      className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm flex items-end md:items-center justify-center p-4"
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 40,
+        background: "rgba(0,0,0,0.7)",
+        backdropFilter: "blur(4px)",
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "center",
+        padding: "var(--s-4)",
+      }}
     >
-      <div className="bg-s1 border border-line rounded-t-3xl md:rounded-3xl w-full max-w-md p-6 pb-7">
-        <div className="flex items-center justify-between mb-3">
-          <p className="label-mono">
+      <div
+        className="card"
+        style={{
+          width: "100%",
+          maxWidth: 440,
+          padding: "var(--s-6)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: "var(--s-3)",
+          }}
+        >
+          <div className="t-meta">
             {step + 1} of {CARDS.length}
-          </p>
+          </div>
           <button
             onClick={dismiss}
-            className="label-mono hover:text-cream"
             type="button"
+            className="t-meta"
+            style={{
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--fg-3)",
+              padding: 0,
+            }}
           >
             Skip
           </button>
         </div>
 
-        <div className="flex gap-1 mb-5">
+        <div
+          style={{
+            display: "flex",
+            gap: "var(--s-1)",
+            marginBottom: "var(--s-5)",
+          }}
+        >
           {CARDS.map((_, i) => (
             <div
               key={i}
-              className={`flex-1 h-1 rounded-full ${
-                i <= step ? "bg-coral" : "bg-s3"
-              }`}
+              style={{
+                flex: 1,
+                height: 4,
+                borderRadius: "var(--r-pill)",
+                background: i <= step ? "var(--fg)" : "var(--bg-4)",
+              }}
             />
           ))}
         </div>
 
         <h2
           id="hwiz-title"
-          className="font-display text-3xl text-cream uppercase tracking-wide leading-[0.95] mb-3"
+          className="t-display-sm"
+          style={{ marginBottom: "var(--s-3)" }}
         >
           {card.title}
         </h2>
-        <p className="text-cream/80 text-sm leading-relaxed mb-6">
+        <p
+          className="t-body-2"
+          style={{ marginBottom: "var(--s-6)" }}
+        >
           {isFirst ? firstBody : card.body}
         </p>
 
-        <div className="flex gap-2">
+        <div style={{ display: "flex", gap: "var(--s-2)" }}>
           {step > 0 && (
             <button
-              onClick={() => setStep(step - 1)}
-              className="btn-ghost flex-1"
+              className="btn btn--ghost"
               type="button"
+              onClick={() => setStep(step - 1)}
+              style={{ flex: 1 }}
             >
               Back
             </button>
           )}
           {!isLast ? (
             <button
-              onClick={() => setStep(step + 1)}
-              className="btn-primary flex-1"
+              className="btn btn--accent"
               type="button"
+              onClick={() => setStep(step + 1)}
+              style={{ flex: 1 }}
             >
               Next
             </button>
           ) : (
             <button
-              onClick={dismiss}
-              className="btn-primary flex-1"
+              className="btn btn--accent"
               type="button"
+              onClick={dismiss}
+              style={{ flex: 1 }}
             >
               Start adding names
             </button>

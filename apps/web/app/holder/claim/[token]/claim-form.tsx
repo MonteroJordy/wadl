@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { claimAllocationAction } from "./actions";
@@ -29,16 +29,28 @@ export default function ClaimForm({
 
   if (!signedIn) {
     return (
-      <div className="card">
-        <p className="label-mono mb-2">Sign in first</p>
-        <p className="text-cream/80 text-sm mb-4">
+      <div className="w-card" style={{ padding: 18 }}>
+        <div className="w-type-meta" style={{ marginBottom: 8 }}>
+          SIGN IN FIRST
+        </div>
+        <p
+          style={{
+            color: "var(--w-fg)",
+            opacity: 0.85,
+            fontSize: 14,
+            lineHeight: 1.5,
+            marginBottom: 16,
+          }}
+        >
           Verify the phone the host invited so we know it&apos;s really you.
         </p>
         <Link
           href={`/login?return=${encodeURIComponent(`/holder/claim/${token}`)}`}
-          className="btn-primary text-center block"
+          style={{ textDecoration: "none", display: "block" }}
         >
-          Sign in by phone
+          <button type="button" className="btn btn--accent" style={{ width: "100%" }}>
+            Sign in by phone
+          </button>
         </Link>
       </div>
     );
@@ -47,9 +59,9 @@ export default function ClaimForm({
   return (
     <button
       type="button"
+      className="btn btn--accent"
       onClick={claim}
       disabled={pending}
-      className="btn-primary"
     >
       {pending ? "Claiming…" : "Claim this allocation"}
     </button>

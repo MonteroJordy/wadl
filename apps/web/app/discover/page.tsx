@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { fmtDate, fmtTime } from "@/lib/format";
+import { fmtTime } from "@/lib/format";
+import { Cover, Logo } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +38,7 @@ export default async function DiscoverPage() {
   const { data: raw } = await admin
     .from("events")
     .select(
-      "id, name, description, flyer_url, event_nights(id, night_date, doors_at, capacity_cap), venue:venues(name, city)"
+      "id, name, description, flyer_url, event_nights(id, night_date, doors_at, capacity_cap), venue:venues(name, city)",
     )
     .order("created_at", { ascending: false });
 
@@ -53,195 +54,202 @@ export default async function DiscoverPage() {
     }))
     .filter((e) => e.event_nights.length > 0);
 
-  // Tonight = events whose first upcoming night is today.
   const tonightEvents = events.filter((e) =>
-    isSameDay(new Date(e.event_nights[0].doors_at), today)
+    isSameDay(new Date(e.event_nights[0].doors_at), today),
   );
   const upcomingEvents = events.filter((e) => !tonightEvents.includes(e));
 
   return (
-    <main id="main-content" className="min-h-screen relative">
-      {/* Sticky top chrome — anchors brand on every scroll */}
-      <header className="sticky top-0 z-30 backdrop-blur-md bg-bg/80 border-b border-line">
-        <div className="max-w-6xl mx-auto px-4 md:px-8 py-3 flex items-center justify-between">
-          <Link
-            href="/"
-            className="font-display text-2xl text-coral tracking-wide"
-          >
-            WADL
+    <main id="main-content" className="v5">
+      <div style={{ background: "var(--bg)", minHeight: "100vh" }}>
+        {/* Top nav */}
+        <div
+          style={{
+            height: 56,
+            padding: "0 var(--s-8)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            borderBottom: "1px solid var(--line)",
+          }}
+        >
+          <Link href="/" aria-label="WADL home" style={{ textDecoration: "none" }}>
+            <Logo size={18} />
           </Link>
-          <nav className="flex items-center gap-3">
-            <Link
-              href="/mytickets"
-              className="label-mono hover:text-cream transition"
-            >
-              My tickets
-            </Link>
+          <div style={{ display: "flex", gap: "var(--s-2)", alignItems: "center" }}>
             <Link
               href="/login"
-              className="font-sans font-semibold text-xs uppercase tracking-[0.16em] px-4 py-2 rounded-full bg-s2 border border-line text-cream hover:border-coral transition"
+              className="t-meta"
+              style={{ textDecoration: "none", color: "var(--fg-2)" }}
             >
-              Sign in
+              SIGN IN
             </Link>
-          </nav>
+            <Link href="/signup" className="btn btn--sm btn--accent" style={{ textDecoration: "none" }}>
+              I run a room
+            </Link>
+          </div>
         </div>
-      </header>
 
-      <div className="max-w-6xl mx-auto px-4 md:px-8 pt-8 md:pt-12 pb-16">
-        <p className="label-mono mb-2">Discover</p>
-        <h1 className="font-display text-5xl md:text-7xl text-cream uppercase tracking-wide leading-[0.9] mb-2">
-          Tonight
-          <span className="text-coral">.</span>
-        </h1>
-        <p className="text-muted text-base max-w-xl mb-10">
-          {events.length === 0
-            ? "Nothing live right now. New nights drop weekly."
-            : `${events.length} live event${events.length === 1 ? "" : "s"} · ${
-                tonightEvents.length
-              } tonight`}
-        </p>
+        {/* Hero header */}
+        <div
+          style={{
+            padding: "var(--s-8) var(--s-8) var(--s-6)",
+            borderBottom: "1px solid var(--line)",
+            background:
+              "radial-gradient(circle at 85% 20%, rgba(255,138,61,0.05) 0%, transparent 50%), transparent",
+          }}
+        >
+          <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+            Tonight, somewhere
+          </div>
+          <div className="t-display-md">
+            The list, the door,
+            <br />
+            the night.
+          </div>
+          <div
+            className="t-body-2"
+            style={{ marginTop: "var(--s-3)", maxWidth: 480 }}
+          >
+            Every guest list in town in one feed. Tap to RSVP. No login wall,
+            no third-party tracking.
+          </div>
+        </div>
 
         {events.length === 0 ? (
-          <section className="rounded-2xl border border-line bg-s1 px-6 py-16 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-coral/10 border border-coral/30 mx-auto mb-5 flex items-center justify-center">
-              <span className="font-display text-3xl text-coral">∅</span>
+          <div
+            style={{
+              padding: "var(--s-20) var(--s-8)",
+              textAlign: "center",
+              maxWidth: 420,
+              margin: "0 auto",
+            }}
+          >
+            <div className="t-display-sm">Nothing live</div>
+            <div className="t-body-2" style={{ marginTop: "var(--s-3)" }}>
+              New nights drop weekly.
             </div>
-            <p className="font-display text-3xl text-cream uppercase tracking-wide mb-2">
-              Nothing live
-            </p>
-            <p className="text-muted text-sm leading-relaxed max-w-md mx-auto">
-              Check back. New nights drop weekly. If you run a room, list yours.
-            </p>
             <Link
               href="/login"
-              className="inline-flex mt-6 items-center gap-2 bg-coral text-bg font-sans font-semibold text-xs uppercase tracking-[0.16em] px-5 py-3 rounded-full hover:brightness-110 transition"
+              className="btn btn--accent"
+              style={{ marginTop: "var(--s-6)" }}
             >
-              I run a room →
+              I run a room
             </Link>
-          </section>
+          </div>
         ) : (
           <>
             {tonightEvents.length > 0 && (
-              <section className="mb-10">
-                <p className="label-mono mb-3 flex items-center gap-2">
-                  <span
-                    className="inline-block w-1.5 h-1.5 rounded-full bg-coral"
-                    style={{ animation: "wadl-pulse-coral 2s infinite" }}
-                  />
-                  Live tonight · {tonightEvents.length}
-                </p>
-                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                  {tonightEvents.map((e) => (
-                    <EventCard key={e.id} event={e} hero />
-                  ))}
-                </div>
-              </section>
+              <Section label={`Happening tonight · ${tonightEvents.length}`}>
+                {tonightEvents.map((e) => (
+                  <DiscoverCard key={e.id} event={e} live />
+                ))}
+              </Section>
             )}
-
             {upcomingEvents.length > 0 && (
-              <section>
-                <p className="label-mono mb-3">
-                  Coming up · {upcomingEvents.length}
-                </p>
-                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                  {upcomingEvents.map((e) => (
-                    <EventCard key={e.id} event={e} />
-                  ))}
-                </div>
-              </section>
+              <Section label={`Coming up · ${upcomingEvents.length}`}>
+                {upcomingEvents.map((e) => (
+                  <DiscoverCard key={e.id} event={e} />
+                ))}
+              </Section>
             )}
           </>
         )}
 
-        <p className="label-mono mt-12 text-center">
-          Are you a venue, brand, or promoter?{" "}
-          <Link href="/login" className="text-coral hover:brightness-125 underline">
-            Run your own door →
-          </Link>
-        </p>
+        <div style={{ height: 48 }} />
       </div>
-
-      <style>{`
-        @keyframes wadl-pulse-coral {
-          0% { box-shadow: 0 0 0 0 rgba(255,74,43,0.7); }
-          70% { box-shadow: 0 0 0 8px rgba(255,74,43,0); }
-          100% { box-shadow: 0 0 0 0 rgba(255,74,43,0); }
-        }
-      `}</style>
     </main>
   );
 }
 
-function EventCard({
+function Section({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div style={{ padding: "var(--s-8)" }}>
+      <div className="t-meta" style={{ marginBottom: "var(--s-4)" }}>
+        {label}
+      </div>
+      <div
+        style={{
+          display: "grid",
+          gap: "var(--s-4)",
+          gridTemplateColumns: "repeat(3, 1fr)",
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function DiscoverCard({
   event,
-  hero,
+  live,
 }: {
   event: DiscoverRow;
-  hero?: boolean;
+  live?: boolean;
 }) {
   const first = event.event_nights[0];
+  const cap = first.capacity_cap ?? null;
+  const venueLine = [event.venue?.name, event.venue?.city]
+    .filter(Boolean)
+    .join(" · ");
+  const date = new Date(first.doors_at);
+  const dow = date.toLocaleDateString("en-US", { weekday: "short" });
+  const metaLine = [
+    dow,
+    venueLine || null,
+    `${fmtTime(first.doors_at)}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
     <Link
       href={`/e/${event.id}`}
-      className={`group relative block rounded-2xl overflow-hidden border transition ${
-        hero
-          ? "border-coral/30 hover:border-coral"
-          : "border-line hover:border-coral/60"
-      }`}
+      className="card card--hover"
+      style={{ textDecoration: "none", color: "inherit", display: "block" }}
     >
-      <div
-        className="w-full bg-s2 relative"
-        style={{ aspectRatio: "4 / 5" }}
-      >
-        {event.flyer_url ? (
-          <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={event.flyer_url}
-              alt={event.name}
-              className="w-full h-full object-cover transition group-hover:scale-[1.02]"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/30 to-transparent" />
-          </>
-        ) : (
+      <Cover seed={event.name} height={200}>
+        <div
+          style={{
+            position: "absolute",
+            left: "var(--s-4)",
+            right: "var(--s-4)",
+            bottom: "var(--s-4)",
+          }}
+        >
           <div
-            className="absolute inset-0 flex items-center justify-center"
-            style={{
-              background:
-                "linear-gradient(135deg, #1a050d 0%, #0a0a0a 50%, #14060a 100%)",
-            }}
+            className="t-meta"
+            style={{ color: "rgba(255,255,255,0.7)" }}
           >
-            <p className="font-display text-7xl text-coral/30 uppercase">
-              {event.name.slice(0, 2)}
-            </p>
+            {metaLine}
           </div>
-        )}
-        {hero && (
-          <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 bg-coral/90 backdrop-blur-sm px-2.5 py-1 rounded-full font-mono text-[9px] uppercase tracking-widest text-bg font-semibold">
-            <span
-              className="w-1.5 h-1.5 rounded-full bg-bg"
-              style={{ animation: "wadl-pulse-coral 2s infinite" }}
-            />
-            Tonight
+          <div
+            className="t-h1"
+            style={{ marginTop: "var(--s-1)", color: "#fff" }}
+          >
+            {event.name}
           </div>
-        )}
-      </div>
-      <div className="absolute inset-x-0 bottom-0 p-4">
-        <p className="label-mono mb-1 text-cream/70">
-          {fmtDate(first.night_date)} · Doors {fmtTime(first.doors_at)}
-          {event.event_nights.length > 1 && (
-            <span className="text-cream"> · +{event.event_nights.length - 1} more</span>
-          )}
-        </p>
-        <p className="font-display text-2xl text-cream uppercase tracking-wide leading-tight line-clamp-2">
-          {event.name}
-        </p>
-        {event.venue?.name && (
-          <p className="label-mono mt-1">
-            {event.venue.name}
-            {event.venue.city ? ` · ${event.venue.city}` : ""}
-          </p>
-        )}
+        </div>
+      </Cover>
+      <div
+        style={{
+          padding: "var(--s-4)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <span className={"chip " + (live ? "chip--accent" : "chip--ghost")}>
+          {live ? "Live tonight" : cap ? `${cap} cap` : "On sale"}
+        </span>
+        <span className={"btn btn--sm " + (live ? "btn--accent" : "")}>RSVP</span>
       </div>
     </Link>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import ConfirmDialog from "@/components/confirm-dialog";
 import { seedDryRunAction, clearDryRunAction } from "./actions";
 
 export default function DryRunControls({
@@ -13,6 +14,7 @@ export default function DryRunControls({
   const [count, setCount] = useState("40");
   const [simulateScans, setSimulateScans] = useState(true);
   const [pending, startTransition] = useTransition();
+  const [clearOpen, setClearOpen] = useState(false);
   const [msg, setMsg] = useState<{
     kind: "ok" | "err";
     text: string;
@@ -40,29 +42,40 @@ export default function DryRunControls({
   }
 
   function clear() {
-    if (
-      !confirm(
-        `Delete all ${existingCount} DRYRUN guests on this event? Real guests stay.`
-      )
-    )
-      return;
+    setClearOpen(true);
+  }
+
+  function doClear() {
     setMsg(null);
     startTransition(async () => {
       const res = await clearDryRunAction(eventId);
       if (res.ok) {
-        setMsg({ kind: "ok", text: `Cleared ${res.deleted} DRYRUN guests.` });
+        setMsg({
+          kind: "ok",
+          text: `Cleared ${res.deleted} DRYRUN guests.`,
+        });
       } else {
         setMsg({ kind: "err", text: res.error });
       }
+      setClearOpen(false);
     });
   }
 
   return (
-    <section className="card">
-      <p className="label-mono mb-3">Generate</p>
-      <div className="grid grid-cols-2 gap-3 mb-4">
+    <section className="card" style={{ padding: "var(--s-5)" }}>
+      <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+        Generate
+      </div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "var(--s-3)",
+          marginBottom: "var(--s-4)",
+        }}
+      >
         <div>
-          <label className="label-mono block mb-1" htmlFor="count">
+          <label htmlFor="count" className="t-meta">
             Count (1–200)
           </label>
           <input
@@ -74,50 +87,71 @@ export default function DryRunControls({
             onChange={(e) =>
               setCount(e.target.value.replace(/[^\d]/g, "").slice(0, 3))
             }
-            className="input-dark"
+            className="input"
+            style={{ marginTop: "var(--s-2)" }}
           />
         </div>
-        <label className="flex items-center gap-2 cursor-pointer mt-6">
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "var(--s-2)",
+            cursor: "pointer",
+            marginTop: "var(--s-6)",
+          }}
+        >
           <input
             type="checkbox"
             checked={simulateScans}
             onChange={(e) => setSimulateScans(e.target.checked)}
-            className="w-4 h-4 accent-coral"
+            style={{ width: 16, height: 16, accentColor: "var(--fg)" }}
           />
-          <span className="text-cream font-sans text-sm">
-            Simulate ~80% scans
-          </span>
+          <span className="t-body">Simulate ~80% scans</span>
         </label>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div style={{ display: "flex", gap: "var(--s-2)" }}>
         <button
           type="button"
+          className="btn btn--accent"
           onClick={seed}
           disabled={pending}
-          className="bg-coral text-bg font-sans font-semibold text-xs uppercase tracking-[0.16em] py-3 rounded-md hover:brightness-110 transition disabled:opacity-50"
         >
           {pending ? "Working…" : "Seed dry run"}
         </button>
         <button
           type="button"
+          className="btn btn--danger"
           onClick={clear}
           disabled={pending || existingCount === 0}
-          className="bg-transparent border border-coral/40 text-coral font-sans font-semibold text-xs uppercase tracking-[0.16em] py-3 rounded-md hover:bg-coral/10 transition disabled:opacity-30 disabled:cursor-not-allowed"
         >
-          {pending ? "…" : `Clear ${existingCount > 0 ? `(${existingCount})` : ""}`}
+          {pending
+            ? "…"
+            : `Clear ${existingCount > 0 ? `(${existingCount})` : ""}`}
         </button>
       </div>
 
       {msg && (
-        <p
-          className={`label-mono mt-3 ${
-            msg.kind === "ok" ? "text-mint" : "text-coral"
-          }`}
+        <div
+          className="t-meta"
+          style={{
+            marginTop: "var(--s-3)",
+            color: msg.kind === "ok" ? "var(--ok)" : "var(--err)",
+          }}
         >
           {msg.text}
-        </p>
+        </div>
       )}
+      <ConfirmDialog
+        open={clearOpen}
+        title={`Delete all ${existingCount} DRYRUN guests?`}
+        body="Real guests stay untouched. Only the seeded test guests get cleared. Cannot be undone."
+        confirmLabel="Clear DRYRUN guests"
+        danger
+        pending={pending}
+        onConfirm={doClear}
+        onCancel={() => setClearOpen(false)}
+      />
     </section>
   );
 }

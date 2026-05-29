@@ -18,21 +18,34 @@ export default function AnalyticsTabs() {
   return (
     <nav
       aria-label="Analytics sections"
-      className="flex gap-1 overflow-x-auto pb-2 mb-6"
+      style={{
+        borderBottom: "1px solid var(--line)",
+        padding: "0 var(--s-8)",
+        display: "flex",
+        gap: "var(--s-1)",
+        overflowX: "auto",
+      }}
     >
       {TABS.map((t) => {
         const active = t.exact ? path === t.href : path.startsWith(t.href);
         return (
-          <Link
-            key={t.href}
-            href={t.href}
-            className={`shrink-0 px-3 py-1.5 rounded-full border text-[10px] font-mono uppercase tracking-wider ${
-              active
-                ? "border-coral bg-s2 text-cream"
-                : "border-line bg-s1 text-muted hover:text-cream"
-            }`}
-          >
-            {t.label}
+          <Link key={t.href} href={t.href} style={{ textDecoration: "none" }}>
+            <div
+              style={{
+                padding: "var(--s-4)",
+                color: active ? "var(--fg)" : "var(--fg-3)",
+                fontSize: "var(--ts-md)",
+                fontWeight: active ? 500 : 400,
+                borderBottom: active
+                  ? "2px solid var(--fg)"
+                  : "2px solid transparent",
+                marginBottom: -1,
+                whiteSpace: "nowrap",
+                transition: "color .12s",
+              }}
+            >
+              {t.label}
+            </div>
           </Link>
         );
       })}

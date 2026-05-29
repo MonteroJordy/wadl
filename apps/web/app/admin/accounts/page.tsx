@@ -1,7 +1,9 @@
-import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { PageHeader } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
+
+const COLS = "1.4fr 100px 1.6fr 120px";
 
 interface Row {
   id: string;
@@ -16,51 +18,64 @@ export default async function AdminAccountsPage() {
   const { data } = await admin
     .from("accounts")
     .select(
-      "id, display_name, account_type, created_at, owner:profiles!owner_user_id(full_name, email)"
+      "id, display_name, account_type, created_at, owner:profiles!owner_user_id(full_name, email)",
     )
     .order("created_at", { ascending: false });
   const rows = (data ?? []) as unknown as Row[];
 
   return (
-    <main id="main-content" className="mx-auto max-w-5xl px-6 pt-8 pb-12">
-      <h1 className="display-lg mb-2">Accounts</h1>
-      <p className="label-mono mb-6">{rows.length} total</p>
-
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="label-mono text-left">
-            <tr>
-              <th className="pb-2">Name</th>
-              <th>Type</th>
-              <th>Owner</th>
-              <th>Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id} className="border-t border-line">
-                <td className="py-2 text-cream">{r.display_name}</td>
-                <td className="py-2 label-mono">{r.account_type}</td>
-                <td className="py-2 text-cream">
-                  {r.owner?.full_name ?? "—"}
-                  {r.owner?.email && (
-                    <span className="text-muted text-xs ml-2">{r.owner.email}</span>
-                  )}
-                </td>
-                <td className="py-2 label-mono">
-                  {new Date(r.created_at).toLocaleDateString()}
-                </td>
-              </tr>
+    <main id="main-content">
+      <PageHeader
+        eyebrow="Platform"
+        title="Accounts"
+        sub={`${rows.length} total`}
+      />
+      <div style={{ padding: "var(--s-8)" }}>
+        <div className="card" style={{ overflowX: "auto" }}>
+          <div
+            className="row"
+            style={{
+              gridTemplateColumns: COLS,
+              padding: "var(--s-3) var(--s-5)",
+              background: "var(--bg)",
+            }}
+          >
+            {["Name", "Type", "Owner", "Created"].map((h) => (
+              <span key={h} className="t-meta">
+                {h}
+              </span>
             ))}
-          </tbody>
-        </table>
+          </div>
+          {rows.map((r) => (
+            <div
+              key={r.id}
+              className="row"
+              style={{
+                gridTemplateColumns: COLS,
+                padding: "var(--s-4) var(--s-5)",
+              }}
+            >
+              <span className="t-body" style={{ color: "var(--fg)" }}>
+                {r.display_name}
+              </span>
+              <span className="chip">{r.account_type}</span>
+              <span className="t-body-2">
+                {r.owner?.full_name ?? "—"}
+                {r.owner?.email && (
+                  <span
+                    style={{ color: "var(--fg-3)", marginLeft: "var(--s-2)" }}
+                  >
+                    {r.owner.email}
+                  </span>
+                )}
+              </span>
+              <span className="t-meta">
+                {new Date(r.created_at).toLocaleDateString()}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
-
-      <p className="label-mono mt-8">
-        <Link href="/admin" className="hover:text-cream">
-          ← Back to stats
-        </Link>
-      </p>
     </main>
   );
 }

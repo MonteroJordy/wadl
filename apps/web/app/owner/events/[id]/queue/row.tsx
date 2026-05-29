@@ -32,34 +32,41 @@ export default function QueueRow({
   }
 
   return (
-    <div className="card">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="font-sans text-cream font-semibold truncate">
-            {fullName}
-            {plusOnes > 0 && (
-              <span className="text-muted font-normal"> +{plusOnes}</span>
-            )}
-          </p>
-          <p className="label-mono mt-1 truncate">
-            {holderLabel} · {addedAgo}
-          </p>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-2 mt-3">
+    <div
+      className="row"
+      style={{ gridTemplateColumns: "1fr 160px 100px 200px" }}
+    >
+      <span className="t-h1 truncate">
+        {fullName}
+        {plusOnes > 0 && (
+          <span style={{ color: "var(--fg-3)", fontWeight: 400 }}>
+            {" "}
+            +{plusOnes}
+          </span>
+        )}
+      </span>
+      <span className="t-body-2 truncate">{holderLabel}</span>
+      <span className="t-meta">{addedAgo}</span>
+      <div
+        style={{
+          display: "flex",
+          gap: "var(--s-2)",
+          justifyContent: "flex-end",
+        }}
+      >
         <button
           type="button"
+          className="btn btn--ghost btn--sm"
           onClick={reject}
           disabled={pending}
-          className="bg-s3 text-cream font-sans text-sm uppercase tracking-[0.14em] py-2 rounded-md border border-line hover:border-coral disabled:opacity-40"
         >
           Deny
         </button>
         <button
           type="button"
+          className="btn btn--sm"
           onClick={approve}
           disabled={pending}
-          className="bg-coral text-bg font-sans text-sm font-semibold uppercase tracking-[0.14em] py-2 rounded-md disabled:opacity-40"
         >
           Approve
         </button>

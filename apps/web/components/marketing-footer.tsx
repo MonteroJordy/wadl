@@ -1,41 +1,87 @@
 import Link from "next/link";
+import { Logo } from "@/components/v5";
+
+const LINKS: Array<[string, string]> = [
+  ["Pricing", "/pricing"],
+  ["About", "/about"],
+  ["Tonight", "/discover"],
+  ["Changelog", "/changelog"],
+  ["Status", "/status"],
+  ["Shortcuts", "/shortcuts"],
+  ["Press", "/press"],
+  ["Careers", "/careers"],
+  ["Privacy", "/privacy"],
+  ["Terms", "/terms"],
+];
 
 export default function MarketingFooter() {
   return (
-    <footer className="bg-bg border-t border-line px-6 md:px-12 py-10">
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+    <footer
+      style={{
+        background: "var(--bg)",
+        borderTop: "1px solid var(--line)",
+        padding: "var(--s-10) var(--s-6)",
+        position: "relative",
+      }}
+    >
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 2,
+          background: "var(--accent-grad)",
+          opacity: 0.7,
+        }}
+      />
+      <div
+        style={{
+          maxWidth: 1200,
+          margin: "0 auto",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-end",
+          gap: "var(--s-6)",
+          flexWrap: "wrap",
+        }}
+      >
         <div>
-          <p className="font-display text-2xl text-coral tracking-wide mb-2">
-            WADL
-          </p>
-          <p className="label-mono">
-            One door, one list, one truth.
-          </p>
-          <p className="label-mono mt-2 text-muted">
-            © {new Date().getFullYear()} WADL. Built in Miami.
-          </p>
+          <Logo size={24} />
+          <div className="t-meta" style={{ marginTop: "var(--s-3)" }}>
+            ONE DOOR · ONE LIST · ONE TRUTH
+          </div>
+          <div
+            className="t-meta"
+            style={{ marginTop: "var(--s-2)", color: "var(--fg-3)" }}
+          >
+            © {new Date().getFullYear()} WADL · BUILT IN MIAMI
+          </div>
         </div>
-        <nav className="flex flex-wrap gap-x-6 gap-y-3">
-          <Link href="/pricing" className="label-mono hover:text-cream">
-            Pricing
-          </Link>
-          <Link href="/discover" className="label-mono hover:text-cream">
-            Tonight
-          </Link>
-          <Link href="/docs/embed" className="label-mono hover:text-cream">
-            Embed widget
-          </Link>
-          <Link href="/privacy" className="label-mono hover:text-cream">
-            Privacy
-          </Link>
-          <Link href="/terms" className="label-mono hover:text-cream">
-            Terms
-          </Link>
+        <nav
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "var(--s-6)",
+          }}
+        >
+          {LINKS.map(([label, href]) => (
+            <Link
+              key={href}
+              href={href}
+              className="t-meta"
+              style={{ textDecoration: "none", color: "var(--fg-2)" }}
+            >
+              {label.toUpperCase()}
+            </Link>
+          ))}
           <a
             href="mailto:jmontero@mainframeagency.com"
-            className="label-mono hover:text-cream"
+            className="t-meta"
+            style={{ textDecoration: "none", color: "var(--fg-2)" }}
           >
-            Contact
+            CONTACT
           </a>
         </nav>
       </div>

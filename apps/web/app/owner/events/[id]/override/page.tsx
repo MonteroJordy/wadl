@@ -1,6 +1,7 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireOwnerContext, fmtDate } from "@/lib/owner";
+import { requireOwnerContext } from "@/lib/owner";
+import { fmtDate } from "@/lib/format";
+import { Breadcrumb, PageHeader, EventSubNav } from "@/components/v5";
 import OverrideForm from "./override-form";
 
 export const dynamic = "force-dynamic";
@@ -15,9 +16,7 @@ export default async function OwnerOverridePage({
 
   const { data: event } = await supabase
     .from("events")
-    .select(
-      "id, name, event_nights(id, night_date, doors_at, is_frozen)"
-    )
+    .select("id, name, event_nights(id, night_date, doors_at, is_frozen)")
     .eq("id", params.id)
     .eq("account_id", account.id)
     .maybeSingle<{
@@ -43,26 +42,29 @@ export default async function OwnerOverridePage({
   return (
     <main
       id="main-content"
-      className="mx-auto max-w-frame md:max-w-2xl px-6 pt-12 pb-8 md:py-12"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
     >
-      <header className="mb-6">
-        <Link
-          href={`/owner/events/${event.id}`}
-          className="label-mono hover:text-cream"
-        >
-          ← {event.name}
-        </Link>
-        <h1 className="display-lg mt-3 mb-2">Owner override</h1>
-        <p className="label-mono">
-          Manually admit a guest. Bypasses caps + lockdown. Audit-logged.
-        </p>
-      </header>
+      <Breadcrumb
+        items={[
+          ["Events", "/owner"],
+          [event.name, `/owner/events/${event.id}`],
+          "Override",
+        ]}
+      />
+      <PageHeader
+        eyebrow="Override"
+        title="Owner override"
+        sub="Manually admit a guest. Bypasses caps + lockdown. Audit-logged."
+      />
+      <EventSubNav active="guests" eventId={event.id} />
 
-      {nights.length === 0 ? (
-        <p className="text-muted">Add a night first.</p>
-      ) : (
-        <OverrideForm eventId={event.id} nights={nights} />
-      )}
+      <div style={{ padding: "var(--s-8)", maxWidth: 720 }}>
+        {nights.length === 0 ? (
+          <div className="t-body-2">Add a night first.</div>
+        ) : (
+          <OverrideForm eventId={event.id} nights={nights} />
+        )}
+      </div>
     </main>
   );
 }

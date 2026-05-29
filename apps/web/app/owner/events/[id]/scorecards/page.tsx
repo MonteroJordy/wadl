@@ -1,9 +1,8 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOwnerContext } from "@/lib/owner";
 import { computeScorecards } from "@/lib/scorecards";
 import ScorecardRow from "@/components/scorecard-row";
-import EmptyState from "@/components/empty-state";
+import { Breadcrumb, PageHeader, EventSubNav } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 
@@ -25,39 +24,62 @@ export default async function EventScorecardsPage({
   const cards = await computeScorecards(account.id, event.id);
 
   return (
-    <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 py-12">
-      <header className="flex items-center justify-between pb-4">
-        <Link
-          href={`/owner/events/${event.id}`}
-          className="label-mono hover:text-cream transition"
-        >
-          ← Back
-        </Link>
-        <p className="label-mono">Scorecards</p>
-      </header>
+    <main
+      id="main-content"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
+    >
+      <Breadcrumb
+        items={[
+          ["Events", "/owner"],
+          [event.name, `/owner/events/${event.id}`],
+          "Scorecards",
+        ]}
+      />
+      <PageHeader
+        eyebrow="Scorecards"
+        title={event.name}
+        sub="Single-event leaderboard · sorted by show rate"
+      />
+      <EventSubNav active="overview" eventId={event.id} />
 
-      <h1 className="display-lg leading-[0.95] mb-2">{event.name}</h1>
-      <p className="label-mono mb-6">
-        Single-event leaderboard · sorted by show rate
-      </p>
-
-      {cards.length === 0 ? (
-        <EmptyState
-          title="No scorecard data yet"
-          body="Approve and scan in some guests, then come back to see who's pulling weight."
-        />
-      ) : (
-        <div className="flex flex-col gap-2">
-          {cards.map((c, i) => (
-            <ScorecardRow
-              key={c.key}
-              card={c}
-              rank={i + 1}
-              href={`/owner/scorecards/${encodeURIComponent(c.key)}`}
-            />
-          ))}
-        </div>
-      )}
+      <div style={{ padding: "var(--s-8)" }}>
+        {cards.length === 0 ? (
+          <div
+            className="card"
+            style={{ padding: "var(--s-16) var(--s-8)", textAlign: "center" }}
+          >
+            <div className="t-h1">No scorecard data yet</div>
+            <div
+              className="t-body-2"
+              style={{
+                marginTop: "var(--s-3)",
+                maxWidth: 460,
+                marginInline: "auto",
+              }}
+            >
+              Approve and scan in some guests, then come back to see who&apos;s
+              pulling weight.
+            </div>
+          </div>
+        ) : (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "var(--s-2)",
+            }}
+          >
+            {cards.map((c, i) => (
+              <ScorecardRow
+                key={c.key}
+                card={c}
+                rank={i + 1}
+                href={`/owner/scorecards/${encodeURIComponent(c.key)}`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </main>
   );
 }

@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { fmtDate, fmtTime } from "@/lib/format";
 import ShareEventButton from "@/components/share-event-button";
 import { getAppUrl } from "@/lib/app-url";
+import { CoverHeader, Logo } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,8 @@ export async function generateMetadata({
   }
   const venueLine = [ev.venue?.name, ev.venue?.city].filter(Boolean).join(" · ");
   const description =
-    ev.description?.slice(0, 200) ?? `RSVP to ${ev.name}${venueLine ? ` at ${venueLine}` : ""}`;
+    ev.description?.slice(0, 200) ??
+    `RSVP to ${ev.name}${venueLine ? ` at ${venueLine}` : ""}`;
   const ogImage = `/api/og/event/${params.eventId}`;
   return {
     title: ev.name,
@@ -63,7 +65,11 @@ interface EventDetail {
     capacity_cap: number | null;
     is_frozen: boolean;
   }>;
-  venue: { name: string | null; city: string | null; address: string | null } | null;
+  venue: {
+    name: string | null;
+    city: string | null;
+    address: string | null;
+  } | null;
 }
 
 export default async function EventDetailPage({
@@ -75,7 +81,7 @@ export default async function EventDetailPage({
   const { data: event } = await admin
     .from("events")
     .select(
-      "id, name, description, flyer_url, event_nights(id, night_date, doors_at, cutoff_at, capacity_cap, is_frozen), venue:venues(name, city, address)"
+      "id, name, description, flyer_url, event_nights(id, night_date, doors_at, cutoff_at, capacity_cap, is_frozen), venue:venues(name, city, address)",
     )
     .eq("id", params.eventId)
     .maybeSingle<EventDetail>();
@@ -83,176 +89,351 @@ export default async function EventDetailPage({
   if (!event) notFound();
 
   const nights = [...event.event_nights].sort((a, b) =>
-    a.doors_at < b.doors_at ? -1 : 1
+    a.doors_at < b.doors_at ? -1 : 1,
   );
 
   const now = Date.now();
-  const upcoming = nights.filter((n) => new Date(n.doors_at).getTime() >= now - 2 * 60 * 60_000);
+  const upcoming = nights.filter(
+    (n) => new Date(n.doors_at).getTime() >= now - 2 * 60 * 60_000,
+  );
   const showNights = upcoming.length > 0 ? upcoming : nights;
 
-  return (
-    <main id="main-content" className="min-h-screen">
-      {/* Sticky chrome */}
-      <header className="sticky top-0 z-30 backdrop-blur-md bg-bg/80 border-b border-line">
-        <div className="max-w-5xl mx-auto px-4 md:px-8 py-3 flex items-center justify-between">
-          <Link href="/discover" className="label-mono hover:text-cream transition">
-            ← Discover
-          </Link>
-          <Link
-            href="/"
-            className="font-display text-2xl text-coral tracking-wide"
-          >
-            WADL
-          </Link>
-          <Link href="/mytickets" className="label-mono hover:text-cream transition">
-            My tickets
-          </Link>
-        </div>
-      </header>
+  const allPast = nights.length > 0 && upcoming.length === 0;
+  const allFrozen = nights.length > 0 && nights.every((n) => n.is_frozen);
+  const firstNight = showNights[0];
 
-      <div className="max-w-5xl mx-auto px-4 md:px-8 pt-6 md:pt-10 pb-16 grid md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-6 md:gap-10">
-        {/* Flyer column */}
+  const eyebrowParts: string[] = [];
+  if (firstNight) {
+    eyebrowParts.push(fmtDate(firstNight.night_date));
+    eyebrowParts.push(`doors ${fmtTime(firstNight.doors_at)}`);
+  }
+  if (event.venue?.name) {
+    eyebrowParts.push(
+      [event.venue.name, event.venue.city].filter(Boolean).join(" · "),
+    );
+  }
+
+  let heroAction: React.ReactNode = null;
+  if (allPast) heroAction = <span className="chip">Event ended</span>;
+  else if (allFrozen)
+    heroAction = <span className="chip chip--warn">At capacity</span>;
+  else if (nights.length > 1)
+    heroAction = <span className="chip chip--ok">{nights.length} nights</span>;
+  else heroAction = <span className="chip chip--ok">On sale</span>;
+
+  return (
+    <main
+      id="main-content"
+      className="v5"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
+    >
+      {/* top nav */}
+      <div
+        style={{
+          height: 56,
+          padding: "0 var(--s-6)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          borderBottom: "1px solid var(--line)",
+        }}
+      >
+        <Link href="/discover" style={{ textDecoration: "none" }}>
+          <Logo size={18} />
+        </Link>
+        <Link
+          href="/login"
+          className="btn btn--ghost"
+          style={{ textDecoration: "none" }}
+        >
+          Sign in
+        </Link>
+      </div>
+
+      <CoverHeader
+        seed={event.name}
+        eyebrow={eyebrowParts.join(" · ")}
+        title={event.name}
+        actions={heroAction}
+        height={500}
+      />
+
+      <div
+        className="event-grid"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr",
+          gap: "var(--s-12)",
+          padding: "var(--s-12)",
+        }}
+      >
+        {/* left — facts */}
         <div>
-          {event.flyer_url ? (
-            <div
-              className="w-full rounded-2xl overflow-hidden border border-line"
-              style={{ aspectRatio: "4 / 5" }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={event.flyer_url}
-                alt={event.name}
-                className="w-full h-full object-cover"
-              />
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(4, 1fr)",
+              borderTop: "1px solid var(--line)",
+              borderBottom: "1px solid var(--line)",
+            }}
+          >
+            {[
+              ["Date", firstNight ? fmtDate(firstNight.night_date) : "TBA"],
+              ["Doors", firstNight ? fmtTime(firstNight.doors_at) : "TBA"],
+              [
+                "Close",
+                firstNight?.cutoff_at ? fmtTime(firstNight.cutoff_at) : "Late",
+              ],
+              [
+                "Cap",
+                firstNight?.capacity_cap
+                  ? String(firstNight.capacity_cap)
+                  : "—",
+              ],
+            ].map(([k, v], i) => (
+              <div
+                key={k}
+                style={{
+                  padding: "var(--s-5) 0",
+                  borderRight: i < 3 ? "1px solid var(--line)" : "none",
+                  paddingLeft: i === 0 ? 0 : "var(--s-5)",
+                }}
+              >
+                <div className="t-meta">{k}</div>
+                <div
+                  className="t-display-sm"
+                  style={{ marginTop: "var(--s-2)" }}
+                >
+                  {v}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {event.venue?.name && (
+            <div style={{ marginTop: "var(--s-10)" }}>
+              <div className="t-meta">Venue</div>
+              <div
+                className="t-display-sm"
+                style={{ marginTop: "var(--s-2)" }}
+              >
+                {event.venue.name}
+              </div>
+              {(event.venue.address || event.venue.city) && (
+                <div className="t-body-2" style={{ marginTop: "var(--s-1)" }}>
+                  {[event.venue.address, event.venue.city]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </div>
+              )}
             </div>
-          ) : (
-            <div
-              className="w-full rounded-2xl flex items-center justify-center border border-line"
-              style={{
-                aspectRatio: "4 / 5",
-                background:
-                  "linear-gradient(135deg, #1a050d 0%, #0a0a0a 50%, #14060a 100%)",
-              }}
-            >
-              <p className="font-display text-7xl text-coral/30 uppercase">
-                {event.name.slice(0, 2)}
+          )}
+
+          {event.description && (
+            <div style={{ marginTop: "var(--s-10)" }}>
+              <div className="t-meta">About</div>
+              <p
+                className="t-body"
+                style={{
+                  marginTop: "var(--s-2)",
+                  whiteSpace: "pre-wrap",
+                  color: "var(--fg-2)",
+                }}
+              >
+                {event.description}
               </p>
+            </div>
+          )}
+
+          {!allPast && !allFrozen && (
+            <div style={{ marginTop: "var(--s-10)" }}>
+              <div className="t-meta">
+                {upcoming.length > 0 ? "Upcoming nights" : "All nights"}
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "var(--s-2)",
+                  marginTop: "var(--s-3)",
+                }}
+              >
+                {showNights.map((n) => {
+                  const canRsvp = !n.is_frozen;
+                  return (
+                    <div
+                      key={n.id}
+                      className="card"
+                      style={{
+                        padding: "var(--s-4)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: "var(--s-3)",
+                      }}
+                    >
+                      <div>
+                        <div className="t-h2">{fmtDate(n.night_date)}</div>
+                        <div
+                          className="t-meta"
+                          style={{ marginTop: "var(--s-1)" }}
+                        >
+                          Doors {fmtTime(n.doors_at)}
+                          {n.is_frozen ? " · closed" : ""}
+                        </div>
+                      </div>
+                      {canRsvp ? (
+                        <Link
+                          href={`/e/${event.id}/rsvp?night=${n.id}`}
+                          className="btn btn--sm"
+                          style={{ textDecoration: "none" }}
+                        >
+                          RSVP
+                        </Link>
+                      ) : (
+                        <span className="chip">Closed</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div style={{ marginTop: "var(--s-5)" }}>
+                <ShareEventButton
+                  url={`${getAppUrl()}/e/${event.id}`}
+                  title={event.name}
+                  text={`${event.name} on WADL${event.venue?.name ? ` · ${event.venue.name}` : ""}`}
+                />
+              </div>
             </div>
           )}
         </div>
 
-        {/* Info column */}
-        <div className="flex flex-col">
-          <h1 className="font-display text-4xl md:text-6xl text-cream uppercase tracking-wide leading-[0.95] mb-3">
-            {event.name}
-          </h1>
-
-      {event.venue?.name && (
-        <div className="mb-4">
-          <p className="label-mono">Venue</p>
-          <p className="font-sans text-cream">{event.venue.name}</p>
-          <p className="label-mono">
-            {[event.venue.address, event.venue.city].filter(Boolean).join(" · ")}
-          </p>
-        </div>
-      )}
-
-      {event.description && (
-        <div className="mb-6">
-          <p className="label-mono">About</p>
-          <p className="text-cream text-sm leading-relaxed whitespace-pre-wrap">
-            {event.description}
-          </p>
-        </div>
-      )}
-
-      {(() => {
-        const allFrozen = nights.length > 0 && nights.every((n) => n.is_frozen);
-        const allPast = nights.length > 0 && upcoming.length === 0;
-        if (allPast) {
-          return (
-            <div className="card border-line text-center mb-6">
-              <p className="label-mono mb-2">This event ended</p>
-              <p className="text-cream/80 text-sm mb-3">
-                Doors are closed. Tell the venue how it went, or browse what&apos;s next.
+        {/* right — RSVP panel */}
+        <div className="card" style={{ padding: "var(--s-6)", height: "fit-content" }}>
+          {allPast ? (
+            <>
+              <span className="chip">Event ended</span>
+              <p
+                className="t-body-2"
+                style={{ marginTop: "var(--s-3)" }}
+              >
+                Doors are closed. Tell the venue how it went, or browse
+                what&apos;s next.
               </p>
-              <div className="grid grid-cols-2 gap-2">
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "var(--s-2)",
+                  marginTop: "var(--s-5)",
+                }}
+              >
                 <Link
                   href={`/e/${event.id}/feedback`}
-                  className="btn-ghost text-center"
+                  className="btn btn--ghost"
+                  style={{ textDecoration: "none" }}
                 >
                   Leave feedback
                 </Link>
                 <Link
                   href="/discover"
-                  className="btn-primary text-center"
+                  className="btn"
+                  style={{ textDecoration: "none" }}
                 >
-                  Discover events
+                  Discover
                 </Link>
               </div>
-            </div>
-          );
-        }
-        if (allFrozen) {
-          return (
-            <div className="card border-coral mb-6">
-              <p className="label-mono text-coral mb-1">⚠ At capacity</p>
-              <p className="text-cream/80 text-sm">
-                Every night sold out. Want to be next time? Follow the host
-                for the next drop.
+            </>
+          ) : allFrozen ? (
+            <>
+              <span className="chip chip--warn">At capacity</span>
+              <p
+                className="t-body-2"
+                style={{ marginTop: "var(--s-3)" }}
+              >
+                Every night sold out. Follow the host for the next drop.
               </p>
-            </div>
-          );
-        }
-        return null;
-      })()}
-
-      <p className="label-mono mb-2">{upcoming.length > 0 ? "Upcoming nights" : "All nights"}</p>
-      <div className="flex flex-col gap-2 mb-6">
-        {showNights.map((n) => {
-          const canRsvp = !n.is_frozen;
-          return (
-            <div key={n.id} className="card">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-sans text-cream font-semibold">
-                    {fmtDate(n.night_date)}
-                  </p>
-                  <p className="label-mono mt-1">
-                    Doors {fmtTime(n.doors_at)}
-                    {n.is_frozen ? " · CLOSED" : ""}
-                  </p>
-                </div>
-                {canRsvp ? (
-                  <Link
-                    href={`/e/${event.id}/rsvp?night=${n.id}`}
-                    className="bg-coral text-bg font-sans font-semibold text-xs uppercase tracking-[0.14em] px-4 py-3 rounded-md hover:brightness-110 transition shrink-0"
-                  >
-                    RSVP
-                  </Link>
-                ) : (
-                  <span className="label-mono">List closed</span>
-                )}
+            </>
+          ) : (
+            <>
+              <div className="t-meta">Get on the list</div>
+              <div
+                className="t-display-sm"
+                style={{ marginTop: "var(--s-2)" }}
+              >
+                30 seconds.
               </div>
-            </div>
-          );
-        })}
-      </div>
+              <p className="t-body-2" style={{ marginTop: "var(--s-1)" }}>
+                No account, no password. We text you a credential.
+              </p>
+              {firstNight && !firstNight.is_frozen && (
+                <Link
+                  href={`/e/${event.id}/rsvp?night=${firstNight.id}`}
+                  className="btn btn--xl btn--accent btn--block"
+                  style={{
+                    textDecoration: "none",
+                    marginTop: "var(--s-5)",
+                  }}
+                >
+                  RSVP
+                </Link>
+              )}
+              <div
+                className="t-meta"
+                style={{
+                  textAlign: "center",
+                  marginTop: "var(--s-3)",
+                  color: "var(--fg-4)",
+                }}
+              >
+                Free RSVP · no charge
+              </div>
+            </>
+          )}
 
-      <ShareEventButton
-        url={`${getAppUrl()}/e/${event.id}`}
-        title={event.name}
-        text={`${event.name} on WADL${event.venue?.name ? ` · ${event.venue.name}` : ""}`}
-      />
-
-      <p className="label-mono mt-8 pt-8 text-center md:text-left border-t border-line">
-        Already have a ticket?{" "}
-        <Link href="/mytickets" className="text-coral hover:brightness-125">
-          My tickets →
-        </Link>
-      </p>
+          <div
+            className="t-meta"
+            style={{
+              marginTop: "var(--s-6)",
+              paddingTop: "var(--s-4)",
+              borderTop: "1px solid var(--line)",
+              color: "var(--fg-4)",
+            }}
+          >
+            Already have a ticket?{" "}
+            <Link
+              href="/mytickets"
+              style={{ color: "var(--fg)", textDecoration: "none" }}
+            >
+              My tickets →
+            </Link>
+          </div>
         </div>
       </div>
+
+      <div
+        style={{
+          padding: "var(--s-5) var(--s-12)",
+          borderTop: "1px solid var(--line)",
+          display: "flex",
+          justifyContent: "space-between",
+          fontFamily: "var(--mono)",
+          fontSize: "var(--ts-xs)",
+          color: "var(--fg-4)",
+        }}
+      >
+        <span>Powered by WADL</span>
+        <span>Share · /e/{event.id.slice(0, 8)}</span>
+      </div>
+
+      <style>{`
+        @media (min-width: 900px) {
+          .event-grid {
+            grid-template-columns: 1.4fr 1fr !important;
+          }
+        }
+      `}</style>
     </main>
   );
 }

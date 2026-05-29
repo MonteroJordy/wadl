@@ -1,6 +1,9 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { PageHeader, Stat } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
+
+const COLS = "1.6fr 110px 1.4fr 130px 120px";
 
 interface AccountRow {
   id: string;
@@ -16,7 +19,7 @@ export default async function AdminBillingPage() {
   const { data } = await admin
     .from("accounts")
     .select(
-      "id, display_name, account_type, stripe_customer_id, subscription_status, created_at"
+      "id, display_name, account_type, stripe_customer_id, subscription_status, created_at",
     )
     .order("created_at", { ascending: false })
     .limit(200);
@@ -24,85 +27,91 @@ export default async function AdminBillingPage() {
   const rows = (data ?? []) as AccountRow[];
   const paying = rows.filter((r) => !!r.stripe_customer_id);
   const active = rows.filter((r) => r.subscription_status === "active");
-  // Conservative MRR estimate: $199/mo Pro × active.
   const mrr = active.length * 199;
   const arr = mrr * 12;
 
   return (
-    <main id="main-content" className="mx-auto max-w-5xl px-6 pt-6 pb-12">
-      <h1 className="display-lg mb-2">Billing</h1>
-      <p className="label-mono mb-6">Revenue + plan state across all accounts.</p>
+    <main id="main-content">
+      <PageHeader
+        eyebrow="Platform"
+        title="Billing"
+        sub="Revenue + plan state across all accounts."
+      />
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, 1fr)",
+          borderBottom: "1px solid var(--line)",
+        }}
+      >
+        <Stat label="MRR" value={`$${mrr.toLocaleString()}`} />
+        <Stat label="ARR run rate" value={`$${arr.toLocaleString()}`} />
+        <Stat label="Active plans" value={active.length} />
+        <Stat label="With customer" value={paying.length} last />
+      </div>
 
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <div className="card">
-          <p className="label-mono">MRR</p>
-          <p className="font-display text-3xl text-cream leading-none mt-1">
-            ${mrr.toLocaleString()}
-          </p>
+      <div style={{ padding: "var(--s-8)" }}>
+        <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+          Accounts · most-recent 200
         </div>
-        <div className="card">
-          <p className="label-mono">ARR run rate</p>
-          <p className="font-display text-3xl text-mint leading-none mt-1">
-            ${arr.toLocaleString()}
-          </p>
+        <div className="card" style={{ overflowX: "auto" }}>
+          <div
+            className="row"
+            style={{
+              gridTemplateColumns: COLS,
+              padding: "var(--s-3) var(--s-5)",
+              background: "var(--bg)",
+            }}
+          >
+            {["Account", "Type", "Stripe customer", "Subscription", "Created"].map(
+              (h) => (
+                <span key={h} className="t-meta">
+                  {h}
+                </span>
+              ),
+            )}
+          </div>
+          {rows.map((r) => (
+            <div
+              key={r.id}
+              className="row"
+              style={{
+                gridTemplateColumns: COLS,
+                padding: "var(--s-4) var(--s-5)",
+              }}
+            >
+              <span className="t-body truncate" style={{ color: "var(--fg)" }}>
+                {r.display_name}
+              </span>
+              <span className="chip">{r.account_type}</span>
+              <span
+                className="t-body-2 truncate"
+                style={{ fontFamily: "var(--mono)", fontSize: "var(--ts-sm)" }}
+              >
+                {r.stripe_customer_id ? (
+                  <span style={{ color: "var(--ok)" }}>
+                    {r.stripe_customer_id.slice(0, 16)}…
+                  </span>
+                ) : (
+                  "—"
+                )}
+              </span>
+              <span>
+                {r.subscription_status ? (
+                  <span className="chip chip--ok">
+                    {r.subscription_status}
+                  </span>
+                ) : (
+                  <span className="t-body-2">—</span>
+                )}
+              </span>
+              <span className="t-meta">
+                {new Date(r.created_at).toLocaleDateString()}
+              </span>
+            </div>
+          ))}
         </div>
-        <div className="card">
-          <p className="label-mono">Active plans</p>
-          <p className="font-display text-3xl text-cream leading-none mt-1">
-            {active.length}
-          </p>
-        </div>
-        <div className="card">
-          <p className="label-mono">With customer</p>
-          <p className="font-display text-3xl text-cream leading-none mt-1">
-            {paying.length}
-          </p>
-        </div>
-      </section>
-
-      <section>
-        <p className="label-mono mb-2">Accounts (most-recent 200)</p>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="label-mono text-left">
-              <tr>
-                <th className="pb-2">Account</th>
-                <th>Type</th>
-                <th>Stripe customer</th>
-                <th>Subscription</th>
-                <th>Created</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.id} className="border-t border-line">
-                  <td className="py-2 text-cream truncate max-w-xs">
-                    {r.display_name}
-                  </td>
-                  <td className="py-2 label-mono">{r.account_type}</td>
-                  <td className="py-2 font-mono text-xs">
-                    {r.stripe_customer_id ? (
-                      <span className="text-mint">
-                        {r.stripe_customer_id.slice(0, 16)}…
-                      </span>
-                    ) : (
-                      <span className="text-muted">—</span>
-                    )}
-                  </td>
-                  <td className="py-2 label-mono">
-                    {r.subscription_status ?? (
-                      <span className="text-muted">—</span>
-                    )}
-                  </td>
-                  <td className="py-2 label-mono">
-                    {new Date(r.created_at).toLocaleDateString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      </div>
     </main>
   );
 }

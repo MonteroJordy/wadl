@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
-import EmptyState from "@/components/empty-state";
+import { PageHeader } from "@/components/v5";
 import StatusButton from "./status-button";
 
 export const dynamic = "force-dynamic";
@@ -16,18 +17,18 @@ interface TicketRow {
   reporter: { full_name: string | null; email: string | null } | null;
 }
 
-const PRIORITY_TONE: Record<string, string> = {
-  urgent: "text-coral",
-  high: "text-gold",
-  normal: "text-cream",
-  low: "text-muted",
+const PRIORITY_CHIP: Record<string, string> = {
+  urgent: "chip chip--err",
+  high: "chip chip--warn",
+  normal: "chip",
+  low: "chip chip--ghost",
 };
 
-const STATUS_TONE: Record<string, string> = {
-  open: "text-coral",
-  pending: "text-gold",
-  resolved: "text-mint",
-  closed: "text-muted",
+const STATUS_CHIP: Record<string, string> = {
+  open: "chip chip--err",
+  pending: "chip chip--warn",
+  resolved: "chip chip--ok",
+  closed: "chip chip--ghost",
 };
 
 export default async function AdminSupportPage({
@@ -42,7 +43,7 @@ export default async function AdminSupportPage({
     .from("support_tickets")
     .select(
       "id, subject, body, priority, status, created_at, resolved_at, " +
-        "account:accounts(display_name), reporter:profiles!reporter_user_id(full_name, email)"
+        "account:accounts(display_name), reporter:profiles!reporter_user_id(full_name, email)",
     )
     .order("created_at", { ascending: false })
     .limit(200);
@@ -51,71 +52,142 @@ export default async function AdminSupportPage({
   const rows = (data ?? []) as unknown as TicketRow[];
 
   return (
-    <main id="main-content" className="mx-auto max-w-5xl px-6 pt-6 pb-12">
-      <h1 className="display-lg mb-2">Support</h1>
-      <p className="label-mono mb-6">Filter by status. Tickets default to open.</p>
-
-      <div className="flex gap-1 mb-4">
-        {(["open", "pending", "resolved", "closed", "all"] as const).map((s) => (
-          <a
-            key={s}
-            href={s === "open" ? "/admin/support" : `/admin/support?status=${s}`}
-            className={`px-3 py-1 rounded-full border text-[10px] font-mono uppercase tracking-wider ${
-              status === s
-                ? "border-coral bg-s2 text-cream"
-                : "border-line bg-s1 text-muted hover:text-cream"
-            }`}
-          >
-            {s}
-          </a>
-        ))}
+    <main id="main-content">
+      <PageHeader
+        eyebrow="Platform"
+        title="Support"
+        sub="Filter by status. Tickets default to open."
+      />
+      <div
+        style={{
+          padding: "var(--s-4) var(--s-8)",
+          borderBottom: "1px solid var(--line)",
+          display: "flex",
+          gap: "var(--s-1)",
+          flexWrap: "wrap",
+        }}
+      >
+        {(["open", "pending", "resolved", "closed", "all"] as const).map(
+          (s) => {
+            const active = status === s;
+            return (
+              <Link
+                key={s}
+                href={
+                  s === "open" ? "/admin/support" : `/admin/support?status=${s}`
+                }
+                style={{ textDecoration: "none" }}
+              >
+                <span
+                  className={"nav-item" + (active ? " nav-item--active" : "")}
+                >
+                  {s[0].toUpperCase() + s.slice(1)}
+                </span>
+              </Link>
+            );
+          },
+        )}
       </div>
 
-      {rows.length === 0 ? (
-        <EmptyState
-          title="No tickets"
-          body={
-            status === "all"
-              ? "No tickets in the system yet."
-              : `No tickets in '${status}' state. Try another filter.`
-          }
-        />
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {rows.map((r) => (
-            <li key={r.id} className="card">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="font-sans text-cream font-semibold truncate">
-                    {r.subject}
-                  </p>
-                  <p className="label-mono mt-1">
-                    {r.account?.display_name ?? "no-account"} ·{" "}
-                    {r.reporter?.full_name ?? r.reporter?.email ?? "—"} ·{" "}
-                    {new Date(r.created_at).toLocaleString()}
-                  </p>
-                  <p className="text-cream/70 text-sm mt-2 line-clamp-3">
-                    {r.body}
-                  </p>
-                </div>
-                <div className="text-right shrink-0 flex flex-col items-end gap-2">
-                  <p
-                    className={`label-mono ${PRIORITY_TONE[r.priority] ?? ""}`}
+      <div style={{ padding: "var(--s-8)" }}>
+        {rows.length === 0 ? (
+          <div
+            className="card"
+            style={{
+              padding: "var(--s-16) var(--s-8)",
+              textAlign: "center",
+            }}
+          >
+            <div className="t-h1">No tickets</div>
+            <p
+              className="t-body-2"
+              style={{
+                marginTop: "var(--s-3)",
+                maxWidth: 460,
+                marginInline: "auto",
+              }}
+            >
+              {status === "all"
+                ? "No tickets in the system yet."
+                : `No tickets in '${status}' state. Try another filter.`}
+            </p>
+          </div>
+        ) : (
+          <ul
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "var(--s-2)",
+              listStyle: "none",
+              padding: 0,
+              margin: 0,
+            }}
+          >
+            {rows.map((r) => (
+              <li
+                key={r.id}
+                className="card"
+                style={{ padding: "var(--s-4)" }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    justifyContent: "space-between",
+                    gap: "var(--s-3)",
+                  }}
+                >
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <p
+                      className="t-h2 truncate"
+                      style={{ color: "var(--fg)" }}
+                    >
+                      {r.subject}
+                    </p>
+                    <div className="t-meta" style={{ marginTop: "var(--s-1)" }}>
+                      {(r.account?.display_name ?? "No-account").toUpperCase()}{" "}
+                      ·{" "}
+                      {(
+                        r.reporter?.full_name ?? r.reporter?.email ?? "—"
+                      ).toUpperCase()}{" "}
+                      · {new Date(r.created_at).toLocaleString().toUpperCase()}
+                    </div>
+                    <p
+                      className="t-body-2"
+                      style={{
+                        marginTop: "var(--s-2)",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {r.body}
+                    </p>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "flex-end",
+                      gap: "var(--s-2)",
+                      flexShrink: 0,
+                    }}
                   >
-                    {r.priority}
-                  </p>
-                  <p
-                    className={`label-mono ${STATUS_TONE[r.status] ?? ""}`}
-                  >
-                    {r.status}
-                  </p>
-                  <StatusButton ticketId={r.id} currentStatus={r.status} />
+                    <span className={PRIORITY_CHIP[r.priority] ?? "chip"}>
+                      {r.priority}
+                    </span>
+                    <span className={STATUS_CHIP[r.status] ?? "chip"}>
+                      {r.status}
+                    </span>
+                    <StatusButton ticketId={r.id} currentStatus={r.status} />
+                  </div>
                 </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </main>
   );
 }

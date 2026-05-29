@@ -51,9 +51,10 @@ export default function SearchForm({
     const res = await manualCheckInAction(eventId, id);
     if (res.ok) {
       setMessage({ id, kind: "ok", text: "Checked in." });
-      // Optimistically update the row.
       setResults((rs) =>
-        rs.map((r) => (r.id === id ? { ...r, checked_in_at: res.scannedAt } : r))
+        rs.map((r) =>
+          r.id === id ? { ...r, checked_in_at: res.scannedAt } : r,
+        ),
       );
     } else {
       setMessage({ id, kind: "err", text: res.error });
@@ -62,94 +63,185 @@ export default function SearchForm({
   }
 
   return (
-    <main id="main-content" className="mobile-frame">
-      <header className="flex items-center justify-between pt-6 pb-4">
-        <Link href={backHref} className="label-mono hover:text-cream">
-          ← Back
-        </Link>
-        <p className="label-mono text-mint">Search</p>
-      </header>
-
-      <h1 className="display-lg leading-[0.95] mb-4">{eventName}</h1>
-
-      <input
-        type="text"
-        placeholder="Search by name"
-        autoFocus
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        className="input-dark mb-4"
-      />
-
-      {pending && <p className="label-mono">Searching…</p>}
-
-      {query && !pending && results.length === 0 && (
-        <p className="label-mono text-center text-mint mt-4">
-          No match — try a different spelling or scan the QR.
-        </p>
-      )}
-
-      <div className="flex flex-col gap-2">
-        {results.map((r) => {
-          const checkedIn = Boolean(r.checked_in_at);
-          const isSelected = selectedId === r.id;
-          const rowMsg = message?.id === r.id ? message : null;
-          return (
-            <div
-              key={r.id}
-              className={`card ${r.flag_dna ? "border-coral" : checkedIn ? "opacity-60" : ""}`}
+    <main
+      id="main-content"
+      className="v5"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
+    >
+      <div style={{ maxWidth: 540, margin: "0 auto" }}>
+        {/* ── Header ── */}
+        <div
+          style={{
+            padding: "var(--s-6) var(--s-8)",
+            borderBottom: "1px solid var(--line)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: "var(--s-2)",
+            }}
+          >
+            <Link
+              href={backHref}
+              className="t-meta"
+              style={{ color: "var(--fg-3)", textDecoration: "none" }}
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-sans text-cream font-semibold truncate">
-                    {r.full_name}
-                    {r.plus_ones > 0 && (
-                      <span className="text-muted font-normal"> +{r.plus_ones}</span>
-                    )}
-                    {r.flag_dna && (
-                      <span className="ml-2 label-mono text-coral">⚠ DNA</span>
-                    )}
-                  </p>
-                  <p className="label-mono mt-1 truncate">
-                    {r.tier.toUpperCase()}
-                    {r.allocation_name && <> · {r.allocation_name}</>}
-                    {checkedIn && (
-                      <>
-                        {" "}
-                        ·{" "}
-                        <span className="text-mint">
-                          IN{" "}
-                          {new Date(r.checked_in_at!).toLocaleTimeString()}
-                        </span>
-                      </>
-                    )}
-                  </p>
-                </div>
-                {checkedIn ? (
-                  <span className="label-mono text-mint shrink-0">In</span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => checkIn(r.id)}
-                    disabled={isSelected || r.flag_dna || r.status !== "approved"}
-                    className="bg-mint text-bg font-sans font-semibold text-xs uppercase tracking-[0.14em] px-4 py-3 rounded-md disabled:opacity-40 hover:brightness-110 transition shrink-0"
-                  >
-                    {isSelected ? "…" : "Check in"}
-                  </button>
-                )}
-              </div>
-              {rowMsg && (
-                <p
-                  className={`label-mono mt-2 ${
-                    rowMsg.kind === "ok" ? "text-mint" : "text-coral"
-                  }`}
-                >
-                  {rowMsg.text}
-                </p>
-              )}
+              ← Back
+            </Link>
+            <span className="t-meta">Manual lookup</span>
+          </div>
+          <div className="t-display-md">{eventName}</div>
+        </div>
+
+        <div
+          style={{
+            padding: "var(--s-8)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "var(--s-4)",
+          }}
+        >
+          <input
+            type="text"
+            placeholder="Search by name"
+            autoFocus
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="input"
+          />
+
+          {pending && <div className="t-meta">Searching…</div>}
+
+          {query && !pending && results.length === 0 && (
+            <div
+              className="t-body-2"
+              style={{ textAlign: "center", color: "var(--fg-3)" }}
+            >
+              No match — try a different spelling or scan the QR.
             </div>
-          );
-        })}
+          )}
+
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "var(--s-2)",
+            }}
+          >
+            {results.map((r) => {
+              const checkedIn = Boolean(r.checked_in_at);
+              const isSelected = selectedId === r.id;
+              const rowMsg = message?.id === r.id ? message : null;
+              const disabled =
+                isSelected || r.flag_dna || r.status !== "approved";
+              return (
+                <div
+                  key={r.id}
+                  className="card"
+                  style={{
+                    padding: "var(--s-5)",
+                    borderColor: r.flag_dna ? "var(--err)" : undefined,
+                    opacity: checkedIn ? 0.6 : 1,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      justifyContent: "space-between",
+                      gap: "var(--s-3)",
+                    }}
+                  >
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div
+                        className="t-h2"
+                        style={{
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {r.full_name}
+                        {r.plus_ones > 0 && (
+                          <span style={{ color: "var(--fg-3)" }}>
+                            {" "}
+                            +{r.plus_ones}
+                          </span>
+                        )}
+                        {r.flag_dna && (
+                          <span
+                            className="chip chip--err"
+                            style={{ marginLeft: "var(--s-2)" }}
+                          >
+                            DNA
+                          </span>
+                        )}
+                      </div>
+                      <div
+                        className="t-meta"
+                        style={{
+                          marginTop: "var(--s-1)",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {r.tier.replace(/_/g, " ").toUpperCase()}
+                        {r.allocation_name && <> · {r.allocation_name}</>}
+                        {checkedIn && (
+                          <>
+                            {" · "}
+                            <span style={{ color: "var(--ok)" }}>
+                              In{" "}
+                              {new Date(
+                                r.checked_in_at!,
+                              ).toLocaleTimeString()}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    {checkedIn ? (
+                      <span
+                        className="chip chip--ok"
+                        style={{ flexShrink: 0 }}
+                      >
+                        In
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => checkIn(r.id)}
+                        disabled={disabled}
+                        className="btn btn--lg"
+                        style={{ flexShrink: 0 }}
+                      >
+                        {isSelected ? "…" : "Check in"}
+                      </button>
+                    )}
+                  </div>
+                  {rowMsg && (
+                    <div
+                      className="t-meta"
+                      style={{
+                        marginTop: "var(--s-2)",
+                        color:
+                          rowMsg.kind === "ok"
+                            ? "var(--ok)"
+                            : "var(--err)",
+                      }}
+                    >
+                      {rowMsg.text}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </main>
   );

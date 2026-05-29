@@ -1,7 +1,10 @@
-import AuthedShell, { type NavSection } from "@/components/authed-shell";
+import Link from "next/link";
 import { requireOwnerContext } from "@/lib/owner";
+import V5Shell, { type V5NavItem } from "@/components/v5/shell";
 import CommandPalette from "@/components/command-palette";
 import NotificationBell from "@/components/notification-bell";
+import MobileTabBar from "@/components/mobile-tab-bar";
+import ShortcutHelp from "@/components/shortcut-help";
 import { hiddenNavHrefs } from "@wadl/shared/account-type";
 
 export const dynamic = "force-dynamic";
@@ -13,104 +16,91 @@ export default async function OwnerLayout({
 }) {
   const { supabase, profile, account } = await requireOwnerContext();
 
-  // Unread notification count for sidebar badge.
   const { count: unread } = await supabase
     .from("notifications")
     .select("id", { count: "exact", head: true })
     .eq("account_id", account.id)
     .is("read_at", null);
 
-  // Whether to surface the platform-admin link.
   const isPlatformAdmin = profile.email === "jmontero@mainframeagency.com";
+  const hidden = hiddenNavHrefs(account.account_type);
 
-  const sections: NavSection[] = [
-    {
-      label: "Run the door",
-      items: [
-        { href: "/owner", label: "This week", matchPrefix: "/owner/events" },
-        { href: "/owner/calendar", label: "Calendar" },
-        { href: "/owner/events/new", label: "+ New event" },
-        { href: "/owner/holders", label: "Holders" },
-        ...(account.account_type !== "venue"
-          ? [{ href: "/owner/partners", label: "Venue partners" }]
-          : []),
-        { href: "/owner/scorecards", label: "Scorecards" },
-        { href: "/owner/analytics", label: "Analytics" },
-        { href: "/owner/flags", label: "Flag list" },
-      ],
-    },
-    {
-      label: "Inbox",
-      items: [
-        {
-          href: "/owner/notifications",
-          label: "Notifications",
-          badge: unread ?? 0,
-        },
-      ],
-    },
-    {
-      label: "Account",
-      items: [
-        { href: "/owner/profile", label: "Profile + venues" },
-        { href: "/owner/sms-templates", label: "SMS templates" },
-        { href: "/owner/sms-log", label: "SMS log" },
-        { href: "/owner/webhooks", label: "Webhooks" },
-        { href: "/owner/payouts", label: "Payouts" },
-        { href: "/owner/billing", label: "Billing" },
-      ],
-    },
-    {
-      label: "View as",
-      items: [
-        { href: "/door", label: "Door view" },
-        { href: "/manager", label: "Manager view" },
-        { href: "/discover", label: "Guest discovery" },
-        { href: "/mytickets", label: "My tickets" },
-      ],
-    },
-    ...(isPlatformAdmin
-      ? [
-          {
-            label: "Platform",
-            items: [
-              { href: "/admin", label: "Internal CMS" },
-              { href: "/owner/errors", label: "Error log" },
-            ],
-          },
-        ]
-      : []),
+  // v5 web nav — a minimal 4-item horizontal top nav (the TopNav pattern
+  // from Wadl v5.html). Everything else lives in the account menu + ⌘K.
+  const nav: V5NavItem[] = [
+    { href: "/owner", label: "Events", matchPrefix: "/owner/events" },
+    { href: "/owner/calendar", label: "Calendar" },
+    { href: "/owner/holders", label: "Promoters" },
+    { href: "/owner/analytics", label: "Analytics" },
   ];
 
-  // Day 41: hide nav items irrelevant to this account type. Brands skip
-  // webhooks; individuals skip both webhooks + sms_templates.
-  const hidden = hiddenNavHrefs(account.account_type);
-  const filteredSections: NavSection[] = sections
-    .map((s) => ({
-      ...s,
-      items: s.items.filter((it) => !hidden.has(it.href)),
-    }))
-    .filter((s) => s.items.length > 0);
+  // Everything not in the primary nav — reachable from the avatar
+  // dropdown. Filtered by account type, then admin/platform appended.
+  const accountMenu = [
+    { href: "/owner/profile", label: "Profile + venues" },
+    { href: "/owner/notifications", label: `Notifications${unread ? ` (${unread})` : ""}` },
+    { href: "/owner/scorecards", label: "Promoter ranks" },
+    { href: "/owner/flags", label: "Do not admit" },
+    ...(account.account_type !== "venue"
+      ? [{ href: "/owner/partners", label: "Venues you collab with" }]
+      : []),
+    { href: "/owner/sms-templates", label: "SMS templates" },
+    { href: "/owner/sms-log", label: "SMS log" },
+    { href: "/owner/webhooks", label: "Webhooks" },
+    { href: "/owner/payouts", label: "Payouts" },
+    { href: "/owner/billing", label: "Billing" },
+    { href: "/door", label: "Preview · Door staff" },
+    { href: "/manager", label: "Preview · Floor manager" },
+    { href: "/discover", label: "Preview · Public feed" },
+    { href: "/mytickets", label: "Preview · Guest wallet" },
+    ...(isPlatformAdmin
+      ? [
+          { href: "/admin", label: "Internal CMS" },
+          { href: "/owner/errors", label: "Error log" },
+        ]
+      : []),
+    { href: "__signout__", label: "Sign out", danger: true },
+  ].filter((m) => !hidden.has(m.href));
+
+  const initials =
+    (profile.full_name ?? "")
+      .split(" ")
+      .map((s) => s[0] ?? "")
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "WA";
+
+  const accountTypeLabel =
+    account.account_type === "venue"
+      ? "Owner"
+      : account.account_type === "brand"
+        ? "Brand"
+        : "Host";
 
   return (
-    <AuthedShell
-      user={{ full_name: profile.full_name, phone: profile.phone }}
-      account={{
-        display_name: account.display_name,
-        account_type: account.account_type,
-      }}
-      sections={filteredSections}
-      brand="WADL"
-      brandSub={account.display_name}
-      brandTone="coral"
+    <V5Shell
+      nav={nav}
+      context={`${account.display_name} · ${accountTypeLabel}`}
+      initials={initials}
+      accountMenu={accountMenu}
+      unread={unread ?? 0}
       topBarRight={
         <>
+          <Link
+            href="/owner/events/new"
+            className="btn btn--sm btn--accent"
+            style={{ textDecoration: "none" }}
+          >
+            + New event
+          </Link>
           <CommandPalette />
           <NotificationBell unread={unread ?? 0} accountId={account.id} />
         </>
       }
     >
       {children}
-    </AuthedShell>
+      <MobileTabBar unread={unread ?? 0} />
+      <ShortcutHelp />
+    </V5Shell>
   );
 }

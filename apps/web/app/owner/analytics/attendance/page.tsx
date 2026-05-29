@@ -1,7 +1,6 @@
 import { requireOwnerContext } from "@/lib/owner";
 import { computeAccountAnalytics } from "@/lib/analytics";
 import { computeExtraAnalytics } from "@/lib/analytics-extra";
-import EmptyState from "@/components/empty-state";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Attendance — WADL" };
@@ -19,10 +18,28 @@ export default async function AttendancePage() {
     computeExtraAnalytics(account.id),
   ]);
 
-  if (a.trend.length === 0)
-    return <EmptyState title="Nothing to plot" body="Run a night in the last 90 days. Attendance, show rate, tier mix all show up here once a door's been open." />;
+  if (a.trend.length === 0) {
+    return (
+      <div
+        className="card"
+        style={{ padding: "var(--s-16) var(--s-8)", textAlign: "center" }}
+      >
+        <div className="t-display-sm">Nothing to plot</div>
+        <p
+          className="t-body-2"
+          style={{
+            marginTop: "var(--s-3)",
+            maxWidth: 480,
+            marginInline: "auto",
+          }}
+        >
+          Run a night in the last 90 days. Attendance, show rate, tier mix all
+          show up here once a door&apos;s been open.
+        </p>
+      </div>
+    );
+  }
 
-  // Bucket trend by month for the secondary chart.
   const byMonth = new Map<string, number>();
   for (const t of a.trend) {
     const ym = t.date.slice(0, 7);
@@ -33,155 +50,319 @@ export default async function AttendancePage() {
     .map(([month, scanned]) => ({ month, scanned }));
   const peakMonth = Math.max(1, ...monthly.map((m) => m.scanned));
 
-  // Tier mix from byVenue is too coarse — derive from topHolders' tier_mix isn't ideal either.
-  // Use a quick estimate: 68/25/7 = average mix from sample. Real tier breakdown needs guests
-  // table, kept here for visual parity with prototype.
+  // Tier breakdown — visual estimate per legacy comment.
   const tierMix = { ga: 68, vip: 25, all_access: 7 };
 
   return (
-    <div className="flex flex-col gap-3">
-      <section className="card">
-        <p className="label-mono mb-3">Monthly attendance</p>
-        <div className="flex items-end gap-3 h-32">
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
+      {/* Monthly bars */}
+      <div className="card" style={{ padding: "var(--s-6)" }}>
+        <div className="t-meta" style={{ marginBottom: "var(--s-4)" }}>
+          Monthly attendance
+        </div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-end",
+            gap: "var(--s-3)",
+            height: 128,
+          }}
+        >
           {monthly.map((m) => (
             <div
               key={m.month}
-              className="flex-1 flex flex-col items-center gap-1 min-w-[40px]"
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "var(--s-1)",
+                minWidth: 40,
+              }}
               title={`${m.month}: ${m.scanned}`}
             >
-              <p className="label-mono text-cream">{m.scanned}</p>
+              <div className="t-meta" style={{ color: "var(--fg)" }}>
+                {m.scanned}
+              </div>
               <div
-                className="w-full rounded-t bg-coral/70"
-                style={{ height: `${(m.scanned / peakMonth) * 100}%` }}
+                style={{
+                  width: "100%",
+                  height: `${(m.scanned / peakMonth) * 100}%`,
+                  background:
+                    m.scanned === peakMonth ? "var(--fg)" : "var(--fg-4)",
+                }}
               />
-              <p className="label-mono">{m.month}</p>
+              <div className="t-meta">{m.month}</div>
             </div>
           ))}
         </div>
-      </section>
+      </div>
 
-      <section className="grid md:grid-cols-2 gap-3">
-        <div className="card">
-          <p className="label-mono mb-3">Day-of-week performance</p>
-          <div className="flex items-end gap-2 h-24">
+      {/* DOW + hour velocity */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+          gap: "var(--s-4)",
+        }}
+      >
+        <div className="card" style={{ padding: "var(--s-6)" }}>
+          <div className="t-meta" style={{ marginBottom: "var(--s-4)" }}>
+            Day-of-week performance
+          </div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-end",
+              gap: "var(--s-2)",
+              height: 96,
+            }}
+          >
             {a.byDow.map((d) => {
               const peak = Math.max(1, ...a.byDow.map((x) => x.scanned));
-              const isBest =
-                a.bestDow?.dow === d.dow && d.events > 0;
+              const isBest = a.bestDow?.dow === d.dow && d.events > 0;
               return (
                 <div
                   key={d.dow}
-                  className="flex-1 flex flex-col items-center gap-1"
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "var(--s-1)",
+                  }}
                   title={`${d.label}: ${d.scanned} scanned across ${d.events} event${d.events === 1 ? "" : "s"}`}
                 >
                   <div
-                    className={`w-full rounded-t ${isBest ? "bg-coral" : "bg-mint/60"}`}
-                    style={{ height: `${Math.max(4, (d.scanned / peak) * 100)}%` }}
+                    style={{
+                      width: "100%",
+                      height: `${Math.max(4, (d.scanned / peak) * 100)}%`,
+                      background: isBest ? "var(--fg)" : "var(--fg-4)",
+                    }}
                   />
-                  <p className="label-mono text-[9px]">{d.label}</p>
+                  <div className="t-meta" style={{ fontSize: 9 }}>
+                    {d.label.toUpperCase()}
+                  </div>
                 </div>
               );
             })}
           </div>
           {a.bestDow && a.bestDow.events > 0 && (
-            <p className="label-mono mt-3">
-              Best day:{" "}
-              <span className="text-cream">{a.bestDow.label}</span> avg{" "}
+            <div className="t-meta" style={{ marginTop: "var(--s-3)" }}>
+              Best:{" "}
+              <span style={{ color: "var(--fg)" }}>
+                {a.bestDow.label.toUpperCase()}
+              </span>{" "}
+              · avg{" "}
               {Math.round(a.bestDow.scanned / Math.max(1, a.bestDow.events))}
-            </p>
+            </div>
           )}
         </div>
 
-        <div className="card">
-          <p className="label-mono mb-3">Check-in velocity by hour</p>
-          <div className="flex items-end gap-1 h-24">
+        <div className="card" style={{ padding: "var(--s-6)" }}>
+          <div className="t-meta" style={{ marginBottom: "var(--s-4)" }}>
+            Check-in velocity by hour
+          </div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-end",
+              gap: "var(--s-1)",
+              height: 96,
+            }}
+          >
             {x.hourVelocity.map((h) => {
               const peak = Math.max(1, ...x.hourVelocity.map((p) => p.count));
+              const isPeak = h.count === peak && h.count > 0;
               return (
                 <div
                   key={h.hour}
-                  className="flex-1 flex flex-col items-center gap-1 min-w-[10px]"
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "var(--s-1)",
+                    minWidth: 10,
+                  }}
                   title={`${fmtHourLabel(h.hour)}: ${h.count}`}
                 >
                   <div
-                    className={`w-full rounded-t ${
-                      h.count === peak && h.count > 0 ? "bg-coral" : "bg-mint/40"
-                    }`}
-                    style={{ height: `${(h.count / peak) * 100}%` }}
+                    style={{
+                      width: "100%",
+                      height: `${(h.count / peak) * 100}%`,
+                      background: isPeak ? "var(--fg)" : "var(--fg-4)",
+                    }}
                   />
                 </div>
               );
             })}
           </div>
           {x.peakHour && (
-            <p className="label-mono mt-3">
+            <div className="t-meta" style={{ marginTop: "var(--s-3)" }}>
               Peak{" "}
-              <span className="text-cream">
-                {fmtHourLabel(x.peakHour.hour)}
+              <span style={{ color: "var(--fg)" }}>
+                {fmtHourLabel(x.peakHour.hour).toUpperCase()}
               </span>{" "}
               · {Math.round(x.peakHour.pct * 100)}% of check-ins
-            </p>
+            </div>
           )}
         </div>
-      </section>
+      </div>
 
-      <section className="card">
-        <p className="label-mono mb-3">Tier breakdown (estimate)</p>
-        <div className="flex h-8 rounded overflow-hidden mb-3">
+      {/* Tier breakdown */}
+      <div className="card" style={{ padding: "var(--s-6)" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            justifyContent: "space-between",
+            marginBottom: "var(--s-4)",
+            gap: "var(--s-3)",
+          }}
+        >
+          <div className="t-meta">Tier breakdown · estimate</div>
+          <div style={{ display: "flex", gap: "var(--s-1)" }}>
+            <span className="chip">GA</span>
+            <span className="chip">VIP</span>
+            <span className="chip">AAA</span>
+          </div>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            height: 32,
+            overflow: "hidden",
+            marginBottom: "var(--s-3)",
+            borderRadius: "var(--r-sm)",
+          }}
+        >
           <div
-            className="bg-cream"
-            style={{ width: `${tierMix.ga}%` }}
+            style={{ width: `${tierMix.ga}%`, background: "var(--fg)" }}
             title={`GA ${tierMix.ga}%`}
           />
           <div
-            className="bg-gold"
-            style={{ width: `${tierMix.vip}%` }}
+            style={{ width: `${tierMix.vip}%`, background: "var(--fg-3)" }}
             title={`VIP ${tierMix.vip}%`}
           />
           <div
-            className="bg-lav"
-            style={{ width: `${tierMix.all_access}%` }}
-            title={`AA ${tierMix.all_access}%`}
+            style={{
+              width: `${tierMix.all_access}%`,
+              background: "var(--bg-4)",
+            }}
+            title={`AAA ${tierMix.all_access}%`}
           />
         </div>
-        <p className="label-mono">
-          GA {tierMix.ga}% · <span className="text-gold">VIP</span> {tierMix.vip}% ·{" "}
-          <span className="text-lav">AA</span> {tierMix.all_access}%
-        </p>
-        <p className="label-mono mt-2 text-muted">
-          (Estimates from window. Per-event tier mix lives on each event recap.)
-        </p>
-      </section>
+        <div
+          className="t-meta"
+          style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-3)" }}
+        >
+          <span>
+            <span style={{ color: "var(--fg)" }}>GA</span> {tierMix.ga}%
+          </span>
+          <span>
+            <span style={{ color: "var(--fg-2)" }}>VIP</span> {tierMix.vip}%
+          </span>
+          <span>AAA {tierMix.all_access}%</span>
+        </div>
+        <div
+          className="t-meta"
+          style={{ marginTop: "var(--s-2)", color: "var(--fg-4)" }}
+        >
+          (Per-event tier mix lives on each event recap)
+        </div>
+      </div>
 
-      <section className="card">
-        <p className="label-mono mb-3">Per-event breakdown</p>
-        <div className="overflow-x-auto -mx-4 px-4">
-          <table className="w-full text-sm">
-            <thead className="label-mono text-left">
+      {/* Per-event table */}
+      <div className="card" style={{ padding: "var(--s-6)" }}>
+        <div className="t-meta" style={{ marginBottom: "var(--s-4)" }}>
+          Per-event breakdown · last 30
+        </div>
+        <div
+          style={{
+            overflowX: "auto",
+            margin: "0 calc(-1 * var(--s-6))",
+            padding: "0 var(--s-6)",
+          }}
+        >
+          <table
+            style={{
+              width: "100%",
+              fontSize: "var(--ts-md)",
+              borderCollapse: "collapse",
+            }}
+          >
+            <thead>
               <tr>
-                <th className="pb-2">Date</th>
-                <th>Event</th>
-                <th className="text-right">Approved</th>
-                <th className="text-right">Scanned</th>
-                <th className="text-right">Show</th>
+                {[
+                  ["Date", "left"],
+                  ["Event", "left"],
+                  ["Approved", "right"],
+                  ["Scanned", "right"],
+                  ["Show", "right"],
+                ].map(([h, align]) => (
+                  <th
+                    key={h}
+                    className="t-meta"
+                    style={{
+                      textAlign: align as "left" | "right",
+                      paddingBottom: "var(--s-2)",
+                    }}
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {a.trend.slice(-30).reverse().map((t) => (
-                <tr key={t.date} className="border-t border-line">
-                  <td className="py-2 label-mono">{t.date}</td>
-                  <td className="py-2 text-cream truncate">all events</td>
-                  <td className="py-2 text-right">{t.approved}</td>
-                  <td className="py-2 text-right text-mint">{t.scanned}</td>
-                  <td className="py-2 text-right">
-                    {t.approved > 0 ? Math.round((t.scanned / t.approved) * 100) : 0}%
-                  </td>
-                </tr>
-              ))}
+              {a.trend
+                .slice(-30)
+                .reverse()
+                .map((t) => (
+                  <tr
+                    key={t.date}
+                    style={{ borderTop: "1px solid var(--line)" }}
+                  >
+                    <td className="t-meta" style={{ padding: "var(--s-3) 0" }}>
+                      {t.date}
+                    </td>
+                    <td
+                      className="t-body-2"
+                      style={{ padding: "var(--s-3) 0" }}
+                    >
+                      all events
+                    </td>
+                    <td
+                      className="t-body t-num"
+                      style={{ padding: "var(--s-3) 0", textAlign: "right" }}
+                    >
+                      {t.approved}
+                    </td>
+                    <td
+                      className="t-body t-num"
+                      style={{
+                        padding: "var(--s-3) 0",
+                        textAlign: "right",
+                        color: "var(--ok)",
+                      }}
+                    >
+                      {t.scanned}
+                    </td>
+                    <td
+                      className="t-body t-num"
+                      style={{ padding: "var(--s-3) 0", textAlign: "right" }}
+                    >
+                      {t.approved > 0
+                        ? Math.round((t.scanned / t.approved) * 100)
+                        : 0}
+                      %
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>
-      </section>
+      </div>
     </div>
   );
 }

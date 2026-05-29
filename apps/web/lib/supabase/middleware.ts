@@ -4,6 +4,9 @@ import { NextResponse, type NextRequest } from "next/server";
 const PUBLIC_PATHS = [
   "/login",
   "/otp",
+  "/forgot-password",
+  "/verify-email",
+  "/onboarding",
   "/api/auth",
   "/api/health",
   "/api/wallet",
@@ -14,6 +17,12 @@ const PUBLIC_PATHS = [
   "/api/cron",
   "/api/log/client-error",
   "/h",
+  "/g",
+  "/v",
+  "/invite",
+  "/role-picker",
+  "/recognized",
+  "/d",
   "/discover",
   "/e",
   "/t",
@@ -25,6 +34,16 @@ const PUBLIC_PATHS = [
   "/pricing",
   "/privacy",
   "/terms",
+  "/status",
+  "/changelog",
+  "/press",
+  "/careers",
+  "/about",
+  "/shortcuts",
+  "/reissue",
+  "/verify-age",
+  "/walkthrough",
+  "/strike",
   "/docs",
   "/help",
   "/contact",
@@ -35,6 +54,12 @@ const PUBLIC_PATHS = [
   "/manifest.json",
   "/icon.svg",
   "/service-worker.js",
+  "/dev",
+  // Preview-mode role dispatcher. The page + API route each enforce
+  // their own NEXT_PUBLIC_PREVIEW_MODE gate (404 when disabled), so
+  // it's safe to let unauthenticated visitors reach them.
+  "/preview",
+  "/api/preview",
 ];
 
 type CookieToSet = { name: string; value: string; options: CookieOptions };

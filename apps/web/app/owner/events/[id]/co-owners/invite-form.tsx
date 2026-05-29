@@ -6,9 +6,6 @@ import { createCoOwnerInviteAction } from "./actions";
 export default function CoOwnerInviteForm({ eventId }: { eventId: string }) {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  // Only "read_only" is enforceable today (Day 19 audit P1-1).
-  // The DB column accepts edit/admin for future tiering — UI doesn't offer
-  // them until write enforcement is wired.
   const permission = "read_only" as const;
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{
@@ -52,11 +49,20 @@ export default function CoOwnerInviteForm({ eventId }: { eventId: string }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="card flex flex-col gap-4">
-      <p className="label-mono">Invite a co-owner account</p>
+    <form
+      onSubmit={onSubmit}
+      className="card"
+      style={{
+        padding: "var(--s-5)",
+        display: "flex",
+        flexDirection: "column",
+        gap: "var(--s-4)",
+      }}
+    >
+      <div className="t-h1">Invite a co-owner account</div>
 
       <div>
-        <label htmlFor="co-phone" className="label-mono block mb-2">
+        <label htmlFor="co-phone" className="t-meta">
           Phone (optional, for SMS)
         </label>
         <input
@@ -65,13 +71,14 @@ export default function CoOwnerInviteForm({ eventId }: { eventId: string }) {
           inputMode="tel"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          className="input-dark"
+          className="input"
+          style={{ marginTop: "var(--s-2)" }}
           placeholder="(305) 555 1234"
         />
       </div>
 
       <div>
-        <label htmlFor="co-email" className="label-mono block mb-2">
+        <label htmlFor="co-email" className="t-meta">
           Email (optional, copy link to send)
         </label>
         <input
@@ -79,52 +86,70 @@ export default function CoOwnerInviteForm({ eventId }: { eventId: string }) {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="input-dark"
+          className="input"
+          style={{ marginTop: "var(--s-2)" }}
           placeholder="they@brand.com"
         />
       </div>
 
       <div>
-        <p className="label-mono mb-2">Permission</p>
-        <div className="card border-line">
-          <p className="label-mono text-cream mb-1">View-only</p>
-          <p className="text-muted text-xs leading-relaxed">
+        <div className="t-meta" style={{ marginBottom: "var(--s-2)" }}>
+          Permission
+        </div>
+        <div
+          className="card"
+          style={{ padding: "var(--s-3)", background: "var(--bg-3)" }}
+        >
+          <div className="t-body" style={{ fontWeight: 500 }}>
+            View-only
+          </div>
+          <div className="t-body-2" style={{ marginTop: "var(--s-1)" }}>
             Co-owners can see the event, allocations, and guest list. Editable
             tiers are coming — for now everything writeable stays with the
             account owner.
-          </p>
+          </div>
         </div>
       </div>
 
-      {error && <p className="text-coral text-sm">{error}</p>}
+      {error && (
+        <p className="t-body-2" style={{ color: "var(--err)" }}>
+          {error}
+        </p>
+      )}
 
       {result && (
-        <div className="bg-s3 border border-line rounded-md p-3">
-          <p className="label-mono mb-2">
+        <div className="card" style={{ padding: "var(--s-3)" }}>
+          <div className="t-meta">
             Invite created
             {result.provider === "dev" && (
-              <span className="text-gold"> (DEV — console log)</span>
+              <span style={{ color: "var(--warn)" }}>
+                {" "}
+                (dev — console log)
+              </span>
             )}
-          </p>
-          <div className="flex gap-2">
+          </div>
+          <div
+            style={{
+              display: "flex",
+              gap: "var(--s-2)",
+              marginTop: "var(--s-2)",
+            }}
+          >
             <input
               value={result.url}
               readOnly
               onFocus={(e) => e.currentTarget.select()}
-              className="input-dark text-xs font-mono"
+              className="input"
+              style={{ fontSize: "var(--ts-sm)", fontFamily: "var(--mono)" }}
             />
-            <button
-              type="button"
-              onClick={copy}
-              className="btn-ghost w-auto px-4"
-            >
+            <button type="button" className="btn btn--ghost" onClick={copy}>
               {copied ? "Copied" : "Copy"}
             </button>
           </div>
         </div>
       )}
 
-      <button type="submit" className="btn-primary" disabled={pending}>
+      <button type="submit" className="btn btn--accent" disabled={pending}>
         {pending ? "Sending…" : "Send invite"}
       </button>
     </form>

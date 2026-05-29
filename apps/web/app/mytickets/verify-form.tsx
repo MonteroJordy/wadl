@@ -54,9 +54,17 @@ export default function MyTicketsVerify() {
 
   if (step === "code") {
     return (
-      <form onSubmit={onVerify} className="flex flex-col gap-4 mt-6">
-        <p className="text-muted text-sm">
-          Sent to <span className="text-cream">{e164}</span>.
+      <form
+        onSubmit={onVerify}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-4)",
+          marginTop: "var(--s-6)",
+        }}
+      >
+        <p className="t-body-2">
+          Sent to <span style={{ color: "var(--fg)" }}>{e164}</span>.
         </p>
         <input
           type="text"
@@ -66,18 +74,40 @@ export default function MyTicketsVerify() {
           maxLength={6}
           value={code}
           onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-          className="input-dark tracking-[0.5em] text-center text-2xl"
+          className="input"
+          style={{
+            letterSpacing: "0.5em",
+            textAlign: "center",
+            fontSize: 24,
+            height: 56,
+          }}
           placeholder="••••••"
           required
         />
-        {error && <p className="text-coral text-sm">{error}</p>}
-        <button type="submit" className="btn-primary" disabled={pending}>
+        {error && (
+          <p className="t-body-2" style={{ color: "var(--err)" }}>
+            {error}
+          </p>
+        )}
+        <button
+          type="submit"
+          className="btn btn--lg btn--accent btn--block"
+          disabled={pending}
+        >
           {pending ? "Verifying…" : "See my tickets"}
         </button>
         <button
           type="button"
           onClick={() => setStep("phone")}
-          className="label-mono text-center hover:text-cream transition"
+          className="t-meta"
+          style={{
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            color: "var(--fg-3)",
+            textAlign: "center",
+            padding: 0,
+          }}
         >
           ← Wrong number
         </button>
@@ -86,9 +116,21 @@ export default function MyTicketsVerify() {
   }
 
   return (
-    <form onSubmit={onSendCode} className="flex flex-col gap-4 mt-6">
+    <form
+      onSubmit={onSendCode}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "var(--s-4)",
+        marginTop: "var(--s-6)",
+      }}
+    >
       <div>
-        <label htmlFor="phone" className="label-mono block mb-2">
+        <label
+          htmlFor="phone"
+          className="t-meta"
+          style={{ display: "block", marginBottom: "var(--s-2)" }}
+        >
           Phone
         </label>
         <input
@@ -98,13 +140,21 @@ export default function MyTicketsVerify() {
           autoComplete="tel"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          className="input-dark"
+          className="input"
           placeholder="(305) 555 1234"
           required
         />
       </div>
-      {error && <p className="text-coral text-sm">{error}</p>}
-      <button type="submit" className="btn-primary" disabled={pending}>
+      {error && (
+        <p className="t-body-2" style={{ color: "var(--err)" }}>
+          {error}
+        </p>
+      )}
+      <button
+        type="submit"
+        className="btn btn--lg btn--accent btn--block"
+        disabled={pending}
+      >
         {pending ? "Sending…" : "Send code"}
       </button>
     </form>

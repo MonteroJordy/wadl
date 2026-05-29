@@ -36,12 +36,10 @@ create policy "event_templates_mutate_via_owner" on public.event_templates
   );
 
 -- ============================================================================
--- Photographer role on event_staff. Enum already includes door_staff +
--- door_manager, but enums need ALTER TYPE to add 'photographer'.
+-- Photographer role on event_staff. The 'photographer' enum value itself is
+-- added in 20260429000002a_day13_enum_value.sql so it commits before this
+-- file references it inside a CHECK constraint.
 -- ============================================================================
-do $$ begin
-  alter type user_role add value if not exists 'photographer';
-exception when duplicate_object then null; end $$;
 
 -- Existing event_staff role check constraint allows 'manager' or 'staff'.
 -- Day 5 widened it; let's broaden to also accept 'photographer'.

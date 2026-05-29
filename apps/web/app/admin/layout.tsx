@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import AdminTabs from "@/components/admin-tabs";
+import { Logo } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 
@@ -29,15 +30,51 @@ export default async function AdminLayout({
   }
 
   return (
-    <div>
-      <header className="border-b border-coral/30 bg-s1 sticky top-0 z-30">
-        <div className="px-4 md:px-8 py-3 flex items-center gap-4">
-          <p className="font-display text-xl text-coral tracking-wide">
-            WADL · ADMIN
-          </p>
+    <div className="v5" style={{ minHeight: "100vh", background: "var(--bg)" }}>
+      <header
+        style={{
+          borderBottom: "1px solid var(--line)",
+          background: "var(--bg)",
+          position: "sticky",
+          top: 0,
+          zIndex: 30,
+        }}
+      >
+        <div
+          style={{
+            padding: "var(--s-3) var(--s-6)",
+            display: "flex",
+            alignItems: "center",
+            gap: "var(--s-4)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "var(--s-3)",
+            }}
+          >
+            <Logo size={18} />
+            <span
+              className="t-meta"
+              style={{
+                paddingLeft: "var(--s-2)",
+                marginLeft: "var(--s-2)",
+                borderLeft: "1px solid var(--line)",
+              }}
+            >
+              Admin
+            </span>
+          </div>
           <Link
             href="/owner"
-            className="ml-auto label-mono hover:text-cream"
+            className="t-meta"
+            style={{
+              marginLeft: "auto",
+              color: "var(--fg-3)",
+              textDecoration: "none",
+            }}
           >
             ← My owner view
           </Link>

@@ -1,6 +1,6 @@
 import { requireOwnerContext } from "@/lib/owner";
 import { computeExtraAnalytics } from "@/lib/analytics-extra";
-import EmptyState from "@/components/empty-state";
+import { Stat } from "@/components/v5";
 import { fmtDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -10,84 +10,186 @@ export default async function GuestsAnalyticsPage() {
   const { account } = await requireOwnerContext();
   const x = await computeExtraAnalytics(account.id);
 
-  if (x.segments.first_timers + x.segments.returning + x.segments.regulars === 0) {
-    return <EmptyState title="No regulars yet" body="First-timers, returning, regulars — the cohort math kicks in after a few nights with check-ins." />;
+  if (
+    x.segments.first_timers + x.segments.returning + x.segments.regulars ===
+    0
+  ) {
+    return (
+      <div
+        className="card"
+        style={{ padding: "var(--s-16) var(--s-8)", textAlign: "center" }}
+      >
+        <div className="t-display-sm">No regulars yet</div>
+        <p
+          className="t-body-2"
+          style={{
+            marginTop: "var(--s-3)",
+            maxWidth: 460,
+            marginInline: "auto",
+          }}
+        >
+          First-timers, returning, regulars — the cohort math kicks in after a
+          few nights with check-ins.
+        </p>
+      </div>
+    );
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <section className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        <div className="card">
-          <p className="label-mono">Returning guests</p>
-          <p className="font-display text-3xl text-cream leading-none mt-1">
-            {Math.round(x.retentionRate * 100)}%
-          </p>
-          <p className="label-mono mt-1">attended ≥2 events in window</p>
-        </div>
-        <div className="card">
-          <p className="label-mono">First-timers</p>
-          <p className="font-display text-3xl text-mint leading-none mt-1">
-            {x.segments.first_timers}
-          </p>
-        </div>
-        <div className="card">
-          <p className="label-mono">Regulars (4+)</p>
-          <p className="font-display text-3xl text-coral leading-none mt-1">
-            {x.segments.regulars}
-          </p>
-        </div>
-      </section>
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
+      <div
+        className="card"
+        style={{
+          padding: 0,
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+        }}
+      >
+        <Stat
+          label="Returning guests"
+          value={`${Math.round(x.retentionRate * 100)}%`}
+          sub="attended ≥2 events in window"
+        />
+        <Stat
+          label="First-timers"
+          value={x.segments.first_timers}
+          sub="brand new this window"
+        />
+        <Stat
+          label="Regulars · 4+"
+          value={x.segments.regulars}
+          sub="your loyal core"
+          last
+        />
+      </div>
 
-      <section className="card">
-        <p className="label-mono mb-3">Segments</p>
-        <div className="flex h-10 rounded overflow-hidden mb-3">
+      <div className="card" style={{ padding: "var(--s-6)" }}>
+        <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+          Segments
+        </div>
+        <div
+          style={{
+            display: "flex",
+            height: 40,
+            overflow: "hidden",
+            marginBottom: "var(--s-3)",
+            borderRadius: "var(--r-sm)",
+          }}
+        >
           <div
-            className="bg-cream"
-            style={{ width: `${x.segments.pct.first_timers}%` }}
+            style={{
+              width: `${x.segments.pct.first_timers}%`,
+              background: "var(--fg)",
+            }}
             title={`First-timers ${x.segments.pct.first_timers}%`}
           />
           <div
-            className="bg-mint"
-            style={{ width: `${x.segments.pct.returning}%` }}
+            style={{
+              width: `${x.segments.pct.returning}%`,
+              background: "var(--fg-3)",
+            }}
             title={`Returning ${x.segments.pct.returning}%`}
           />
           <div
-            className="bg-coral"
-            style={{ width: `${x.segments.pct.regulars}%` }}
+            style={{
+              width: `${x.segments.pct.regulars}%`,
+              background: "var(--bg-4)",
+            }}
             title={`Regulars ${x.segments.pct.regulars}%`}
           />
         </div>
-        <p className="label-mono">
-          First-timers {x.segments.pct.first_timers}% ·{" "}
-          <span className="text-mint">Returning</span> {x.segments.pct.returning}% ·{" "}
-          <span className="text-coral">Regulars</span> {x.segments.pct.regulars}%
-        </p>
-      </section>
+        <div
+          className="t-meta"
+          style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-3)" }}
+        >
+          <span>
+            <span style={{ color: "var(--fg)" }}>First-timers</span>{" "}
+            {x.segments.pct.first_timers}%
+          </span>
+          <span>
+            <span style={{ color: "var(--fg-2)" }}>Returning</span>{" "}
+            {x.segments.pct.returning}%
+          </span>
+          <span>Regulars {x.segments.pct.regulars}%</span>
+        </div>
+      </div>
 
-      <section className="card">
-        <p className="label-mono mb-3">Top returning guests</p>
+      <div className="card" style={{ padding: "var(--s-6)" }}>
+        <div className="t-meta" style={{ marginBottom: "var(--s-4)" }}>
+          Top returning guests
+        </div>
         {x.topGuests.length === 0 ? (
-          <p className="text-muted text-sm">No repeat guests yet.</p>
+          <p className="t-body-2">No repeat guests yet.</p>
         ) : (
-          <div className="overflow-x-auto -mx-4 px-4">
-            <table className="w-full text-sm">
-              <thead className="label-mono text-left">
+          <div
+            style={{
+              overflowX: "auto",
+              margin: "0 calc(-1 * var(--s-6))",
+              padding: "0 var(--s-6)",
+            }}
+          >
+            <table
+              style={{
+                width: "100%",
+                fontSize: "var(--ts-md)",
+                borderCollapse: "collapse",
+              }}
+            >
+              <thead>
                 <tr>
-                  <th className="pb-2">Name</th>
-                  <th>Phone</th>
-                  <th className="text-right">Events</th>
-                  <th className="text-right">Avg tier</th>
-                  <th className="text-right">Last seen</th>
+                  {["Name", "Phone", "Events", "Avg tier", "Last seen"].map(
+                    (h, i) => (
+                      <th
+                        key={h}
+                        className="t-meta"
+                        style={{
+                          textAlign: i >= 2 ? "right" : "left",
+                          paddingBottom: "var(--s-2)",
+                        }}
+                      >
+                        {h}
+                      </th>
+                    ),
+                  )}
                 </tr>
               </thead>
               <tbody>
                 {x.topGuests.map((g) => (
-                  <tr key={g.phone ?? g.full_name} className="border-t border-line">
-                    <td className="py-2 text-cream">{g.full_name}</td>
-                    <td className="py-2 font-mono text-xs">{g.phone ?? "—"}</td>
-                    <td className="py-2 text-right">{g.events_attended}</td>
-                    <td className="py-2 text-right label-mono">{g.avg_tier}</td>
-                    <td className="py-2 text-right label-mono">
+                  <tr
+                    key={g.phone ?? g.full_name}
+                    style={{ borderTop: "1px solid var(--line)" }}
+                  >
+                    <td
+                      className="t-body"
+                      style={{ padding: "var(--s-3) 0" }}
+                    >
+                      {g.full_name}
+                    </td>
+                    <td
+                      className="t-body-2 t-num"
+                      style={{
+                        padding: "var(--s-3) 0",
+                        fontFamily: "var(--mono)",
+                      }}
+                    >
+                      {g.phone ?? "—"}
+                    </td>
+                    <td
+                      className="t-body t-num"
+                      style={{ padding: "var(--s-3) 0", textAlign: "right" }}
+                    >
+                      {g.events_attended}
+                    </td>
+                    <td
+                      className="t-meta"
+                      style={{ padding: "var(--s-3) 0", textAlign: "right" }}
+                    >
+                      {g.avg_tier}
+                    </td>
+                    <td
+                      className="t-meta"
+                      style={{ padding: "var(--s-3) 0", textAlign: "right" }}
+                    >
                       {fmtDate(g.last_seen)}
                     </td>
                   </tr>
@@ -96,7 +198,7 @@ export default async function GuestsAnalyticsPage() {
             </table>
           </div>
         )}
-      </section>
+      </div>
     </div>
   );
 }

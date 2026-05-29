@@ -37,8 +37,12 @@ export async function requireOwnerContext() {
     .eq("id", user.id)
     .maybeSingle<Profile>();
 
+  // /signup is now the unified wizard that handles every onboarding step
+  // (role, identity, OTP, venue extras). Both incomplete-name and
+  // incomplete-account states route there; the wizard's useEffect resumes
+  // from the right step.
   if (!profile || !profile.full_name) redirect("/signup");
-  if (!profile.account_id) redirect("/entitysetup");
+  if (!profile.account_id) redirect("/signup");
 
   const { data: account } = await supabase
     .from("accounts")
@@ -46,7 +50,7 @@ export async function requireOwnerContext() {
     .eq("id", profile.account_id)
     .maybeSingle<Account>();
 
-  if (!account) redirect("/entitysetup");
+  if (!account) redirect("/signup");
 
   // The account row must point back to this user — otherwise the user is
   // (in theory) a future co-account-member trying to reach owner surfaces

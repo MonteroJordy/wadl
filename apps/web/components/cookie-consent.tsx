@@ -8,7 +8,9 @@ const ONE_YEAR = 60 * 60 * 24 * 365;
 
 function readConsent(): "accepted" | "rejected" | null {
   if (typeof document === "undefined") return null;
-  const m = document.cookie.match(/(?:^|;\s*)wadl_cookie_consent=(accepted|rejected)/);
+  const m = document.cookie.match(
+    /(?:^|;\s*)wadl_cookie_consent=(accepted|rejected)/,
+  );
   return (m?.[1] as "accepted" | "rejected" | undefined) ?? null;
 }
 
@@ -34,29 +36,63 @@ export default function CookieConsent() {
     <div
       role="region"
       aria-label="Cookie consent"
-      className="fixed inset-x-0 bottom-0 z-50 px-3 pb-3 md:px-6 md:pb-6 pointer-events-none"
+      style={{
+        position: "fixed",
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 50,
+        padding: 12,
+        pointerEvents: "none",
+      }}
     >
-      <div className="pointer-events-auto mx-auto max-w-2xl bg-s1 border border-line rounded-lg p-4 md:p-5 shadow-2xl flex flex-col md:flex-row md:items-center gap-4">
-        <div className="flex-1 text-sm text-cream/80 leading-relaxed">
-          We use essential cookies for sign-in and a tiny first-party cookie
-          to remember this choice.{" "}
-          <Link href="/privacy#cookies" className="text-coral underline">
+      <div
+        className="card"
+        style={{
+          pointerEvents: "auto",
+          margin: "0 auto",
+          maxWidth: 720,
+          padding: "var(--s-5)",
+          boxShadow: "0 24px 64px rgba(0,0,0,0.6)",
+          display: "flex",
+          alignItems: "center",
+          gap: "var(--s-4)",
+          flexWrap: "wrap",
+        }}
+      >
+        <div
+          className="t-body-2"
+          style={{ flex: 1, minWidth: 240, lineHeight: 1.5 }}
+        >
+          We use essential cookies for sign-in and a tiny first-party cookie to
+          remember this choice.{" "}
+          <Link
+            href="/privacy#cookies"
+            style={{ color: "var(--fg)", textDecoration: "underline" }}
+          >
             Privacy policy
           </Link>
           .
         </div>
-        <div className="flex gap-2 shrink-0">
+        <div
+          style={{
+            display: "flex",
+            gap: "var(--s-2)",
+            flexShrink: 0,
+            flexWrap: "wrap",
+          }}
+        >
           <button
+            className="btn btn--ghost btn--sm"
             type="button"
             onClick={() => pick("rejected")}
-            className="border border-line text-cream font-sans font-semibold text-xs uppercase tracking-[0.14em] px-4 py-2 rounded-md hover:border-cream/30 transition"
           >
             Reject non-essential
           </button>
           <button
+            className="btn btn--sm"
             type="button"
             onClick={() => pick("accepted")}
-            className="bg-coral text-bg font-sans font-semibold text-xs uppercase tracking-[0.14em] px-4 py-2 rounded-md hover:brightness-110 transition"
           >
             Accept
           </button>

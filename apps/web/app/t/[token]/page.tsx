@@ -2,6 +2,7 @@ import Link from "next/link";
 import QRCode from "qrcode";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fmtDate, fmtTime } from "@/lib/format";
+import { Logo } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 
@@ -18,24 +19,6 @@ interface TicketData {
   };
 }
 
-function StatusPill({ status }: { status: string }) {
-  const cls =
-    status === "approved"
-      ? "bg-mint/20 text-mint border-mint/40"
-      : status === "pending"
-      ? "bg-gold/20 text-gold border-gold/40"
-      : status === "rejected"
-      ? "bg-coral/20 text-coral border-coral/40"
-      : "bg-s3 text-muted border-line";
-  return (
-    <span
-      className={`inline-block border rounded-full px-3 py-1 label-mono ${cls}`}
-    >
-      {status}
-    </span>
-  );
-}
-
 export default async function TicketPage({
   params,
 }: {
@@ -46,21 +29,43 @@ export default async function TicketPage({
   const { data: guest } = await admin
     .from("guests")
     .select(
-      "id, full_name, plus_ones, status, check_in_token, night:event_nights!inner(night_date, doors_at, event:events!inner(id, name, flyer_url))"
+      "id, full_name, plus_ones, status, check_in_token, night:event_nights!inner(night_date, doors_at, event:events!inner(id, name, flyer_url))",
     )
     .eq("check_in_token", params.token)
     .maybeSingle<TicketData>();
 
   if (!guest) {
     return (
-      <main id="main-content" className="mobile-frame">
-        <div className="pt-12 text-center">
-          <p className="label-mono mb-3">WADL</p>
-          <h1 className="display-lg mb-3">Ticket not found.</h1>
-          <p className="text-muted text-sm">
+      <main
+        id="main-content"
+        style={{ minHeight: "100vh", background: "var(--bg)" }}
+      >
+        <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
+          <Logo size={18} />
+        </div>
+        <div
+          style={{
+            padding: "var(--s-24) var(--s-6) 0",
+            textAlign: "center",
+            maxWidth: 420,
+            margin: "0 auto",
+          }}
+        >
+          <div className="t-meta">Credential</div>
+          <div className="t-display-md" style={{ marginTop: "var(--s-3)" }}>
+            Ticket not found.
+          </div>
+          <p className="t-body-2" style={{ marginTop: "var(--s-3)" }}>
             The link may be wrong or the ticket may have been revoked.
           </p>
-          <Link href="/mytickets" className="btn-primary mt-6 inline-block w-auto px-6">
+          <Link
+            href="/mytickets"
+            className="btn btn--accent"
+            style={{
+              marginTop: "var(--s-6)",
+              textDecoration: "none",
+            }}
+          >
             My tickets
           </Link>
         </div>
@@ -72,15 +77,13 @@ export default async function TicketPage({
     type: "svg",
     errorCorrectionLevel: "M",
     margin: 1,
-    color: { dark: "#0a0a0a", light: "#F2EDE4" },
+    color: { dark: "#0a0a0b", light: "#f3f1ec" },
   });
 
   const active = guest.status === "approved";
-  // Past-event view: when doors_at is more than 6h in the past, switch to a
-  // post-event "you attended" UI instead of showing the (now-useless) QR.
   const isPast =
     new Date(guest.night.doors_at).getTime() < Date.now() - 6 * 60 * 60_000;
-  // Look for an approved scan to know if they actually came.
+
   const admin2 = createAdminClient();
   const { data: scan } = isPast
     ? await admin2
@@ -95,186 +98,302 @@ export default async function TicketPage({
 
   if (isPast) {
     return (
-      <main id="main-content" className="min-h-screen">
-        <header className="sticky top-0 z-30 backdrop-blur-md bg-bg/80 border-b border-line">
-          <div className="max-w-md mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
-            <Link href="/mytickets" className="label-mono hover:text-cream transition">
-              ← Tickets
-            </Link>
-            <Link
-              href="/"
-              className="font-display text-xl text-coral tracking-wide"
-            >
-              WADL
-            </Link>
-            <p className="label-mono">Past</p>
+      <main
+        id="main-content"
+        style={{ minHeight: "100vh", background: "var(--bg)" }}
+      >
+        <div
+          style={{
+            padding: "var(--s-6) var(--s-6) 0",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Link
+            href="/mytickets"
+            className="t-meta"
+            style={{ textDecoration: "none" }}
+          >
+            ← Tickets
+          </Link>
+          <Logo size={16} />
+          <span className="chip chip--ghost">Past</span>
+        </div>
+
+        <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
+          <div className="t-meta">
+            {fmtDate(guest.night.night_date)} · Doors{" "}
+            {fmtTime(guest.night.doors_at)}
           </div>
-        </header>
-        <div className="max-w-md mx-auto px-4 md:px-6 pt-6 pb-12">
-        <h1 className="font-display text-3xl md:text-4xl text-cream uppercase tracking-wide leading-[0.95] mb-2">
-          {guest.night.event.name}
-        </h1>
-        <p className="label-mono mb-6">
-          {fmtDate(guest.night.night_date)} · Doors {fmtTime(guest.night.doors_at)}
-        </p>
+          <div className="t-display-md" style={{ marginTop: "var(--s-2)" }}>
+            {guest.night.event.name}
+          </div>
+        </div>
 
         {guest.night.event.flyer_url && (
-          <div
-            className="w-full rounded-lg overflow-hidden border border-line mb-5"
-            style={{ aspectRatio: "4 / 5" }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={guest.night.event.flyer_url}
-              alt={guest.night.event.name}
-              className="w-full h-full object-cover"
-            />
+          <div style={{ padding: "var(--s-5) var(--s-6) 0" }}>
+            <div
+              style={{
+                width: "100%",
+                aspectRatio: "4 / 5",
+                borderRadius: "var(--r-lg)",
+                border: "1px solid var(--line)",
+                background: "var(--bg-3)",
+                overflow: "hidden",
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={guest.night.event.flyer_url}
+                alt={guest.night.event.name}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
+              />
+            </div>
           </div>
         )}
 
-        <div className="card mb-4">
-          {scan ? (
-            <>
-              <p className="label-mono text-mint mb-1">✓ You attended</p>
-              <p className="font-sans text-cream">
-                Scanned in at{" "}
-                {new Date(scan.scanned_at).toLocaleString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  hour: "numeric",
-                  minute: "2-digit",
-                })}
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="label-mono text-coral mb-1">No-show</p>
-              <p className="font-sans text-cream/80 text-sm">
-                We don&apos;t have a record of you scanning in. Talk to the
-                host if that&apos;s a mistake.
-              </p>
-            </>
-          )}
+        <div style={{ padding: "var(--s-5) var(--s-6) 0" }}>
+          <div className="card" style={{ padding: "var(--s-4)" }}>
+            {scan ? (
+              <>
+                <span className="chip chip--ok">Attended</span>
+                <p className="t-body-2" style={{ marginTop: "var(--s-3)" }}>
+                  Scanned in at{" "}
+                  {new Date(scan.scanned_at).toLocaleString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
+                </p>
+              </>
+            ) : (
+              <>
+                <span className="chip chip--warn">No-show</span>
+                <p className="t-body-2" style={{ marginTop: "var(--s-3)" }}>
+                  We don&apos;t have a record of you scanning in. Talk to the
+                  host if that&apos;s a mistake.
+                </p>
+              </>
+            )}
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 mb-2">
+        <div
+          style={{
+            padding: "var(--s-5) var(--s-6) 0",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "var(--s-2)",
+          }}
+        >
           <Link
             href={`/e/${guest.night.event.id}/feedback?token=${guest.check_in_token}`}
-            className="btn-ghost text-center"
+            className="btn btn--ghost"
+            style={{ textDecoration: "none" }}
           >
             Leave feedback
           </Link>
-          <Link href="/discover" className="btn-primary text-center">
-            What&apos;s next →
+          <Link
+            href="/discover"
+            className="btn btn--accent"
+            style={{ textDecoration: "none" }}
+          >
+            What&apos;s next
           </Link>
         </div>
 
-        <p className="label-mono mt-8 text-center break-all">
-          <span className="text-muted">Token:</span> {guest.check_in_token}
-        </p>
+        <div
+          className="t-meta"
+          style={{
+            padding: "var(--s-8) var(--s-6) var(--s-4)",
+            textAlign: "center",
+            wordBreak: "break-all",
+          }}
+        >
+          Token · {guest.check_in_token}
         </div>
       </main>
     );
   }
 
   return (
-    <main id="main-content" className="min-h-screen">
-      <header className="sticky top-0 z-30 backdrop-blur-md bg-bg/80 border-b border-line">
-        <div className="max-w-md mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
-          <Link href="/mytickets" className="label-mono hover:text-cream transition">
-            ← Tickets
-          </Link>
-          <Link
-            href="/"
-            className="font-display text-xl text-coral tracking-wide"
-          >
-            WADL
-          </Link>
-          <StatusPill status={guest.status} />
-        </div>
-      </header>
-
-      <div className="max-w-md mx-auto px-4 md:px-6 pt-6 pb-12 flex flex-col">
-      <h1 className="font-display text-3xl md:text-4xl text-cream uppercase tracking-wide leading-[0.95] mb-2">
-        {guest.night.event.name}
-      </h1>
-      <p className="label-mono mb-6">
-        {fmtDate(guest.night.night_date)} · Doors {fmtTime(guest.night.doors_at)}
-      </p>
-
+    <main
+      id="main-content"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
+    >
       <div
-        className={`rounded-2xl p-6 flex items-center justify-center ${
-          active ? "bg-cream" : "bg-s2 border border-line"
-        }`}
-        style={{ aspectRatio: "1 / 1" }}
+        style={{
+          padding: "var(--s-6) var(--s-6) 0",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
       >
-        {active ? (
-          <div
-            className="w-full h-full [&>svg]:w-full [&>svg]:h-full"
-            dangerouslySetInnerHTML={{ __html: svg }}
-          />
-        ) : (
-          <div className="text-center px-4">
-            <p className="font-display text-4xl text-gold mb-3">PENDING</p>
-            <p className="text-muted text-sm">
-              Your QR activates once the host approves this RSVP.
-            </p>
-          </div>
-        )}
+        <Link
+          href="/mytickets"
+          className="t-meta"
+          style={{ textDecoration: "none" }}
+        >
+          ← Tickets
+        </Link>
+        <Logo size={16} />
+        <span
+          className={
+            "chip " +
+            (guest.status === "approved"
+              ? "chip--ok"
+              : guest.status === "pending"
+                ? "chip--warn"
+                : guest.status === "rejected"
+                  ? "chip--err"
+                  : "chip--ghost")
+          }
+        >
+          {guest.status.charAt(0).toUpperCase() + guest.status.slice(1)}
+        </span>
       </div>
 
-      <div className="card mt-5">
-        <p className="label-mono mb-1">Guest</p>
-        <p className="font-sans text-cream font-semibold">
-          {guest.full_name}
-          {guest.plus_ones > 0 && (
-            <span className="text-muted font-normal"> +{guest.plus_ones}</span>
+      <div style={{ padding: "var(--s-5) var(--s-6) 0" }}>
+        <div className="t-meta">
+          {fmtDate(guest.night.night_date)} · Doors{" "}
+          {fmtTime(guest.night.doors_at)}
+        </div>
+        <div className="t-display-md" style={{ marginTop: "var(--s-2)" }}>
+          {guest.night.event.name}
+        </div>
+      </div>
+
+      {/* Big QR */}
+      <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
+        <div
+          style={{
+            aspectRatio: "1 / 1",
+            borderRadius: "var(--r-lg)",
+            border: "1px solid var(--line)",
+            background: active ? "var(--fg)" : "var(--bg-3)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: active ? "var(--s-6)" : "var(--s-8)",
+          }}
+        >
+          {active ? (
+            <div
+              style={{ width: "100%", height: "100%" }}
+              dangerouslySetInnerHTML={{ __html: svg }}
+            />
+          ) : (
+            <div style={{ textAlign: "center" }}>
+              <div className="t-meta" style={{ color: "var(--warn)" }}>
+                Pending
+              </div>
+              <div
+                className="t-display-md"
+                style={{ marginTop: "var(--s-2)" }}
+              >
+                Hold tight.
+              </div>
+              <p
+                className="t-body-2"
+                style={{ marginTop: "var(--s-3)", maxWidth: 240 }}
+              >
+                Your QR activates once the host approves this RSVP.
+              </p>
+            </div>
           )}
-        </p>
+        </div>
+      </div>
+
+      <div style={{ padding: "var(--s-5) var(--s-6) 0" }}>
+        <div className="card" style={{ padding: "var(--s-4)" }}>
+          <div className="t-meta">Guest</div>
+          <div className="t-h1" style={{ marginTop: "var(--s-1)" }}>
+            {guest.full_name}
+            {guest.plus_ones > 0 && (
+              <span style={{ color: "var(--fg-3)", fontWeight: 400 }}>
+                {" "}
+                +{guest.plus_ones}
+              </span>
+            )}
+          </div>
+        </div>
       </div>
 
       {active && (
-        <div className="grid grid-cols-2 gap-2 mt-5">
+        <div
+          style={{
+            padding: "var(--s-5) var(--s-6) 0",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "var(--s-2)",
+          }}
+        >
           <a
             href={`/api/wallet/apple/${guest.check_in_token}`}
-            className="btn-ghost text-center text-xs"
+            className="btn btn--ghost"
+            style={{ textDecoration: "none" }}
           >
-            Add to Apple Wallet
+            Apple Wallet
           </a>
           <a
             href={`/api/wallet/google/${guest.check_in_token}`}
-            className="btn-ghost text-center text-xs"
+            className="btn btn--ghost"
+            style={{ textDecoration: "none" }}
           >
-            Add to Google Wallet
+            Google Wallet
           </a>
         </div>
       )}
 
-      <p className="label-mono mt-6 text-center break-all">
-        <span className="text-muted">Token:</span> {guest.check_in_token}
-      </p>
-
-      <p className="label-mono mt-3 text-center">
+      <div
+        style={{
+          padding: "var(--s-6) var(--s-6) 0",
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-2)",
+          textAlign: "center",
+        }}
+      >
         <a
           href={`/api/events/${guest.night.event.id}/calendar.ics`}
-          className="hover:text-cream"
+          className="t-meta"
+          style={{ textDecoration: "none" }}
         >
           + Add to calendar
         </a>
-      </p>
-
-      <p className="label-mono mt-3 text-center">
         <a
           href={`/referral/${guest.id}`}
-          className="hover:text-cream"
+          className="t-meta"
+          style={{ textDecoration: "none" }}
         >
           Bring a friend →
         </a>
-      </p>
+      </div>
 
-      <p className="label-mono mt-8 text-center">
-        Show this screen at the door.
-      </p>
+      <div
+        style={{
+          padding: "var(--s-8) var(--s-6) var(--s-4)",
+          textAlign: "center",
+        }}
+      >
+        <div className="t-meta">Show this screen at the door</div>
+        <div
+          className="t-meta"
+          style={{
+            marginTop: "var(--s-3)",
+            color: "var(--fg-4)",
+            wordBreak: "break-all",
+            fontSize: 9,
+          }}
+        >
+          {guest.check_in_token}
+        </div>
       </div>
     </main>
   );

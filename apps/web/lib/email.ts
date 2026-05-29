@@ -84,7 +84,7 @@ export function renderEmail(opts: {
 
   const html = `<!doctype html>
 <html><head><meta charset="utf-8"><title>${escapeHtml(opts.heading)}</title></head>
-<body style="margin:0;padding:24px;background:#0a0a0a;font-family:system-ui,sans-serif;color:#F2EDE4;">
+<body style="margin:0;padding:24px;background:#0a0a0a;font-family:system-ui,sans-serif;color:#f3f1ec;">
 ${
   opts.preheader
     ? `<div style="display:none;max-height:0;overflow:hidden;color:transparent;">${escapeHtml(opts.preheader)}</div>`
@@ -92,17 +92,17 @@ ${
 }
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;margin:0 auto;background:#111;border:1px solid rgba(255,255,255,0.08);border-radius:8px;">
 <tr><td style="padding:24px;">
-<p style="font-family:ui-monospace,monospace;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#FF4A2B;margin:0 0 4px;">WADL</p>
-<h1 style="font-size:22px;color:#F2EDE4;margin:0 0 12px;font-weight:700;">${escapeHtml(opts.heading)}</h1>
-<p style="font-size:14px;line-height:1.5;color:#F2EDE4;margin:0 0 20px;">${escapeHtml(opts.body).replace(/\n/g, "<br>")}</p>
+<p style="font-family:ui-monospace,monospace;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:oklch(0.7 0.24 260);margin:0 0 4px;">WADL</p>
+<h1 style="font-size:22px;color:#f3f1ec;margin:0 0 12px;font-weight:700;">${escapeHtml(opts.heading)}</h1>
+<p style="font-size:14px;line-height:1.5;color:#f3f1ec;margin:0 0 20px;">${escapeHtml(opts.body).replace(/\n/g, "<br>")}</p>
 ${
   opts.ctaHref
-    ? `<p style="margin:0 0 16px;"><a href="${escapeAttr(opts.ctaHref)}" style="display:inline-block;background:#FF4A2B;color:#0a0a0a;padding:12px 20px;text-decoration:none;font-weight:600;font-size:13px;letter-spacing:0.14em;text-transform:uppercase;border-radius:6px;">${escapeHtml(opts.ctaLabel ?? "Open")}</a></p>`
+    ? `<p style="margin:0 0 16px;"><a href="${escapeAttr(opts.ctaHref)}" style="display:inline-block;background:oklch(0.7 0.24 260);color:#0a0a0a;padding:12px 20px;text-decoration:none;font-weight:600;font-size:13px;letter-spacing:0.14em;text-transform:uppercase;border-radius:6px;">${escapeHtml(opts.ctaLabel ?? "Open")}</a></p>`
     : ""
 }
 ${
   opts.footer
-    ? `<p style="font-family:ui-monospace,monospace;font-size:10px;color:rgba(242,237,228,0.5);margin:24px 0 0;">${escapeHtml(opts.footer)}</p>`
+    ? `<p style="font-family:ui-monospace,monospace;font-size:10px;color:oklch(0.94 0.005 90 / 0.5);margin:24px 0 0;">${escapeHtml(opts.footer)}</p>`
     : ""
 }
 </td></tr>

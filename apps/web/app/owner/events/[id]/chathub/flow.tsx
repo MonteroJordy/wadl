@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
+import { Breadcrumb, PageHeader, EventSubNav } from "@/components/v5";
 import { parseChatAction, commitChatAction } from "./actions";
 import type { ParsedLine } from "@/lib/chathub";
 
@@ -36,10 +37,10 @@ export default function ChatHubFlow({
   const [text, setText] = useState("");
   const [nightId, setNightId] = useState(nights[0]?.id ?? "");
   const [fallbackAlloc, setFallbackAlloc] = useState<string>(
-    allocations[0]?.id ?? ""
+    allocations[0]?.id ?? "",
   );
   const [defaultHolder, setDefaultHolder] = useState<string>(
-    allocations[0]?.holder_name ?? ""
+    allocations[0]?.holder_name ?? "",
   );
   const [rows, setRows] = useState<ParsedLine[]>([]);
   const [backend, setBackend] = useState<"claude" | "regex" | null>(null);
@@ -57,7 +58,7 @@ export default function ChatHubFlow({
       const res = await parseChatAction(
         eventId,
         text,
-        defaultHolder.trim() || null
+        defaultHolder.trim() || null,
       );
       if (!res.ok) {
         setError(res.error);
@@ -89,7 +90,7 @@ export default function ChatHubFlow({
           plus_ones: r.plus_ones,
           attributed_to_holder_name: r.attributed_to_holder_name,
           raw_line: r.raw_line,
-        }))
+        })),
       );
       if (!res.ok) {
         setError(res.error);
@@ -102,33 +103,49 @@ export default function ChatHubFlow({
 
   const total = rows.reduce((s, r) => s + 1 + r.plus_ones, 0);
 
+  const crumbs: Array<string | [string, string]> = [
+    ["Events", "/owner"],
+    [eventName, `/owner/events/${eventId}`],
+    "Chat hub",
+  ];
+
   if (step === "done") {
     return (
-      <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 py-12">
-        <p className="label-mono mb-2">Chat Hub</p>
-        <h1 className="display-lg mb-2">Committed.</h1>
-        <p className="text-muted text-sm mb-6">
-          {committedCount} guest{committedCount === 1 ? "" : "s"} added to the list.
-        </p>
-        <div className="grid grid-cols-2 gap-2">
-          <Link
-            href={`/owner/events/${eventId}/queue`}
-            className="btn-primary text-center"
-          >
-            Review queue
-          </Link>
-          <button
-            type="button"
-            onClick={() => {
-              setStep("input");
-              setText("");
-              setRows([]);
-              setCommittedCount(0);
-            }}
-            className="btn-ghost"
-          >
-            Add more
-          </button>
+      <main
+        id="main-content"
+        style={{ minHeight: "100vh", background: "var(--bg)" }}
+      >
+        <Breadcrumb items={crumbs} />
+        <PageHeader
+          eyebrow="Chat hub"
+          title="Committed"
+          sub={`${committedCount} guest${
+            committedCount === 1 ? "" : "s"
+          } added to the list.`}
+        />
+        <EventSubNav active="guests" eventId={eventId} />
+        <div style={{ padding: "var(--s-8)", maxWidth: 720 }}>
+          <div style={{ display: "flex", gap: "var(--s-2)" }}>
+            <Link
+              href={`/owner/events/${eventId}/queue`}
+              className="btn btn--accent"
+              style={{ textDecoration: "none" }}
+            >
+              Review queue
+            </Link>
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={() => {
+                setStep("input");
+                setText("");
+                setRows([]);
+                setCommittedCount(0);
+              }}
+            >
+              Add more
+            </button>
+          </div>
         </div>
       </main>
     );
@@ -136,146 +153,207 @@ export default function ChatHubFlow({
 
   if (step === "review") {
     return (
-      <main id="main-content" className="mx-auto max-w-frame md:max-w-3xl px-6 py-12">
-        <header className="flex items-center justify-between pb-4">
-          <button
-            type="button"
-            onClick={() => setStep("input")}
-            className="label-mono hover:text-cream transition"
+      <main
+        id="main-content"
+        style={{ minHeight: "100vh", background: "var(--bg)" }}
+      >
+        <Breadcrumb items={crumbs} />
+        <PageHeader
+          eyebrow={`Chat hub · parsed by ${backend ?? ""}`}
+          title="Review & commit"
+          sub={`${rows.length} rows · ${total} heads incl. +1s`}
+          actions={
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={() => setStep("input")}
+            >
+              Edit input
+            </button>
+          }
+        />
+        <EventSubNav active="guests" eventId={eventId} />
+
+        <div style={{ padding: "var(--s-8)", maxWidth: 880 }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "var(--s-2)",
+              marginBottom: "var(--s-4)",
+            }}
           >
-            ← Edit input
-          </button>
-          <p className="label-mono">
-            Parsed by{" "}
-            <span className={backend === "claude" ? "text-coral" : "text-mint"}>
-              {backend}
-            </span>
-          </p>
-        </header>
+            {rows.map((r, i) => (
+              <div key={i} className="card" style={{ padding: "var(--s-4)" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: "var(--s-3)",
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <input
+                      type="text"
+                      value={r.name}
+                      onChange={(e) =>
+                        updateRow(i, { name: e.target.value })
+                      }
+                      className="input"
+                      placeholder="Name"
+                    />
+                    <div
+                      className="t-meta truncate"
+                      style={{ marginTop: "var(--s-2)" }}
+                    >
+                      {r.raw_line}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeRow(i)}
+                    className="t-meta"
+                    style={{
+                      flexShrink: 0,
+                      background: "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                      color: "var(--err)",
+                      padding: 0,
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
 
-        <h1 className="display-lg mb-2">Review &amp; commit.</h1>
-        <p className="label-mono mb-4">
-          {rows.length} rows · {total} heads incl. +1s
-        </p>
-
-        <div className="flex flex-col gap-2 mb-4">
-          {rows.map((r, i) => (
-            <div key={i} className="card">
-              <div className="flex items-start gap-3">
-                <div className="flex-1 min-w-0">
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 80px 1fr",
+                    gap: "var(--s-2)",
+                    marginTop: "var(--s-3)",
+                  }}
+                >
+                  <select
+                    value={r.tier}
+                    onChange={(e) =>
+                      updateRow(i, {
+                        tier: e.target.value as
+                          | "ga"
+                          | "vip"
+                          | "all_access",
+                      })
+                    }
+                    className="input"
+                  >
+                    {TIERS.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="number"
+                    min={0}
+                    max={10}
+                    value={r.plus_ones}
+                    onChange={(e) =>
+                      updateRow(i, {
+                        plus_ones: parseInt(e.target.value, 10) || 0,
+                      })
+                    }
+                    className="input"
+                    title="+1s"
+                  />
                   <input
                     type="text"
-                    value={r.name}
-                    onChange={(e) => updateRow(i, { name: e.target.value })}
-                    className="input-dark text-sm"
-                    placeholder="Name"
+                    placeholder="Holder"
+                    value={r.attributed_to_holder_name ?? ""}
+                    onChange={(e) =>
+                      updateRow(i, {
+                        attributed_to_holder_name: e.target.value || null,
+                      })
+                    }
+                    className="input"
                   />
-                  <p className="label-mono mt-2 truncate text-muted">
-                    {r.raw_line}
-                  </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => removeRow(i)}
-                  className="label-mono text-coral hover:brightness-125 shrink-0"
-                >
-                  Remove
-                </button>
+                <div className="t-meta" style={{ marginTop: "var(--s-2)" }}>
+                  Confidence:{" "}
+                  <span
+                    style={{
+                      color:
+                        r.confidence > 0.8
+                          ? "var(--ok)"
+                          : r.confidence > 0.5
+                            ? "var(--warn)"
+                            : "var(--err)",
+                    }}
+                  >
+                    {Math.round(r.confidence * 100)}%
+                  </span>
+                </div>
               </div>
+            ))}
+          </div>
 
-              <div className="grid grid-cols-3 gap-2 mt-3">
-                <select
-                  value={r.tier}
-                  onChange={(e) =>
-                    updateRow(i, {
-                      tier: e.target.value as "ga" | "vip" | "all_access",
-                    })
-                  }
-                  className="input-dark text-xs py-2"
-                >
-                  {TIERS.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.label}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="number"
-                  min={0}
-                  max={10}
-                  value={r.plus_ones}
-                  onChange={(e) =>
-                    updateRow(i, {
-                      plus_ones: parseInt(e.target.value, 10) || 0,
-                    })
-                  }
-                  className="input-dark text-xs py-2"
-                  title="+1s"
-                />
-                <input
-                  type="text"
-                  placeholder="Holder"
-                  value={r.attributed_to_holder_name ?? ""}
-                  onChange={(e) =>
-                    updateRow(i, {
-                      attributed_to_holder_name: e.target.value || null,
-                    })
-                  }
-                  className="input-dark text-xs py-2"
-                />
-              </div>
-              <p className="label-mono mt-2">
-                Confidence:{" "}
-                <span
-                  className={
-                    r.confidence > 0.8
-                      ? "text-mint"
-                      : r.confidence > 0.5
-                      ? "text-gold"
-                      : "text-coral"
-                  }
-                >
-                  {Math.round(r.confidence * 100)}%
-                </span>
-              </p>
-            </div>
-          ))}
+          {error && (
+            <p
+              className="t-body-2"
+              style={{ color: "var(--err)", marginBottom: "var(--s-3)" }}
+            >
+              {error}
+            </p>
+          )}
+
+          <button
+            type="button"
+            className="btn btn--accent"
+            onClick={onCommit}
+            disabled={pending || rows.length === 0}
+          >
+            {pending
+              ? "Committing…"
+              : `Commit ${rows.length} to ${eventName}`}
+          </button>
         </div>
-
-        {error && <p className="text-coral text-sm mb-3">{error}</p>}
-
-        <button
-          type="button"
-          onClick={onCommit}
-          disabled={pending || rows.length === 0}
-          className="btn-primary"
-        >
-          {pending ? "Committing…" : `Commit ${rows.length} to ${eventName}`}
-        </button>
       </main>
     );
   }
 
   return (
-    <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 py-12">
-      <p className="label-mono mb-2">Chat Hub</p>
-      <h1 className="display-lg leading-[0.95] mb-2">Paste the names.</h1>
-      <p className="text-muted text-sm mb-6">
-        Drop in plain text from WhatsApp, Slack, or anywhere. We&apos;ll parse
-        names, tiers, +1s, and who they&apos;re w/.
-      </p>
+    <main
+      id="main-content"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
+    >
+      <Breadcrumb items={crumbs} />
+      <PageHeader
+        eyebrow="Chat hub"
+        title="Paste the names"
+        sub="Drop in plain text from WhatsApp, Slack, or anywhere. We'll parse names, tiers, +1s, and who they're w/."
+      />
+      <EventSubNav active="guests" eventId={eventId} />
 
-      <form onSubmit={onParse} className="flex flex-col gap-4">
+      <form
+        onSubmit={onParse}
+        style={{
+          padding: "var(--s-8)",
+          maxWidth: 720,
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-5)",
+        }}
+      >
         {nights.length > 1 && (
           <div>
-            <label htmlFor="night" className="label-mono block mb-2">
+            <label htmlFor="night" className="t-meta">
               Night
             </label>
             <select
               id="night"
               value={nightId}
               onChange={(e) => setNightId(e.target.value)}
-              className="input-dark"
+              className="input"
+              style={{ marginTop: "var(--s-2)" }}
             >
               {nights.map((n) => (
                 <option key={n.id} value={n.id}>
@@ -292,7 +370,7 @@ export default function ChatHubFlow({
 
         {allocations.length > 0 && (
           <div>
-            <label htmlFor="alloc" className="label-mono block mb-2">
+            <label htmlFor="alloc" className="t-meta">
               Default holder (when a line doesn&apos;t specify one)
             </label>
             <select
@@ -303,7 +381,8 @@ export default function ChatHubFlow({
                 const m = allocations.find((a) => a.id === e.target.value);
                 setDefaultHolder(m?.holder_name ?? "");
               }}
-              className="input-dark"
+              className="input"
+              style={{ marginTop: "var(--s-2)" }}
             >
               {allocations.map((a) => (
                 <option key={a.id} value={a.id}>
@@ -315,22 +394,32 @@ export default function ChatHubFlow({
         )}
 
         <div>
-          <label htmlFor="paste" className="label-mono block mb-2">
+          <label htmlFor="paste" className="t-meta">
             Paste names (one per line)
           </label>
           <textarea
             id="paste"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            className="input-dark min-h-[260px] font-mono text-xs"
+            className="input"
+            style={{
+              marginTop: "var(--s-2)",
+              minHeight: 260,
+              fontFamily: "var(--mono)",
+              fontSize: "var(--ts-sm)",
+            }}
             placeholder={`Diplo VIP\nAlice +2\nBob w/ Kiko VIP\nCarol Smith all access`}
             required
           />
         </div>
 
-        {error && <p className="text-coral text-sm">{error}</p>}
+        {error && (
+          <p className="t-body-2" style={{ color: "var(--err)" }}>
+            {error}
+          </p>
+        )}
 
-        <button type="submit" className="btn-primary" disabled={pending}>
+        <button type="submit" className="btn btn--accent" disabled={pending}>
           {pending ? "Parsing…" : "Parse"}
         </button>
       </form>

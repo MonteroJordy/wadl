@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import ConfirmDialog from "@/components/confirm-dialog";
 import { bulkUnflagAction } from "./actions";
 
 interface FlagItem {
@@ -16,6 +17,7 @@ export default function BulkFlagForm({ items }: { items: FlagItem[] }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [pending, startTransition] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
 
   function toggle(id: string) {
     const next = new Set(selected);
@@ -31,76 +33,125 @@ export default function BulkFlagForm({ items }: { items: FlagItem[] }) {
 
   function unflag() {
     if (selected.size === 0) return;
-    if (
-      !confirm(
-        `Remove DNA flag from ${selected.size} guest${selected.size === 1 ? "" : "s"}?`
-      )
-    )
-      return;
+    setOpen(true);
+  }
+
+  function doUnflag() {
     startTransition(async () => {
       const res = await bulkUnflagAction([...selected]);
       if (res.ok) {
         setMsg(`Unflagged ${res.count}.`);
         setSelected(new Set());
       } else setMsg(res.error);
+      setOpen(false);
     });
   }
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: "var(--s-3)",
+          gap: "var(--s-3)",
+        }}
+      >
         <button
           type="button"
-          className="label-mono hover:text-cream"
           onClick={selectAll}
+          className="t-meta"
+          style={{
+            background: "transparent",
+            border: 0,
+            cursor: "pointer",
+            padding: 0,
+            color: "var(--fg-3)",
+          }}
         >
           {selected.size === items.length ? "Clear" : "Select all"}
         </button>
         <button
           type="button"
+          className="btn btn--sm btn--ghost"
           disabled={selected.size === 0 || pending}
           onClick={unflag}
-          className="btn-ghost w-auto px-4 disabled:opacity-40"
         >
           {pending ? "Working…" : `Unflag ${selected.size || ""}`}
         </button>
       </div>
 
-      {msg && <p className="text-mint text-sm mb-3">{msg}</p>}
+      {msg && (
+        <p
+          className="t-body-2"
+          style={{ color: "var(--ok)", marginBottom: "var(--s-3)" }}
+        >
+          {msg}
+        </p>
+      )}
 
-      <ul className="flex flex-col gap-2">
-        {items.map((it) => (
-          <li
-            key={it.id}
-            className={`card flex items-start gap-3 ${
-              selected.has(it.id) ? "border-coral" : ""
-            }`}
-          >
-            <input
-              type="checkbox"
-              checked={selected.has(it.id)}
-              onChange={() => toggle(it.id)}
-              className="mt-1 accent-coral"
-            />
-            <div className="min-w-0 flex-1">
-              <p className="font-sans font-semibold text-cream">
-                {it.full_name}
+      <div className="card">
+        {items.map((it) => {
+          const isSel = selected.has(it.id);
+          return (
+            <div
+              key={it.id}
+              className="row"
+              onClick={() => toggle(it.id)}
+              style={{
+                gridTemplateColumns: "24px 180px 1fr 200px 120px",
+                cursor: "pointer",
+                background: isSel ? "var(--bg-3)" : undefined,
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={isSel}
+                onChange={() => toggle(it.id)}
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  accentColor: "var(--fg)",
+                  width: 16,
+                  height: 16,
+                }}
+              />
+              <div style={{ minWidth: 0 }}>
+                <span
+                  className="t-h2 truncate"
+                  style={{ display: "block", fontFamily: "var(--mono)" }}
+                >
+                  {it.full_name}
+                </span>
                 {it.phone && (
-                  <span className="text-muted ml-2 text-xs font-mono">
+                  <span
+                    className="t-meta"
+                    style={{ fontFamily: "var(--mono)" }}
+                  >
                     {it.phone}
                   </span>
                 )}
-              </p>
-              <p className="label-mono mt-0.5">
+              </div>
+              <span className="t-body-2 truncate">
+                {it.reason ?? "no reason on file"}
+              </span>
+              <span className="t-meta truncate">
                 {it.event_name} · {it.night_date}
-              </p>
-              {it.reason && (
-                <p className="text-coral text-sm mt-1">{it.reason}</p>
-              )}
+              </span>
+              <span className="chip chip--warn">Do not admit</span>
             </div>
-          </li>
-        ))}
-      </ul>
+          );
+        })}
+      </div>
+      <ConfirmDialog
+        open={open}
+        title={`Remove DNA flag from ${selected.size} guest${selected.size === 1 ? "" : "s"}?`}
+        body="They'll be able to scan in normally at the door again. The original flag stays in the audit log."
+        confirmLabel="Remove flag"
+        pending={pending}
+        onConfirm={doUnflag}
+        onCancel={() => setOpen(false)}
+      />
     </div>
   );
 }

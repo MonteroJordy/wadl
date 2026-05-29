@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOwnerContext } from "@/lib/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { Breadcrumb, PageHeader, EventSubNav } from "@/components/v5";
 import DryRunControls from "./controls";
 
 export const dynamic = "force-dynamic";
@@ -29,10 +29,9 @@ export default async function DryRunPage({
   const nightIds = event.event_nights.map((n) => n.id);
   const totalCap = event.event_nights.reduce(
     (s, n) => s + (n.capacity_cap ?? 0),
-    0
+    0,
   );
 
-  // How many DRYRUN guests already exist on this event.
   let existingCount = 0;
   if (nightIds.length > 0) {
     const { count } = await admin
@@ -46,91 +45,182 @@ export default async function DryRunPage({
   return (
     <main
       id="main-content"
-      className="mx-auto w-full max-w-3xl px-4 md:px-8 pt-6 pb-16"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
     >
-      <header className="mb-8">
-        <Link
-          href={`/owner/events/${event.id}`}
-          className="label-mono hover:text-cream transition mb-2 inline-block"
+      <Breadcrumb
+        items={[
+          ["Events", "/owner"],
+          [event.name, `/owner/events/${event.id}`],
+          "Dry run",
+        ]}
+      />
+      <PageHeader
+        eyebrow="Dry run"
+        title="Dry run"
+        sub="Stress-test the daydash, queue, recap, and SMS log without burning a real Friday. Seeds DRYRUN-flagged guests with realistic distribution. Optional check-in simulation jitters scans across the 2h after doors."
+      />
+      <EventSubNav active="overview" eventId={event.id} />
+
+      <div style={{ padding: "var(--s-8)", maxWidth: 880 }}>
+        <section
+          className="card"
+          style={{ padding: "var(--s-5)", marginBottom: "var(--s-3)" }}
         >
-          ← {event.name}
-        </Link>
-        <h1 className="font-display text-4xl md:text-5xl text-cream uppercase tracking-wide leading-[0.9]">
-          Dry run
-        </h1>
-        <p className="text-cream/70 text-sm leading-relaxed mt-3 max-w-2xl">
-          Stress-test the daydash, queue, recap, and SMS log without burning a
-          real Friday. Seeds DRYRUN-flagged guests with realistic distribution
-          (mix of approved + pending + waitlisted, plus-ones, tier mix). Optional
-          check-in simulation jitters scans across the 2h after doors so the
-          arrival-velocity chart populates.
-        </p>
-      </header>
-
-      <section className="card mb-4">
-        <p className="label-mono mb-2">Current state</p>
-        <div className="grid grid-cols-3 gap-3">
-          <div>
-            <p className="font-display text-3xl text-cream leading-none">
-              {existingCount}
-            </p>
-            <p className="label-mono mt-1">DRYRUN guests</p>
+          <div className="t-meta" style={{ marginBottom: "var(--s-4)" }}>
+            Current state
           </div>
-          <div>
-            <p className="font-display text-3xl text-cream leading-none">
-              {event.event_nights.length}
-            </p>
-            <p className="label-mono mt-1">
-              Night{event.event_nights.length === 1 ? "" : "s"}
-            </p>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: "var(--s-4)",
+            }}
+          >
+            <DryStat label="DRYRUN guests" value={existingCount} />
+            <DryStat
+              label={`Night${event.event_nights.length === 1 ? "" : "s"}`}
+              value={event.event_nights.length}
+            />
+            <DryStat label="Total cap" value={totalCap || "—"} />
           </div>
-          <div>
-            <p className="font-display text-3xl text-cream leading-none">
-              {totalCap || "—"}
-            </p>
-            <p className="label-mono mt-1">Total cap</p>
+        </section>
+
+        <DryRunControls eventId={event.id} existingCount={existingCount} />
+
+        <section
+          className="card"
+          style={{ padding: "var(--s-5)", marginTop: "var(--s-3)" }}
+        >
+          <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+            What this populates
           </div>
-        </div>
-      </section>
+          <ul
+            className="t-body-2"
+            style={{
+              lineHeight: 1.7,
+              listStyle: "none",
+              padding: 0,
+              margin: 0,
+            }}
+          >
+            <Bullet>
+              <strong style={{ color: "var(--fg)" }}>Daydash hero stats</strong>{" "}
+              — In/Pending/RSVPs counters move with realistic numbers.
+            </Bullet>
+            <Bullet>
+              <strong style={{ color: "var(--fg)" }}>Capacity ETA</strong> —
+              recent-30-minute scan rate becomes nonzero, the projected-at-cap
+              pill activates.
+            </Bullet>
+            <Bullet>
+              <strong style={{ color: "var(--fg)" }}>Approval queue</strong> —
+              the pending bucket has things to approve.
+            </Bullet>
+            <Bullet>
+              <strong style={{ color: "var(--fg)" }}>Top holders</strong> — if
+              you have allocations, simulated guests roll up to them.
+            </Bullet>
+            <Bullet>
+              <strong style={{ color: "var(--fg)" }}>Recap</strong> — show rate,
+              tier breakdown, top-holder ranking all populate.
+            </Bullet>
+            <Bullet>
+              <strong style={{ color: "var(--fg)" }}>
+                Hour velocity chart
+              </strong>{" "}
+              — arrival distribution renders properly.
+            </Bullet>
+          </ul>
+        </section>
 
-      <DryRunControls eventId={event.id} existingCount={existingCount} />
-
-      <section className="card mt-4">
-        <p className="label-mono mb-2">What this populates</p>
-        <ul className="text-cream/80 text-sm leading-relaxed space-y-2">
-          <li>
-            · <span className="text-coral">Daydash hero stats</span> — In/Pending/RSVPs counters move with realistic numbers.
-          </li>
-          <li>
-            · <span className="text-coral">Capacity ETA</span> — recent-30-minute scan rate becomes nonzero, the projected-at-cap pill activates.
-          </li>
-          <li>
-            · <span className="text-coral">Approval queue</span> — the pending bucket has things to approve.
-          </li>
-          <li>
-            · <span className="text-coral">Top holders</span> — if you have allocations, simulated guests roll up to them.
-          </li>
-          <li>
-            · <span className="text-coral">Recap</span> — show rate, tier breakdown, top-holder ranking all populate.
-          </li>
-          <li>
-            · <span className="text-coral">Hour velocity chart</span> — arrival distribution renders properly.
-          </li>
-        </ul>
-      </section>
-
-      <section className="card mt-4 border-coral/40 bg-s2">
-        <p className="label-mono text-coral mb-2">What it doesn&apos;t do</p>
-        <ul className="text-cream/80 text-sm leading-relaxed space-y-2">
-          <li>· No real SMS goes out — phones are +1555 placeholder numbers.</li>
-          <li>· No webhooks fire to integrations.</li>
-          <li>· No notifications get pushed (the Supabase Realtime bell stays quiet).</li>
-          <li>
-            · Cleanup deletes every guest tagged{" "}
-            <code className="text-coral">notes = &quot;DRYRUN&quot;</code> on this event&apos;s nights — leaves real guests intact.
-          </li>
-        </ul>
-      </section>
+        <section
+          className="card"
+          style={{
+            padding: "var(--s-5)",
+            marginTop: "var(--s-3)",
+            borderColor: "var(--err)",
+          }}
+        >
+          <div
+            className="t-meta"
+            style={{ color: "var(--err)", marginBottom: "var(--s-3)" }}
+          >
+            What it doesn&apos;t do
+          </div>
+          <ul
+            className="t-body-2"
+            style={{
+              lineHeight: 1.7,
+              listStyle: "none",
+              padding: 0,
+              margin: 0,
+            }}
+          >
+            <Bullet>
+              No real SMS goes out — phones are +1555 placeholder numbers.
+            </Bullet>
+            <Bullet>No webhooks fire to integrations.</Bullet>
+            <Bullet>
+              No notifications get pushed (the Supabase Realtime bell stays
+              quiet).
+            </Bullet>
+            <Bullet>
+              Cleanup deletes every guest tagged{" "}
+              <code
+                style={{
+                  fontFamily: "var(--mono)",
+                  fontSize: "var(--ts-sm)",
+                  color: "var(--fg)",
+                }}
+              >
+                notes = &quot;DRYRUN&quot;
+              </code>{" "}
+              on this event&apos;s nights — leaves real guests intact.
+            </Bullet>
+          </ul>
+        </section>
+      </div>
     </main>
+  );
+}
+
+function DryStat({
+  label,
+  value,
+}: {
+  label: string;
+  value: number | string;
+}) {
+  return (
+    <div>
+      <div className="t-display-md t-num">{value}</div>
+      <div className="t-meta" style={{ marginTop: "var(--s-2)" }}>
+        {label}
+      </div>
+    </div>
+  );
+}
+
+function Bullet({ children }: { children: React.ReactNode }) {
+  return (
+    <li
+      style={{
+        paddingLeft: "var(--s-5)",
+        position: "relative",
+        marginBottom: "var(--s-2)",
+      }}
+    >
+      <span
+        style={{
+          position: "absolute",
+          left: 0,
+          top: 0,
+          color: "var(--fg-4)",
+        }}
+      >
+        ·
+      </span>
+      {children}
+    </li>
   );
 }

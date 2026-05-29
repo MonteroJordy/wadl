@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { Logo } from "@/components/v5";
 import FeedbackForm from "./form";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +13,18 @@ interface EventRow {
   flyer_url: string | null;
   event_nights: Array<{ doors_at: string }>;
 }
+
+const SHELL_STYLE: React.CSSProperties = {
+  marginInline: "auto",
+  width: "100%",
+  maxWidth: 420,
+  minHeight: "100vh",
+  background: "var(--bg)",
+  display: "flex",
+  flexDirection: "column",
+  position: "relative",
+  paddingBottom: "var(--s-12)",
+};
 
 export default async function FeedbackPage({
   params,
@@ -28,32 +41,43 @@ export default async function FeedbackPage({
     .maybeSingle<EventRow>();
   if (!ev) notFound();
 
-  // Only show the survey for events whose latest night is in the past.
   const lastDoorsAt = ev.event_nights
     .map((n) => new Date(n.doors_at).getTime())
     .sort((a, b) => b - a)[0];
   const isPast = lastDoorsAt && lastDoorsAt < Date.now();
+
   if (!isPast) {
     return (
-      <main id="main-content" className="mobile-frame">
-        <header className="pt-6 pb-4">
-          <p className="label-mono">Feedback</p>
-          <h1 className="display-lg leading-[0.95]">{ev.name}</h1>
-        </header>
-        <div className="card">
-          <p className="font-sans text-cream font-semibold mb-1">
-            Event hasn&apos;t happened yet
-          </p>
-          <p className="text-muted text-sm">
-            Come back after the night to share how it went.
-          </p>
+      <main id="main-content" className="v5">
+        <div style={SHELL_STYLE}>
+          <div style={{ padding: "var(--s-5) var(--s-6) 0" }}>
+            <Logo size={18} />
+          </div>
+          <div style={{ padding: "var(--s-8) var(--s-6) 0" }}>
+            <div className="t-meta">Feedback</div>
+            <div
+              className="t-display-md"
+              style={{ marginTop: "var(--s-2)", lineHeight: 1.0 }}
+            >
+              {ev.name}
+            </div>
+          </div>
+          <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
+            <div className="card" style={{ padding: "var(--s-5)" }}>
+              <span className="chip">Event not yet</span>
+              <p
+                className="t-body-2"
+                style={{ marginTop: "var(--s-3)" }}
+              >
+                Come back after the night to share how it went.
+              </p>
+            </div>
+          </div>
         </div>
       </main>
     );
   }
 
-  // Validate token if provided — it pre-fills the guest_id link so the
-  // submission gets attributed (still anonymous to the venue's view).
   const token = searchParams.token ?? "";
   let guestId: string | null = null;
   let guestName: string | null = null;
@@ -79,37 +103,83 @@ export default async function FeedbackPage({
 
   if (searchParams.submitted === "1" || alreadySubmitted) {
     return (
-      <main id="main-content" className="mobile-frame">
-        <header className="pt-6 pb-4">
-          <p className="label-mono">Feedback</p>
-          <h1 className="display-lg leading-[0.95]">{ev.name}</h1>
-        </header>
-        <div className="card border-mint bg-s2">
-          <p className="label-mono text-mint mb-2">Thanks for letting us know</p>
-          <p className="text-cream text-sm leading-relaxed">
-            Your rating helps the venue book better nights. See you next time.
-          </p>
+      <main id="main-content" className="v5">
+        <div style={SHELL_STYLE}>
+          <div style={{ padding: "var(--s-5) var(--s-6) 0" }}>
+            <Logo size={18} />
+          </div>
+          <div style={{ padding: "var(--s-8) var(--s-6) 0" }}>
+            <div className="t-meta">Feedback</div>
+            <div
+              className="t-display-md"
+              style={{ marginTop: "var(--s-2)", lineHeight: 1.0 }}
+            >
+              {ev.name}
+            </div>
+          </div>
+          <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
+            <div
+              className="card"
+              style={{ padding: "var(--s-5)", borderColor: "var(--ok)" }}
+            >
+              <span className="chip chip--ok">Thanks for letting us know</span>
+              <p className="t-body-2" style={{ marginTop: "var(--s-3)" }}>
+                Your rating helps the venue book better nights. See you next
+                time.
+              </p>
+            </div>
+            <Link
+              href="/discover"
+              className="btn btn--ghost btn--lg btn--block"
+              style={{
+                textDecoration: "none",
+                marginTop: "var(--s-4)",
+              }}
+            >
+              Browse upcoming events
+            </Link>
+          </div>
         </div>
-        <Link href="/discover" className="btn-ghost block text-center mt-4">
-          Browse upcoming events
-        </Link>
       </main>
     );
   }
 
   return (
-    <main id="main-content" className="mobile-frame">
-      <header className="pt-6 pb-4">
-        <p className="label-mono">How was your night?</p>
-        <h1 className="display-lg leading-[0.95]">{ev.name}</h1>
-        {guestName && (
-          <p className="label-mono mt-2">For {guestName}</p>
-        )}
-      </header>
-      <FeedbackForm eventId={ev.id} guestId={guestId} token={token} />
-      <p className="label-mono mt-4 text-center">
-        One rating per guest · stays private
-      </p>
+    <main id="main-content" className="v5">
+      <div style={SHELL_STYLE}>
+        <div style={{ padding: "var(--s-5) var(--s-6) 0" }}>
+          <Logo size={18} />
+        </div>
+        <div style={{ padding: "var(--s-8) var(--s-6) 0" }}>
+          <div className="t-meta">How was your night?</div>
+          <div
+            className="t-display-md"
+            style={{ marginTop: "var(--s-2)", lineHeight: 1.0 }}
+          >
+            {ev.name}
+          </div>
+          {guestName && (
+            <div className="t-meta" style={{ marginTop: "var(--s-2)" }}>
+              For {guestName}
+            </div>
+          )}
+        </div>
+        <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
+          <FeedbackForm eventId={ev.id} guestId={guestId} token={token} />
+        </div>
+        <div
+          className="t-meta"
+          style={{
+            marginTop: "auto",
+            paddingTop: "var(--s-6)",
+            paddingBottom: "var(--s-4)",
+            textAlign: "center",
+            color: "var(--fg-4)",
+          }}
+        >
+          One rating per guest · stays private
+        </div>
+      </div>
     </main>
   );
 }

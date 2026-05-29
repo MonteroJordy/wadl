@@ -13,6 +13,13 @@ interface NightInput {
   capacity_cap: number | null;
 }
 
+interface TierInput {
+  label: string;
+  cap: number;
+  tone: "neutral" | "info" | "warn" | "err" | "ok";
+  slug: string;
+}
+
 const VALID_EVENT_TYPES: EventType[] = [
   "venue_owned",
   "brand_takeover",
@@ -27,6 +34,7 @@ export async function createEventAction(formData: FormData) {
   const description = (formData.get("description") as string | null)?.trim();
   const flyerUrl = (formData.get("flyer_url") as string | null)?.trim();
   const nightsJson = formData.get("nights") as string | null;
+  const tiersJson = formData.get("tiers") as string | null;
 
   if (!name) return { error: "Event name is required." };
   if (!eventType || !VALID_EVENT_TYPES.includes(eventType as EventType)) {
@@ -46,6 +54,40 @@ export async function createEventAction(formData: FormData) {
   for (const n of nights) {
     if (!n.night_date || !n.doors_at) {
       return { error: "Every night needs a date and doors time." };
+    }
+  }
+
+  // Per-tier credentials (GA / VIP / AAA / custom). Stashed on
+  // event.metadata.tiers for now — a real `event_tiers` table comes with
+  // the per-tier-links + cap-enforcement work.
+  let tiers: TierInput[] = [];
+  if (tiersJson) {
+    try {
+      const parsed = JSON.parse(tiersJson);
+      if (Array.isArray(parsed)) {
+        tiers = parsed
+          .filter(
+            (t): t is TierInput =>
+              t &&
+              typeof t.label === "string" &&
+              typeof t.cap === "number" &&
+              typeof t.slug === "string",
+          )
+          .map((t) => ({
+            label: t.label.trim().slice(0, 32),
+            cap: Math.max(1, Math.floor(t.cap)),
+            tone:
+              t.tone === "info" ||
+              t.tone === "warn" ||
+              t.tone === "err" ||
+              t.tone === "ok"
+                ? t.tone
+                : "neutral",
+            slug: t.slug.trim().slice(0, 24).toLowerCase(),
+          }));
+      }
+    } catch {
+      // Soft-fail — tiers stay empty, no crash.
     }
   }
 
@@ -77,6 +119,7 @@ export async function createEventAction(formData: FormData) {
       description: description || null,
       flyer_url: flyerUrl || null,
       created_by: user.id,
+      metadata: tiers.length > 0 ? { tiers } : null,
     })
     .select("id")
     .single();

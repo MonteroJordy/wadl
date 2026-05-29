@@ -1,6 +1,7 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireOwnerContext, fmtDate } from "@/lib/owner";
+import { requireOwnerContext } from "@/lib/owner";
+import { fmtDate } from "@/lib/format";
+import { Breadcrumb, PageHeader, EventSubNav } from "@/components/v5";
 import CsvImportForm from "./import-form";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ export default async function ImportCsvPage({
   const { data: event } = await supabase
     .from("events")
     .select(
-      "id, name, event_nights(id, night_date, doors_at, allocations(id, holder_name))"
+      "id, name, event_nights(id, night_date, doors_at, allocations(id, holder_name))",
     )
     .eq("id", params.id)
     .eq("account_id", account.id)
@@ -32,12 +33,10 @@ export default async function ImportCsvPage({
 
   const nights = [...event.event_nights]
     .sort((a, b) => (a.doors_at < b.doors_at ? -1 : 1))
-    .map((n) => ({
-      id: n.id,
-      label: fmtDate(n.night_date),
-    }));
+    .map((n) => ({ id: n.id, label: fmtDate(n.night_date) }));
 
-  const allocations: Array<{ id: string; night_id: string; label: string }> = [];
+  const allocations: Array<{ id: string; night_id: string; label: string }> =
+    [];
   for (const n of event.event_nights) {
     for (const a of n.allocations ?? []) {
       allocations.push({
@@ -49,19 +48,31 @@ export default async function ImportCsvPage({
   }
 
   return (
-    <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 pt-12 pb-8 md:py-12">
-      <Link
-        href={`/owner/events/${event.id}`}
-        className="label-mono hover:text-cream"
-      >
-        ← Back
-      </Link>
-      <h1 className="display-lg mt-3 mb-2">Import CSV</h1>
-      <p className="label-mono mb-6">
-        Bulk-add guests to {event.name}. Phones validated to E.164. Duplicates by phone skipped.
-      </p>
+    <main
+      id="main-content"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
+    >
+      <Breadcrumb
+        items={[
+          ["Events", "/owner"],
+          [event.name, `/owner/events/${event.id}`],
+          "Import CSV",
+        ]}
+      />
+      <PageHeader
+        eyebrow="Import"
+        title="Import CSV"
+        sub={`Bulk-add guests to ${event.name}. Phones validated to E.164. Duplicates by phone skipped.`}
+      />
+      <EventSubNav active="guests" eventId={event.id} />
 
-      <CsvImportForm eventId={event.id} nights={nights} allocations={allocations} />
+      <div style={{ padding: "var(--s-8)", maxWidth: 720 }}>
+        <CsvImportForm
+          eventId={event.id}
+          nights={nights}
+          allocations={allocations}
+        />
+      </div>
     </main>
   );
 }

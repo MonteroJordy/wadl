@@ -1,22 +1,25 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOwnerContext } from "@/lib/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAppUrl } from "@/lib/app-url";
+import { Breadcrumb, PageHeader, EventSubNav } from "@/components/v5";
 import InviteForm from "./invite-form";
 import {
   CopyLinkButton,
   RevokeInviteButton,
   RemoveStaffButton,
 } from "./row-buttons";
-import EmptyState from "@/components/empty-state";
 
 export const dynamic = "force-dynamic";
 
 interface StaffRow {
   user_id: string;
   role: string;
-  profile: { id: string; full_name: string | null; phone: string | null };
+  profile: {
+    id: string;
+    full_name: string | null;
+    phone: string | null;
+  };
 }
 
 interface InviteRow {
@@ -27,18 +30,23 @@ interface InviteRow {
   created_at: string;
 }
 
-function roleBadge(role: string) {
-  if (role === "door_manager") return "text-gold";
-  if (role === "door_staff") return "text-mint";
-  if (role === "photographer") return "text-lav";
-  return "text-muted";
-}
-
 function roleLabel(role: string) {
   if (role === "door_manager") return "Manager";
-  if (role === "door_staff") return "Staff";
+  if (role === "door_staff") return "Scanner";
   if (role === "photographer") return "Photographer";
-  return role;
+  return role.replace(/_/g, " ");
+}
+
+function initials(name: string) {
+  return (
+    name
+      .trim()
+      .split(/\s+/)
+      .map((x) => x[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "?"
+  );
 }
 
 export default async function StaffPage({
@@ -76,82 +84,116 @@ export default async function StaffPage({
   const appUrl = getAppUrl();
 
   return (
-    <main id="main-content" className="mobile-frame">
-      <header className="flex items-center justify-between pt-6 pb-4">
-        <Link
-          href={`/owner/events/${event.id}`}
-          className="label-mono hover:text-cream"
-        >
-          ← Back
-        </Link>
-        <p className="label-mono">Staff</p>
-      </header>
+    <main id="main-content">
+      <Breadcrumb
+        items={[
+          ["Events", "/owner"],
+          [event.name, `/owner/events/${event.id}`],
+          "Staff",
+        ]}
+      />
+      <PageHeader
+        eyebrow={`${staff.length} staff · all confirmed`}
+        title="Staff"
+      />
+      <EventSubNav active="staff" eventId={event.id} />
 
-      <h1 className="display-lg mb-2">{event.name}</h1>
-      <p className="label-mono mb-6">
-        {staff.length} on · {invites.length} pending
-      </p>
+      <div style={{ padding: "var(--s-8)" }}>
+        {/* Invite form */}
+        <div style={{ marginBottom: "var(--s-8)", maxWidth: 720 }}>
+          <InviteForm eventId={event.id} />
+        </div>
 
-      <InviteForm eventId={event.id} />
-
-      <section className="mt-8">
-        <p className="label-mono mb-2">Staff on this event</p>
+        {/* Active staff */}
+        <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+          On this event · {staff.length}
+        </div>
         {staff.length === 0 ? (
-          <EmptyState
-            title="No staff yet"
-            body="Invite someone above to put them on the scanner tonight."
-          />
+          <div
+            className="card"
+            style={{ padding: "var(--s-10)", textAlign: "center" }}
+          >
+            <div className="t-h1">No staff yet</div>
+            <div className="t-body-2" style={{ marginTop: "var(--s-2)" }}>
+              Invite someone above to put them on the scanner tonight.
+            </div>
+          </div>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="card">
             {staff.map((s) => (
-              <div key={s.user_id} className="card">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-sans text-cream font-semibold truncate">
-                      {s.profile?.full_name ?? "Unnamed"}
-                    </p>
-                    <p className="label-mono mt-1 truncate">
-                      {s.profile?.phone ?? "no phone"} ·{" "}
-                      <span className={roleBadge(s.role)}>
-                        {roleLabel(s.role)}
-                      </span>
-                    </p>
-                  </div>
-                  <RemoveStaffButton eventId={event.id} userId={s.user_id} />
+              <div
+                key={s.user_id}
+                className="row"
+                style={{
+                  gridTemplateColumns: "36px 1fr 1fr 140px 100px 24px",
+                }}
+              >
+                <div
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: "var(--r-pill)",
+                    background: "var(--bg-3)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 11,
+                    fontWeight: 500,
+                  }}
+                >
+                  {initials(s.profile?.full_name ?? "?")}
                 </div>
+                <span className="t-h1">
+                  {s.profile?.full_name ?? "Unnamed"}
+                </span>
+                <span className="t-body-2">{roleLabel(s.role)}</span>
+                <span className="t-meta">
+                  {s.profile?.phone ?? "No phone"}
+                </span>
+                <span className="chip chip--ok">Confirmed</span>
+                <RemoveStaffButton eventId={event.id} userId={s.user_id} />
               </div>
             ))}
           </div>
         )}
-      </section>
 
-      {invites.length > 0 && (
-        <section className="mt-8">
-          <p className="label-mono mb-2">Pending invites</p>
-          <div className="flex flex-col gap-2">
-            {invites.map((i) => (
-              <div key={i.id} className="card">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-sans text-cream font-semibold">
-                      {i.phone}
-                    </p>
-                    <p className="label-mono mt-1">
-                      <span className={roleBadge(i.role)}>
-                        {roleLabel(i.role)}
-                      </span>
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <CopyLinkButton url={`${appUrl}/staff-invite/${i.token}`} />
-                    <RevokeInviteButton eventId={event.id} inviteId={i.id} />
-                  </div>
+        {/* Pending invites */}
+        {invites.length > 0 && (
+          <>
+            <div
+              className="t-meta"
+              style={{
+                marginTop: "var(--s-10)",
+                marginBottom: "var(--s-3)",
+              }}
+            >
+              Pending invites · {invites.length}
+            </div>
+            <div className="card">
+              {invites.map((i) => (
+                <div
+                  key={i.id}
+                  className="row"
+                  style={{
+                    gridTemplateColumns: "1fr 1fr 100px auto auto",
+                  }}
+                >
+                  <span className="t-h1">{i.phone}</span>
+                  <span className="t-body-2">{roleLabel(i.role)}</span>
+                  <span className="chip chip--warn">Pending</span>
+                  <CopyLinkButton
+                    url={`${appUrl}/staff-invite/${i.token}`}
+                  />
+                  <RevokeInviteButton
+                    eventId={event.id}
+                    inviteId={i.id}
+                  />
                 </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     </main>
   );
 }

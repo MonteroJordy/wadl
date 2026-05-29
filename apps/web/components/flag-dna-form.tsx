@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import ConfirmDialog from "@/components/confirm-dialog";
 import { toggleFlagDnaAction } from "@/lib/flag";
 
 interface Props {
@@ -19,6 +20,7 @@ export default function FlagDnaForm({
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
+  const [unflagOpen, setUnflagOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
   function onFlag(e: React.FormEvent) {
@@ -43,7 +45,10 @@ export default function FlagDnaForm({
   }
 
   function onUnflag() {
-    if (!confirm("Remove the DO NOT ADMIT flag on this guest?")) return;
+    setUnflagOpen(true);
+  }
+
+  function doUnflag() {
     setError(null);
     setSaved(null);
     startTransition(async () => {
@@ -53,26 +58,66 @@ export default function FlagDnaForm({
         setFlagged(false);
         setSaved("Flag removed.");
       }
+      setUnflagOpen(false);
     });
   }
 
   if (flagged) {
     return (
-      <div className="card border-coral">
-        <p className="label-mono text-coral mb-1">⚠ FLAGGED — DO NOT ADMIT</p>
+      <div
+        className="w-card"
+        style={{ padding: 14, borderColor: "var(--w-err)" }}
+      >
+        <div
+          className="w-type-meta"
+          style={{ color: "var(--w-err)", marginBottom: 4 }}
+        >
+          ⚠ FLAGGED — DO NOT ADMIT
+        </div>
         {initialReason && (
-          <p className="text-cream text-sm mb-3">{initialReason}</p>
+          <p
+            style={{
+              color: "var(--w-fg)",
+              fontSize: 14,
+              marginBottom: 12,
+            }}
+          >
+            {initialReason}
+          </p>
         )}
         <button
           type="button"
+          className="btn btn--ghost"
           onClick={onUnflag}
           disabled={pending}
-          className="btn-ghost"
         >
           {pending ? "Working…" : "Remove flag"}
         </button>
-        {error && <p className="text-coral text-sm mt-2">{error}</p>}
-        {saved && <p className="text-mint text-sm mt-2">{saved}</p>}
+        {error && (
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-err)", marginTop: 8 }}
+          >
+            {error}
+          </p>
+        )}
+        {saved && (
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-ok)", marginTop: 8 }}
+          >
+            {saved}
+          </p>
+        )}
+        <ConfirmDialog
+          open={unflagOpen}
+          title="Remove the DO NOT ADMIT flag?"
+          body="The guest will be able to scan in normally again at the door. The original flag entry stays in the audit log."
+          confirmLabel="Remove flag"
+          pending={pending}
+          onConfirm={doUnflag}
+          onCancel={() => setUnflagOpen(false)}
+        />
       </div>
     );
   }
@@ -82,50 +127,111 @@ export default function FlagDnaForm({
       <div>
         <button
           type="button"
+          className="btn btn--ghost"
           onClick={() => setShowConfirm(true)}
-          className="btn-ghost border-coral/60 text-coral"
+          style={{
+            borderColor: "var(--w-err)",
+            color: "var(--w-err)",
+          }}
         >
           ⚠ Flag Do Not Admit
         </button>
-        {saved && <p className="text-mint text-sm mt-2">{saved}</p>}
+        {saved && (
+          <p
+            className="w-type-body-sm"
+            style={{ color: "var(--w-ok)", marginTop: 8 }}
+          >
+            {saved}
+          </p>
+        )}
       </div>
     );
   }
 
   return (
-    <form onSubmit={onFlag} className="card border-coral/60 flex flex-col gap-3">
-      <p className="label-mono text-coral">Flag this guest</p>
-      <p className="text-muted text-sm">
-        Any scan of their QR will show <span className="text-cream">DO NOT ADMIT</span> at the door.
+    <form
+      onSubmit={onFlag}
+      className="w-card"
+      style={{
+        padding: 14,
+        borderColor: "var(--w-err)",
+        display: "flex",
+        flexDirection: "column",
+        gap: 12,
+      }}
+    >
+      <div
+        className="w-type-meta"
+        style={{ color: "var(--w-err)" }}
+      >
+        FLAG THIS GUEST
+      </div>
+      <p
+        className="w-type-body-sm"
+        style={{ color: "var(--w-fg-muted)", lineHeight: 1.5 }}
+      >
+        Any scan of their QR will show{" "}
+        <span style={{ color: "var(--w-fg)" }}>DO NOT ADMIT</span> at the door.
         This is logged to the audit trail.
       </p>
       <div>
-        <label htmlFor="flag-reason" className="label-mono block mb-2">
-          Reason
+        <label
+          htmlFor="flag-reason"
+          className="w-type-meta"
+          style={{ display: "block", marginBottom: 6 }}
+        >
+          REASON
         </label>
         <textarea
           id="flag-reason"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          className="input-dark min-h-[72px]"
+          style={{
+            width: "100%",
+            background: "var(--w-surface-1)",
+            border: "1px solid var(--w-line)",
+            color: "var(--w-fg)",
+            padding: "10px 12px",
+            fontFamily: "var(--w-sans)",
+            fontSize: 14,
+            minHeight: 72,
+          }}
           placeholder="Fight at last event. Banned."
           required
           autoFocus
         />
       </div>
-      {error && <p className="text-coral text-sm">{error}</p>}
-      <div className="grid grid-cols-2 gap-2">
+      {error && (
+        <p
+          className="w-type-body-sm"
+          style={{ color: "var(--w-err)" }}
+        >
+          {error}
+        </p>
+      )}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 8,
+        }}
+      >
         <button
           type="button"
+          className="btn btn--ghost"
           onClick={() => setShowConfirm(false)}
-          className="btn-ghost"
         >
           Cancel
         </button>
         <button
           type="submit"
+          className="btn"
           disabled={pending || !reason.trim()}
-          className="w-full bg-coral text-bg font-sans font-semibold text-sm uppercase tracking-[0.14em] py-4 rounded-md disabled:opacity-40 hover:brightness-110 transition"
+          style={{
+            background: "var(--w-err)",
+            borderColor: "var(--w-err)",
+            color: "var(--w-bg)",
+          }}
         >
           {pending ? "Flagging…" : "Flag DNA"}
         </button>

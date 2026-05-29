@@ -1,6 +1,6 @@
 import { requireOwnerContext } from "@/lib/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
-import EmptyState from "@/components/empty-state";
+import { PageHeader } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "SMS log — WADL" };
@@ -24,25 +24,31 @@ interface LogRow {
   guest: { id: string; full_name: string } | null;
 }
 
-// Tones map to actual delivery outcomes. "delivered" / "sent" are mint
-// (positive), terminal failure modes are coral, in-flight or unknown
-// statuses are muted.
-const STATUS_TONE: Record<string, string> = {
-  delivered: "text-mint",
-  sent: "text-mint",
-  failed: "text-coral",
-  undelivered: "text-coral",
-  opted_out: "text-coral",
-  config_error: "text-coral",
-  queued: "text-muted",
-  sending: "text-muted",
-  accepted: "text-muted",
+const STATUS_CHIP: Record<string, string> = {
+  delivered: "chip chip--ok",
+  sent: "chip chip--ok",
+  failed: "chip chip--err",
+  undelivered: "chip chip--err",
+  opted_out: "chip chip--err",
+  config_error: "chip chip--err",
+  queued: "chip chip--ghost",
+  sending: "chip chip--ghost",
+  accepted: "chip chip--ghost",
 };
 
-// Display label preferring the latest Twilio status when present.
 function effectiveStatus(r: LogRow): string {
   return r.twilio_status ?? r.status;
 }
+
+const FILTERS = [
+  ["", "All"],
+  ["delivered", "Delivered"],
+  ["failed", "Failed"],
+  ["undelivered", "Undelivered"],
+  ["sent", "Sent"],
+  ["opted_out", "Opted out"],
+  ["config_error", "Config error"],
+] as const;
 
 export default async function SmsLogPage({
   searchParams,
@@ -56,14 +62,11 @@ export default async function SmsLogPage({
   let query = admin
     .from("sms_log")
     .select(
-      "id, to_phone, body, template_key, provider, provider_sid, status, twilio_status, twilio_error_code, status_updated_at, error, segments, cost_estimate_usd, created_at, event:events(id, name), guest:guests(id, full_name)"
+      "id, to_phone, body, template_key, provider, provider_sid, status, twilio_status, twilio_error_code, status_updated_at, error, segments, cost_estimate_usd, created_at, event:events(id, name), guest:guests(id, full_name)",
     )
     .eq("account_id", account.id)
     .order("created_at", { ascending: false })
     .limit(200);
-  // Twilio-callback statuses (delivered/failed/undelivered) live primarily
-  // on twilio_status; row.status overwrites only on terminal callbacks. Fall
-  // back to either-column match so old rows still surface in filters.
   if (status) {
     if (["delivered", "failed", "undelivered"].includes(status)) {
       query = query.or(`status.eq.${status},twilio_status.eq.${status}`);
@@ -74,90 +77,172 @@ export default async function SmsLogPage({
   const { data } = await query;
   const rows = (data ?? []) as unknown as LogRow[];
 
-  const deliveredCount = rows.filter((r) => effectiveStatus(r) === "delivered").length;
-  const failedCount = rows.filter((r) =>
-    ["failed", "undelivered"].includes(effectiveStatus(r))
+  const deliveredCount = rows.filter(
+    (r) => effectiveStatus(r) === "delivered",
   ).length;
-  const totalCost = rows.reduce((s, r) => s + (r.cost_estimate_usd ?? 0), 0);
+  const failedCount = rows.filter((r) =>
+    ["failed", "undelivered"].includes(effectiveStatus(r)),
+  ).length;
+  const totalCost = rows.reduce(
+    (s, r) => s + (r.cost_estimate_usd ?? 0),
+    0,
+  );
 
   return (
-    <main
-      id="main-content"
-      className="mx-auto max-w-frame md:max-w-4xl px-6 pt-12 pb-8 md:py-12"
-    >
-      <header className="mb-6">
-        <p className="label-mono mb-1">Outbound SMS</p>
-        <h1 className="display-lg">Message log</h1>
-        <p className="label-mono mt-2">
-          Last 200 sends · {deliveredCount} delivered
-          {failedCount > 0 && <> · {failedCount} failed</>} · est $
-          {totalCost.toFixed(2)}
-        </p>
-      </header>
+    <main id="main-content" style={{ minHeight: "100vh", background: "var(--bg)" }}>
+      <PageHeader
+        eyebrow="Outbound SMS"
+        title="Message log"
+        sub={`Last 200 sends · est $${totalCost.toFixed(2)}`}
+        actions={
+          <>
+            <span className="chip chip--ok">{deliveredCount} delivered</span>
+            {failedCount > 0 && (
+              <span className="chip chip--err">{failedCount} failed</span>
+            )}
+          </>
+        }
+      />
 
-      <div className="flex flex-wrap gap-1 mb-4">
-        {["", "delivered", "failed", "undelivered", "sent", "opted_out", "config_error"].map((s) => (
-          <a
-            key={s || "all"}
-            href={s ? `/owner/sms-log?status=${s}` : "/owner/sms-log"}
-            className={`px-3 py-1 rounded-full border text-[10px] font-mono uppercase tracking-wider ${
-              status === s
-                ? "border-coral bg-s2 text-cream"
-                : "border-line bg-s1 text-muted hover:text-cream"
-            }`}
-          >
-            {s.replace("_", " ") || "all"}
-          </a>
-        ))}
+      {/* Filter chips */}
+      <div
+        style={{
+          padding: "var(--s-4) var(--s-8)",
+          borderBottom: "1px solid var(--line)",
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "var(--s-1)",
+        }}
+      >
+        {FILTERS.map(([s, label]) => {
+          const active = status === s;
+          return (
+            <a
+              key={s || "all"}
+              href={s ? `/owner/sms-log?status=${s}` : "/owner/sms-log"}
+              className={"nav-item" + (active ? " nav-item--active" : "")}
+              style={{ fontSize: "var(--ts-sm)", textDecoration: "none" }}
+            >
+              {label}
+            </a>
+          );
+        })}
       </div>
 
-      {rows.length === 0 ? (
-        <EmptyState
-          title="Quiet line"
-          body="Every text WADL fires — RSVP QRs, broadcasts, tier upgrades, staff invites — lands here. Quiet means nothing's going out."
-        />
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {rows.map((r) => (
-            <li key={r.id} className="card">
-              <div className="flex items-baseline justify-between gap-3 mb-2">
-                <p className="font-mono text-sm text-cream">{r.to_phone}</p>
-                <span
-                  className={`label-mono ${
-                    STATUS_TONE[effectiveStatus(r)] ?? "text-muted"
-                  }`}
-                  title={
-                    r.status_updated_at
-                      ? `Updated ${new Date(r.status_updated_at).toLocaleString()}`
-                      : undefined
-                  }
-                >
-                  {effectiveStatus(r).replace("_", " ")}
-                </span>
-              </div>
-              <p className="text-cream/80 text-sm leading-relaxed mb-2">
-                {r.body}
-              </p>
-              <p className="label-mono">
-                {new Date(r.created_at).toLocaleString()} ·{" "}
-                {r.provider}
-                {r.template_key ? ` · ${r.template_key}` : ""} ·{" "}
-                {r.segments ?? 1} seg ·{" "}
-                ${(r.cost_estimate_usd ?? 0).toFixed(4)}
-              </p>
-              {r.event && (
-                <p className="label-mono mt-1 text-cream truncate">
-                  {r.event.name}
-                  {r.guest ? ` · ${r.guest.full_name}` : ""}
-                </p>
-              )}
-              {r.error && (
-                <p className="label-mono mt-1 text-coral">{r.error}</p>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+      <div style={{ padding: "var(--s-8)" }}>
+        {rows.length === 0 ? (
+          <div
+            className="card"
+            style={{ padding: "var(--s-16) var(--s-8)", textAlign: "center" }}
+          >
+            <div className="t-display-sm">Quiet line</div>
+            <p
+              className="t-body-2"
+              style={{
+                marginTop: "var(--s-3)",
+                maxWidth: 480,
+                marginInline: "auto",
+              }}
+            >
+              Every text WADL fires — RSVP QRs, broadcasts, tier upgrades, staff
+              invites — lands here. Quiet means nothing&apos;s going out.
+            </p>
+          </div>
+        ) : (
+          <ul
+            style={{
+              listStyle: "none",
+              padding: 0,
+              margin: 0,
+              display: "flex",
+              flexDirection: "column",
+              gap: "var(--s-2)",
+            }}
+          >
+            {rows.map((r) => {
+              const effStatus = effectiveStatus(r);
+              const chipClass = STATUS_CHIP[effStatus] ?? "chip chip--ghost";
+              return (
+                <li key={r.id}>
+                  <div className="card" style={{ padding: "var(--s-4)" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "baseline",
+                        justifyContent: "space-between",
+                        gap: "var(--s-3)",
+                        marginBottom: "var(--s-2)",
+                      }}
+                    >
+                      <div
+                        className="t-body t-num"
+                        style={{ fontFamily: "var(--mono)", fontWeight: 500 }}
+                      >
+                        {r.to_phone}
+                      </div>
+                      <span
+                        className={chipClass}
+                        title={
+                          r.status_updated_at
+                            ? `Updated ${new Date(r.status_updated_at).toLocaleString()}`
+                            : undefined
+                        }
+                      >
+                        {effStatus.replace(/_/g, " ")}
+                      </span>
+                    </div>
+                    <p
+                      className="t-body"
+                      style={{ marginBottom: "var(--s-2)" }}
+                    >
+                      {r.body}
+                    </p>
+                    <div
+                      className="t-meta"
+                      style={{
+                        display: "flex",
+                        gap: "var(--s-2)",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <span>
+                        {new Date(r.created_at).toLocaleString()}
+                      </span>
+                      <span>· {r.provider}</span>
+                      {r.template_key && <span>· {r.template_key}</span>}
+                      <span>· {r.segments ?? 1} seg</span>
+                      <span>· ${(r.cost_estimate_usd ?? 0).toFixed(4)}</span>
+                    </div>
+                    {r.event && (
+                      <div
+                        className="t-meta truncate"
+                        style={{
+                          marginTop: "var(--s-1)",
+                          color: "var(--fg-2)",
+                        }}
+                      >
+                        {r.event.name}
+                        {r.guest ? ` · ${r.guest.full_name}` : ""}
+                      </div>
+                    )}
+                    {r.error && (
+                      <div
+                        className="t-body-2"
+                        style={{
+                          marginTop: "var(--s-1)",
+                          color: "var(--err)",
+                        }}
+                      >
+                        {r.error}
+                      </div>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
     </main>
   );
 }

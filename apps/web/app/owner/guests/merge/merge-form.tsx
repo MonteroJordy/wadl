@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import ConfirmDialog from "@/components/confirm-dialog";
 import { mergeGuestsAction, type MergeChoices } from "./actions";
 
 interface SidePayload {
@@ -34,22 +35,22 @@ export default function MergeForm({
   });
   const [pending, startTransition] = useTransition();
   const [err, setErr] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
 
   function set<K extends keyof MergeChoices>(k: K, v: MergeChoices[K]) {
     setChoices((c) => ({ ...c, [k]: v }));
   }
 
   function submit() {
-    if (
-      !confirm(
-        "Merge these two guests? The older record wins. The other becomes a soft-deleted reference."
-      )
-    )
-      return;
+    setOpen(true);
+  }
+
+  function doMerge() {
     startTransition(async () => {
       const res = await mergeGuestsAction(a.id, b.id, choices);
       if (res.ok) router.replace(`/owner/flags`);
       else setErr(res.error);
+      setOpen(false);
     });
   }
 
@@ -66,45 +67,76 @@ export default function MergeForm({
     bVal: string | null;
     allowConcat?: boolean;
   }) {
+    const optStyle = (active: boolean): React.CSSProperties => ({
+      textAlign: "left",
+      padding: 10,
+      border: `1px solid ${active ? "var(--w-acc)" : "var(--w-line)"}`,
+      background: active ? "var(--w-acc-soft)" : "var(--w-surface-1)",
+      cursor: "pointer",
+      color: "inherit",
+    });
     return (
-      <div className="card mb-3">
-        <p className="label-mono mb-2">{label}</p>
-        <div className="grid grid-cols-2 gap-2">
+      <div className="w-card" style={{ padding: 14, marginBottom: 12 }}>
+        <div className="w-type-meta" style={{ marginBottom: 8 }}>
+          {label.toUpperCase()}
+        </div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 8,
+          }}
+        >
           <button
             type="button"
             onClick={() => set(field, "a" as MergeChoices[K])}
-            className={`text-left p-2 rounded border ${
-              choices[field] === "a" ? "border-coral bg-s2" : "border-line"
-            }`}
+            style={optStyle(choices[field] === "a")}
           >
-            <p className="font-sans text-sm text-cream truncate">
-              {aVal || <span className="text-muted">—</span>}
+            <p
+              style={{
+                color: "var(--w-fg)",
+                fontSize: 14,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {aVal || <span style={{ color: "var(--w-fg-muted)" }}>—</span>}
             </p>
-            <p className="label-mono mt-1">A</p>
+            <div className="w-type-meta" style={{ marginTop: 4 }}>
+              A
+            </div>
           </button>
           <button
             type="button"
             onClick={() => set(field, "b" as MergeChoices[K])}
-            className={`text-left p-2 rounded border ${
-              choices[field] === "b" ? "border-coral bg-s2" : "border-line"
-            }`}
+            style={optStyle(choices[field] === "b")}
           >
-            <p className="font-sans text-sm text-cream truncate">
-              {bVal || <span className="text-muted">—</span>}
+            <p
+              style={{
+                color: "var(--w-fg)",
+                fontSize: 14,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {bVal || <span style={{ color: "var(--w-fg-muted)" }}>—</span>}
             </p>
-            <p className="label-mono mt-1">B</p>
+            <div className="w-type-meta" style={{ marginTop: 4 }}>
+              B
+            </div>
           </button>
           {allowConcat && (
             <button
               type="button"
               onClick={() => set(field, "concat" as MergeChoices[K])}
-              className={`col-span-2 p-2 rounded border ${
-                choices[field] === "concat"
-                  ? "border-coral bg-s2"
-                  : "border-line"
-              }`}
+              style={{
+                ...optStyle(choices[field] === "concat"),
+                gridColumn: "1 / -1",
+              }}
             >
-              <p className="label-mono">Combine both</p>
+              <div className="w-type-meta">COMBINE BOTH</div>
             </button>
           )}
         </div>
@@ -114,26 +146,44 @@ export default function MergeForm({
 
   return (
     <div>
-      <div className="grid grid-cols-2 gap-2 mb-4">
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 8,
+          marginBottom: 16,
+        }}
+      >
         {[a, b].map((g, i) => (
-          <div
-            key={g.id}
-            className="card border-line"
-          >
-            <p className="label-mono mb-1">{i === 0 ? "A" : "B"}</p>
-            <p className="font-sans text-cream font-semibold truncate">
+          <div key={g.id} className="w-card" style={{ padding: 14 }}>
+            <div className="w-type-meta" style={{ marginBottom: 4 }}>
+              {i === 0 ? "A" : "B"}
+            </div>
+            <p
+              style={{
+                color: "var(--w-fg)",
+                fontWeight: 600,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
               {g.full_name}
             </p>
-            <p className="label-mono mt-1">
-              {g.event_name} · {g.night_date}
-            </p>
-            <p className="label-mono mt-1">
-              {g.status} · {g.check_ins} scan{g.check_ins === 1 ? "" : "s"}
-            </p>
+            <div className="w-type-meta" style={{ marginTop: 4 }}>
+              {g.event_name.toUpperCase()} · {g.night_date.toUpperCase()}
+            </div>
+            <div className="w-type-meta" style={{ marginTop: 4 }}>
+              {g.status.toUpperCase()} · {g.check_ins} SCAN
+              {g.check_ins === 1 ? "" : "S"}
+            </div>
             {g.tags.length > 0 && (
-              <p className="label-mono mt-2 text-cream">
-                {g.tags.join(" · ")}
-              </p>
+              <div
+                className="w-type-meta"
+                style={{ marginTop: 8, color: "var(--w-fg)" }}
+              >
+                {g.tags.join(" · ").toUpperCase()}
+              </div>
             )}
           </div>
         ))}
@@ -155,16 +205,32 @@ export default function MergeForm({
         allowConcat
       />
 
-      {err && <p className="text-coral text-sm mb-3">{err}</p>}
+      {err && (
+        <p
+          className="w-type-body-sm"
+          style={{ color: "var(--w-err)", marginBottom: 12 }}
+        >
+          {err}
+        </p>
+      )}
 
       <button
         type="button"
+        className="btn btn--accent"
         onClick={submit}
         disabled={pending}
-        className="btn-primary"
       >
         {pending ? "Merging…" : "Merge"}
       </button>
+      <ConfirmDialog
+        open={open}
+        title="Merge these two guests?"
+        body="The older record wins. The other becomes a soft-deleted reference — its scan history stays in the audit log, but the duplicate row stops showing in lists."
+        confirmLabel="Merge"
+        pending={pending}
+        onConfirm={doMerge}
+        onCancel={() => setOpen(false)}
+      />
     </div>
   );
 }

@@ -20,10 +20,14 @@ export default function ReferralForm({
 
   if (!active) {
     return (
-      <div className="card text-center">
-        <p className="label-mono mb-2">Closed</p>
-        <p className="text-muted text-sm">
-          You can&apos;t add friends right now — list closed or RSVP not active.
+      <div
+        className="card"
+        style={{ padding: "var(--s-4)", textAlign: "center" }}
+      >
+        <span className="chip chip--ghost">Closed</span>
+        <p className="t-body-2" style={{ marginTop: "var(--s-3)" }}>
+          You can&apos;t add friends right now — list closed or RSVP not
+          active.
         </p>
       </div>
     );
@@ -49,23 +53,34 @@ export default function ReferralForm({
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+    <form
+      onSubmit={onSubmit}
+      style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}
+    >
       <div>
-        <label htmlFor="rname" className="label-mono block mb-2">
+        <label
+          htmlFor="rname"
+          className="t-meta"
+          style={{ display: "block", marginBottom: "var(--s-2)" }}
+        >
           Friend&apos;s full name
         </label>
         <input
           id="rname"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="input-dark"
+          className="input"
           placeholder="Their full name"
           required
         />
       </div>
       {plusOnesAllowed && (
         <div>
-          <label htmlFor="rplus" className="label-mono block mb-2">
+          <label
+            htmlFor="rplus"
+            className="t-meta"
+            style={{ display: "block", marginBottom: "var(--s-2)" }}
+          >
             +1s
           </label>
           <input
@@ -75,17 +90,22 @@ export default function ReferralForm({
             max={4}
             value={plus}
             onChange={(e) => setPlus(e.target.value)}
-            className="input-dark"
+            className="input"
           />
         </div>
       )}
-      {error && <p className="text-coral text-sm">{error}</p>}
-      {added && (
-        <p className="text-mint text-sm">
-          Added <span className="text-cream">{added}</span> to the list.
+      {error && (
+        <p className="t-body-2" style={{ color: "var(--err)" }}>
+          {error}
         </p>
       )}
-      <button type="submit" className="btn-primary" disabled={pending}>
+      {added && (
+        <p className="t-body-2" style={{ color: "var(--ok)" }}>
+          Added <span style={{ color: "var(--fg)" }}>{added}</span> to the
+          list.
+        </p>
+      )}
+      <button className="btn btn--accent" type="submit" disabled={pending}>
         {pending ? "Adding…" : "Add friend"}
       </button>
     </form>

@@ -1,8 +1,10 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import EmptyState from "@/components/empty-state";
+import { PageHeader } from "@/components/v5";
 import ToggleButton from "./toggle-button";
 
 export const dynamic = "force-dynamic";
+
+const COLS = "1.2fr 2fr 90px 90px 1fr 110px";
 
 interface FlagRow {
   key: string;
@@ -22,51 +24,82 @@ export default async function AdminFeatureFlagsPage() {
   const flags = (data ?? []) as FlagRow[];
 
   return (
-    <main id="main-content" className="mx-auto max-w-5xl px-6 pt-6 pb-12">
-      <h1 className="display-lg mb-2">Feature flags</h1>
-      <p className="label-mono mb-6">
-        Toggle on/off live. Rollout % + target stay editable via SQL for now.
-      </p>
-
-      {flags.length === 0 ? (
-        <EmptyState
-          title="No flags seeded"
-          body="Run the migration to populate the starter flag set."
-        />
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="label-mono text-left">
-              <tr>
-                <th className="pb-2">Key</th>
-                <th>Description</th>
-                <th>Status</th>
-                <th className="text-right">Rollout</th>
-                <th>Target</th>
-                <th>Updated</th>
-              </tr>
-            </thead>
-            <tbody>
-              {flags.map((f) => (
-                <tr key={f.key} className="border-t border-line">
-                  <td className="py-2 font-mono text-cream">{f.key}</td>
-                  <td className="py-2 text-muted text-xs max-w-md">
-                    {f.description ?? ""}
-                  </td>
-                  <td className="py-2">
-                    <ToggleButton flagKey={f.key} enabled={f.enabled} />
-                  </td>
-                  <td className="py-2 text-right">{f.rollout_pct}%</td>
-                  <td className="py-2 label-mono">{f.rollout_target ?? "—"}</td>
-                  <td className="py-2 label-mono text-muted">
-                    {new Date(f.updated_at).toLocaleDateString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+    <main id="main-content">
+      <PageHeader
+        eyebrow="Platform"
+        title="Feature flags"
+        sub="Toggle on/off live. Rollout % + target stay editable via SQL for now."
+      />
+      <div style={{ padding: "var(--s-8)" }}>
+        {flags.length === 0 ? (
+          <div
+            className="card"
+            style={{
+              padding: "var(--s-16) var(--s-8)",
+              textAlign: "center",
+            }}
+          >
+            <div className="t-h1">No flags seeded</div>
+            <p
+              className="t-body-2"
+              style={{
+                marginTop: "var(--s-3)",
+                maxWidth: 460,
+                marginInline: "auto",
+              }}
+            >
+              Run the migration to populate the starter flag set.
+            </p>
+          </div>
+        ) : (
+          <div className="card" style={{ overflowX: "auto" }}>
+            <div
+              className="row"
+              style={{
+                gridTemplateColumns: COLS,
+                padding: "var(--s-3) var(--s-5)",
+                background: "var(--bg)",
+              }}
+            >
+              {["Key", "Description", "Status", "Rollout", "Target", "Updated"].map(
+                (h) => (
+                  <span key={h} className="t-meta">
+                    {h}
+                  </span>
+                ),
+              )}
+            </div>
+            {flags.map((f) => (
+              <div
+                key={f.key}
+                className="row"
+                style={{
+                  gridTemplateColumns: COLS,
+                  padding: "var(--s-4) var(--s-5)",
+                }}
+              >
+                <span
+                  className="t-body-2"
+                  style={{ fontFamily: "var(--mono)", color: "var(--fg)" }}
+                >
+                  {f.key}
+                </span>
+                <span className="t-body-2 truncate">
+                  {f.description ?? ""}
+                </span>
+                <span>
+                  <ToggleButton flagKey={f.key} enabled={f.enabled} />
+                </span>
+                <span className="t-body-2 t-num">{f.rollout_pct}%</span>
+                <span className="t-body-2">{f.rollout_target ?? "—"}</span>
+                <span className="t-meta">
+                  {new Date(f.updated_at).toLocaleDateString()}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </main>
   );
 }

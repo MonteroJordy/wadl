@@ -4,14 +4,25 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getAppUrl } from "@/lib/app-url";
 import { getVapidPublicKey } from "@/lib/push";
 import PushSubscribeButton from "@/components/push-subscribe";
-import EmptyState from "@/components/empty-state";
+import FormSubmit from "@/components/form-submit";
+import { PageHeader } from "@/components/v5";
 import AccountMetaForm from "./account-meta-form";
 import ShareLinkInput from "./share-link";
 
 export const dynamic = "force-dynamic";
 
+function initials(name: string): string {
+  return name
+    .split(" ")
+    .map((x) => x[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
 export default async function ProfilePage() {
-  const { user, profile, account } = await requireOwnerContext();
+  const { profile, account } = await requireOwnerContext();
   const admin = createAdminClient();
 
   const [venuesRes, staffRes] = await Promise.all([
@@ -23,7 +34,7 @@ export default async function ProfilePage() {
     admin
       .from("event_staff")
       .select(
-        "user_id, role, event:events!inner(id, name, account_id), profile:profiles!inner(full_name, phone)"
+        "user_id, role, event:events!inner(id, name, account_id), profile:profiles!inner(full_name, phone)",
       )
       .eq("event.account_id", account.id),
   ]);
@@ -36,14 +47,16 @@ export default async function ProfilePage() {
     profile: { full_name: string | null; phone: string | null };
   }>;
 
-  // Dedupe staff by user — same person may help on multiple events.
-  const teamMap = new Map<string, {
-    user_id: string;
-    name: string;
-    phone: string | null;
-    role: string;
-    events: string[];
-  }>();
+  const teamMap = new Map<
+    string,
+    {
+      user_id: string;
+      name: string;
+      phone: string | null;
+      role: string;
+      events: string[];
+    }
+  >();
   for (const s of staff) {
     const existing = teamMap.get(s.user_id);
     if (existing) {
@@ -60,173 +73,406 @@ export default async function ProfilePage() {
   }
   const team = [...teamMap.values()];
 
-  const accountTypeLabel = account.account_type === "venue" ? "Venue" : account.account_type === "brand" ? "Brand" : "Individual";
+  const accountTypeLabel =
+    account.account_type === "venue"
+      ? "Venue"
+      : account.account_type === "brand"
+        ? "Brand"
+        : "Individual";
+
+  const sectionLabel: React.CSSProperties = {
+    marginBottom: "var(--s-3)",
+  };
 
   return (
-    <main id="main-content" className="mx-auto max-w-frame md:max-w-2xl px-6 py-8 md:py-12">
-      <header className="pb-6">
-        <p className="label-mono mb-1">Profile</p>
-        <h1 className="display-lg leading-[0.95]">{profile.full_name ?? "Owner"}</h1>
-        <p className="label-mono mt-2">{profile.phone}</p>
-      </header>
+    <main
+      id="main-content"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
+    >
+      <PageHeader
+        eyebrow={`${accountTypeLabel} · ${account.display_name}`}
+        title="Profile + venues"
+        sub="Your account, venues, and team — defaults all new events inherit."
+      />
 
-      <section className="card mb-4">
-        <p className="label-mono mb-2">Account</p>
-        <div className="flex items-baseline justify-between gap-3">
-          <p className="font-sans text-cream font-semibold text-lg truncate">
-            {account.display_name}
-          </p>
-          <span className={`label-mono px-2 py-1 rounded-full border ${
-            account.account_type === "venue"
-              ? "text-coral border-coral/40"
-              : account.account_type === "brand"
-              ? "text-gold border-gold/40"
-              : "text-mint border-mint/40"
-          }`}>
-            {accountTypeLabel}
-          </span>
-        </div>
-        {profile.email && (
-          <p className="label-mono mt-2 truncate">
-            <span className="text-muted">Email</span>{" "}
-            <span className="text-cream">{profile.email}</span>
-          </p>
-        )}
-        {(account.handle || account.city) && (
-          <p className="label-mono mt-2 truncate">
-            {account.handle && (
-              <>
-                <span className="text-muted">@</span>
-                <span className="text-cream">{account.handle}</span>
-              </>
-            )}
-            {account.handle && account.city && " · "}
-            {account.city && (
-              <>
-                <span className="text-muted">in</span>{" "}
-                <span className="text-cream">{account.city}</span>
-              </>
-            )}
-          </p>
-        )}
-      </section>
-
-      <section className="card mb-4">
-        <p className="label-mono mb-3">Edit handle + city</p>
-        <AccountMetaForm
-          initialHandle={account.handle ?? null}
-          initialCity={account.city ?? null}
-        />
-      </section>
-
-      <section className="card mb-4">
-        <div className="flex items-baseline justify-between mb-2">
-          <p className="label-mono">Venues</p>
-          <Link
-            href="/venuesetup"
-            className="label-mono text-coral hover:brightness-125"
-          >
-            + Add
-          </Link>
-        </div>
-        {venues.length === 0 ? (
-          <p className="text-muted text-sm">
-            No venue yet — add one to start scheduling events.
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {venues.map((v) => (
-              <li key={v.id} className="flex items-baseline justify-between">
-                <div>
-                  <p className="font-sans text-cream">{v.name}</p>
-                  <p className="label-mono">
-                    {v.city || "—"}
-                    {v.default_capacity && ` · cap ${v.default_capacity}`}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section className="card mb-4">
-        <p className="label-mono mb-2">Team — door staff &amp; managers</p>
-        {team.length === 0 ? (
-          <p className="text-muted text-sm">
-            No staff invited yet. Add staff per-event from any event&apos;s Staff page.
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {team.map((m) => (
-              <li key={m.user_id} className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-sans text-cream truncate">{m.name}</p>
-                  <p className="label-mono truncate">
-                    {m.phone ?? "no phone"} ·{" "}
-                    <span className={m.role === "door_manager" ? "text-gold" : "text-mint"}>
-                      {m.role === "door_manager" ? "Manager" : "Staff"}
-                    </span>
-                  </p>
-                </div>
-                <p className="label-mono text-right shrink-0 max-w-[40%] truncate">
-                  {m.events.length === 1
-                    ? m.events[0]
-                    : `${m.events.length} events`}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section className="mb-4">
-        <PushSubscribeButton vapidPublicKey={getVapidPublicKey()} />
-      </section>
-
-      <section className="card mb-4">
-        <p className="label-mono mb-2">Share with venues</p>
-        <p className="text-muted text-sm mb-2">
-          Send this link to anyone you want to invite to the platform:
-        </p>
-        <ShareLinkInput url={getAppUrl()} />
-      </section>
-
-      <section className="card border-coral/40 mb-4">
-        <p className="label-mono text-coral mb-2">Danger zone</p>
-        <p className="text-muted text-sm mb-3">
-          Deleting your account is permanent and removes all events, allocations, and guest data.
-          Contact <a href="mailto:jmontero@mainframeagency.com" className="text-cream underline">support</a> to request deletion.
-        </p>
-        <button
-          type="button"
-          disabled
-          className="btn-ghost border-coral/60 text-coral disabled:opacity-50"
-          title="Stub — contact support"
+      <div
+        style={{
+          padding: "var(--s-8)",
+          maxWidth: 800,
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-6)",
+        }}
+      >
+        {/* Identity */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "var(--s-5)",
+          }}
         >
-          Delete account (request)
-        </button>
-      </section>
-
-      <form action="/api/auth/signout" method="post">
-        <button type="submit" className="btn-ghost">
-          Sign out
-        </button>
-      </form>
-
-      {!profile.full_name && (
-        <div className="mt-4">
-          <EmptyState
-            title="Profile incomplete"
-            body="Finish onboarding to unlock the rest of the dashboard."
-            action={
-              <Link href="/signup" className="btn-primary inline-block">
-                Complete signup
-              </Link>
-            }
-          />
+          <div
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: "var(--r-pill)",
+              background: "var(--bg-3)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 22,
+              fontWeight: 500,
+              fontFamily: "var(--display)",
+            }}
+          >
+            {initials(profile.full_name ?? "Owner")}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="t-display-sm">
+              {profile.full_name ?? "Owner"}
+            </div>
+            <div className="t-body-2" style={{ marginTop: "var(--s-1)" }}>
+              {profile.phone ?? "no phone on file"}
+              {profile.email ? ` · ${profile.email}` : ""}
+            </div>
+          </div>
         </div>
-      )}
+
+        {/* Account */}
+        <div>
+          <div className="t-meta" style={sectionLabel}>
+            Account
+          </div>
+          <div className="card" style={{ padding: "var(--s-6)" }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, 1fr)",
+                gap: "var(--s-5)",
+              }}
+            >
+              <div>
+                <div className="t-meta">Display name</div>
+                <div className="t-h2" style={{ marginTop: "var(--s-1)" }}>
+                  {account.display_name}
+                </div>
+              </div>
+              <div>
+                <div className="t-meta">Type</div>
+                <div style={{ marginTop: "var(--s-1)" }}>
+                  <span className="chip">{accountTypeLabel}</span>
+                </div>
+              </div>
+              {account.handle && (
+                <div>
+                  <div className="t-meta">Handle</div>
+                  <div
+                    className="t-h2"
+                    style={{ marginTop: "var(--s-1)" }}
+                  >
+                    @{account.handle}
+                  </div>
+                </div>
+              )}
+              {account.city && (
+                <div>
+                  <div className="t-meta">City</div>
+                  <div
+                    className="t-h2"
+                    style={{ marginTop: "var(--s-1)" }}
+                  >
+                    {account.city}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div
+              className="hr"
+              style={{ margin: "var(--s-5) 0" }}
+            />
+            <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+              Edit handle + city
+            </div>
+            <AccountMetaForm
+              initialHandle={account.handle ?? null}
+              initialCity={account.city ?? null}
+            />
+          </div>
+        </div>
+
+        {/* Venues */}
+        <div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "baseline",
+              marginBottom: "var(--s-3)",
+            }}
+          >
+            <div className="t-meta">Venues · {venues.length}</div>
+            <Link
+              href="/venuesetup"
+              className="btn btn--ghost btn--sm"
+              style={{ textDecoration: "none" }}
+            >
+              + Add
+            </Link>
+          </div>
+          {venues.length === 0 ? (
+            <div
+              className="card"
+              style={{ padding: "var(--s-6)" }}
+            >
+              <div className="t-body-2">
+                No venue yet — add one to start scheduling events.
+              </div>
+            </div>
+          ) : (
+            <div className="card">
+              {venues.map((v) => (
+                <div
+                  key={v.id}
+                  className="row"
+                  style={{ gridTemplateColumns: "1fr 1fr 120px" }}
+                >
+                  <span className="t-h2 truncate">{v.name}</span>
+                  <span className="t-body-2">{v.city || "—"}</span>
+                  <span className="t-meta">
+                    {v.default_capacity
+                      ? `Cap ${v.default_capacity}`
+                      : "No cap"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Team */}
+        <div>
+          <div className="t-meta" style={sectionLabel}>
+            Team · door staff &amp; managers · {team.length}
+          </div>
+          {team.length === 0 ? (
+            <div
+              className="card"
+              style={{ padding: "var(--s-6)" }}
+            >
+              <div className="t-body-2">
+                No staff invited yet. Add staff per-event from any
+                event&apos;s Staff page.
+              </div>
+            </div>
+          ) : (
+            <div className="card">
+              {team.map((m) => (
+                <div
+                  key={m.user_id}
+                  className="row"
+                  style={{
+                    gridTemplateColumns: "36px 1fr 1fr 90px 140px",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: "var(--r-pill)",
+                      background: "var(--bg-3)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      fontFamily: "var(--display)",
+                    }}
+                  >
+                    {initials(m.name)}
+                  </div>
+                  <span className="t-h2 truncate">{m.name}</span>
+                  <span className="t-body-2 truncate">
+                    {m.phone ?? "no phone"}
+                  </span>
+                  <span
+                    className={
+                      "chip " +
+                      (m.role === "door_manager"
+                        ? "chip--warn"
+                        : "chip--ok")
+                    }
+                  >
+                    {m.role === "door_manager" ? "Manager" : "Staff"}
+                  </span>
+                  <span className="t-meta truncate">
+                    {m.events.length === 1
+                      ? m.events[0]
+                      : `${m.events.length} events`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Notifications + push */}
+        <div>
+          <div className="t-meta" style={sectionLabel}>
+            Notifications
+          </div>
+          <Link
+            href="/owner/profile/notifications"
+            className="card card--hover"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "var(--s-4)",
+              padding: "var(--s-5)",
+              textDecoration: "none",
+              color: "inherit",
+            }}
+          >
+            <div>
+              <div className="t-h1">Notification preferences</div>
+              <div className="t-meta" style={{ marginTop: "var(--s-1)" }}>
+                Channels, per-kind controls, quiet hours
+              </div>
+            </div>
+            <span style={{ color: "var(--fg-3)" }}>→</span>
+          </Link>
+          <div style={{ marginTop: "var(--s-3)" }}>
+            <PushSubscribeButton vapidPublicKey={getVapidPublicKey()} />
+          </div>
+        </div>
+
+        {/* Share link */}
+        <div>
+          <div className="t-meta" style={sectionLabel}>
+            Share with venues
+          </div>
+          <div className="card" style={{ padding: "var(--s-6)" }}>
+            <p
+              className="t-body-2"
+              style={{ marginBottom: "var(--s-3)" }}
+            >
+              Send this link to anyone you want to invite to the platform.
+            </p>
+            <ShareLinkInput url={getAppUrl()} />
+          </div>
+        </div>
+
+        {/* Security */}
+        <Link
+          href="/owner/profile/security"
+          className="card card--hover"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "var(--s-4)",
+            padding: "var(--s-5)",
+            textDecoration: "none",
+            color: "inherit",
+          }}
+        >
+          <div>
+            <div className="t-h1">Security</div>
+            <div className="t-meta" style={{ marginTop: "var(--s-1)" }}>
+              Two-factor auth + recovery codes
+            </div>
+          </div>
+          <span style={{ color: "var(--fg-3)" }}>→</span>
+        </Link>
+
+        {/* Danger zone */}
+        <div>
+          <div className="t-meta" style={sectionLabel}>
+            Danger zone
+          </div>
+          <div
+            className="card"
+            style={{
+              padding: "var(--s-5)",
+              borderColor: "rgba(248,113,113,0.4)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "var(--s-4)",
+              flexWrap: "wrap",
+            }}
+          >
+            <div>
+              <div className="t-h1" style={{ color: "var(--err)" }}>
+                Delete account
+              </div>
+              <div
+                className="t-body-2"
+                style={{ marginTop: "var(--s-1)", maxWidth: 460 }}
+              >
+                Permanent — removes all events, allocations, and guest data.
+                Contact{" "}
+                <a
+                  href="mailto:jmontero@mainframeagency.com"
+                  style={{
+                    color: "var(--fg)",
+                    textDecoration: "underline",
+                  }}
+                >
+                  support
+                </a>{" "}
+                to request deletion.
+              </div>
+            </div>
+            <button
+              type="button"
+              className="btn btn--danger"
+              disabled
+              title="Stub — contact support"
+            >
+              Delete account
+            </button>
+          </div>
+        </div>
+
+        {/* Sign out */}
+        <form action="/api/auth/signout" method="post">
+          <FormSubmit variant="ghost" block pendingLabel="Signing out…">
+            Sign out
+          </FormSubmit>
+        </form>
+
+        {!profile.full_name && (
+          <div
+            className="card"
+            style={{
+              padding: "var(--s-8)",
+              textAlign: "center",
+              borderColor: "var(--line-2)",
+            }}
+          >
+            <span className="chip">Profile incomplete</span>
+            <div className="t-h1" style={{ marginTop: "var(--s-3)" }}>
+              Finish onboarding
+            </div>
+            <p className="t-body-2" style={{ marginTop: "var(--s-2)" }}>
+              Complete signup to unlock the rest of the dashboard.
+            </p>
+            <Link
+              href="/signup"
+              className="btn btn--accent"
+              style={{
+                marginTop: "var(--s-4)",
+                textDecoration: "none",
+                display: "inline-flex",
+              }}
+            >
+              Complete signup
+            </Link>
+          </div>
+        )}
+      </div>
     </main>
   );
 }

@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fmtDate, fmtTime } from "@/lib/format";
+import { Logo } from "@/components/v5";
 import ReferralForm from "./form";
 
 export const dynamic = "force-dynamic";
@@ -36,17 +37,32 @@ export default async function ReferralPage({
     .select(
       "id, full_name, status, allocation_id, " +
         "allocation:allocations(id, cap, list_open, plus_ones_allowed), " +
-        "night:event_nights!inner(id, night_date, doors_at, is_frozen, event:events!inner(id, name, flyer_url))"
+        "night:event_nights!inner(id, night_date, doors_at, is_frozen, event:events!inner(id, name, flyer_url))",
     )
     .eq("id", params.guestId)
     .maybeSingle<ReferrerData>();
 
   if (!ref) {
     return (
-      <main id="main-content" className="mobile-frame">
-        <div className="pt-12 text-center">
-          <p className="label-mono mb-3">WADL</p>
-          <h1 className="display-lg mb-3">Link not found.</h1>
+      <main
+        id="main-content"
+        style={{ minHeight: "100vh", background: "var(--bg)" }}
+      >
+        <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
+          <Logo size={18} />
+        </div>
+        <div
+          style={{
+            padding: "var(--s-24) var(--s-6) 0",
+            textAlign: "center",
+            maxWidth: 420,
+            margin: "0 auto",
+          }}
+        >
+          <div className="t-meta">Referral</div>
+          <div className="t-display-md" style={{ marginTop: "var(--s-3)" }}>
+            Link not found.
+          </div>
         </div>
       </main>
     );
@@ -76,53 +92,134 @@ export default async function ReferralPage({
     remaining > 0 &&
     ref.status !== "cancelled" &&
     ref.status !== "rejected";
+  const capPct =
+    alloc && alloc.cap > 0
+      ? Math.min(100, Math.round((used / alloc.cap) * 100))
+      : 0;
 
   return (
-    <main id="main-content" className="mobile-frame">
-      <header className="pt-6 pb-4">
-        <p className="label-mono mb-2">Bring a friend</p>
-        <h1 className="display-lg">{ref.night.event.name}</h1>
-        <p className="label-mono mt-2">
-          {fmtDate(ref.night.night_date)} · Doors {fmtTime(ref.night.doors_at)}
-        </p>
-      </header>
+    <main
+      id="main-content"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
+    >
+      <div
+        style={{
+          padding: "var(--s-6) var(--s-6) 0",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <Logo size={18} />
+        <span className="chip chip--solid">Bring a friend</span>
+      </div>
+
+      <div style={{ padding: "var(--s-8) var(--s-6) 0" }}>
+        <div className="t-meta">
+          {fmtDate(ref.night.night_date)} · Doors{" "}
+          {fmtTime(ref.night.doors_at)}
+        </div>
+        <div className="t-display-md" style={{ marginTop: "var(--s-2)" }}>
+          {ref.night.event.name}
+        </div>
+      </div>
 
       {ref.night.event.flyer_url ? (
-        <div
-          className="w-full rounded-lg overflow-hidden mb-4 border border-line"
-          style={{ aspectRatio: "4 / 5" }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={ref.night.event.flyer_url}
-            alt={ref.night.event.name}
-            className="w-full h-full object-cover"
-          />
+        <div style={{ padding: "var(--s-5) var(--s-6) 0" }}>
+          <div
+            style={{
+              width: "100%",
+              aspectRatio: "4 / 5",
+              borderRadius: "var(--r-lg)",
+              border: "1px solid var(--line)",
+              background: "var(--bg-3)",
+              overflow: "hidden",
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={ref.night.event.flyer_url}
+              alt={ref.night.event.name}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+              }}
+            />
+          </div>
         </div>
       ) : null}
 
-      <section className="card mb-5">
-        <p className="label-mono mb-1">Referral by</p>
-        <p className="font-sans text-cream font-semibold">{ref.full_name}</p>
-        {(brought ?? 0) > 0 && (
-          <p className="label-mono mt-2">
-            <span className="text-mint">{brought}</span> brought so far
-          </p>
-        )}
-        {alloc && (
-          <p className="label-mono mt-2">
-            {used}/{alloc.cap} on list ({remaining} spots left)
-          </p>
-        )}
-      </section>
+      <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
+        <div className="card" style={{ padding: "var(--s-5)" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "var(--s-3)",
+            }}
+          >
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="t-meta">Referral by</div>
+              <div className="t-h1" style={{ marginTop: "var(--s-1)" }}>
+                {ref.full_name}
+              </div>
+            </div>
+            {(brought ?? 0) > 0 && (
+              <span className="chip chip--ok">{brought} brought</span>
+            )}
+          </div>
+          {alloc && alloc.cap > 0 && (
+            <>
+              <div
+                style={{
+                  marginTop: "var(--s-4)",
+                  height: 4,
+                  background: "var(--line)",
+                  borderRadius: "var(--r-pill)",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    height: "100%",
+                    width: `${capPct}%`,
+                    background: "var(--fg)",
+                  }}
+                />
+              </div>
+              <div
+                className="t-meta"
+                style={{ marginTop: "var(--s-2)" }}
+              >
+                {remaining} spots left
+              </div>
+            </>
+          )}
+        </div>
+      </div>
 
-      <ReferralForm
-        guestId={ref.id}
-        plusOnesAllowed={alloc?.plus_ones_allowed ?? false}
-        active={active}
-      />
+      <div style={{ padding: "var(--s-6) var(--s-6) 0" }}>
+        <ReferralForm
+          guestId={ref.id}
+          plusOnesAllowed={alloc?.plus_ones_allowed ?? false}
+          active={active}
+        />
+      </div>
 
-      <p className="label-mono mt-auto pt-8 text-center">Powered by WADL</p>
+      <div
+        style={{
+          paddingTop: "var(--s-8)",
+          paddingBottom: "var(--s-4)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "var(--s-2)",
+        }}
+      >
+        <span className="t-meta">Powered by</span>
+        <Logo size={11} />
+      </div>
     </main>
   );
 }

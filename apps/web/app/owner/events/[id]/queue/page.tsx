@@ -1,9 +1,8 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOwnerContext, fmtDate } from "@/lib/owner";
+import { Breadcrumb, PageHeader, EventSubNav } from "@/components/v5";
 import QueueRow from "./row";
 import BulkActions from "./bulk";
-import EmptyState from "@/components/empty-state";
 
 export const dynamic = "force-dynamic";
 
@@ -33,11 +32,13 @@ export default async function QueuePage({
     .maybeSingle();
   if (!event) notFound();
 
-  const nights = ((event.event_nights ?? []) as Array<{
-    id: string;
-    night_date: string;
-    doors_at: string;
-  }>).sort((a, b) => (a.doors_at < b.doors_at ? -1 : 1));
+  const nights = (
+    (event.event_nights ?? []) as Array<{
+      id: string;
+      night_date: string;
+      doors_at: string;
+    }>
+  ).sort((a, b) => (a.doors_at < b.doors_at ? -1 : 1));
 
   const nightIds = nights.map((n) => n.id);
 
@@ -54,7 +55,9 @@ export default async function QueuePage({
     const [pRes, aRes] = await Promise.all([
       supabase
         .from("guests")
-        .select("id, event_night_id, allocation_id, full_name, plus_ones, created_at")
+        .select(
+          "id, event_night_id, allocation_id, full_name, plus_ones, created_at",
+        )
         .in("event_night_id", nightIds)
         .eq("status", "pending")
         .order("created_at", { ascending: true }),
@@ -77,73 +80,122 @@ export default async function QueuePage({
   return (
     <main
       id="main-content"
-      className="mx-auto w-full max-w-4xl px-4 md:px-8 pt-6 pb-16"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
     >
-      <header className="mb-6">
-        <Link
-          href={`/owner/events/${event.id}`}
-          className="label-mono hover:text-cream transition mb-2 inline-block"
-        >
-          ← {event.name}
-        </Link>
-        <h1 className="font-display text-4xl md:text-5xl text-cream uppercase tracking-wide leading-[0.9]">
-          Approval queue
-        </h1>
-        <p className="label-mono mt-2">
-          {pending.length === 0
-            ? "Nothing pending"
-            : `${pending.length} pending · approve or reject`}
-        </p>
-      </header>
+      <Breadcrumb
+        items={[
+          ["Events", "/owner"],
+          [event.name, `/owner/events/${event.id}`],
+          "Queue",
+        ]}
+      />
+      <PageHeader
+        eyebrow="Approval queue"
+        title="Pending review"
+        sub={
+          pending.length === 0
+            ? "Nothing pending — auto-approved allocations bypass this view."
+            : `${pending.length} pending · approve or reject below.`
+        }
+      />
+      <EventSubNav active="guests" eventId={event.id} />
 
-      {pending.length === 0 ? (
-        <section className="rounded-2xl border border-line bg-s1 px-6 py-16 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-mint/10 border border-mint/30 mx-auto mb-5 flex items-center justify-center">
-            <span className="font-display text-3xl text-mint">✓</span>
+      <div style={{ padding: "var(--s-8)" }}>
+        {pending.length === 0 ? (
+          <div
+            className="card"
+            style={{ padding: "var(--s-16) var(--s-8)", textAlign: "center" }}
+          >
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: "var(--r-lg)",
+                background: "var(--bg-3)",
+                margin: "0 auto var(--s-5)",
+              }}
+            />
+            <div className="t-display-md">Queue empty</div>
+            <div
+              className="t-body-2"
+              style={{
+                marginTop: "var(--s-3)",
+                maxWidth: 420,
+                marginInline: "auto",
+              }}
+            >
+              Nothing waiting for review. Auto-approved allocations bypass this
+              view — you only see RSVPs from holders who require host approval.
+            </div>
           </div>
-          <p className="font-display text-3xl text-cream uppercase tracking-wide mb-2">
-            Queue empty
-          </p>
-          <p className="text-muted text-sm leading-relaxed max-w-md mx-auto">
-            Nothing waiting for review. Auto-approved allocations bypass this
-            view — you only see RSVPs from holders who require host approval.
-          </p>
-        </section>
-      ) : (
-        <div className="flex flex-col gap-8">
-          {nights.map((n) => {
-            const list = byNight.get(n.id) ?? [];
-            if (list.length === 0) return null;
-            return (
-              <section key={n.id}>
-                <p className="label-mono mb-3">
-                  {fmtDate(n.night_date)} · {list.length} pending
-                </p>
-                <div className="mb-3">
-                  <BulkActions eventId={event.id} nightId={n.id} count={list.length} />
-                </div>
-                <div className="flex flex-col gap-2">
-                  {list.map((g) => (
-                    <QueueRow
-                      key={g.id}
+        ) : (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "var(--s-10)",
+            }}
+          >
+            {nights.map((n) => {
+              const list = byNight.get(n.id) ?? [];
+              if (list.length === 0) return null;
+              return (
+                <section key={n.id}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      marginBottom: "var(--s-3)",
+                      gap: "var(--s-3)",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <span className="t-meta">
+                      {fmtDate(n.night_date)} · {list.length} pending
+                    </span>
+                    <BulkActions
                       eventId={event.id}
-                      guestId={g.id}
-                      fullName={g.full_name}
-                      plusOnes={g.plus_ones}
-                      holderLabel={
-                        g.allocation_id
-                          ? holderById.get(g.allocation_id) ?? "Holder"
-                          : "Direct add"
-                      }
-                      addedAgo={ago(g.created_at)}
+                      nightId={n.id}
+                      count={list.length}
                     />
-                  ))}
-                </div>
-              </section>
-            );
-          })}
-        </div>
-      )}
+                  </div>
+                  <div className="card">
+                    <div
+                      className="row"
+                      style={{
+                        gridTemplateColumns: "1fr 160px 100px 200px",
+                        background: "var(--bg)",
+                      }}
+                    >
+                      {["Name", "Holder", "Added", ""].map((h, i) => (
+                        <span key={i} className="t-meta">
+                          {h}
+                        </span>
+                      ))}
+                    </div>
+                    {list.map((g) => (
+                      <QueueRow
+                        key={g.id}
+                        eventId={event.id}
+                        guestId={g.id}
+                        fullName={g.full_name}
+                        plusOnes={g.plus_ones}
+                        holderLabel={
+                          g.allocation_id
+                            ? (holderById.get(g.allocation_id) ?? "Holder")
+                            : "Direct add"
+                        }
+                        addedAgo={ago(g.created_at)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </main>
   );
 }

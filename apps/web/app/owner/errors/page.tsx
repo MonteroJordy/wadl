@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireOwnerContext } from "@/lib/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { PageHeader } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,13 @@ interface ErrorRow {
   stack: string | null;
   context: Record<string, unknown> | null;
 }
+
+const SEV_COLOR: Record<string, string> = {
+  fatal: "var(--err)",
+  error: "var(--err)",
+  warn: "var(--warn)",
+  info: "var(--ok)",
+};
 
 export default async function ErrorsPage({
   searchParams,
@@ -37,92 +45,138 @@ export default async function ErrorsPage({
   const rows = (data ?? []) as ErrorRow[];
 
   return (
-    <main id="main-content" className="mx-auto max-w-5xl px-6 pt-12 pb-12">
-      <header className="mb-6">
-        <p className="label-mono mb-1">Platform owner only</p>
-        <h1 className="display-lg">Error log</h1>
-        <p className="label-mono mt-2">
-          {rows.length} most recent · captureException() writes here automatically.
-        </p>
-      </header>
+    <main id="main-content" style={{ minHeight: "100vh", background: "var(--bg)" }}>
+      <PageHeader
+        eyebrow="Platform owner only"
+        title="Error log"
+        sub={`${rows.length} most recent · captureException() writes here automatically.`}
+      />
 
-      <div className="flex gap-1 mb-4">
-        {(["all", "fatal", "error", "warn", "info"] as const).map((s) => (
-          <a
-            key={s}
-            href={s === "all" ? "/owner/errors" : `/owner/errors?severity=${s}`}
-            className={`px-3 py-1 rounded-full border text-[10px] font-mono uppercase tracking-wider ${
-              (searchParams.severity ?? "all") === s
-                ? "border-coral bg-s2 text-cream"
-                : "border-line bg-s1 text-muted hover:text-cream"
-            }`}
-          >
-            {s}
-          </a>
-        ))}
+      <div
+        style={{
+          padding: "var(--s-4) var(--s-8)",
+          borderBottom: "1px solid var(--line)",
+          display: "flex",
+          gap: "var(--s-1)",
+        }}
+      >
+        {(["all", "fatal", "error", "warn", "info"] as const).map((s) => {
+          const active = (searchParams.severity ?? "all") === s;
+          return (
+            <a
+              key={s}
+              href={
+                s === "all" ? "/owner/errors" : `/owner/errors?severity=${s}`
+              }
+              className={"nav-item" + (active ? " nav-item--active" : "")}
+              style={{ fontSize: "var(--ts-sm)", textDecoration: "none" }}
+            >
+              {s[0].toUpperCase() + s.slice(1)}
+            </a>
+          );
+        })}
       </div>
 
-      {rows.length === 0 ? (
-        <p className="text-muted">No errors. Or none captured.</p>
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {rows.map((r) => (
-            <li
-              key={r.id}
-              className={`card border-line ${
-                r.severity === "fatal"
-                  ? "border-coral"
-                  : r.severity === "error"
-                  ? "border-coral/40"
-                  : r.severity === "warn"
-                  ? "border-gold/40"
-                  : ""
-              }`}
-            >
-              <div className="flex items-baseline justify-between gap-2 mb-1">
-                <p className="font-sans text-cream font-semibold truncate">
-                  {r.message}
-                </p>
-                <p className="label-mono shrink-0">
-                  {new Date(r.occurred_at).toLocaleString()}
-                </p>
-              </div>
-              <p className="label-mono mb-2">
-                <span
-                  className={
-                    r.severity === "fatal" || r.severity === "error"
-                      ? "text-coral"
-                      : r.severity === "warn"
-                      ? "text-gold"
-                      : "text-mint"
-                  }
+      <div style={{ padding: "var(--s-8)", maxWidth: 1080 }}>
+        {rows.length === 0 ? (
+          <p className="t-body-2">No errors. Or none captured.</p>
+        ) : (
+          <ul
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "var(--s-2)",
+              listStyle: "none",
+              padding: 0,
+              margin: 0,
+            }}
+          >
+            {rows.map((r) => (
+              <li
+                key={r.id}
+                className="card"
+                style={{ padding: "var(--s-4)" }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "baseline",
+                    justifyContent: "space-between",
+                    gap: "var(--s-2)",
+                    marginBottom: "var(--s-1)",
+                  }}
                 >
-                  {r.severity}
-                </span>
-                {r.route && <span className="ml-2">{r.route}</span>}
-                {r.user_id && (
-                  <span className="ml-2 text-muted">
-                    user={r.user_id.slice(0, 8)}
+                  <p
+                    className="t-body truncate"
+                    style={{ flex: 1, minWidth: 0, fontWeight: 500 }}
+                  >
+                    {r.message}
+                  </p>
+                  <div className="t-meta" style={{ flexShrink: 0 }}>
+                    {new Date(r.occurred_at).toLocaleString()}
+                  </div>
+                </div>
+                <div className="t-meta" style={{ marginBottom: "var(--s-2)" }}>
+                  <span
+                    style={{ color: SEV_COLOR[r.severity] ?? "var(--fg)" }}
+                  >
+                    {r.severity.toUpperCase()}
                   </span>
-                )}
-              </p>
-              {r.stack && (
-                <pre className="text-xs text-muted overflow-x-auto whitespace-pre-wrap font-mono">
-                  {r.stack.split("\n").slice(0, 6).join("\n")}
-                </pre>
-              )}
-              {r.context && (
-                <details className="mt-2">
-                  <summary className="label-mono cursor-pointer">context</summary>
-                  <pre className="text-xs text-muted mt-1 overflow-x-auto font-mono">
-                    {JSON.stringify(r.context, null, 2)}
+                  {r.route && (
+                    <span style={{ marginLeft: "var(--s-2)" }}>{r.route}</span>
+                  )}
+                  {r.user_id && (
+                    <span
+                      style={{
+                        marginLeft: "var(--s-2)",
+                        color: "var(--fg-3)",
+                      }}
+                    >
+                      user={r.user_id.slice(0, 8)}
+                    </span>
+                  )}
+                </div>
+                {r.stack && (
+                  <pre
+                    style={{
+                      fontSize: 11,
+                      color: "var(--fg-3)",
+                      overflowX: "auto",
+                      whiteSpace: "pre-wrap",
+                      fontFamily: "var(--mono)",
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {r.stack.split("\n").slice(0, 6).join("\n")}
                   </pre>
-                </details>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+                )}
+                {r.context && (
+                  <details style={{ marginTop: "var(--s-2)" }}>
+                    <summary
+                      className="t-meta"
+                      style={{ cursor: "pointer" }}
+                    >
+                      Context
+                    </summary>
+                    <pre
+                      style={{
+                        fontSize: 11,
+                        color: "var(--fg-3)",
+                        marginTop: "var(--s-1)",
+                        overflowX: "auto",
+                        fontFamily: "var(--mono)",
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {JSON.stringify(r.context, null, 2)}
+                    </pre>
+                  </details>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </main>
   );
 }

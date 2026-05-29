@@ -35,7 +35,7 @@ export default function ComparePicker({
         next.set(side, e.target.value);
         router.replace(`/owner/analytics/compare?${next.toString()}`);
       }}
-      className="input-dark"
+      className="input"
       aria-label={`Event ${side.toUpperCase()}`}
     >
       {events.map((ev) => (

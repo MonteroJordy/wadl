@@ -1,0 +1,4 @@
+# Supabase CLI local state — contains pooler URL with DB password,
+# linked project metadata. Never commit.
+.temp/
+.branches/

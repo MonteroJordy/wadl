@@ -3,28 +3,219 @@
 @tailwind utilities;
 
 :root {
+  /* ════════════════════════════════════════════════════════════════
+     WADL v5 — design tokens rebuilt from scratch (Claude Design handoff).
+       · 4pt spacing scale          · 1.25 modular type scale
+       · 3 radii (sm/md/lg) + pill  · monochrome: white CTA on near-black
+       · status hues only (no brand accent)
+     The legacy --w-* and --coral/--cream/etc. names below are ALIASED to
+     v5 values so all 168 existing component files inherit the rebrand
+     with zero per-file edits. New work should use the raw v5 tokens.
+     ════════════════════════════════════════════════════════════════ */
+
+  /* ─── v5 raw tokens (source of truth) ─── */
+  /* Spacing — 4pt grid */
+  --s-0: 0;
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+  --s-12: 48px;
+  --s-16: 64px;
+  --s-20: 80px;
+  --s-24: 96px;
+
+  /* Radii — minimal */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-pill: 999px;
+
+  /* Surfaces — near-black ramp, tightened contrast (v5.2) */
   --bg: #0a0a0a;
-  --s1: #111111;
-  --s2: #181818;
-  --s3: #222222;
-  --coral: #ff4a2b;
-  --gold: #f5c842;
-  --mint: #00d97e;
-  --lav: #a78bfa;
-  --cream: #f2ede4;
-  --muted: rgba(242, 237, 228, 0.5);
-  --line: rgba(255, 255, 255, 0.07);
+  --bg-2: #141414;
+  --bg-3: #1e1e1e;
+  --bg-4: #2a2a2a;
+  --line: rgba(255, 255, 255, 0.05);
+  --line-2: rgba(255, 255, 255, 0.10);
+  --line-3: rgba(255, 255, 255, 0.20);
+
+  /* Type colors */
+  --fg: #fafafa;
+  --fg-2: #a8a8a8;
+  --fg-3: #707070;
+  --fg-4: #4a4a4a;
+
+  /* Status — single hue each, soft */
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --err: #f87171;
+  --info: #60a5fa;
+
+  /* Brand accent gradient — pink → orange → yellow.
+     Use sparingly: primary marketing CTAs, "live" chips, accent surfaces.
+     Pairs with --accent-soft as a low-saturation backdrop tint. */
+  --accent-1: #ff3d6e;
+  --accent-2: #ff8a3d;
+  --accent-3: #ffd23d;
+  --accent-grad: linear-gradient(135deg, #ff3d6e 0%, #ff8a3d 50%, #ffd23d 100%);
+  --accent-soft: rgba(255, 61, 110, 0.12);
+
+  /* Type scale — modular 1.25 */
+  --ts-xs: 11px;
+  --ts-sm: 13px;
+  --ts-md: 14px;
+  --ts-lg: 16px;
+  --ts-xl: 20px;
+  --ts-2xl: 24px;
+  --ts-3xl: 32px;
+  --ts-4xl: 44px;
+  --ts-5xl: 60px;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semi: 600;
+  --fw-bold: 700;
+
+  /* ─── Legacy aliases — map old names → v5 values ─── */
+  --s1: var(--bg);
+  --s2: var(--bg-3);
+  --s3: var(--bg-4);
+  --coral: var(--err);   /* was cobalt — now error red    */
+  --gold: var(--warn);
+  --mint: var(--ok);
+  --lav: var(--info);
+  --cream: var(--fg);
+  --muted: var(--fg-2);
+
+  /* Legacy font CSS vars — chain to the loaded families so font-display,
+     font-sans, font-mono Tailwind utilities resolve without touching
+     the existing 168 files. */
+  --font-bebas: var(--font-inter-tight);
+  --font-epilogue: var(--font-inter-tight);
+  --font-dm-mono: var(--font-jb-mono);
+
+  /* ─── --w-* aliases → v5 (the rebrand inheritance bridge) ─── */
+  --w-ink: var(--bg);
+  --w-bg: var(--bg);
+  --w-surface: rgba(255, 255, 255, 0.02);
+  --w-surface-2: var(--bg-2);
+  --w-surface-3: var(--bg-3);
+  --w-line: var(--line-2);
+  --w-line-2: var(--line-3);
+
+  --w-fg: var(--fg);
+  --w-fg-muted: var(--fg-2);
+  --w-fg-dim: var(--fg-3);
+  --w-fg-faint: var(--fg-4);
+
+  /* v5 has NO brand accent — the primary CTA is white-on-black. So the
+     old highlighter-yellow accent collapses to white; ink-on-accent
+     becomes the near-black bg. */
+  --w-acc: var(--fg);
+  --w-acc-ink: var(--bg);
+  --w-acc-soft: var(--line-2);
+
+  --w-ga: var(--fg);
+  --w-vip: var(--info);
+  --w-aaa: var(--fg);
+
+  --w-ok: var(--ok);
+  --w-warn: var(--warn);
+  --w-err: var(--err);
+
+  --w-sans: var(--font-inter-tight), "Inter", -apple-system,
+    BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  --w-display: var(--font-inter-tight), "Inter", -apple-system, sans-serif;
+  --w-mono: var(--font-jb-mono), "JetBrains Mono", "SF Mono",
+    "IBM Plex Mono", ui-monospace, monospace;
+
+  /* Rounded — v5 introduces 3 radii (was sharp 0px everywhere). */
+  --w-r-xs: 4px;
+  --w-r-sm: var(--r-sm);
+  --w-r-md: var(--r-md);
+  --w-r-lg: var(--r-lg);
+
+  --w-shadow-card: 0 1px 0 0 #ffffff05 inset, 0 0 0 1px var(--w-line);
+
+  /* === Responsive scale tokens — these flip at the desktop breakpoint
+     so individual components don't have to write media queries. Mobile
+     defaults below; desktop overrides at the bottom of this file. === */
+
+  /* Page padding: mobile breathes more, desktop is denser. */
+  --w-page-pad-x: 16px;
+  --w-page-pad-y: 24px;
+  --w-page-pad-bottom: 96px; /* room for fixed bottom tab bar */
+
+  /* Card padding rhythm. */
+  --w-card-pad: 14px;
+  --w-card-pad-lg: 18px;
+
+  /* Stack gap (between vertical sections). */
+  --w-stack-gap: 12px;
+  --w-stack-gap-lg: 20px;
+
+  /* Display sizes — v5 modular scale (1.25 ratio). */
+  --w-display-sm: var(--ts-2xl);  /* 24 */
+  --w-display-md: var(--ts-3xl);  /* 32 */
+  --w-display-lg: var(--ts-4xl);  /* 44 */
+  --w-display-xl: var(--ts-5xl);  /* 60 */
+
+  /* Body / meta sizes. */
+  --w-body: var(--ts-md);   /* 14 */
+  --w-meta: var(--ts-xs);   /* 11 */
+
+  /* Touch target floor — 44px iOS HIG on mobile, tighter on desktop. */
+  --w-touch: 44px;
+
+  /* Container widths for content. Default = roomy desktop. */
+  --w-content-narrow: 720px;
+  --w-content-medium: 960px;
+  --w-content-wide: 1200px;
+  --w-content-xwide: 1440px;
+}
+
+/* Desktop overrides (≥768px = tablet+, where we have a sticky sidebar). */
+@media (min-width: 768px) {
+  :root {
+    --w-page-pad-x: 32px;
+    --w-page-pad-y: 32px;
+    --w-page-pad-bottom: 32px; /* no bottom tab bar */
+
+    --w-card-pad: 16px;
+    --w-card-pad-lg: 24px;
+
+    --w-stack-gap: 16px;
+    --w-stack-gap-lg: 24px;
+
+    --w-display-sm: 24px;
+    --w-display-md: 36px;
+    --w-display-lg: 56px;
+    --w-display-xl: 88px;
+
+    --w-body: 14px;
+    --w-meta: 11px;
+
+    --w-touch: 36px;
+  }
 }
 
 html,
 body {
-  background-color: var(--bg);
-  color: var(--cream);
+  background-color: var(--w-bg);
+  color: var(--w-fg);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  font-family: var(--font-epilogue), system-ui, sans-serif;
+  font-family: var(--w-sans);
+  font-feature-settings: "ss01", "ss02", "cv11";
+  letter-spacing: -0.01em;
 }
 
 /* a11y: skip link for keyboard users — visible only on focus. */
@@ -33,11 +224,11 @@ body {
   top: 8px;
   left: 8px;
   z-index: 100;
-  background: var(--coral);
-  color: var(--bg);
+  background: var(--w-acc);
+  color: var(--w-acc-ink);
   padding: 8px 14px;
   border-radius: 6px;
-  font-family: ui-monospace, monospace;
+  font-family: var(--w-mono);
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.14em;
@@ -47,22 +238,41 @@ body {
 }
 .skip-link:focus {
   transform: translateY(0);
-  outline: 2px solid var(--cream);
+  outline: 2px solid var(--w-fg);
   outline-offset: 2px;
 }
 
-/* a11y: ensure keyboard focus is always visible. Browsers strip outline on
-   click; focus-visible only fires for keyboard nav, so this is non-intrusive. */
+/* a11y: keyboard focus ring uses the new accent. Mouse clicks don't
+   trigger this (because :focus-visible), so the ring only appears for
+   keyboard users, exactly when it helps and never as visual noise. */
 *:focus-visible {
-  outline: 2px solid var(--coral);
+  outline: 2px solid var(--w-acc);
   outline-offset: 2px;
 }
 
-/* Inputs already replace outline with a coral border — keep that, but also
-   add a subtle ring under focus-visible for extra contrast. */
 .input-dark:focus-visible {
-  outline: 2px solid var(--coral);
+  outline: 2px solid var(--w-acc);
   outline-offset: 1px;
+}
+
+/* Buttons in the new system: contrast the accent ring against the
+   button's own accent fill by stacking a dark inner ring + accent outer
+   ring. Works on every variant (primary, ghost, solid). */
+.w-btn:focus-visible {
+  outline: 2px solid var(--w-acc) !important;
+  outline-offset: 3px;
+  box-shadow: inset 0 0 0 2px var(--w-ink);
+}
+.w-btn--ghost:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--w-acc);
+}
+
+/* Inputs in the new system already have a border; reinforce the ring
+   on focus so it doesn't look like a hover-stuck state. */
+.w-input:focus-visible {
+  outline: 2px solid var(--w-acc);
+  outline-offset: 1px;
+  border-color: var(--w-acc);
 }
 
 /* Honor user's reduced-motion preference everywhere. */
@@ -75,57 +285,490 @@ body {
   }
 }
 
+/* Subtle fade-in on every <main id="main-content"> when a new route
+   mounts. Removes the "hard cut" feeling between page navigations
+   without slowing perceived load. Reduced-motion users get it disabled
+   via the media query above (animation-duration → 0.01ms). */
+@keyframes wadlPageFadeIn {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+main#main-content {
+  animation: wadlPageFadeIn 220ms ease-out;
+}
+
+/* Print styles — strip chrome, force black-on-white so guest lists and
+   audit logs print legibly. Pages that should hide entirely when
+   printing (sidebars, tab bars, top bars, modals, action buttons) get
+   `.no-print`. Conversely, anything print-only (a header logo for the
+   printed page) gets `.print-only`. */
+@media print {
+  *, *::before, *::after {
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    border-color: #ddd !important;
+  }
+  /* Hide app chrome — sidebar, hamburger, mobile tab bar, toolbars. */
+  .w-aside-tablet,
+  .w-mobile-chrome,
+  .w-tab-bar,
+  .w-tab-bar-spacer,
+  .w-topbar,
+  .w-toast-stack,
+  .w-sticky-footer,
+  .no-print,
+  nav,
+  button[type="button"],
+  a[role="button"],
+  form[action="/api/auth/signout"] {
+    display: none !important;
+  }
+  /* Content area: full width, no left margin. */
+  .w-content,
+  .w-shell {
+    display: block !important;
+    margin-left: 0 !important;
+    flex: 1 1 100% !important;
+  }
+  main#main-content {
+    animation: none !important;
+    padding: 0 !important;
+  }
+  /* Break-inside on tables/cards so a row doesn't split across pages. */
+  tr, .w-card, li {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  /* Print-only elements hidden on screen. */
+  .print-only { display: block !important; }
+  /* Keep links readable: show the URL after the link text. */
+  a[href]:not(.no-print-url)::after {
+    content: " (" attr(href) ")";
+    font-size: 9px;
+    color: #666 !important;
+  }
+}
+.print-only { display: none; }
+
+/* Touch target floor on coarse-pointer devices (mobile / tablet).
+   Most CTAs already meet 44x44 via `.w-btn` (height 44px). The mobile
+   tab bar items also hit 44px. For one-off compact icon buttons that
+   need the thumb-friendly floor, add `.w-tap` to opt in. */
+.w-tap {
+  min-width: 44px;
+  min-height: 44px;
+}
+@media (pointer: coarse) {
+  /* Make sure the standard sidebar nav links are easy to tap. They use
+     padding rather than explicit height, so this enforces the floor
+     without disturbing desktop density. */
+  .w-aside-tablet a {
+    min-height: 44px;
+    display: flex !important;
+    align-items: center;
+  }
+}
+
+/* === RESPONSIVE LAYOUT RULES — moved out of inline <style> in components
+   to prevent SSR-vs-client whitespace hydration mismatches. === */
+
+/* Mobile bottom tab bar: visible <768px, hidden ≥768px. */
+@media (min-width: 768px) {
+  .w-tab-bar { display: none !important; }
+}
+@media (max-width: 767px) {
+  .w-tab-bar-spacer { height: 64px; }
+  /* Sticky form footer needs to sit above the mobile bottom tab bar. */
+  .w-sticky-footer {
+    bottom: calc(64px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* Discover-page card hover lift — shotgun-style affordance.
+   Only on hover-capable devices so touch doesn't get stuck "lifted". */
+@media (hover: hover) {
+  .w-discover-card > .w-card {
+    will-change: transform;
+  }
+  .w-discover-card:hover > .w-card {
+    transform: translateY(-2px);
+    border-color: var(--w-line-2) !important;
+  }
+}
+
+/* Inline prose anchors: undecorated text links inside body copy get
+   the accent color and an underline-on-hover so users can spot them.
+   Scoped to <p> + .w-type-body* so we don't disturb nav/card/CTA links
+   that have their own styling. */
+p > a:not([class]),
+.w-type-body a:not([class]),
+.w-type-body-sm a:not([class]) {
+  color: var(--w-acc);
+  text-decoration: none;
+}
+p > a:not([class]):hover,
+.w-type-body a:not([class]):hover,
+.w-type-body-sm a:not([class]):hover,
+p > a:not([class]):focus-visible,
+.w-type-body a:not([class]):focus-visible,
+.w-type-body-sm a:not([class]):focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Hover affordance for clickable cards. Any <a> that directly wraps a
+   `.w-card` (the standard owner pattern) lifts the border + brightens
+   subtly on hover so users can see what's clickable. KPI cards (not
+   inside <a>) stay flat. */
+a:hover > .w-card,
+a:hover > * > .w-card,
+a:focus-visible > .w-card {
+  border-color: var(--w-line-2);
+  background: var(--w-surface-3);
+}
+@media (prefers-reduced-motion: no-preference) {
+  a > .w-card {
+    transition: border-color 120ms ease, background 120ms ease;
+  }
+}
+
+/* Sidebar nav links: subtle hover for visible click affordance. The
+   active item already has its own border-left accent — hover only
+   applies to non-active items. */
+.w-shell aside a:hover:not([aria-current="page"]) {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--w-fg);
+}
+
+/* Cap form input widths inside owner content on desktop. Text inputs span
+   100% of their container by default; on a 1600px-wide owner page that
+   produces hostile 1000px input fields. The cap stays under any explicit
+   parent max-width (e.g. the new-event-cols 600px column) so columnar
+   forms remain unaffected. */
+@media (min-width: 768px) {
+  .w-content input[type="text"],
+  .w-content input[type="email"],
+  .w-content input[type="tel"],
+  .w-content input[type="url"],
+  .w-content input[type="password"],
+  .w-content select,
+  .w-content textarea { max-width: 520px; }
+  .w-content input[type="date"],
+  .w-content input[type="time"],
+  .w-content input[type="number"] { max-width: 200px; }
+  .w-content input[type="search"] { max-width: 480px; }
+  /* Tables / cards / explicit-wide containers opt out via .w-input-wide. */
+  .w-content .w-input-wide input,
+  .w-content .w-input-wide select,
+  .w-content .w-input-wide textarea { max-width: none; }
+}
+
+/* AuthedShell: sticky sidebar + flex content on desktop, drawer on mobile.
+   On desktop the shell becomes a flex container so the sticky sidebar
+   takes its natural 256px slot and content flexes to fill the rest. We
+   do NOT add margin-left on .w-content — sidebar's flex slot already
+   reserves the space. Earlier code did both, causing a 256px gap. */
+@media (min-width: 768px) {
+  .w-shell { display: flex !important; }
+  aside.w-aside-tablet {
+    position: sticky !important;
+    top: 0 !important;
+    transform: translateX(0) !important;
+    height: 100vh !important;
+    flex: 0 0 256px !important;
+  }
+  .w-mobile-chrome { display: none !important; }
+  .w-topbar { padding-left: 24px !important; }
+}
+
+/* Toast stack — move to bottom-center on mobile so it doesn't overlap
+   the hamburger or top-bar buttons. Reserve space for the mobile tab
+   bar (64px) plus iOS safe-area inset. */
+@media (max-width: 767px) {
+  .w-toast-stack {
+    top: auto !important;
+    right: 16px !important;
+    left: 16px !important;
+    bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+    max-width: none !important;
+  }
+}
+
+/* Daydash desktop / mobile structural swap. */
+@media (min-width: 1024px) {
+  .dd-mobile { display: none !important; }
+}
+@media (max-width: 1023px) {
+  .dd-desktop { display: none !important; }
+}
+.dd-desk-frame {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 24px 32px 48px;
+}
+.dd-desk-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--w-line);
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.dd-desk-grid {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr) 360px;
+  gap: 20px;
+  align-items: start;
+}
+.dd-desk-rail {
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+.dd-desk-rail::-webkit-scrollbar { width: 6px; }
+.dd-desk-rail::-webkit-scrollbar-thumb { background: var(--w-line); }
+
+.dd-mob-frame { padding: 0 0 96px; }
+.dd-mob-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: rgba(15, 15, 16, 0.92);
+  backdrop-filter: blur(8px);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--w-line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.dd-mob-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.dd-mob-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.dd-mob-action {
+  min-height: 88px;
+  padding: 16px;
+  background: var(--w-surface-2);
+  border: 1px solid var(--w-line);
+  color: var(--w-fg);
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* New event form: 2-column on desktop. The fields column is intentionally
+   capped at 600px because letting it stretch to 1fr leaves half the column
+   empty — text inputs feel awful past ~600px wide. */
+@media (min-width: 1024px) {
+  .new-event-cols {
+    display: grid !important;
+    grid-template-columns: 320px 600px !important;
+    gap: 48px !important;
+    align-items: start !important;
+    justify-content: start !important;
+  }
+  .new-event-cover { position: sticky !important; top: 24px !important; }
+  .new-event-cover-preview {
+    width: 100% !important;
+    max-width: 320px !important;
+  }
+}
+
+/* Animations referenced by various components. */
+@keyframes wadlSkeleton {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@keyframes wadlToastIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes wadlBellPing {
+  0% { box-shadow: 0 0 0 0 var(--w-acc); opacity: 0.7; }
+  100% { box-shadow: 0 0 0 12px transparent; opacity: 0; }
+}
+@keyframes wadlLivePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
 @layer components {
-  /* Mobile-first column. Stays 375px on phones (intentional — the design
-     was sketched for that frame). Expands to 2xl on desktop so it doesn't
-     feel marooned. The body painted radial below makes the surrounding
-     viewport feel designed instead of empty. */
+  /* Mobile-first column. Stays 375px on phones, expands on desktop. The
+     legacy coral/gold radial body paint is removed — the new system runs
+     on near-black ink with a single cobalt accent. */
   .mobile-frame {
     @apply mx-auto w-full max-w-frame md:max-w-2xl min-h-screen bg-transparent px-6 py-8 flex flex-col relative;
   }
   @media (min-width: 768px) {
     body:has(.mobile-frame) {
-      background-color: var(--bg);
-      background-image:
-        radial-gradient(ellipse 800px 600px at 50% -200px, rgba(255, 74, 43, 0.08), transparent 70%),
-        radial-gradient(ellipse 600px 500px at 50% 110%, rgba(245, 200, 66, 0.04), transparent 70%);
-      background-attachment: fixed;
+      background-color: var(--w-ink);
     }
   }
 
+  /* === LEGACY component classes — repainted to the new system. The
+     class names are kept so 168 existing files don't have to change. === */
   .display-xl {
-    @apply font-display text-5xl leading-none tracking-wide text-cream uppercase;
+    font-family: var(--w-display);
+    font-weight: 700;
+    font-size: 56px;
+    line-height: 0.94;
+    letter-spacing: -0.035em;
+    color: var(--w-fg);
+    text-transform: none;
   }
 
   .display-lg {
-    @apply font-display text-4xl leading-none tracking-wide text-cream uppercase;
+    font-family: var(--w-display);
+    font-weight: 700;
+    font-size: 38px;
+    line-height: 1.0;
+    letter-spacing: -0.03em;
+    color: var(--w-fg);
+    text-transform: none;
   }
 
   .label-mono {
-    @apply font-mono text-[10px] uppercase tracking-[0.18em] text-muted;
+    font-family: var(--w-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--w-fg-muted);
   }
 
   .input-dark {
-    @apply w-full bg-s2 border border-line text-cream px-4 py-4 rounded-md
-           font-sans text-base placeholder:text-muted
-           focus:border-coral focus:outline-none transition-colors;
+    width: 100%;
+    background: #ffffff06;
+    border: 1px solid var(--w-line);
+    color: var(--w-fg);
+    padding: 14px 16px;
+    border-radius: var(--w-r-sm);
+    font-family: var(--w-sans);
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.12s, background 0.12s;
+  }
+  .input-dark::placeholder {
+    color: var(--w-fg-dim);
+  }
+  .input-dark:focus {
+    border-color: var(--w-acc);
+    background: #ffffff0a;
   }
 
   .btn-primary {
-    @apply w-full bg-coral text-bg font-sans font-semibold
-           text-sm uppercase tracking-[0.14em] py-4 rounded-md
-           disabled:opacity-40 disabled:cursor-not-allowed
-           hover:brightness-110 transition;
+    width: 100%;
+    background: var(--w-acc);
+    color: var(--w-acc-ink);
+    font-family: var(--w-sans);
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: -0.005em;
+    padding: 14px 18px;
+    border-radius: 9999px;
+    border: 0;
+    cursor: pointer;
+    transition: filter 0.12s, transform 0.08s;
+    text-transform: none;
+  }
+  .btn-primary:hover:not(:disabled) {
+    filter: brightness(1.05);
+  }
+  .btn-primary:active {
+    transform: translateY(1px);
+  }
+  .btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 
   .btn-ghost {
-    @apply w-full bg-transparent border border-line text-cream font-sans
-           font-semibold text-sm uppercase tracking-[0.14em] py-4 rounded-md
-           hover:border-cream/30 transition;
+    width: 100%;
+    background: transparent;
+    color: var(--w-fg);
+    font-family: var(--w-sans);
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: -0.005em;
+    padding: 14px 18px;
+    border-radius: 9999px;
+    border: 0;
+    box-shadow: inset 0 0 0 1px var(--w-line-2);
+    cursor: pointer;
+    transition: background 0.12s;
+    text-transform: none;
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: #ffffff0a;
   }
 
   .card {
-    @apply bg-s1 border border-line rounded-lg p-4;
+    background: var(--w-surface-2);
+    border: 1px solid var(--w-line);
+    border-radius: var(--w-r-md);
+    padding: 16px;
+  }
+
+  /* `text-coral` continues to resolve to the cobalt accent (via the
+     Tailwind color remap). The previous override that forced it to the
+     err token was overcorrecting brand uses (e.g. the inline "WADL"
+     wordmark on legacy static pages). Errors that need true red use
+     `text-err` directly — swept in subsequent passes. */
+  /* `text-mint` / `text-gold` already chain to ok/warn via the remap;
+     no extra override needed. */
+
+  /* === Bebas-era inline patterns neutralized ===
+     A lot of legacy markup still combines `font-display` with `uppercase`
+     + `tracking-wide`/`tracking-widest`/`tracking-[0.NNem]` to mimic the
+     old Bebas Neue look. Inter Tight is meant to read tight and
+     sentence-case, so wherever those classes coexist with `font-display`,
+     reset them. Surgical compound selectors so unrelated `.uppercase` /
+     `.tracking-*` callers aren't affected. */
+  .font-display.uppercase {
+    text-transform: none;
+  }
+  .font-display.tracking-wide,
+  .font-display.tracking-wider,
+  .font-display.tracking-widest,
+  .font-display[class*="tracking-\\["] {
+    letter-spacing: -0.025em;
+  }
+  /* Same treatment for any element using the legacy `.display-xl` /
+     `.display-lg` classes that still have inline tracking + uppercase
+     applied alongside. */
+  .display-xl.uppercase,
+  .display-lg.uppercase {
+    text-transform: none;
+  }
+  .display-xl.tracking-wide,
+  .display-xl.tracking-wider,
+  .display-xl.tracking-widest,
+  .display-lg.tracking-wide,
+  .display-lg.tracking-wider,
+  .display-lg.tracking-widest {
+    letter-spacing: -0.035em;
+  }
+  /* Custom mono labels that used `tracking-[0.14em]` etc. for the cream
+     uppercase look — keep them uppercase but tighten letter-spacing and
+     ensure they read in JetBrains Mono via the legacy chain. */
+  .label-mono.tracking-wide,
+  .label-mono.tracking-wider,
+  .label-mono.tracking-widest {
+    letter-spacing: 0.06em;
   }
 
   /* Subtle entry animation so navigations don't snap. Disabled by the
@@ -138,3 +781,601 @@ body {
     to { opacity: 1; transform: translateY(0); }
   }
 }
+
+/* ============================================================
+   NEW DESIGN SYSTEM — repaint primitives. Apply by wrapping a
+   subtree in `.w-app` (typically the root <body> once we flip).
+   Names mirror the handoff so component ports are 1:1 reads.
+   ============================================================ */
+
+.w-app,
+.w-app * {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.w-app {
+  font-family: var(--w-sans);
+  color: var(--w-fg);
+  background: var(--w-bg);
+  font-feature-settings: "ss01", "ss02", "cv11";
+  letter-spacing: -0.01em;
+}
+
+/* Typographic scale — retargeted to v5 (.t-* equivalents) so every
+   legacy .w-type-* consumer inherits the v5 design without per-file edits. */
+.w-type-display-xl {
+  font-family: var(--w-display);
+  font-size: var(--ts-5xl);
+  font-weight: var(--fw-bold);
+  line-height: 1.0;
+  letter-spacing: -0.035em;
+  color: var(--fg);
+}
+.w-type-display-lg {
+  font-family: var(--w-display);
+  font-size: var(--ts-4xl);
+  font-weight: var(--fw-bold);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  color: var(--fg);
+}
+.w-type-display-md {
+  font-family: var(--w-display);
+  font-size: var(--ts-3xl);
+  font-weight: var(--fw-bold);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: var(--fg);
+}
+.w-type-display-sm {
+  font-family: var(--w-display);
+  font-size: var(--ts-2xl);
+  font-weight: var(--fw-semi);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+}
+.w-type-h1 {
+  font-size: var(--ts-xl);
+  font-weight: var(--fw-semi);
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  color: var(--fg);
+}
+.w-type-h2 {
+  font-size: var(--ts-lg);
+  font-weight: var(--fw-medium);
+  line-height: 1.4;
+  color: var(--fg);
+}
+.w-type-h3 {
+  font-size: var(--ts-md);
+  font-weight: var(--fw-semi);
+  line-height: 1.4;
+  color: var(--fg);
+}
+.w-type-body {
+  font-size: var(--ts-md);
+  font-weight: var(--fw-regular);
+  line-height: 1.5;
+  color: var(--fg);
+}
+.w-type-body-sm {
+  font-size: var(--ts-sm);
+  font-weight: var(--fw-regular);
+  line-height: 1.5;
+  color: var(--fg-2);
+}
+.w-type-meta {
+  font-family: var(--w-mono);
+  font-size: var(--ts-xs);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+.w-type-meta-lg {
+  font-family: var(--w-mono);
+  font-size: var(--ts-sm);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+.w-type-num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Buttons — retargeted to v5 .btn */
+.w-btn {
+  height: 40px;
+  padding: 0 var(--s-5);
+  border-radius: var(--r-md);
+  border: 0;
+  font-family: var(--w-display);
+  font-weight: var(--fw-medium);
+  font-size: var(--ts-md);
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  background: var(--fg);
+  color: var(--bg);
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+}
+.w-btn:hover:not(:disabled) {
+  background: #e8e8e8;
+}
+.w-btn:active:not(:disabled) {
+  background: #d4d4d4;
+}
+.w-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.w-btn--primary {
+  background: var(--fg);
+  color: var(--bg);
+}
+.w-btn--primary:hover:not(:disabled) {
+  background: #e8e8e8;
+}
+.w-btn--solid {
+  background: var(--fg);
+  color: var(--bg);
+}
+.w-btn--solid:hover:not(:disabled) {
+  background: #e8e8e8;
+}
+.w-btn--ghost {
+  background: transparent;
+  color: var(--fg);
+  box-shadow: inset 0 0 0 1px var(--line-2);
+}
+.w-btn--ghost:hover:not(:disabled) {
+  background: var(--bg-2);
+  box-shadow: inset 0 0 0 1px var(--line-3);
+}
+.w-btn--lg {
+  height: 48px;
+  padding: 0 var(--s-6);
+  font-size: 15px;
+}
+.w-btn--block {
+  width: 100%;
+}
+
+/* Inputs — retargeted to v5 .input */
+.w-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  color: var(--fg);
+  font-family: var(--w-display);
+  font-size: var(--ts-md);
+  line-height: 1;
+  outline: none;
+  caret-color: var(--fg);
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+/* On desktop, cap inputs at a comfortable max so they don't span 1000px
+   on wide displays. The parent container can override with its own width.
+   Date / time / number / color pickers are intentionally narrower since
+   they hold tiny values; selects opt out so dropdowns stay searchable. */
+@media (min-width: 768px) {
+  .w-input { max-width: 520px; }
+  .w-input[type="date"],
+  .w-input[type="time"],
+  .w-input[type="number"],
+  .w-input[type="color"] { max-width: 200px; }
+  .w-input[type="search"] { max-width: 480px; }
+  textarea.w-input { max-width: 720px; }
+}
+.w-input:hover {
+  border-color: var(--line-3);
+}
+.w-input:focus {
+  border-color: var(--fg);
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--fg);
+}
+.w-input::placeholder {
+  color: var(--fg-4);
+}
+.w-label {
+  font-family: var(--w-mono);
+  font-size: var(--ts-xs);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+  margin-bottom: var(--s-2);
+  display: block;
+}
+
+/* Card — retargeted to v5 .card */
+.w-card {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+/* List rows in cards — first row should not have a top border. */
+.w-card > .w-list-edit-row:first-child {
+  border-top: 0 !important;
+}
+
+/* Chips — retargeted to v5 .chip (pill, status by color) */
+.w-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  height: 20px;
+  padding: 0 var(--s-2);
+  border-radius: var(--r-pill);
+  font-family: var(--w-display);
+  font-size: var(--ts-xs);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0;
+  background: var(--bg-3);
+  color: var(--fg-2);
+}
+.w-chip--acc {
+  background: var(--fg);
+  color: var(--bg);
+}
+.w-chip--ok {
+  background: rgba(74, 222, 128, 0.16);
+  color: var(--ok);
+}
+.w-chip--warn {
+  background: rgba(251, 191, 36, 0.16);
+  color: var(--warn);
+}
+.w-chip--err {
+  background: rgba(248, 113, 113, 0.16);
+  color: var(--err);
+}
+.w-chip--ghost {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line-2);
+  color: var(--fg-3);
+}
+
+/* Divider */
+.w-rule {
+  height: 1px;
+  background: var(--w-line);
+  border: 0;
+  margin: 0;
+}
+.w-rule--strong {
+  background: var(--w-line-2);
+}
+
+/* Capacity meter — sharp */
+.w-meter {
+  height: 4px;
+  background: #ffffff10;
+  border-radius: 0;
+  overflow: hidden;
+}
+.w-meter > i {
+  display: block;
+  height: 100%;
+  background: var(--w-fg);
+}
+.w-meter--acc > i {
+  background: var(--w-acc);
+}
+
+/* Hatched fill (AAA tier) */
+.w-hatch {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--w-fg) 0 1px,
+    transparent 1px 4px
+  );
+}
+
+/* QR-ish decorative pattern */
+.w-qr-deco {
+  background:
+    radial-gradient(#0a0a0b 25%, transparent 25%) 0 0 / 8px 8px,
+    radial-gradient(#0a0a0b 25%, transparent 25%) 4px 4px / 8px 8px,
+    var(--w-fg);
+}
+
+/* Hide scrollbar inside artboards */
+.w-noscroll::-webkit-scrollbar {
+  display: none;
+}
+.w-noscroll {
+  scrollbar-width: none;
+}
+
+/* Scanner viewfinder */
+@keyframes wScan {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(100%); }
+  100% { transform: translateY(0); }
+}
+.w-scanline {
+  animation: wScan 2.4s cubic-bezier(0.65, 0.05, 0.36, 1) infinite;
+}
+
+@keyframes wPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.w-pulse {
+  animation: wPulse 1.6s ease-in-out infinite;
+}
+
+/* Holographic shimmer (top-tier credentials) */
+@keyframes wHolo {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.w-holo {
+  background: linear-gradient(
+    110deg,
+    oklch(0.7 0.24 260) 0%,
+    oklch(0.75 0.2 230) 30%,
+    oklch(0.65 0.25 295) 50%,
+    oklch(0.75 0.2 230) 70%,
+    oklch(0.7 0.24 260) 100%
+  );
+  background-size: 200% 100%;
+  animation: wHolo 4s linear infinite;
+}
+
+/* Mobile frame variant for the new design system. Use `.w-frame` in
+   place of `.mobile-frame` on repainted screens — it inherits the
+   handoff's near-black canvas instead of the legacy radial. */
+.w-frame {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 375px;
+  min-height: 100vh;
+  background: var(--w-bg);
+  color: var(--w-fg);
+  font-family: var(--w-sans);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+@media (min-width: 768px) {
+  .w-frame {
+    max-width: 420px;
+    box-shadow: 0 0 0 1px var(--w-line);
+    border-radius: var(--w-r-lg);
+    margin-block: 32px;
+    min-height: calc(100vh - 64px);
+  }
+  body:has(.w-frame) {
+    background-color: var(--w-ink);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   WADL v5 component library — verbatim from the Claude Design handoff
+   (wadl-v5.css). New components should use these classes directly; the
+   --w-* legacy classes above still work via the token aliases.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* Type — clean hierarchy */
+.t-display-xl { font-size: var(--ts-5xl); font-weight: var(--fw-bold); line-height: 1.0; letter-spacing: -0.035em; color: var(--fg); }
+.t-display-lg { font-size: var(--ts-4xl); font-weight: var(--fw-bold); line-height: 1.05; letter-spacing: -0.03em; color: var(--fg); }
+.t-display-md { font-size: var(--ts-3xl); font-weight: var(--fw-bold); line-height: 1.1; letter-spacing: -0.025em; color: var(--fg); }
+.t-display-sm { font-size: var(--ts-2xl); font-weight: var(--fw-semi); line-height: 1.15; letter-spacing: -0.02em; color: var(--fg); }
+.t-h1 { font-size: var(--ts-xl); font-weight: var(--fw-semi); line-height: 1.3; letter-spacing: -0.015em; color: var(--fg); }
+.t-h2 { font-size: var(--ts-lg); font-weight: var(--fw-medium); line-height: 1.4; color: var(--fg); }
+.t-body { font-size: var(--ts-md); font-weight: var(--fw-regular); line-height: 1.5; color: var(--fg); }
+.t-body-2 { font-size: var(--ts-sm); font-weight: var(--fw-regular); line-height: 1.5; color: var(--fg-2); }
+.t-meta { font-family: var(--w-mono); font-size: var(--ts-xs); font-weight: var(--fw-medium); letter-spacing: 0.04em; text-transform: uppercase; color: var(--fg-3); }
+.t-num { font-variant-numeric: tabular-nums; }
+
+/* BUTTON — high contrast, primary is white-on-black */
+.btn {
+  height: 40px; padding: 0 var(--s-5); border-radius: var(--r-md); border: 0;
+  font-family: var(--w-display); font-weight: var(--fw-medium); font-size: var(--ts-md); line-height: 1;
+  cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: var(--s-2);
+  background: var(--fg); color: var(--bg);
+  transition: background .12s, box-shadow .12s, opacity .12s;
+  white-space: nowrap; text-decoration: none;
+}
+.btn:hover { background: #e8e8e8; }
+.btn:focus-visible { outline: 0; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--fg); }
+.btn:active { background: #d4d4d4; }
+.btn[disabled], .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn--secondary { background: var(--bg-3); color: var(--fg); }
+.btn--secondary:hover { background: var(--bg-4); }
+.btn--ghost { background: transparent; color: var(--fg); box-shadow: inset 0 0 0 1px var(--line-2); }
+.btn--ghost:hover { background: var(--bg-2); box-shadow: inset 0 0 0 1px var(--line-3); }
+.btn--danger { background: var(--err); color: var(--bg); }
+.btn--danger:hover { background: #fb8e8e; }
+.btn--accent {
+  background: var(--accent-grad);
+  color: #0a0a0a;
+  box-shadow: 0 2px 16px rgba(255, 61, 110, 0.28);
+  border: 0;
+}
+.btn--accent:hover { filter: brightness(1.08); background: var(--accent-grad); }
+.btn--accent:focus-visible { outline: 2px solid var(--accent-3); outline-offset: 2px; }
+.btn--sm { height: 32px; padding: 0 var(--s-3); font-size: var(--ts-sm); border-radius: var(--r-sm); }
+.btn--lg { height: 48px; padding: 0 var(--s-6); font-size: 15px; border-radius: var(--r-md); }
+.btn--xl { height: 56px; padding: 0 var(--s-8); font-size: var(--ts-lg); border-radius: var(--r-md); }
+.btn--block { width: 100%; }
+
+/* INPUT */
+.input {
+  width: 100%; height: 44px; padding: 0 var(--s-4); border-radius: var(--r-md);
+  background: var(--bg-2); border: 1px solid var(--line-2);
+  color: var(--fg); font-family: var(--w-display); font-weight: var(--fw-regular);
+  font-size: var(--ts-md); line-height: 1; outline: none; caret-color: var(--fg);
+  transition: border-color .12s, box-shadow .12s;
+}
+.input:hover { border-color: var(--line-3); }
+.input:focus { border-color: var(--fg); box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--fg); }
+.input::placeholder { color: var(--fg-4); }
+
+/* CARD */
+.card {
+  background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--r-lg);
+  overflow: hidden; transition: border-color .15s;
+}
+.card--hover { cursor: pointer; transition: border-color 160ms ease-out, box-shadow 160ms ease-out, transform 160ms ease-out; }
+.card--hover:hover {
+  border-color: rgba(255, 138, 61, 0.35);
+  box-shadow: 0 4px 24px rgba(255, 61, 110, 0.10);
+  transform: translateY(-1px);
+}
+.card--accent {
+  border-color: rgba(255, 61, 110, 0.35);
+  background: linear-gradient(180deg, var(--accent-soft) 0%, transparent 60%), var(--bg-2);
+}
+
+/* CHIP — single shape, status by color */
+.chip {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  height: 20px; padding: 0 var(--s-2); border-radius: var(--r-pill);
+  background: var(--bg-3);
+  font-family: var(--w-display); font-weight: var(--fw-medium); font-size: var(--ts-xs); line-height: 1;
+  color: var(--fg-2); letter-spacing: 0;
+}
+.chip--solid { background: var(--fg); color: var(--bg); }
+.chip--ok { background: rgba(74,222,128,0.16); color: var(--ok); }
+.chip--warn { background: rgba(251,191,36,0.16); color: var(--warn); }
+.chip--err { background: rgba(248,113,113,0.16); color: var(--err); }
+.chip--info { background: rgba(96,165,250,0.16); color: var(--info); }
+.chip--accent { background: var(--accent-grad); color: #0a0a0a; font-weight: 600; }
+.chip--ghost { background: transparent; box-shadow: inset 0 0 0 1px var(--line-2); }
+
+/* DIVIDER */
+.hr { height: 1px; background: var(--line); border: 0; margin: 0; }
+.hr-label { display: flex; align-items: center; gap: var(--s-3); color: var(--fg-3); }
+.hr-label::before, .hr-label::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+/* NAV ITEM */
+.nav-item {
+  padding: var(--s-2) var(--s-3); border-radius: var(--r-sm);
+  color: var(--fg-2); font-family: var(--w-display); font-weight: var(--fw-medium);
+  font-size: var(--ts-md); line-height: 1;
+  cursor: pointer; transition: background .12s, color .12s; user-select: none;
+}
+.nav-item:hover { color: var(--fg); }
+.nav-item--active { background: var(--bg-3); color: var(--fg); }
+
+/* ROW — consistent table rows */
+.row {
+  display: grid; align-items: center; gap: var(--s-4);
+  padding: var(--s-3) var(--s-5);
+  border-bottom: 1px solid var(--line); transition: background .12s;
+}
+.row:hover { background: var(--bg-2); }
+.row:last-child { border-bottom: 0; }
+
+/* DOT STATUS */
+.dot { display: inline-block; width: 6px; height: 6px; border-radius: var(--r-pill); background: var(--fg-3); }
+.dot--ok { background: var(--ok); }
+.dot--warn { background: var(--warn); }
+.dot--err { background: var(--err); }
+.dot--info { background: var(--info); }
+
+/* BADGE — count */
+.badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 var(--s-1);
+  border-radius: var(--r-pill); background: var(--fg); color: var(--bg);
+  font-family: var(--w-display); font-weight: var(--fw-semi); font-size: 10px; line-height: 1;
+}
+.badge--muted { background: var(--bg-3); color: var(--fg); }
+
+/* STICKY QUICK BAR */
+.quickbar {
+  position: sticky; bottom: 0; z-index: 5;
+  background: rgba(10,10,10,0.92); backdrop-filter: blur(20px);
+  border-top: 1px solid var(--line-2);
+  padding: var(--s-3) var(--s-6);
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s-3);
+}
+.quickbar__group { display: flex; align-items: center; gap: var(--s-2); }
+.quickbar__btn {
+  height: 36px; padding: 0 var(--s-3); border-radius: var(--r-sm);
+  background: transparent; border: 0; color: var(--fg-2); cursor: pointer;
+  display: inline-flex; align-items: center; gap: var(--s-2);
+  font-family: var(--w-display); font-weight: var(--fw-medium); font-size: var(--ts-sm); line-height: 1;
+  transition: color .12s, background .12s;
+}
+.quickbar__btn:hover { color: var(--fg); background: var(--bg-3); }
+.quickbar__btn--primary { color: var(--bg); background: var(--fg); }
+.quickbar__btn--primary:hover { background: #e8e8e8; color: var(--bg); }
+
+/* SAVEBAR */
+.savebar {
+  position: sticky; bottom: 0; z-index: 5;
+  background: var(--bg-2); border-top: 1px solid var(--line-2);
+  padding: var(--s-3) var(--s-6);
+  display: flex; align-items: center; justify-content: space-between;
+  transform: translateY(0); transition: transform .2s ease-out;
+}
+.savebar--hidden { transform: translateY(100%); }
+.savebar__label { display: flex; align-items: center; gap: var(--s-2); color: var(--fg-2); font-size: var(--ts-sm); }
+
+/* PAGE LAYOUT helpers */
+.page { display: flex; flex-direction: column; min-height: 100%; }
+.page__body { flex: 1; }
+
+/* TOAST CONTAINER */
+.toast-stack {
+  position: fixed; bottom: var(--s-6); right: var(--s-6);
+  display: flex; flex-direction: column; gap: var(--s-2);
+  z-index: 10; width: 340px;
+}
+
+/* CMD-K HINT */
+.cmdk-hint {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  padding: var(--s-1) var(--s-2); border-radius: var(--r-sm);
+  background: var(--bg-3); color: var(--fg-3);
+  font-family: var(--w-mono); font-size: 10px;
+  cursor: pointer; transition: color .12s;
+}
+.cmdk-hint:hover { color: var(--fg-2); }
+
+/* KBD */
+.kbd {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 var(--s-1);
+  border-radius: var(--r-sm); background: var(--bg-3);
+  font-family: var(--w-mono); font-size: 10px; font-weight: var(--fw-medium);
+  color: var(--fg-2);
+}
+
+/* PULSE */
+@keyframes v5pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+.pulse { animation: v5pulse 1.5s ease-in-out infinite; }
+
+/* DENSITY UTILITIES */
+.stack-1 > * + * { margin-top: var(--s-1); }
+.stack-2 > * + * { margin-top: var(--s-2); }
+.stack-3 > * + * { margin-top: var(--s-3); }
+.stack-4 > * + * { margin-top: var(--s-4); }
+.stack-6 > * + * { margin-top: var(--s-6); }
+
+/* TRUNCATE / NOSCROLL */
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.noscroll::-webkit-scrollbar { display: none; }
+.noscroll { scrollbar-width: none; }
+
+/* v5 selection — white-on-black highlight */
+::selection { background: var(--fg); color: var(--bg); }

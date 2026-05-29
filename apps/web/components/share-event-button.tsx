@@ -34,8 +34,8 @@ export default function ShareEventButton({
   return (
     <button
       type="button"
+      className="btn btn--ghost"
       onClick={share}
-      className="btn-ghost text-center"
       aria-label="Share this event"
     >
       {copied ? "Link copied" : "Share event"}

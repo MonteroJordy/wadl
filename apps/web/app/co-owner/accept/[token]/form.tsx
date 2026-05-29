@@ -19,7 +19,7 @@ export default function CoOwnerAcceptForm({
 }) {
   const router = useRouter();
   const [step, setStep] = useState<"start" | "otp" | "binding">(
-    alreadyAuthed ? "binding" : "start"
+    alreadyAuthed ? "binding" : "start",
   );
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
@@ -83,16 +83,30 @@ export default function CoOwnerAcceptForm({
 
   if (step === "binding") {
     return (
-      <div className="flex flex-col gap-4">
-        <p className="text-muted text-sm">
-          Accept invite to <span className="text-cream">{eventName}</span> with{" "}
-          <span className="text-coral">{permission.replace("_", "-")}</span> permission.
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-4)",
+        }}
+      >
+        <p className="t-body-2">
+          Accept invite to{" "}
+          <span style={{ color: "var(--fg)" }}>{eventName}</span> with{" "}
+          <span style={{ color: "var(--fg)" }}>
+            {permission.replace("_", "-")}
+          </span>{" "}
+          permission.
         </p>
-        {error && <p className="text-coral text-sm">{error}</p>}
+        {error && (
+          <p className="t-body-2" style={{ color: "var(--err)" }}>
+            {error}
+          </p>
+        )}
         <button
+          className="btn btn--accent"
           type="button"
           onClick={onBindExisting}
-          className="btn-primary"
           disabled={pending}
         >
           {pending ? "Working…" : "Accept invite"}
@@ -103,9 +117,16 @@ export default function CoOwnerAcceptForm({
 
   if (step === "otp") {
     return (
-      <form onSubmit={onVerify} className="flex flex-col gap-4">
-        <p className="text-muted text-sm">
-          Sent to <span className="text-cream">{e164}</span>.
+      <form
+        onSubmit={onVerify}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-4)",
+        }}
+      >
+        <p className="t-body-2">
+          Sent to <span style={{ color: "var(--fg)" }}>{e164}</span>.
         </p>
         <input
           type="text"
@@ -115,18 +136,36 @@ export default function CoOwnerAcceptForm({
           maxLength={6}
           value={code}
           onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-          className="input-dark tracking-[0.5em] text-center text-2xl"
+          className="input"
+          style={{
+            letterSpacing: "0.5em",
+            textAlign: "center",
+            fontSize: 24,
+            height: 56,
+          }}
           placeholder="••••••"
           required
         />
-        {error && <p className="text-coral text-sm">{error}</p>}
-        <button type="submit" className="btn-primary" disabled={pending}>
+        {error && (
+          <p className="t-body-2" style={{ color: "var(--err)" }}>
+            {error}
+          </p>
+        )}
+        <button className="btn btn--accent" type="submit" disabled={pending}>
           {pending ? "Verifying…" : "Verify & accept"}
         </button>
         <button
           type="button"
           onClick={() => setStep("start")}
-          className="label-mono text-center hover:text-cream transition"
+          className="t-meta"
+          style={{
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            color: "var(--fg-3)",
+            textAlign: "center",
+            padding: 0,
+          }}
         >
           ← Wrong number
         </button>
@@ -135,11 +174,16 @@ export default function CoOwnerAcceptForm({
   }
 
   return (
-    <form onSubmit={onSendCode} className="flex flex-col gap-4">
-      <p className="text-muted text-sm">
+    <form
+      onSubmit={onSendCode}
+      style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}
+    >
+      <p className="t-body-2">
         You&apos;ve been invited to co-own{" "}
-        <span className="text-cream">{eventName}</span> with{" "}
-        <span className="text-cream">{permission.replace("_", "-")}</span>{" "}
+        <span style={{ color: "var(--fg)" }}>{eventName}</span> with{" "}
+        <span style={{ color: "var(--fg)" }}>
+          {permission.replace("_", "-")}
+        </span>{" "}
         permission. Verify your phone to continue.
       </p>
       <input
@@ -147,12 +191,16 @@ export default function CoOwnerAcceptForm({
         inputMode="tel"
         value={phone}
         onChange={(e) => setPhone(e.target.value)}
-        className="input-dark"
+        className="input"
         placeholder="(305) 555 1234"
         required
       />
-      {error && <p className="text-coral text-sm">{error}</p>}
-      <button type="submit" className="btn-primary" disabled={pending}>
+      {error && (
+        <p className="t-body-2" style={{ color: "var(--err)" }}>
+          {error}
+        </p>
+      )}
+      <button className="btn btn--accent" type="submit" disabled={pending}>
         {pending ? "Sending…" : "Text me the code"}
       </button>
     </form>

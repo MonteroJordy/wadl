@@ -1,17 +1,17 @@
 import Link from "next/link";
 import { requireOwnerContext } from "@/lib/owner";
 import { computeExtraAnalytics } from "@/lib/analytics-extra";
-import EmptyState from "@/components/empty-state";
+import { Stat } from "@/components/v5";
 import { fmtDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Capacity — WADL" };
 
-const STATUS_TONE: Record<string, string> = {
-  sold_out: "text-coral",
-  near_cap: "text-gold",
-  normal: "text-cream",
-  low: "text-muted",
+const STATUS_CHIP: Record<string, string> = {
+  sold_out: "chip chip--err",
+  near_cap: "chip chip--warn",
+  normal: "chip chip--ok",
+  low: "chip chip--ghost",
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -25,8 +25,27 @@ export default async function CapacityAnalyticsPage() {
   const { account } = await requireOwnerContext();
   const x = await computeExtraAnalytics(account.id);
 
-  if (x.capacityRows.length === 0)
-    return <EmptyState title="Set caps to plot" body="Drop a capacity number on each night in event settings. The how-full-was-it chart populates after the first run." />;
+  if (x.capacityRows.length === 0) {
+    return (
+      <div
+        className="card"
+        style={{ padding: "var(--s-16) var(--s-8)", textAlign: "center" }}
+      >
+        <div className="t-display-sm">Set caps to plot</div>
+        <p
+          className="t-body-2"
+          style={{
+            marginTop: "var(--s-3)",
+            maxWidth: 460,
+            marginInline: "auto",
+          }}
+        >
+          Drop a capacity number on each night in event settings. The
+          how-full-was-it chart populates after the first run.
+        </p>
+      </div>
+    );
+  }
 
   const withCap = x.capacityRows.filter((r) => r.cap > 0);
   const avgUtil =
@@ -34,70 +53,118 @@ export default async function CapacityAnalyticsPage() {
       ? 0
       : withCap.reduce((s, r) => s + r.pct, 0) / withCap.length;
   const soldOut = withCap.filter((r) => r.status === "sold_out").length;
+  const unused = withCap.reduce(
+    (s, r) => s + Math.max(0, r.cap - r.in_count),
+    0,
+  );
 
   return (
-    <div className="flex flex-col gap-3">
-      <section className="grid grid-cols-3 gap-3">
-        <div className="card">
-          <p className="label-mono">Avg utilization</p>
-          <p className="font-display text-3xl text-cream leading-none mt-1">
-            {Math.round(avgUtil * 100)}%
-          </p>
-        </div>
-        <div className="card">
-          <p className="label-mono">Sold out</p>
-          <p className="font-display text-3xl text-coral leading-none mt-1">
-            {soldOut}
-          </p>
-        </div>
-        <div className="card">
-          <p className="label-mono">Unused spots</p>
-          <p className="font-display text-3xl text-cream leading-none mt-1">
-            {withCap.reduce((s, r) => s + Math.max(0, r.cap - r.in_count), 0)}
-          </p>
-        </div>
-      </section>
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
+      <div
+        className="card"
+        style={{
+          padding: 0,
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+        }}
+      >
+        <Stat
+          label="Avg utilization"
+          value={`${Math.round(avgUtil * 100)}%`}
+          sub="across nights with a cap"
+        />
+        <Stat label="Sold out" value={soldOut} sub="nights at capacity" />
+        <Stat label="Unused spots" value={unused} sub="seats left empty" last />
+      </div>
 
-      <section className="card">
-        <p className="label-mono mb-3">Capacity by event-night</p>
-        <div className="overflow-x-auto -mx-4 px-4">
-          <table className="w-full text-sm">
-            <thead className="label-mono text-left">
+      <div className="card" style={{ padding: "var(--s-6)" }}>
+        <div className="t-meta" style={{ marginBottom: "var(--s-4)" }}>
+          Capacity by event-night
+        </div>
+        <div
+          style={{
+            overflowX: "auto",
+            margin: "0 calc(-1 * var(--s-6))",
+            padding: "0 var(--s-6)",
+          }}
+        >
+          <table
+            style={{
+              width: "100%",
+              fontSize: "var(--ts-md)",
+              borderCollapse: "collapse",
+            }}
+          >
+            <thead>
               <tr>
-                <th className="pb-2">Date</th>
-                <th>Event</th>
-                <th className="text-right">In</th>
-                <th className="text-right">Cap</th>
-                <th className="text-right">Util</th>
-                <th className="text-right">Status</th>
+                {[
+                  ["Date", "left"],
+                  ["Event", "left"],
+                  ["In", "right"],
+                  ["Cap", "right"],
+                  ["Util", "right"],
+                  ["Status", "right"],
+                ].map(([h, align]) => (
+                  <th
+                    key={h}
+                    className="t-meta"
+                    style={{
+                      textAlign: align as "left" | "right",
+                      paddingBottom: "var(--s-2)",
+                    }}
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {x.capacityRows.map((r) => (
-                <tr key={`${r.event_id}-${r.date}`} className="border-t border-line">
-                  <td className="py-2 label-mono">{fmtDate(r.date)}</td>
-                  <td className="py-2 text-cream truncate">
+                <tr
+                  key={`${r.event_id}-${r.date}`}
+                  style={{ borderTop: "1px solid var(--line)" }}
+                >
+                  <td className="t-meta" style={{ padding: "var(--s-3) 0" }}>
+                    {fmtDate(r.date)}
+                  </td>
+                  <td style={{ padding: "var(--s-3) 0" }}>
                     <Link
                       href={`/owner/events/${r.event_id}`}
-                      className="hover:underline"
+                      className="t-body"
+                      style={{ color: "var(--fg)", textDecoration: "none" }}
                     >
                       {r.event_name}
                     </Link>
                   </td>
-                  <td className="py-2 text-right">{r.in_count}</td>
-                  <td className="py-2 text-right">{r.cap || "—"}</td>
-                  <td className="py-2 text-right">
+                  <td
+                    className="t-body t-num"
+                    style={{ padding: "var(--s-3) 0", textAlign: "right" }}
+                  >
+                    {r.in_count}
+                  </td>
+                  <td
+                    className="t-body t-num"
+                    style={{ padding: "var(--s-3) 0", textAlign: "right" }}
+                  >
+                    {r.cap || "—"}
+                  </td>
+                  <td
+                    className="t-body t-num"
+                    style={{ padding: "var(--s-3) 0", textAlign: "right" }}
+                  >
                     {r.cap > 0 ? Math.round(r.pct * 100) + "%" : "—"}
                   </td>
-                  <td className={`py-2 text-right label-mono ${STATUS_TONE[r.status]}`}>
-                    {STATUS_LABEL[r.status]}
+                  <td style={{ padding: "var(--s-3) 0", textAlign: "right" }}>
+                    <span className={STATUS_CHIP[r.status]}>
+                      {STATUS_LABEL[r.status]}
+                    </span>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </section>
+      </div>
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import { requireOwnerContext } from "@/lib/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { PageHeader } from "@/components/v5";
 import CreateWebhookForm from "./create-form";
+import { InlineFormSubmit } from "@/components/form-submit";
 import {
   retryDeliveriesAction,
   toggleWebhookAction,
@@ -42,7 +44,7 @@ export default async function WebhooksPage() {
     admin
       .from("webhook_deliveries")
       .select(
-        "id, endpoint_id, event_name, status_code, attempt, delivered_at, last_error, created_at, endpoint:webhook_endpoints!inner(account_id)"
+        "id, endpoint_id, event_name, status_code, attempt, delivered_at, last_error, created_at, endpoint:webhook_endpoints!inner(account_id)",
       )
       .order("created_at", { ascending: false })
       .limit(50),
@@ -56,100 +58,180 @@ export default async function WebhooksPage() {
   ).filter((d) => d.endpoint.account_id === account.id);
 
   return (
-    <main id="main-content" className="mx-auto max-w-frame md:max-w-3xl px-6 pt-12 pb-8 md:py-12">
-      <h1 className="display-lg mb-2">Webhooks</h1>
-      <p className="label-mono mb-6">
-        POSTs to your URL when events fire. HMAC-SHA256 signed. Backoff on failure.
-      </p>
+    <main id="main-content" style={{ minHeight: "100vh", background: "var(--bg)" }}>
+      <PageHeader
+        eyebrow="Dev"
+        title="Webhooks"
+        sub="POSTs to your URL when events fire. HMAC-SHA256 signed. Backoff on failure."
+      />
+      <div
+        style={{
+          padding: "var(--s-8)",
+          maxWidth: 880,
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-6)",
+        }}
+      >
+        <CreateWebhookForm />
 
-      <CreateWebhookForm />
-
-      <section className="mt-6">
-        <p className="label-mono mb-3">Endpoints</p>
-        {endpoints.length === 0 ? (
-          <p className="text-muted text-sm">No endpoints yet.</p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {endpoints.map((e) => (
-              <li key={e.id} className="card">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="font-mono text-sm text-cream truncate">{e.url}</p>
-                    <p className="label-mono mt-1">
-                      events: <span className="text-cream">{e.events}</span> ·{" "}
+        <section>
+          <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
+            Endpoints
+          </div>
+          {endpoints.length === 0 ? (
+            <p className="t-body-2">No endpoints yet.</p>
+          ) : (
+            <div className="card">
+              {endpoints.map((e) => (
+                <div
+                  key={e.id}
+                  className="row"
+                  style={{ gridTemplateColumns: "1fr auto" }}
+                >
+                  <div style={{ minWidth: 0 }}>
+                    <p
+                      className="t-body truncate"
+                      style={{ fontFamily: "var(--mono)", fontSize: 13 }}
+                    >
+                      {e.url}
+                    </p>
+                    <div
+                      className="t-meta"
+                      style={{ marginTop: "var(--s-1)" }}
+                    >
+                      Events:{" "}
+                      <span style={{ color: "var(--fg)" }}>{e.events}</span> ·{" "}
                       {e.active ? (
-                        <span className="text-mint">active</span>
+                        <span style={{ color: "var(--ok)" }}>active</span>
                       ) : (
-                        <span className="text-muted">paused</span>
+                        <span style={{ color: "var(--fg-3)" }}>paused</span>
                       )}
-                    </p>
-                    <p className="label-mono mt-1 break-all">
-                      secret: <span className="text-cream">{e.secret}</span>
-                    </p>
+                    </div>
+                    <div
+                      className="t-meta"
+                      style={{
+                        marginTop: "var(--s-1)",
+                        wordBreak: "break-all",
+                      }}
+                    >
+                      Secret:{" "}
+                      <span style={{ color: "var(--fg)" }}>{e.secret}</span>
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-1 shrink-0">
-                    <form action={toggleWebhookAction.bind(null, e.id, !e.active)}>
-                      <button
-                        type="submit"
-                        className="label-mono hover:text-cream"
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "var(--s-1)",
+                      flexShrink: 0,
+                      alignItems: "flex-end",
+                    }}
+                  >
+                    <form
+                      action={toggleWebhookAction.bind(null, e.id, !e.active)}
+                    >
+                      <InlineFormSubmit
+                        className="t-meta"
+                        pendingLabel="…"
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          cursor: "pointer",
+                          color: "var(--fg)",
+                          padding: 0,
+                        }}
                       >
                         {e.active ? "Pause" : "Activate"}
-                      </button>
+                      </InlineFormSubmit>
                     </form>
                     <form action={deleteWebhookAction.bind(null, e.id)}>
-                      <button
-                        type="submit"
-                        className="label-mono text-coral hover:text-cream"
+                      <InlineFormSubmit
+                        className="t-meta"
+                        pendingLabel="…"
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          cursor: "pointer",
+                          color: "var(--err)",
+                          padding: 0,
+                        }}
                       >
                         Delete
-                      </button>
+                      </InlineFormSubmit>
                     </form>
                   </div>
                 </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+              ))}
+            </div>
+          )}
+        </section>
 
-      <section className="mt-6">
-        <div className="flex items-center justify-between mb-3">
-          <p className="label-mono">Recent deliveries</p>
-          <form action={retryDeliveriesAction}>
-            <button type="submit" className="label-mono hover:text-cream">
-              Retry pending
-            </button>
-          </form>
-        </div>
-        {deliveries.length === 0 ? (
-          <p className="text-muted text-sm">No deliveries yet.</p>
-        ) : (
-          <ul className="flex flex-col gap-1">
-            {deliveries.map((d) => (
-              <li
-                key={d.id}
-                className={`label-mono p-2 rounded border ${
-                  d.delivered_at
-                    ? "border-mint/30"
-                    : d.attempt >= 5
-                    ? "border-coral/40"
-                    : "border-line"
-                }`}
+        <section>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: "var(--s-3)",
+            }}
+          >
+            <div className="t-meta">Recent deliveries</div>
+            <form action={retryDeliveriesAction}>
+              <InlineFormSubmit
+                className="t-meta"
+                pendingLabel="Retrying…"
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "var(--fg)",
+                  padding: 0,
+                }}
               >
-                <span className="text-cream">{d.event_name}</span> ·{" "}
-                {d.delivered_at ? (
-                  <span className="text-mint">{d.status_code} delivered</span>
-                ) : (
-                  <span className="text-coral">
-                    attempt {d.attempt}/5 {d.last_error ? `· ${d.last_error.slice(0, 60)}` : ""}
+                Retry pending
+              </InlineFormSubmit>
+            </form>
+          </div>
+          {deliveries.length === 0 ? (
+            <p className="t-body-2">No deliveries yet.</p>
+          ) : (
+            <div className="card">
+              {deliveries.map((d) => (
+                <div
+                  key={d.id}
+                  className="row"
+                  style={{ gridTemplateColumns: "1fr auto auto" }}
+                >
+                  <span
+                    className="t-body-2"
+                    style={{ fontFamily: "var(--mono)", color: "var(--fg)" }}
+                  >
+                    {d.event_name}
                   </span>
-                )}{" "}
-                · {new Date(d.created_at).toLocaleTimeString()}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+                  {d.delivered_at ? (
+                    <span className="chip chip--ok">
+                      {d.status_code} delivered
+                    </span>
+                  ) : (
+                    <span
+                      className={
+                        "chip " +
+                        (d.attempt >= 5 ? "chip--err" : "chip--warn")
+                      }
+                    >
+                      Attempt {d.attempt}/5
+                    </span>
+                  )}
+                  <span className="t-meta">
+                    {new Date(d.created_at).toLocaleTimeString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
     </main>
   );
 }

@@ -1,7 +1,9 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import Link from "next/link";
+import { PageHeader } from "@/components/v5";
 
 export const dynamic = "force-dynamic";
+
+const COLS = "1.6fr 1.2fr 1fr 80px 120px";
 
 interface Row {
   id: string;
@@ -17,47 +19,57 @@ export default async function AdminEventsPage() {
   const { data } = await admin
     .from("events")
     .select(
-      "id, name, created_at, account:accounts(display_name), venue:venues(name), event_nights(id)"
+      "id, name, created_at, account:accounts(display_name), venue:venues(name), event_nights(id)",
     )
     .order("created_at", { ascending: false })
     .limit(200);
   const rows = (data ?? []) as unknown as Row[];
 
   return (
-    <main id="main-content" className="mx-auto max-w-5xl px-6 pt-8 pb-12">
-      <h1 className="display-lg mb-2">Events</h1>
-      <p className="label-mono mb-6">Most recent 200</p>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="label-mono text-left">
-            <tr>
-              <th className="pb-2">Name</th>
-              <th>Account</th>
-              <th>Venue</th>
-              <th>Nights</th>
-              <th>Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id} className="border-t border-line">
-                <td className="py-2 text-cream">{r.name}</td>
-                <td className="py-2">{r.account?.display_name}</td>
-                <td className="py-2 label-mono">{r.venue?.name ?? "—"}</td>
-                <td className="py-2">{r.event_nights.length}</td>
-                <td className="py-2 label-mono">
-                  {new Date(r.created_at).toLocaleDateString()}
-                </td>
-              </tr>
+    <main id="main-content">
+      <PageHeader
+        eyebrow="Platform"
+        title="Events"
+        sub="Most recent 200"
+      />
+      <div style={{ padding: "var(--s-8)" }}>
+        <div className="card" style={{ overflowX: "auto" }}>
+          <div
+            className="row"
+            style={{
+              gridTemplateColumns: COLS,
+              padding: "var(--s-3) var(--s-5)",
+              background: "var(--bg)",
+            }}
+          >
+            {["Name", "Account", "Venue", "Nights", "Created"].map((h) => (
+              <span key={h} className="t-meta">
+                {h}
+              </span>
             ))}
-          </tbody>
-        </table>
+          </div>
+          {rows.map((r) => (
+            <div
+              key={r.id}
+              className="row"
+              style={{
+                gridTemplateColumns: COLS,
+                padding: "var(--s-4) var(--s-5)",
+              }}
+            >
+              <span className="t-body" style={{ color: "var(--fg)" }}>
+                {r.name}
+              </span>
+              <span className="t-body-2">{r.account?.display_name}</span>
+              <span className="t-body-2">{r.venue?.name ?? "—"}</span>
+              <span className="t-body-2 t-num">{r.event_nights.length}</span>
+              <span className="t-meta">
+                {new Date(r.created_at).toLocaleDateString()}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
-      <p className="label-mono mt-8">
-        <Link href="/admin" className="hover:text-cream">
-          ← Back
-        </Link>
-      </p>
     </main>
   );
 }
