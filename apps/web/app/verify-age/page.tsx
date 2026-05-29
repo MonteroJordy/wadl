@@ -1,11 +1,31 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { Suspense, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Logo } from "@/components/v5";
 
 export default function VerifyAgePage() {
+  // useSearchParams() requires a Suspense boundary in App Router so the
+  // static export step doesn't bail out. Wrap the body and have the
+  // outer page render an empty shell.
+  return (
+    <Suspense fallback={<VerifyAgeShell />}>
+      <VerifyAgeBody />
+    </Suspense>
+  );
+}
+
+function VerifyAgeShell() {
+  return (
+    <main
+      id="main-content"
+      style={{ minHeight: "100vh", background: "var(--bg)" }}
+    />
+  );
+}
+
+function VerifyAgeBody() {
   const router = useRouter();
   const sp = useSearchParams();
   const next = sp.get("next") ?? "/mytickets";
