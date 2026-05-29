@@ -248,8 +248,26 @@ export default async function RootPage() {
             margin: "0 auto",
           }}
         >
-          <div className="t-meta" style={{ marginBottom: "var(--s-3)" }}>
-            Tonight, somewhere
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "var(--s-3)",
+              marginBottom: "var(--s-3)",
+            }}
+          >
+            <div
+              className="pulse"
+              aria-hidden
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: "var(--r-pill)",
+                background: "var(--accent-1)",
+                boxShadow: "0 0 12px rgba(255,61,110,0.6)",
+              }}
+            />
+            <div className="t-meta">TONIGHT, SOMEWHERE · 3 LIVE</div>
           </div>
           <div
             style={{
@@ -426,17 +444,27 @@ export default async function RootPage() {
             }}
           >
             <div
-              className="card"
+              className="card card--accent"
               style={{
                 padding: "var(--s-6)",
-                borderColor: "var(--fg)",
               }}
             >
-              <div className="t-meta">The wedge</div>
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "var(--s-2)",
+                }}
+              >
+                <span className="chip chip--accent">The wedge</span>
+              </div>
               <h3 className="t-h1" style={{ marginTop: "var(--s-3)" }}>
                 Sub-links per tier
               </h3>
-              <p className="t-body-2" style={{ marginTop: "var(--s-2)" }}>
+              <p
+                className="t-body-2"
+                style={{ marginTop: "var(--s-2)", color: "var(--fg-2)" }}
+              >
                 Diplo&apos;s 25-spot list = 5 AAA · 10 VIP · 10 GA. Three
                 links, three audiences. AAA in his Signal group, VIP in his
                 inner circle, GA in his Instagram bio.
