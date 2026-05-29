@@ -324,8 +324,10 @@ export default function NewEventForm({
         onSubmit={onSubmit}
         style={{
           padding: "var(--s-8)",
+          maxWidth: 1120,
+          marginInline: "auto",
           display: "grid",
-          gridTemplateColumns: "1fr 380px",
+          gridTemplateColumns: "minmax(0, 1fr) 360px",
           gap: "var(--s-8)",
           alignItems: "start",
         }}
@@ -738,8 +740,7 @@ export default function NewEventForm({
                       padding: "var(--s-3) var(--s-5)",
                       borderBottom: isLast ? "0" : "1px solid var(--line)",
                       display: "grid",
-                      gridTemplateColumns:
-                        "14px 120px 1fr 90px 100px 24px",
+                      gridTemplateColumns: "14px minmax(0, 1fr) 110px 28px",
                       alignItems: "center",
                       gap: "var(--s-3)",
                     }}
@@ -754,9 +755,10 @@ export default function NewEventForm({
                         updateTier(i, { tone: next });
                       }}
                       aria-label={`Cycle color · current ${t.tone}`}
+                      title="Click to change color"
                       style={{
-                        width: 10,
-                        height: 10,
+                        width: 12,
+                        height: 12,
                         borderRadius: "var(--r-pill)",
                         background: TONE_HEX[t.tone],
                         border: 0,
@@ -769,27 +771,15 @@ export default function NewEventForm({
                       type="text"
                       value={t.label}
                       onChange={(e) =>
-                        updateTier(i, { label: e.target.value })
+                        updateTier(i, {
+                          label: e.target.value,
+                          slug: slugify(e.target.value),
+                        })
                       }
-                      placeholder="GA"
+                      placeholder="GA / VIP / AAA"
                       aria-label="Tier label"
                       className="input"
                       style={{ height: 36, fontWeight: 600 }}
-                    />
-                    <input
-                      type="text"
-                      value={t.slug}
-                      onChange={(e) =>
-                        updateTier(i, { slug: slugify(e.target.value) })
-                      }
-                      placeholder={slugify(t.label) || "slug"}
-                      aria-label="Link slug"
-                      className="input"
-                      style={{
-                        height: 36,
-                        fontFamily: "var(--mono)",
-                        fontSize: 13,
-                      }}
                     />
                     <input
                       type="number"
@@ -801,14 +791,8 @@ export default function NewEventForm({
                       placeholder="cap"
                       aria-label="Cap"
                       className="input"
-                      style={{ height: 36 }}
+                      style={{ height: 36, textAlign: "right" }}
                     />
-                    <span
-                      className="t-meta"
-                      style={{ color: "var(--fg-3)" }}
-                    >
-                      {t.tone}
-                    </span>
                     {tiers.length > 1 ? (
                       <button
                         type="button"
@@ -820,7 +804,8 @@ export default function NewEventForm({
                           color: "var(--fg-3)",
                           cursor: "pointer",
                           padding: 0,
-                          justifySelf: "end",
+                          justifySelf: "center",
+                          fontSize: 18,
                         }}
                       >
                         ×
