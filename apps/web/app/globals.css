@@ -1233,8 +1233,16 @@ a:focus-visible > .w-card {
   background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--r-lg);
   overflow: hidden; transition: border-color .15s;
 }
-.card--hover { cursor: pointer; }
-.card--hover:hover { border-color: var(--line-2); }
+.card--hover { cursor: pointer; transition: border-color 160ms ease-out, box-shadow 160ms ease-out, transform 160ms ease-out; }
+.card--hover:hover {
+  border-color: rgba(255, 138, 61, 0.35);
+  box-shadow: 0 4px 24px rgba(255, 61, 110, 0.10);
+  transform: translateY(-1px);
+}
+.card--accent {
+  border-color: rgba(255, 61, 110, 0.35);
+  background: linear-gradient(180deg, var(--accent-soft) 0%, transparent 60%), var(--bg-2);
+}
 
 /* CHIP — single shape, status by color */
 .chip {

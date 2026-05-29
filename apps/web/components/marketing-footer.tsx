@@ -21,8 +21,21 @@ export default function MarketingFooter() {
         background: "var(--bg)",
         borderTop: "1px solid var(--line)",
         padding: "var(--s-10) var(--s-6)",
+        position: "relative",
       }}
     >
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 2,
+          background: "var(--accent-grad)",
+          opacity: 0.7,
+        }}
+      />
       <div
         style={{
           maxWidth: 1200,

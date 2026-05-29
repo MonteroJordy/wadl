@@ -288,6 +288,17 @@ export default async function RootPage() {
                 style={{ textDecoration: "none" }}
               >
                 <Cover seed={ev.seed} height={200}>
+                  <span
+                    className="chip chip--accent"
+                    style={{
+                      position: "absolute",
+                      top: "var(--s-3)",
+                      left: "var(--s-3)",
+                      fontSize: 10,
+                    }}
+                  >
+                    LIVE
+                  </span>
                   <div
                     style={{
                       position: "absolute",
