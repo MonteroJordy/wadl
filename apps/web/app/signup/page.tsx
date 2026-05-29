@@ -542,33 +542,63 @@ function StepHeader({
   total: number;
   onBack: () => void;
 }) {
+  const pct = Math.round((Number(step) / total) * 100);
   return (
     <header
       style={{
-        padding: "var(--s-5) var(--s-6)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: "var(--s-4)",
+        padding: "var(--s-5) var(--s-6) var(--s-3)",
+        position: "relative",
       }}
     >
       <div
-        style={{ display: "flex", alignItems: "center", gap: "var(--s-3)" }}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "var(--s-4)",
+          marginBottom: "var(--s-4)",
+        }}
       >
-        <button
-          type="button"
-          onClick={onBack}
-          aria-label="Back"
-          className="btn btn--ghost btn--sm"
-          style={{ width: 36, padding: 0 }}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "var(--s-3)",
+          }}
         >
-          ←
-        </button>
-        <Logo size={18} />
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label="Back"
+            className="btn btn--ghost btn--sm"
+            style={{ width: 36, padding: 0 }}
+          >
+            ←
+          </button>
+          <Logo size={18} />
+        </div>
+        <span className="chip chip--ghost">
+          Step {step} of {total}
+        </span>
       </div>
-      <span className="chip chip--ghost">
-        Step {step} of {total}
-      </span>
+      <div
+        aria-hidden
+        style={{
+          height: 3,
+          background: "var(--bg-3)",
+          borderRadius: 99,
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            width: `${pct}%`,
+            height: "100%",
+            background: "var(--accent-grad)",
+            transition: "width 220ms ease-out",
+          }}
+        />
+      </div>
     </header>
   );
 }

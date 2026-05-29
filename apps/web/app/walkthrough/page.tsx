@@ -75,7 +75,12 @@ export default function WalkthroughPage() {
                 width: 32,
                 height: 3,
                 borderRadius: 99,
-                background: idx === i ? "var(--fg)" : "var(--bg-3)",
+                background:
+                  idx === i
+                    ? "var(--accent-grad)"
+                    : idx < i
+                      ? "var(--fg-3)"
+                      : "var(--bg-3)",
                 transition: "background 160ms ease-out",
               }}
             />
