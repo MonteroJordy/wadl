@@ -201,7 +201,7 @@ export default async function TicketPage({
           </Link>
           <Link
             href="/discover"
-            className="btn"
+            className="btn btn--accent"
             style={{ textDecoration: "none" }}
           >
             What&apos;s next

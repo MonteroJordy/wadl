@@ -48,7 +48,7 @@ export default function AddPartnerForm() {
     return (
       <button
         type="button"
-        className="btn"
+        className="btn btn--accent"
         onClick={() => setOpen(true)}
       >
         + New partner

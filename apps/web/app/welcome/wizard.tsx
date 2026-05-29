@@ -537,7 +537,7 @@ export default function WelcomeWizard({ initial }: { initial: InitialState }) {
                 >
                   ← Back
                 </button>
-                <button type="submit" disabled={pending} className="btn">
+                <button type="submit" disabled={pending} className="btn btn--accent">
                   {pending ? "Creating…" : "Create →"}
                 </button>
               </div>
@@ -570,7 +570,7 @@ export default function WelcomeWizard({ initial }: { initial: InitialState }) {
                     onClick={() =>
                       finish(`/owner/events/${createdEventId}/allocations/new`)
                     }
-                    className="btn"
+                    className="btn btn--accent"
                     disabled={pending}
                   >
                     + Invite a holder
@@ -588,7 +588,7 @@ export default function WelcomeWizard({ initial }: { initial: InitialState }) {
                 <button
                   type="button"
                   onClick={() => finish("/owner")}
-                  className="btn"
+                  className="btn btn--accent"
                   disabled={pending}
                 >
                   Go to dashboard →

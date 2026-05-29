@@ -141,7 +141,7 @@ export default function GuestRow({ eventId, guest }: Props) {
                 Deny
               </button>
               <button
-                className="btn"
+                className="btn btn--accent"
                 type="button"
                 onClick={approve}
                 disabled={pending}
@@ -151,7 +151,7 @@ export default function GuestRow({ eventId, guest }: Props) {
             </>
           ) : guest.status === "approved" ? (
             <button
-              className="btn"
+              className="btn btn--accent"
               type="button"
               onClick={checkIn}
               disabled={pending || guest.flag_dna}

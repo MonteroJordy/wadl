@@ -91,7 +91,7 @@ export default async function VenuePublicProfile({ params }: PageProps) {
         actions={
           <Link
             href="/discover"
-            className="btn"
+            className="btn btn--accent"
             style={{ textDecoration: "none" }}
           >
             See all nights

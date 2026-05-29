@@ -177,7 +177,7 @@ export default function HolderIntroWizard({
           )}
           {!isLast ? (
             <button
-              className="btn"
+              className="btn btn--accent"
               type="button"
               onClick={() => setStep(step + 1)}
               style={{ flex: 1 }}
@@ -186,7 +186,7 @@ export default function HolderIntroWizard({
             </button>
           ) : (
             <button
-              className="btn"
+              className="btn btn--accent"
               type="button"
               onClick={dismiss}
               style={{ flex: 1 }}

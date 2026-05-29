@@ -48,7 +48,7 @@ export default function ClaimForm({
           href={`/login?return=${encodeURIComponent(`/holder/claim/${token}`)}`}
           style={{ textDecoration: "none", display: "block" }}
         >
-          <button type="button" className="btn" style={{ width: "100%" }}>
+          <button type="button" className="btn btn--accent" style={{ width: "100%" }}>
             Sign in by phone
           </button>
         </Link>
@@ -59,7 +59,7 @@ export default function ClaimForm({
   return (
     <button
       type="button"
-      className="btn"
+      className="btn btn--accent"
       onClick={claim}
       disabled={pending}
     >
