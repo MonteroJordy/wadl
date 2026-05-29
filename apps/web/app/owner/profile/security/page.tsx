@@ -122,7 +122,7 @@ export default function SecurityPage() {
                 href="/owner/profile/recovery"
                 style={{ textDecoration: "none" }}
               >
-                <button type="button" className="btn">
+                <button type="button" className="btn btn--accent">
                   Verify & continue{" "}
                   <span
                     aria-hidden

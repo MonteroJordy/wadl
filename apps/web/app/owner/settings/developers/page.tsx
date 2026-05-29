@@ -33,7 +33,7 @@ export default async function DevelopersSettings() {
       actions={
         <Link
           href="/owner/webhooks"
-          className="btn"
+          className="btn btn--accent"
           style={{ textDecoration: "none" }}
         >
           Manage webhooks

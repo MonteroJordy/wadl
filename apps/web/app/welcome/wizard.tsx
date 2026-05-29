@@ -361,7 +361,7 @@ export default function WelcomeWizard({ initial }: { initial: InitialState }) {
               >
                 ← Back
               </button>
-              <button type="button" onClick={next} className="btn">
+              <button type="button" onClick={next} className="btn btn--accent">
                 Next →
               </button>
             </div>
@@ -426,7 +426,7 @@ export default function WelcomeWizard({ initial }: { initial: InitialState }) {
               >
                 ← Back
               </button>
-              <button type="button" onClick={next} className="btn">
+              <button type="button" onClick={next} className="btn btn--accent">
                 {initial.hasVenue ? "Next →" : "Skip for now"}
               </button>
             </div>

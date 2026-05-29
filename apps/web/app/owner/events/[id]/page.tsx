@@ -110,7 +110,7 @@ export default async function DayDashPage({
           >
             <Link
               href={`/owner/events/${event.id}/settings`}
-              className="btn"
+              className="btn btn--accent"
               style={{ textDecoration: "none" }}
             >
               Go to settings
@@ -274,7 +274,7 @@ export default async function DayDashPage({
             </Link>
             <Link
               href={`/owner/events/${event.id}/settings`}
-              className="btn"
+              className="btn btn--accent"
               style={{ textDecoration: "none" }}
             >
               Edit

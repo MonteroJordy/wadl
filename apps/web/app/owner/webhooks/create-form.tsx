@@ -83,7 +83,7 @@ export default function CreateWebhookForm() {
           <code className="kbd">x-wadl-signature: sha256=&lt;hmac&gt;</code>.
         </p>
       )}
-      <button type="submit" className="btn" disabled={pending}>
+      <button type="submit" className="btn btn--accent" disabled={pending}>
         {pending ? "Creating…" : "Add endpoint"}
       </button>
     </form>

@@ -207,7 +207,7 @@ export default function TemplateManager({
           marginBottom: "var(--s-6)",
         }}
       >
-        <button type="button" className="btn" onClick={startNew}>
+        <button type="button" className="btn btn--accent" onClick={startNew}>
           + New template
         </button>
         <button

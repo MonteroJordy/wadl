@@ -398,7 +398,7 @@ export default function CsvImportForm({
           {err}
         </p>
       )}
-      <button type="submit" className="btn">
+      <button type="submit" className="btn btn--accent">
         Preview
       </button>
     </form>

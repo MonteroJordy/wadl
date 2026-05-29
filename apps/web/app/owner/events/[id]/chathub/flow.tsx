@@ -419,7 +419,7 @@ export default function ChatHubFlow({
           </p>
         )}
 
-        <button type="submit" className="btn" disabled={pending}>
+        <button type="submit" className="btn btn--accent" disabled={pending}>
           {pending ? "Parsing…" : "Parse"}
         </button>
       </form>
