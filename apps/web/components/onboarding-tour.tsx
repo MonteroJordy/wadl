@@ -229,7 +229,7 @@ export default function OnboardingTour({
           ) : (
             <button
               type="button"
-              className="btn"
+              className="btn btn--accent"
               onClick={next}
               disabled={pending}
               style={{ flex: 1 }}

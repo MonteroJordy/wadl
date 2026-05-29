@@ -113,7 +113,7 @@ export default function DryRunControls({
       <div style={{ display: "flex", gap: "var(--s-2)" }}>
         <button
           type="button"
-          className="btn"
+          className="btn btn--accent"
           onClick={seed}
           disabled={pending}
         >

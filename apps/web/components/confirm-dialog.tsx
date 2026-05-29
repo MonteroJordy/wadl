@@ -160,18 +160,10 @@ export default function ConfirmDialog({
           <button
             ref={confirmRef}
             type="button"
-            className="btn"
+            className={danger ? "btn btn--danger" : "btn btn--accent"}
             onClick={() => void onConfirm()}
             disabled={pending}
             aria-busy={pending || undefined}
-            style={
-              danger
-                ? {
-                    background: "var(--w-err)",
-                    color: "var(--w-acc-ink)",
-                  }
-                : undefined
-            }
           >
             {pending ? "Working…" : confirmLabel}
           </button>

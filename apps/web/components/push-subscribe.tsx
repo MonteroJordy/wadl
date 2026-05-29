@@ -182,7 +182,7 @@ export default function PushSubscribeButton({ vapidPublicKey }: Props) {
           </p>
           <button
             type="button"
-            className="btn"
+            className="btn btn--accent"
             onClick={subscribe}
             disabled={busy || permission === "denied"}
           >

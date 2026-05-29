@@ -170,7 +170,7 @@ export default async function PostEventReport({ params }: PageProps) {
         actions={
           <a
             href={`/api/owner/events/${params.id}/report.csv`}
-            className="btn"
+            className="btn btn--accent"
             style={{ textDecoration: "none" }}
           >
             Export

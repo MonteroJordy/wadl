@@ -95,7 +95,7 @@ export default function GuestDmButton({
         </button>
         <button
           type="button"
-          className="btn"
+          className="btn btn--accent"
           onClick={send}
           disabled={pending || !body.trim()}
         >

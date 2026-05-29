@@ -214,7 +214,7 @@ export default async function PayoutsPage({
                 Complete Stripe&apos;s Express onboarding to start receiving
                 promoter commissions.
               </p>
-              <a href={oauthUrl} className="btn">
+              <a href={oauthUrl} className="btn btn--accent">
                 Connect Stripe account
               </a>
             </>

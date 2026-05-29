@@ -128,7 +128,7 @@ export default function ChatHubFlow({
           <div style={{ display: "flex", gap: "var(--s-2)" }}>
             <Link
               href={`/owner/events/${eventId}/queue`}
-              className="btn"
+              className="btn btn--accent"
               style={{ textDecoration: "none" }}
             >
               Review queue
@@ -307,7 +307,7 @@ export default function ChatHubFlow({
 
           <button
             type="button"
-            className="btn"
+            className="btn btn--accent"
             onClick={onCommit}
             disabled={pending || rows.length === 0}
           >

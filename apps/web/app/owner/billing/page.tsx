@@ -68,7 +68,7 @@ export default async function BillingPage() {
             </p>
             <Link
               href="/api/billing/checkout"
-              className="btn"
+              className="btn btn--accent"
               style={{ marginTop: "var(--s-4)" }}
             >
               Set up billing
@@ -93,7 +93,7 @@ export default async function BillingPage() {
             </p>
             <Link
               href="/api/billing/portal"
-              className="btn"
+              className="btn btn--accent"
               style={{ marginTop: "var(--s-4)" }}
             >
               Open billing portal

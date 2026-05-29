@@ -139,7 +139,7 @@ export default function SettingsForm({
             <button
               type="submit"
               form="event-basics-form"
-              className="btn"
+              className="btn btn--accent"
               disabled={pending}
             >
               {pending ? "Saving…" : "Save"}
