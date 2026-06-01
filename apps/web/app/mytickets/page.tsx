@@ -305,29 +305,60 @@ function TicketCard({ t, highlight }: { t: TicketRow; highlight?: boolean }) {
         textDecoration: "none",
         color: "inherit",
         display: "block",
-        ...(highlight ? { borderColor: "var(--fg)" } : null),
+        overflow: "hidden",
+        ...(highlight
+          ? {
+              borderColor: "rgba(255,61,110,0.4)",
+              boxShadow: "0 8px 32px rgba(255,61,110,0.16)",
+            }
+          : null),
       }}
     >
-      <Cover seed={t.night.event.name} height={140}>
-        <div
-          style={{
-            position: "absolute",
-            left: "var(--s-4)",
-            right: "var(--s-4)",
-            bottom: "var(--s-4)",
-          }}
+      <div
+        style={{
+          position: "relative",
+          aspectRatio: highlight ? "4 / 5" : undefined,
+          height: highlight ? undefined : 140,
+        }}
+      >
+        <Cover
+          seed={t.night.event.name}
+          height={highlight ? undefined : 140}
+          style={highlight ? { height: "100%" } : undefined}
         >
-          <div className="t-meta" style={{ color: "rgba(255,255,255,0.7)" }}>
-            {timeLine}
-          </div>
+          {highlight && today && (
+            <span
+              className="chip chip--accent"
+              style={{
+                position: "absolute",
+                top: "var(--s-4)",
+                left: "var(--s-4)",
+                fontSize: 10,
+              }}
+            >
+              TONIGHT
+            </span>
+          )}
           <div
-            className="t-h1"
-            style={{ color: "#fff", marginTop: "var(--s-1)" }}
+            style={{
+              position: "absolute",
+              left: "var(--s-4)",
+              right: "var(--s-4)",
+              bottom: "var(--s-4)",
+            }}
           >
-            {t.night.event.name}
+            <div className="t-meta" style={{ color: "rgba(255,255,255,0.7)" }}>
+              {timeLine}
+            </div>
+            <div
+              className={highlight ? "t-display-sm" : "t-h1"}
+              style={{ color: "#fff", marginTop: "var(--s-1)" }}
+            >
+              {t.night.event.name}
+            </div>
           </div>
-        </div>
-      </Cover>
+        </Cover>
+      </div>
       <div
         style={{
           padding: "var(--s-4)",
@@ -337,7 +368,9 @@ function TicketCard({ t, highlight }: { t: TicketRow; highlight?: boolean }) {
         }}
       >
         <span className="t-h2">{partyLabel}</span>
-        <span className="btn btn--sm">Show QR</span>
+        <span className={"btn btn--sm " + (highlight ? "btn--accent" : "")}>
+          Show QR
+        </span>
       </div>
     </Link>
   );
