@@ -876,16 +876,18 @@ function Step3Welcome({
     <div style={{ width: "100%", maxWidth: 480, textAlign: "center" }}>
       <div
         style={{
-          width: 64,
-          height: 64,
+          width: 72,
+          height: 72,
           borderRadius: "var(--r-pill)",
-          background: "var(--ok)",
-          color: "var(--bg)",
+          background: "var(--accent-grad)",
+          color: "#0a0a0a",
           display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
-          fontSize: 32,
+          fontSize: 36,
           lineHeight: 1,
+          fontWeight: 700,
+          boxShadow: "0 8px 32px rgba(255, 61, 110, 0.32)",
         }}
         aria-hidden="true"
       >
