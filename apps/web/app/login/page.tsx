@@ -64,7 +64,7 @@ export default function LoginPage() {
   return (
     <main
       id="main-content"
-      className="v5"
+      className="v5 login-split"
       style={{
         minHeight: "100vh",
         background: "var(--bg)",
@@ -241,7 +241,10 @@ export default function LoginPage() {
       </div>
 
       {/* Right — full-height cover with live-event caption */}
-      <div style={{ position: "relative", minHeight: "100vh" }}>
+      <div
+        className="login-cover-pane"
+        style={{ position: "relative", minHeight: "100vh" }}
+      >
         <Cover
           seed="signin v5"
           style={{
@@ -283,6 +286,13 @@ export default function LoginPage() {
           </div>
         </Cover>
       </div>
+
+      <style>{`
+        @media (max-width: 880px) {
+          .login-split { grid-template-columns: 1fr !important; }
+          .login-cover-pane { display: none !important; }
+        }
+      `}</style>
     </main>
   );
 }
